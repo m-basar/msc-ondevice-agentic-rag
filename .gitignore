@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Generated index (rebuild with scripts/build_index.py)
+data/index.json
+data/index_*.json
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Office lock files
+~$*
+
+# Private working notes - not for the repo
+ROADMAP.md
+
+# Keep results - they are dissertation evidence
+!results/
+!results/runs/

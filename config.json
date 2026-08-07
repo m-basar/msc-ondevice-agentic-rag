@@ -1,0 +1,59 @@
+{
+  "project": {
+    "name": "on-device-agentic-rag",
+    "seed": 42
+  },
+  "paths": {
+    "kb_docs": "data/kb",
+    "index": "data/index.json",
+    "test_set": "data/test_set.json",
+    "results": "results/runs"
+  },
+  "llm": {
+    "backend": "ollama",
+    "ollama_url": "http://localhost:11434",
+    "generation_model": "llama3.2:3b",
+    "embedding_model": "nomic-embed-text",
+    "candidate_models": [
+      "llama3.2:3b",
+      "qwen2.5:3b",
+      "phi3:mini",
+      "gemma:2b"
+    ],
+    "timeout_seconds": 300
+  },
+  "generation": {
+    "temperature": 0.1,
+    "num_ctx": 4096,
+    "num_predict": 400
+  },
+  "verification": {
+    "temperature": 0.0,
+    "num_predict": 10
+  },
+  "chunking": {
+    "max_words": 180,
+    "overlap_sentences": 1
+  },
+  "retrieval": {
+    "top_k": 4,
+    "min_similarity": 0.32
+  },
+  "confidence": {
+    "weights": {
+      "support_ratio": 0.6,
+      "retrieval": 0.25,
+      "coverage": 0.15
+    },
+    "contradiction_penalty": 0.4,
+    "high_threshold": 0.7,
+    "medium_threshold": 0.45
+  },
+  "experiment": {
+    "conditions": {
+      "A": "laptop_gpu",
+      "B": "laptop_cpu_only",
+      "C": "pi5_cpu_only"
+    }
+  }
+}

@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sme-assistant"
+version = "0.1.0"
+description = "Privacy-preserving on-device agentic RAG assistant for SME knowledge management"
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [{ name = "Md Basar Basar" }]
+dependencies = []
+
+[project.optional-dependencies]
+plots = ["matplotlib>=3.7"]
+dev = ["pytest>=7.4"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
