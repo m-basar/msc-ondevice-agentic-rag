@@ -1,0 +1,385 @@
+{
+  "corpus_sha256": "dd51cf741e597459f782bf351f4a789654de53ab072f7853d7faf0368cfa4866",
+  "document_count": 37,
+  "documents": [
+    {
+      "id": "CS-01",
+      "title": "Delivery Frequently Asked Questions",
+      "version": "1.8",
+      "status": "superseded",
+      "effective_date": "2025-01-01",
+      "words": 312,
+      "sha256": "b1f8e1e1bb547a9003bab32cc9c47e5ad9109324fa273c03f1d209b6636bd573"
+    },
+    {
+      "id": "CS-02",
+      "title": "Damaged Goods Frequently Asked Questions",
+      "version": "1.5",
+      "status": "current",
+      "effective_date": "2025-12-01",
+      "words": 281,
+      "sha256": "e922af6346533421e809ec360c78d997c3894ae3abd15e21dea9f12c257caac9"
+    },
+    {
+      "id": "CS-03",
+      "title": "Warranty Frequently Asked Questions",
+      "version": "1.9",
+      "status": "current",
+      "effective_date": "2026-01-01",
+      "words": 290,
+      "sha256": "d1952b678a3f88fe0b47a27f0f46e5b14aa4119948b3818262fbc0c3771f4e95"
+    },
+    {
+      "id": "CS-04",
+      "title": "Complaints and Escalation",
+      "version": "1.4",
+      "status": "current",
+      "effective_date": "2025-09-01",
+      "words": 299,
+      "sha256": "50d55949e6f4cb3ef939a94a1a5710d9d9fce7d1fd406a11d356c3917643ade2"
+    },
+    {
+      "id": "CS-11",
+      "title": "Delivery Frequently Asked Questions",
+      "version": "2.2",
+      "status": "current",
+      "effective_date": "2026-02-01",
+      "words": 314,
+      "sha256": "fbe6971a9724facddd31853efdf6d038f5bc8c89468d894260598ce718526774"
+    },
+    {
+      "id": "FIN-01",
+      "title": "Invoicing and Credit Control",
+      "version": "2.1",
+      "status": "current",
+      "effective_date": "2025-10-01",
+      "words": 255,
+      "sha256": "0a97f4c125d26667e923f2389c90d6c28db91baeac315a351e4b2720276c56b2"
+    },
+    {
+      "id": "FIN-02",
+      "title": "Petty Cash Procedure",
+      "version": "1.2",
+      "status": "current",
+      "effective_date": "2026-04-01",
+      "words": 286,
+      "sha256": "6b1248cd9b76e7c913f15eb951a12f8623705d4296622772d480cb08b7422108"
+    },
+    {
+      "id": "FIN-03",
+      "title": "Procurement Policy",
+      "version": "1.7",
+      "status": "current",
+      "effective_date": "2025-10-01",
+      "words": 298,
+      "sha256": "57c93dc7036f9619fd5297346209ad5a5297ae403bcca4c2a5b1ff7995e7c4ad"
+    },
+    {
+      "id": "GEN-01",
+      "title": "Company Overview",
+      "version": "1.4",
+      "status": "current",
+      "effective_date": "2026-01-15",
+      "words": 283,
+      "sha256": "08fc15ace8121ef488506d422fb674b727e4d7ed055b733d7ba347682dbea21e"
+    },
+    {
+      "id": "GEN-02",
+      "title": "Opening Hours and Key Contacts",
+      "version": "2.0",
+      "status": "current",
+      "effective_date": "2026-04-01",
+      "words": 246,
+      "sha256": "ff4e3e5361dbec3e4a184ce4a561c87266f87689b89884d343a1e14afdb0696d"
+    },
+    {
+      "id": "GEN-03",
+      "title": "Visitor and Contractor Policy",
+      "version": "1.2",
+      "status": "current",
+      "effective_date": "2025-09-01",
+      "words": 251,
+      "sha256": "5e98775676434ceaa21ae14e6249fc3493c44c2a6f98e14928fc54013a38ee32"
+    },
+    {
+      "id": "GEN-04",
+      "title": "IT Equipment Issue and Return",
+      "version": "1.1",
+      "status": "current",
+      "effective_date": "2025-11-01",
+      "words": 246,
+      "sha256": "f38267abb9f0c746e737bbb6205a4b40f657ef839b2f3e2501034db537dbaee7"
+    },
+    {
+      "id": "HR-01",
+      "title": "Annual Leave Policy",
+      "version": "3.0",
+      "status": "current",
+      "effective_date": "2026-04-01",
+      "words": 252,
+      "sha256": "cc40ec11a6fb81222999c1d7c90a004f5d747fc50e9aa21d1cd836f55d783653"
+    },
+    {
+      "id": "HR-02",
+      "title": "Sickness Absence Policy",
+      "version": "2.2",
+      "status": "superseded",
+      "effective_date": "2025-10-01",
+      "words": 302,
+      "sha256": "5ea91242c3e16dfc7c2b0d16dc984224fae4805ed22728945d61253df116e7bf"
+    },
+    {
+      "id": "HR-03",
+      "title": "Expenses Policy",
+      "version": "1.3",
+      "status": "superseded",
+      "effective_date": "2024-04-01",
+      "words": 152,
+      "sha256": "5ee7c03c0e64d66b69f5d08fc603753cacaa1eecf6a6ad78cb3cefdf3f4f7ac7"
+    },
+    {
+      "id": "HR-04",
+      "title": "Remote Working Policy",
+      "version": "1.5",
+      "status": "current",
+      "effective_date": "2025-06-01",
+      "words": 249,
+      "sha256": "af3749436797ca3236909ca805a1364df3abe501bcaf2cd6613b04f262df1772"
+    },
+    {
+      "id": "HR-05",
+      "title": "Disciplinary Procedure",
+      "version": "2.1",
+      "status": "current",
+      "effective_date": "2025-04-01",
+      "words": 280,
+      "sha256": "b9b4f931ffc4cc516ba34873deb800683a347684790b646dacfb8a706736d14d"
+    },
+    {
+      "id": "HR-06",
+      "title": "Training and Development",
+      "version": "1.2",
+      "status": "current",
+      "effective_date": "2025-04-01",
+      "words": 259,
+      "sha256": "ab1281a2a1dafad8ed9ceba8b2e618749d6090ebc5d880ef397f1c131364e169"
+    },
+    {
+      "id": "HR-12",
+      "title": "Sickness Absence Policy",
+      "version": "3.0",
+      "status": "current",
+      "effective_date": "2026-04-06",
+      "words": 341,
+      "sha256": "d72cee144d3a4b959ffcbd5a7ed9c0a0c3d3099f05c70cb83d9f503e45617a71"
+    },
+    {
+      "id": "HR-13",
+      "title": "Expenses Policy",
+      "version": "2.0",
+      "status": "current",
+      "effective_date": "2026-04-01",
+      "words": 256,
+      "sha256": "84382f4b4a23a8dad4f8baff471dd515862f7e9149c204fcca27541b020b6053"
+    },
+    {
+      "id": "IT-01",
+      "title": "Password and Access Policy",
+      "version": "1.4",
+      "status": "superseded",
+      "effective_date": "2024-06-01",
+      "words": 263,
+      "sha256": "d5235d003a3722a4ca384433d131d0268165bb68c4fdd864daf35bca52176db8"
+    },
+    {
+      "id": "IT-02",
+      "title": "Data Protection and Information Handling",
+      "version": "2.0",
+      "status": "current",
+      "effective_date": "2025-11-01",
+      "words": 277,
+      "sha256": "a6e880177f98673697bd580bbd1756139b60a6906fe05b90d9e58f36a034471a"
+    },
+    {
+      "id": "IT-03",
+      "title": "Security Incident Reporting",
+      "version": "1.6",
+      "status": "current",
+      "effective_date": "2025-11-01",
+      "words": 303,
+      "sha256": "ea837fe17fa13636d4bd0157c3fb215281a4ccf38d371f83e82af4da76757c9d"
+    },
+    {
+      "id": "IT-04",
+      "title": "Backup and Recovery",
+      "version": "1.3",
+      "status": "current",
+      "effective_date": "2025-05-01",
+      "words": 290,
+      "sha256": "226fc759387c4f2101c9bf9dcfe732507e7a9a5195f2cf474bb6461f0cf5c8c9"
+    },
+    {
+      "id": "IT-11",
+      "title": "Password and Access Policy",
+      "version": "2.2",
+      "status": "current",
+      "effective_date": "2026-01-01",
+      "words": 323,
+      "sha256": "b26522896ba39f89c9534f5ae1f97da2b190f2ef96ee25f514f25205f868982a"
+    },
+    {
+      "id": "OPS-01",
+      "title": "Order Processing Standard Operating Procedure",
+      "version": "3.1",
+      "status": "current",
+      "effective_date": "2026-02-01",
+      "words": 295,
+      "sha256": "6f95e0951078d40beb8a20d58f0be007935b6717aec82aab6c8247b2370b37d3"
+    },
+    {
+      "id": "OPS-02",
+      "title": "Returns Standard Operating Procedure",
+      "version": "2.3",
+      "status": "current",
+      "effective_date": "2025-12-01",
+      "words": 284,
+      "sha256": "a8d1dea09b8329a3971758ba796fce4b15f4219e0439141ed6be1f17fb166fbf"
+    },
+    {
+      "id": "OPS-03",
+      "title": "Refunds Standard Operating Procedure",
+      "version": "1.4",
+      "status": "current",
+      "effective_date": "2025-12-01",
+      "words": 432,
+      "sha256": "725e572a68d57a919da2bdef476f37afe8c984d7ad040322aae7ccee2eb4bcc0"
+    },
+    {
+      "id": "OPS-04",
+      "title": "Stock Intake Standard Operating Procedure",
+      "version": "2.0",
+      "status": "current",
+      "effective_date": "2025-08-01",
+      "words": 266,
+      "sha256": "cf68ce61f0786698fe1abcf20a090a6788505ad8a651ae22379d0ced4d99eb14"
+    },
+    {
+      "id": "OPS-05",
+      "title": "Warehouse Safety Rules",
+      "version": "2.4",
+      "status": "current",
+      "effective_date": "2026-01-01",
+      "words": 346,
+      "sha256": "05281c84dc1dffb8e1731bee5dae0f92d991878832c9cd6f58844e22962f46e3"
+    },
+    {
+      "id": "OPS-06",
+      "title": "Forklift Truck Operations",
+      "version": "1.8",
+      "status": "current",
+      "effective_date": "2025-07-01",
+      "words": 376,
+      "sha256": "497f0c10f5691b47d781ca5d4c14f0ac0c17e2358a6abc381d79f03e63800a64"
+    },
+    {
+      "id": "OPS-07",
+      "title": "Fire Evacuation Procedure",
+      "version": "3.0",
+      "status": "current",
+      "effective_date": "2026-01-01",
+      "words": 316,
+      "sha256": "0b10039676e5e573caffe110ec633137c5b46a2179b8ebb8f175381c1fae9758"
+    },
+    {
+      "id": "OPS-08",
+      "title": "First Aid and Accident Reporting",
+      "version": "2.1",
+      "status": "current",
+      "effective_date": "2025-09-01",
+      "words": 289,
+      "sha256": "db7938341bd4c5138191ef77ddd280fa86d45b0339b4b0a9f3077bc06d1a6517"
+    },
+    {
+      "id": "PRD-01",
+      "title": "Knife Care Guide",
+      "version": "1.3",
+      "status": "current",
+      "effective_date": "2025-06-01",
+      "words": 308,
+      "sha256": "1a4b29b85926db75f917e526493250826f291f8d39fa81fe071901ac41ca6a0d"
+    },
+    {
+      "id": "PRD-02",
+      "title": "Cast Iron Care Guide",
+      "version": "1.2",
+      "status": "current",
+      "effective_date": "2025-06-01",
+      "words": 304,
+      "sha256": "f44b0d82d95e30a0ee942eb30222c9878078c42c0dabc7fd4536183573d1c2f1"
+    },
+    {
+      "id": "REG-01",
+      "title": "Health and Safety Policy",
+      "version": "3.2",
+      "status": "current",
+      "effective_date": "2026-01-01",
+      "words": 318,
+      "sha256": "c5cea30d8d8f97eec01c1399baa55334bac8fed48d30581070807ca163e8c369"
+    },
+    {
+      "id": "REG-02",
+      "title": "Data Retention Schedule",
+      "version": "1.8",
+      "status": "current",
+      "effective_date": "2025-11-01",
+      "words": 328,
+      "sha256": "e8740a533cd3bb68bd86519fdb5cf4abc4541108efcd85fff9f4c3176d8230eb"
+    }
+  ],
+  "generated_at": "2026-08-07T19:23:24.204728+00:00",
+  "schema_versions": {
+    "conflict_registry": "2.0",
+    "corpus_manifest": "1.0"
+  },
+  "config_sha256": "b159968e3078b581eb52db7b485d1c0b3e05273a4212081e5e747979f19f0d23",
+  "conflict_registry_sha256": "e7a74d6e34c67a3a3bf6ed49996c2e9c932d1d0ca45d3a2698bacf048efc4bcd",
+  "git": {
+    "available": true,
+    "commit": "c91dea6b4a7fca21caf50ef551e8229211ea1853",
+    "commit_short": "c91dea6b4a7f",
+    "branch": "main",
+    "dirty": true,
+    "dirty_files": [
+      "docs/BENCHMARKS.md",
+      "results/benchmarks/README.md",
+      "results/corpus_manifest.json"
+    ]
+  },
+  "legal_review_date": "2026-08-07",
+  "conflicts": {
+    "schema_version": "2.0",
+    "family_count": 6,
+    "by_type": {
+      "current_current": 2,
+      "version_supersession": 4
+    },
+    "by_risk": {
+      "high": 2,
+      "medium": 3,
+      "low": 1
+    },
+    "filter_resolvable": 4,
+    "requires_reasoning": 2,
+    "domains": [
+      "customer_service",
+      "data_protection",
+      "finance",
+      "hr",
+      "information_security"
+    ],
+    "fact_count": 13,
+    "fully_absent_topics": 8,
+    "partial_topics": 2,
+    "registry_sha256": "e7a74d6e34c67a3a3bf6ed49996c2e9c932d1d0ca45d3a2698bacf048efc4bcd"
+  }
+}

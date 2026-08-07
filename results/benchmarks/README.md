@@ -26,4 +26,19 @@ them would remove the audit trail that makes the corrections credible.
 7. Full provenance: corpus, registry, config, script and prompt SHA-256, git commit and dirty state, seed, and the exact command
 8. Raspberry Pi EEPROM fan curve corrected (`FAN_TEMP0..3`)
 
-All eight are in place from commit `HEAD`. No valid run has been recorded yet.
+## VALID runs
+
+| Run | Machine | Condition |
+|---|---|---|
+| `20260807_181428_Basar_laptop_gpu_v2` | Laptop | GPU, all models, 5 reps |
+| `20260807_181611_Basar_laptop_cpu_v2` | Laptop | CPU only, llama3.2:3b, 5 reps |
+| `20260807_191119_agi-pi_pi5_v2` | Pi 5 | CPU only, all models, 5 reps, cool-to 65C |
+
+All three carry commit `ca511829602f`, corpus SHA `dd51cf741e59...` and seed 42, so they are directly comparable.
+
+Two caveats recorded in the provenance blocks rather than hidden:
+
+- `laptop_cpu_v2` was taken with a **dirty working tree**. It is usable but not exactly reproducible from its commit alone.
+- Both laptop runs were taken on the **Balanced** power profile. The CPU-only condition should be repeated on Best Performance before the final RQ4 figures are reported.
+
+Figures from these runs, and only these runs, appear in `docs/BENCHMARKS.md`.
