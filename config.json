@@ -34,7 +34,8 @@
   },
   "chunking": {
     "max_words": 180,
-    "overlap_sentences": 1
+    "overlap_sentences": 1,
+    "min_words": 40
   },
   "retrieval": {
     "top_k": 4,
