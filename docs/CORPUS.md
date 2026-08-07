@@ -50,11 +50,20 @@ This distinction matters because gold answers are written against the corpus. An
 
 Three mechanisms enforce this rather than one:
 
-1. It is addressed under `config.evaluation`, never `config.paths`. A pipeline component using only `paths` cannot reach it.
+1. **Gold data locations live in a separate configuration file.** `gold/evaluation.json` is loaded only by `sme_assistant.evaluation.config`. The runtime `Config` object built from `config.json` has no key that leads there, so there is no config lookup at all, correct or otherwise, that reaches the answer key.
 2. The loader lives in `sme_assistant.evaluation`, not `sme_assistant.kb`, so the boundary is visible in the import graph.
-3. `tests/test_no_oracle_leakage.py` parses every module in the inference packages and fails if any imports the registry, imports from the evaluation package, or contains a literal path to gold data.
+3. `tests/test_no_oracle_leakage.py` parses every module in the inference packages and fails if any imports the registry, imports from the evaluation package, contains a literal path to gold data, or attempts a config lookup for an evaluation key.
+
+An earlier design placed evaluation paths under `config.evaluation`, alongside runtime paths in the same file. A reviewer observed that this demonstrated the absence of *current* leakage while leaving the route open: an inference module could have called `config.path("evaluation.conflicts")` and read the answer key, importing nothing and containing no literal path, so the tests would have passed. Splitting the files removes the possibility rather than testing for its absence.
 
 Without this separation the system would be scoring against its own answer key.
+
+## Evaluation protocol
+
+Declared once, in `gold/evaluation.json`, and asserted by a test:
+
+- **Leave-one-family-out cross-validation.** Each conflict family serves as a held-out fold in turn. With a small number of families this is the correct technique; a three-way split would leave too few families per partition to support any estimate.
+- **Macro-averaged by family.** Paraphrased questions drawn from one family test the same document pair and are not independent observations.
 
 ## Conflict design
 
