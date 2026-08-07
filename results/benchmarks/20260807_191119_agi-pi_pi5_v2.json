@@ -1,0 +1,1441 @@
+{
+  "timestamp": "2026-08-07T19:11:19.714928+00:00",
+  "tag": "pi5_v2",
+  "provenance": {
+    "config_sha256": "b159968e3078b581eb52db7b485d1c0b3e05273a4212081e5e747979f19f0d23",
+    "corpus_sha256": "dd51cf741e597459f782bf351f4a789654de53ab072f7853d7faf0368cfa4866",
+    "conflict_registry_sha256": "e7a74d6e34c67a3a3bf6ed49996c2e9c932d1d0ca45d3a2698bacf048efc4bcd",
+    "benchmark_script_sha256": "4f397a8c61fa7cdb9391d61e5cc012052e539844b37278c60fcccaa59c23a5db",
+    "long_prompt_sha256": "191ccfd3e8c5ed2117f7c5f2aba8b4da50d7a476bd6f7048c757d2007a649091",
+    "long_prompt_tokens_reported_by_server": 903,
+    "git": {
+      "available": true,
+      "commit": "ca511829602f884c1e3672265ab2ff97ae246c4d",
+      "commit_short": "ca511829602f",
+      "branch": "main",
+      "dirty": false,
+      "dirty_files": []
+    },
+    "seed": 42,
+    "command": "scripts/benchmark.py --all-models --repeat 5 --timeout 1200 --cool-to 65 --tag pi5_v2",
+    "arguments": {
+      "model": null,
+      "all_models": true,
+      "repeat": 5,
+      "cpu_only": false,
+      "tag": "pi5_v2",
+      "no_save": false,
+      "cool_to": 65.0,
+      "cool_max_wait": 300,
+      "timeout": 1200
+    }
+  },
+  "config_fingerprint": "b159968e3078b581eb52db7b485d1c0b3e05273a4212081e5e747979f19f0d23",
+  "generation_options": {
+    "temperature": 0.1,
+    "num_ctx": 4096,
+    "num_predict": 400
+  },
+  "cpu_only": false,
+  "environment_before": {
+    "host": {
+      "hostname": "agi-pi",
+      "system": "Linux",
+      "release": "6.12.62+rpt-rpi-2712",
+      "machine": "aarch64",
+      "processor": null,
+      "cpu_count": 4,
+      "python": "3.13.5",
+      "memory_total_gb": 15.83,
+      "memory_available_gb": 12.48,
+      "cpu_temperature_c": 59.5,
+      "throttle": {
+        "raw": "0xe0000",
+        "now": {
+          "under_voltage": false,
+          "arm_frequency_capped": false,
+          "throttled": false,
+          "soft_temp_limit": false
+        },
+        "since_boot": {
+          "under_voltage": false,
+          "arm_frequency_capped": true,
+          "throttled": true,
+          "soft_temp_limit": true
+        }
+      },
+      "power_profile": null,
+      "gpus": []
+    },
+    "ollama": {
+      "base_url": "http://localhost:11434",
+      "reachable": true,
+      "version": "0.32.6",
+      "models": [
+        {
+          "name": "gemma:2b",
+          "digest": "b50d6c999e59",
+          "size": 1678456656
+        },
+        {
+          "name": "llama3.2:1b",
+          "digest": "baf6a787fdff",
+          "size": 1321098329
+        },
+        {
+          "name": "llama3.2:3b",
+          "digest": "a80c4f17acd5",
+          "size": 2019393189
+        },
+        {
+          "name": "nomic-embed-text:latest",
+          "digest": "0a109f422b47",
+          "size": 274302450
+        },
+        {
+          "name": "phi3:mini",
+          "digest": "4f2222927938",
+          "size": 2176178913
+        },
+        {
+          "name": "qwen2.5:3b",
+          "digest": "357c53fb659c",
+          "size": 1929912432
+        }
+      ],
+      "model_store_fingerprint": "e39bc25c0edd",
+      "loaded": [
+        {
+          "name": "llama3.2:1b",
+          "size": 1798381239,
+          "size_vram": 0,
+          "context_length": 4096
+        }
+      ]
+    },
+    "gpu_offload_fraction": 0.0
+  },
+  "environment_after": {
+    "host": {
+      "hostname": "agi-pi",
+      "system": "Linux",
+      "release": "6.12.62+rpt-rpi-2712",
+      "machine": "aarch64",
+      "processor": null,
+      "cpu_count": 4,
+      "python": "3.13.5",
+      "memory_total_gb": 15.83,
+      "memory_available_gb": 14.0,
+      "cpu_temperature_c": 77.65,
+      "throttle": {
+        "raw": "0xe0000",
+        "now": {
+          "under_voltage": false,
+          "arm_frequency_capped": false,
+          "throttled": false,
+          "soft_temp_limit": false
+        },
+        "since_boot": {
+          "under_voltage": false,
+          "arm_frequency_capped": true,
+          "throttled": true,
+          "soft_temp_limit": true
+        }
+      },
+      "power_profile": null,
+      "gpus": []
+    },
+    "ollama": {
+      "base_url": "http://localhost:11434",
+      "reachable": true,
+      "version": "0.32.6",
+      "models": [
+        {
+          "name": "gemma:2b",
+          "digest": "b50d6c999e59",
+          "size": 1678456656
+        },
+        {
+          "name": "llama3.2:1b",
+          "digest": "baf6a787fdff",
+          "size": 1321098329
+        },
+        {
+          "name": "llama3.2:3b",
+          "digest": "a80c4f17acd5",
+          "size": 2019393189
+        },
+        {
+          "name": "nomic-embed-text:latest",
+          "digest": "0a109f422b47",
+          "size": 274302450
+        },
+        {
+          "name": "phi3:mini",
+          "digest": "4f2222927938",
+          "size": 2176178913
+        },
+        {
+          "name": "qwen2.5:3b",
+          "digest": "357c53fb659c",
+          "size": 1929912432
+        }
+      ],
+      "model_store_fingerprint": "e39bc25c0edd",
+      "loaded": [
+        {
+          "name": "nomic-embed-text:latest",
+          "size": 376449269,
+          "size_vram": 0,
+          "context_length": 2048
+        }
+      ]
+    },
+    "gpu_offload_fraction": 0.0
+  },
+  "gpu_offload_by_model": {
+    "llama3.2:1b": 0.0,
+    "llama3.2:3b": 0.0,
+    "qwen2.5:3b": 0.0,
+    "phi3:mini": 0.0,
+    "gemma:2b": 0.0
+  },
+  "models": [
+    {
+      "model": "llama3.2:1b",
+      "timed_out": false,
+      "timeout_detail": null,
+      "gpu_offload_fraction": 0.0,
+      "short": {
+        "eval_tokens_per_second": {
+          "mean": 7.31,
+          "median": 7.24,
+          "min": 6.78,
+          "max": 7.85,
+          "n": 5
+        },
+        "wall_seconds": {
+          "mean": 21.65,
+          "median": 25.39,
+          "min": 4.68,
+          "max": 27.94,
+          "n": 5
+        },
+        "runs": [
+          {
+            "wall_seconds": 27.938,
+            "load_seconds": 0.545,
+            "prompt_tokens": 50,
+            "prompt_tokens_per_second": 73.78,
+            "eval_tokens": 181,
+            "eval_tokens_per_second": 6.78,
+            "total_seconds": 27.936
+          },
+          {
+            "wall_seconds": 26.135,
+            "load_seconds": 0.58,
+            "prompt_tokens": 50,
+            "prompt_tokens_per_second": 91.6,
+            "eval_tokens": 181,
+            "eval_tokens_per_second": 7.24,
+            "total_seconds": 26.133
+          },
+          {
+            "wall_seconds": 24.124,
+            "load_seconds": 0.616,
+            "prompt_tokens": 50,
+            "prompt_tokens_per_second": 91.65,
+            "eval_tokens": 180,
+            "eval_tokens_per_second": 7.85,
+            "total_seconds": 24.121
+          },
+          {
+            "wall_seconds": 4.677,
+            "load_seconds": 0.612,
+            "prompt_tokens": 50,
+            "prompt_tokens_per_second": 91.09,
+            "eval_tokens": 26,
+            "eval_tokens_per_second": 7.44,
+            "total_seconds": 4.674
+          },
+          {
+            "wall_seconds": 25.392,
+            "load_seconds": 0.631,
+            "prompt_tokens": 50,
+            "prompt_tokens_per_second": 92.0,
+            "eval_tokens": 175,
+            "eval_tokens_per_second": 7.23,
+            "total_seconds": 25.39
+          }
+        ]
+      },
+      "long": {
+        "prompt_tokens": 903,
+        "eval_tokens_per_second": {
+          "mean": 6.46,
+          "median": 6.45,
+          "min": 6.3,
+          "max": 6.6,
+          "n": 5
+        },
+        "prompt_tokens_per_second": {
+          "mean": 49.14,
+          "median": 49.5,
+          "min": 46.55,
+          "max": 50.99,
+          "n": 5
+        },
+        "wall_seconds": {
+          "mean": 30.46,
+          "median": 29.99,
+          "min": 29.08,
+          "max": 32.24,
+          "n": 5
+        },
+        "runs": [
+          {
+            "wall_seconds": 29.083,
+            "load_seconds": 0.577,
+            "prompt_tokens": 903,
+            "prompt_tokens_per_second": 48.89,
+            "eval_tokens": 64,
+            "eval_tokens_per_second": 6.38,
+            "total_seconds": 29.079,
+            "cpu_temp_before_c": 67.75,
+            "cpu_temp_after_c": 83.7,
+            "arm_frequency_before_hz": 2400023808,
+            "arm_frequency_after_hz": 2201020672,
+            "arm_frequency_nominal_hz": 2400000000,
+            "clock_ratio": 0.917,
+            "throttle": {
+              "raw": "0xe0008",
+              "now": {
+                "under_voltage": false,
+                "arm_frequency_capped": false,
+                "throttled": false,
+                "soft_temp_limit": true
+              },
+              "since_boot": {
+                "under_voltage": false,
+                "arm_frequency_capped": true,
+                "throttled": true,
+                "soft_temp_limit": true
+              }
+            }
+          },
+          {
+            "wall_seconds": 32.241,
+            "load_seconds": 0.595,
+            "prompt_tokens": 903,
+            "prompt_tokens_per_second": 46.55,
+            "eval_tokens": 77,
+            "eval_tokens_per_second": 6.3,
+            "total_seconds": 32.237,
+            "cpu_temp_before_c": 64.45,
+            "cpu_temp_after_c": 82.6,
+            "arm_frequency_before_hz": 1500012800,
+            "arm_frequency_after_hz": 2311031296,
+            "arm_frequency_nominal_hz": 2400000000,
+            "clock_ratio": 0.963,
+            "throttle": {
+              "raw": "0xe0008",
+              "now": {
+                "under_voltage": false,
+                "arm_frequency_capped": false,
+                "throttled": false,
+                "soft_temp_limit": true
+              },
+              "since_boot": {
+                "under_voltage": false,
+                "arm_frequency_capped": true,
+                "throttled": true,
+                "soft_temp_limit": true
+              }
+            }
+          },
+          {
+            "wall_seconds": 29.986,
+            "load_seconds": 0.583,
+            "prompt_tokens": 903,
+            "prompt_tokens_per_second": 49.78,
+            "eval_tokens": 74,
+            "eval_tokens_per_second": 6.58,
+            "total_seconds": 29.983,
+            "cpu_temp_before_c": 62.8,
+            "cpu_temp_after_c": 83.15,
+            "arm_frequency_before_hz": 1500016128,
+            "arm_frequency_after_hz": 2256022784,
+            "arm_frequency_nominal_hz": 2400000000,
+            "clock_ratio": 0.94,
+            "throttle": {
+              "raw": "0xe0008",
+              "now": {
+                "under_voltage": false,
+                "arm_frequency_capped": false,
+                "throttled": false,
+                "soft_temp_limit": true
+              },
+              "since_boot": {
+                "under_voltage": false,
+                "arm_frequency_capped": true,
+                "throttled": true,
+                "soft_temp_limit": true
+              }
+            }
+          },
+          {
+            "wall_seconds": 29.158,
+            "load_seconds": 0.578,
+            "prompt_tokens": 903,
+            "prompt_tokens_per_second": 50.99,
+            "eval_tokens": 70,
+            "eval_tokens_per_second": 6.45,
+            "total_seconds": 29.154,
+            "cpu_temp_before_c": 65.0,
+            "cpu_temp_after_c": 82.05,
+            "arm_frequency_before_hz": 1500016128,
+            "arm_frequency_after_hz": 2366030080,
+            "arm_frequency_nominal_hz": 2400000000,
+            "clock_ratio": 0.986,
+            "throttle": {
+              "raw": "0xe0008",
+              "now": {
+                "under_voltage": false,
+                "arm_frequency_capped": false,
+                "throttled": false,
+                "soft_temp_limit": true
+              },
+              "since_boot": {
+                "under_voltage": false,
+                "arm_frequency_capped": true,
+                "throttled": true,
+                "soft_temp_limit": true
+              }
+            }
+          },
+          {
+            "wall_seconds": 31.853,
+            "load_seconds": 0.568,
+            "prompt_tokens": 903,
+            "prompt_tokens_per_second": 49.5,
+            "eval_tokens": 86,
+            "eval_tokens_per_second": 6.6,
+            "total_seconds": 31.848,
+            "cpu_temp_before_c": 63.9,
+            "cpu_temp_after_c": 83.7,
+            "arm_frequency_before_hz": 1500016128,
+            "arm_frequency_after_hz": 2201017600,
+            "arm_frequency_nominal_hz": 2400000000,
+            "clock_ratio": 0.917,
+            "throttle": {
+              "raw": "0xe0008",
+              "now": {
+                "under_voltage": false,
+                "arm_frequency_capped": false,
+                "throttled": false,
+                "soft_temp_limit": true
+              },
+              "since_boot": {
+                "under_voltage": false,
+                "arm_frequency_capped": true,
+                "throttled": true,
+                "soft_temp_limit": true
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "model": "llama3.2:3b",
+      "timed_out": false,
+      "timeout_detail": null,
+      "gpu_offload_fraction": 0.0,
+      "short": {
+        "eval_tokens_per_second": {
+          "mean": 4.49,
+          "median": 4.5,
+          "min": 4.4,
+          "max": 4.61,
+          "n": 5
+        },
+        "wall_seconds": {
+          "mean": 40.05,
+          "median": 39.61,
+          "min": 38.21,
+          "max": 42.32,
+          "n": 5
+        },
+        "runs": [
+          {
+            "wall_seconds": 42.323,
+            "load_seconds": 0.575,
+            "prompt_tokens": 50,
+            "prompt_tokens_per_second": 45.92,
+            "eval_tokens": 179,
+            "eval_tokens_per_second": 4.4,
+            "total_seconds": 42.321
+          },
+          {
+            "wall_seconds": 39.611,
+            "load_seconds": 0.611,
+            "prompt_tokens": 50,
+            "prompt_tokens_per_second": 55.52,
+            "eval_tokens": 168,
+            "eval_tokens_per_second": 4.42,
+            "total_seconds": 39.608
+          },
+          {
+            "wall_seconds": 39.043,
+            "load_seconds": 0.6,
+            "prompt_tokens": 50,
+            "prompt_tokens_per_second": 55.82,
+            "eval_tokens": 173,
+            "eval_tokens_per_second": 4.61,
+            "total_seconds": 39.039
+          },
+          {
+            "wall_seconds": 41.056,
+            "load_seconds": 0.596,
+            "prompt_tokens": 50,
+            "prompt_tokens_per_second": 55.82,
+            "eval_tokens": 178,
+            "eval_tokens_per_second": 4.5,
+            "total_seconds": 41.053
+          },
+          {
+            "wall_seconds": 38.206,
+            "load_seconds": 0.624,
+            "prompt_tokens": 50,
+            "prompt_tokens_per_second": 55.85,
+            "eval_tokens": 166,
+            "eval_tokens_per_second": 4.53,
+            "total_seconds": 38.204
+          }
+        ]
+      },
+      "long": {
+        "prompt_tokens": 903,
+        "eval_tokens_per_second": {
+          "mean": 3.7,
+          "median": 3.66,
+          "min": 3.61,
+          "max": 3.91,
+          "n": 5
+        },
+        "prompt_tokens_per_second": {
+          "mean": 24.54,
+          "median": 24.54,
+          "min": 24.41,
+          "max": 24.72,
+          "n": 5
+        },
+        "wall_seconds": {
+          "mean": 54.85,
+          "median": 54.34,
+          "min": 53.7,
+          "max": 57.5,
+          "n": 5
+        },
+        "runs": [
+          {
+            "wall_seconds": 54.344,
+            "load_seconds": 0.592,
+            "prompt_tokens": 903,
+            "prompt_tokens_per_second": 24.72,
+            "eval_tokens": 63,
+            "eval_tokens_per_second": 3.66,
+            "total_seconds": 54.34,
+            "cpu_temp_before_c": 73.25,
+            "cpu_temp_after_c": 83.7,
+            "arm_frequency_before_hz": 2400017408,
+            "arm_frequency_after_hz": 2201027328,
+            "arm_frequency_nominal_hz": 2400000000,
+            "clock_ratio": 0.917,
+            "throttle": {
+              "raw": "0xe0008",
+              "now": {
+                "under_voltage": false,
+                "arm_frequency_capped": false,
+                "throttled": false,
+                "soft_temp_limit": true
+              },
+              "since_boot": {
+                "under_voltage": false,
+                "arm_frequency_capped": true,
+                "throttled": true,
+                "soft_temp_limit": true
+              }
+            }
+          },
+          {
+            "wall_seconds": 53.699,
+            "load_seconds": 0.589,
+            "prompt_tokens": 903,
+            "prompt_tokens_per_second": 24.41,
+            "eval_tokens": 63,
+            "eval_tokens_per_second": 3.91,
+            "total_seconds": 53.695,
+            "cpu_temp_before_c": 65.0,
+            "cpu_temp_after_c": 84.8,
+            "arm_frequency_before_hz": 1500016128,
+            "arm_frequency_after_hz": 1500019456,
+            "arm_frequency_nominal_hz": 2400000000,
+            "clock_ratio": 0.625,
+            "throttle": {
+              "raw": "0xe0008",
+              "now": {
+                "under_voltage": false,
+                "arm_frequency_capped": false,
+                "throttled": false,
+                "soft_temp_limit": true
+              },
+              "since_boot": {
+                "under_voltage": false,
+                "arm_frequency_capped": true,
+                "throttled": true,
+                "soft_temp_limit": true
+              }
+            }
+          },
+          {
+            "wall_seconds": 54.363,
+            "load_seconds": 0.586,
+            "prompt_tokens": 903,
+            "prompt_tokens_per_second": 24.54,
+            "eval_tokens": 62,
+            "eval_tokens_per_second": 3.66,
+            "total_seconds": 54.359,
+            "cpu_temp_before_c": 64.45,
+            "cpu_temp_after_c": 83.15,
+            "arm_frequency_before_hz": 1500019456,
+            "arm_frequency_after_hz": 2256019456,
+            "arm_frequency_nominal_hz": 2400000000,
+            "clock_ratio": 0.94,
+            "throttle": {
+              "raw": "0xe0008",
+              "now": {
+                "under_voltage": false,
+                "arm_frequency_capped": false,
+                "throttled": false,
+                "soft_temp_limit": true
+              },
+              "since_boot": {
+                "under_voltage": false,
+                "arm_frequency_capped": true,
+                "throttled": true,
+                "soft_temp_limit": true
+              }
+            }
+          },
+          {
+            "wall_seconds": 54.33,
+            "load_seconds": 0.578,
+            "prompt_tokens": 903,
+            "prompt_tokens_per_second": 24.57,
+            "eval_tokens": 62,
+            "eval_tokens_per_second": 3.65,
+            "total_seconds": 54.325,
+            "cpu_temp_before_c": 63.9,
+            "cpu_temp_after_c": 83.7,
+            "arm_frequency_before_hz": 1500016128,
+            "arm_frequency_after_hz": 2201030656,
+            "arm_frequency_nominal_hz": 2400000000,
+            "clock_ratio": 0.917,
+            "throttle": {
+              "raw": "0xe0008",
+              "now": {
+                "under_voltage": false,
+                "arm_frequency_capped": false,
+                "throttled": false,
+                "soft_temp_limit": true
+              },
+              "since_boot": {
+                "under_voltage": false,
+                "arm_frequency_capped": true,
+                "throttled": true,
+                "soft_temp_limit": true
+              }
+            }
+          },
+          {
+            "wall_seconds": 57.498,
+            "load_seconds": 0.586,
+            "prompt_tokens": 903,
+            "prompt_tokens_per_second": 24.45,
+            "eval_tokens": 72,
+            "eval_tokens_per_second": 3.61,
+            "total_seconds": 57.494,
+            "cpu_temp_before_c": 65.0,
+            "cpu_temp_after_c": 83.7,
+            "arm_frequency_before_hz": 1500012800,
+            "arm_frequency_after_hz": 2201017600,
+            "arm_frequency_nominal_hz": 2400000000,
+            "clock_ratio": 0.917,
+            "throttle": {
+              "raw": "0xe0008",
+              "now": {
+                "under_voltage": false,
+                "arm_frequency_capped": false,
+                "throttled": false,
+                "soft_temp_limit": true
+              },
+              "since_boot": {
+                "under_voltage": false,
+                "arm_frequency_capped": true,
+                "throttled": true,
+                "soft_temp_limit": true
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "model": "qwen2.5:3b",
+      "timed_out": false,
+      "timeout_detail": null,
+      "gpu_offload_fraction": 0.0,
+      "short": {
+        "eval_tokens_per_second": {
+          "mean": 4.81,
+          "median": 4.77,
+          "min": 4.57,
+          "max": 5.06,
+          "n": 5
+        },
+        "wall_seconds": {
+          "mean": 29.74,
+          "median": 29.32,
+          "min": 28.16,
+          "max": 33.05,
+          "n": 5
+        },
+        "runs": [
+          {
+            "wall_seconds": 28.158,
+            "load_seconds": 0.454,
+            "prompt_tokens": 68,
+            "prompt_tokens_per_second": 47.55,
+            "eval_tokens": 130,
+            "eval_tokens_per_second": 4.95,
+            "total_seconds": 28.155
+          },
+          {
+            "wall_seconds": 29.832,
+            "load_seconds": 0.545,
+            "prompt_tokens": 68,
+            "prompt_tokens_per_second": 55.76,
+            "eval_tokens": 132,
+            "eval_tokens_per_second": 4.71,
+            "total_seconds": 29.829
+          },
+          {
+            "wall_seconds": 28.359,
+            "load_seconds": 0.498,
+            "prompt_tokens": 68,
+            "prompt_tokens_per_second": 55.53,
+            "eval_tokens": 127,
+            "eval_tokens_per_second": 4.77,
+            "total_seconds": 28.356
+          },
+          {
+            "wall_seconds": 33.053,
+            "load_seconds": 0.484,
+            "prompt_tokens": 68,
+            "prompt_tokens_per_second": 55.58,
+            "eval_tokens": 143,
+            "eval_tokens_per_second": 4.57,
+            "total_seconds": 33.05
+          },
+          {
+            "wall_seconds": 29.317,
+            "load_seconds": 0.521,
+            "prompt_tokens": 68,
+            "prompt_tokens_per_second": 51.87,
+            "eval_tokens": 139,
+            "eval_tokens_per_second": 5.06,
+            "total_seconds": 29.313
+          }
+        ]
+      },
+      "long": {
+        "prompt_tokens": 952,
+        "eval_tokens_per_second": {
+          "mean": 4.19,
+          "median": 4.19,
+          "min": 4.08,
+          "max": 4.34,
+          "n": 5
+        },
+        "prompt_tokens_per_second": {
+          "mean": 25.27,
+          "median": 25.29,
+          "min": 25.05,
+          "max": 25.39,
+          "n": 5
+        },
+        "wall_seconds": {
+          "mean": 62.22,
+          "median": 62.14,
+          "min": 61.35,
+          "max": 63.63,
+          "n": 5
+        },
+        "runs": [
+          {
+            "wall_seconds": 63.634,
+            "load_seconds": 0.463,
+            "prompt_tokens": 952,
+            "prompt_tokens_per_second": 25.32,
+            "eval_tokens": 111,
+            "eval_tokens_per_second": 4.34,
+            "total_seconds": 63.626,
+            "cpu_temp_before_c": 73.8,
+            "cpu_temp_after_c": 83.7,
+            "arm_frequency_before_hz": 2400020480,
+            "arm_frequency_after_hz": 2201020672,
+            "arm_frequency_nominal_hz": 2400000000,
+            "clock_ratio": 0.917,
+            "throttle": {
+              "raw": "0xe0008",
+              "now": {
+                "under_voltage": false,
+                "arm_frequency_capped": false,
+                "throttled": false,
+                "soft_temp_limit": true
+              },
+              "since_boot": {
+                "under_voltage": false,
+                "arm_frequency_capped": true,
+                "throttled": true,
+                "soft_temp_limit": true
+              }
+            }
+          },
+          {
+            "wall_seconds": 61.349,
+            "load_seconds": 0.465,
+            "prompt_tokens": 952,
+            "prompt_tokens_per_second": 25.39,
+            "eval_tokens": 98,
+            "eval_tokens_per_second": 4.19,
+            "total_seconds": 61.342,
+            "cpu_temp_before_c": 62.25,
+            "cpu_temp_after_c": 84.8,
+            "arm_frequency_before_hz": 1500022656,
+            "arm_frequency_after_hz": 2146018816,
+            "arm_frequency_nominal_hz": 2400000000,
+            "clock_ratio": 0.894,
+            "throttle": {
+              "raw": "0xe0008",
+              "now": {
+                "under_voltage": false,
+                "arm_frequency_capped": false,
+                "throttled": false,
+                "soft_temp_limit": true
+              },
+              "since_boot": {
+                "under_voltage": false,
+                "arm_frequency_capped": true,
+                "throttled": true,
+                "soft_temp_limit": true
+              }
+            }
+          },
+          {
+            "wall_seconds": 62.257,
+            "load_seconds": 0.468,
+            "prompt_tokens": 952,
+            "prompt_tokens_per_second": 25.29,
+            "eval_tokens": 101,
+            "eval_tokens_per_second": 4.19,
+            "total_seconds": 62.25,
+            "cpu_temp_before_c": 64.45,
+            "cpu_temp_after_c": 84.25,
+            "arm_frequency_before_hz": 1500016128,
+            "arm_frequency_after_hz": 2146018816,
+            "arm_frequency_nominal_hz": 2400000000,
+            "clock_ratio": 0.894,
+            "throttle": {
+              "raw": "0xe0008",
+              "now": {
+                "under_voltage": false,
+                "arm_frequency_capped": false,
+                "throttled": false,
+                "soft_temp_limit": true
+              },
+              "since_boot": {
+                "under_voltage": false,
+                "arm_frequency_capped": true,
+                "throttled": true,
+                "soft_temp_limit": true
+              }
+            }
+          },
+          {
+            "wall_seconds": 62.14,
+            "load_seconds": 0.46,
+            "prompt_tokens": 952,
+            "prompt_tokens_per_second": 25.28,
+            "eval_tokens": 98,
+            "eval_tokens_per_second": 4.08,
+            "total_seconds": 62.133,
+            "cpu_temp_before_c": 63.35,
+            "cpu_temp_after_c": 84.8,
+            "arm_frequency_before_hz": 1500019456,
+            "arm_frequency_after_hz": 1500012800,
+            "arm_frequency_nominal_hz": 2400000000,
+            "clock_ratio": 0.625,
+            "throttle": {
+              "raw": "0xe0008",
+              "now": {
+                "under_voltage": false,
+                "arm_frequency_capped": false,
+                "throttled": false,
+                "soft_temp_limit": true
+              },
+              "since_boot": {
+                "under_voltage": false,
+                "arm_frequency_capped": true,
+                "throttled": true,
+                "soft_temp_limit": true
+              }
+            }
+          },
+          {
+            "wall_seconds": 61.733,
+            "load_seconds": 0.452,
+            "prompt_tokens": 952,
+            "prompt_tokens_per_second": 25.05,
+            "eval_tokens": 96,
+            "eval_tokens_per_second": 4.13,
+            "total_seconds": 61.726,
+            "cpu_temp_before_c": 65.0,
+            "cpu_temp_after_c": 83.15,
+            "arm_frequency_before_hz": 1500016128,
+            "arm_frequency_after_hz": 1500022656,
+            "arm_frequency_nominal_hz": 2400000000,
+            "clock_ratio": 0.625,
+            "throttle": {
+              "raw": "0xe0008",
+              "now": {
+                "under_voltage": false,
+                "arm_frequency_capped": false,
+                "throttled": false,
+                "soft_temp_limit": true
+              },
+              "since_boot": {
+                "under_voltage": false,
+                "arm_frequency_capped": true,
+                "throttled": true,
+                "soft_temp_limit": true
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "model": "phi3:mini",
+      "timed_out": false,
+      "timeout_detail": null,
+      "gpu_offload_fraction": 0.0,
+      "short": {
+        "eval_tokens_per_second": {
+          "mean": 3.9,
+          "median": 3.91,
+          "min": 3.75,
+          "max": 4.04,
+          "n": 5
+        },
+        "wall_seconds": {
+          "mean": 85.2,
+          "median": 84.85,
+          "min": 71.31,
+          "max": 105.26,
+          "n": 5
+        },
+        "runs": [
+          {
+            "wall_seconds": 84.854,
+            "load_seconds": 0.072,
+            "prompt_tokens": 51,
+            "prompt_tokens_per_second": 43.28,
+            "eval_tokens": 338,
+            "eval_tokens_per_second": 4.04,
+            "total_seconds": 84.849
+          },
+          {
+            "wall_seconds": 105.264,
+            "load_seconds": 0.097,
+            "prompt_tokens": 51,
+            "prompt_tokens_per_second": 43.38,
+            "eval_tokens": 389,
+            "eval_tokens_per_second": 3.75,
+            "total_seconds": 105.259
+          },
+          {
+            "wall_seconds": 89.597,
+            "load_seconds": 0.099,
+            "prompt_tokens": 51,
+            "prompt_tokens_per_second": 43.41,
+            "eval_tokens": 339,
+            "eval_tokens_per_second": 3.85,
+            "total_seconds": 89.592
+          },
+          {
+            "wall_seconds": 71.307,
+            "load_seconds": 0.1,
+            "prompt_tokens": 51,
+            "prompt_tokens_per_second": 38.89,
+            "eval_tokens": 275,
+            "eval_tokens_per_second": 3.95,
+            "total_seconds": 71.303
+          },
+          {
+            "wall_seconds": 74.985,
+            "load_seconds": 0.098,
+            "prompt_tokens": 51,
+            "prompt_tokens_per_second": 43.2,
+            "eval_tokens": 287,
+            "eval_tokens_per_second": 3.91,
+            "total_seconds": 74.981
+          }
+        ]
+      },
+      "long": {
+        "prompt_tokens": 1160,
+        "eval_tokens_per_second": {
+          "mean": 2.88,
+          "median": 2.86,
+          "min": 2.85,
+          "max": 2.97,
+          "n": 5
+        },
+        "prompt_tokens_per_second": {
+          "mean": 26.21,
+          "median": 26.23,
+          "min": 26.07,
+          "max": 26.29,
+          "n": 5
+        },
+        "wall_seconds": {
+          "mean": 146.57,
+          "median": 154.1,
+          "min": 91.1,
+          "max": 184.92,
+          "n": 5
+        },
+        "runs": [
+          {
+            "wall_seconds": 154.103,
+            "load_seconds": 0.077,
+            "prompt_tokens": 1160,
+            "prompt_tokens_per_second": 26.23,
+            "eval_tokens": 314,
+            "eval_tokens_per_second": 2.86,
+            "total_seconds": 154.095,
+            "cpu_temp_before_c": 70.5,
+            "cpu_temp_after_c": 83.15,
+            "arm_frequency_before_hz": 2400027136,
+            "arm_frequency_after_hz": 2201020672,
+            "arm_frequency_nominal_hz": 2400000000,
+            "clock_ratio": 0.917,
+            "throttle": {
+              "raw": "0xe0008",
+              "now": {
+                "under_voltage": false,
+                "arm_frequency_capped": false,
+                "throttled": false,
+                "soft_temp_limit": true
+              },
+              "since_boot": {
+                "under_voltage": false,
+                "arm_frequency_capped": true,
+                "throttled": true,
+                "soft_temp_limit": true
+              }
+            }
+          },
+          {
+            "wall_seconds": 184.919,
+            "load_seconds": 0.076,
+            "prompt_tokens": 1160,
+            "prompt_tokens_per_second": 26.18,
+            "eval_tokens": 400,
+            "eval_tokens_per_second": 2.85,
+            "total_seconds": 184.911,
+            "cpu_temp_before_c": 65.0,
+            "cpu_temp_after_c": 83.15,
+            "arm_frequency_before_hz": 1500019456,
+            "arm_frequency_after_hz": 1500022656,
+            "arm_frequency_nominal_hz": 2400000000,
+            "clock_ratio": 0.625,
+            "throttle": {
+              "raw": "0xe0008",
+              "now": {
+                "under_voltage": false,
+                "arm_frequency_capped": false,
+                "throttled": false,
+                "soft_temp_limit": true
+              },
+              "since_boot": {
+                "under_voltage": false,
+                "arm_frequency_capped": true,
+                "throttled": true,
+                "soft_temp_limit": true
+              }
+            }
+          },
+          {
+            "wall_seconds": 164.425,
+            "load_seconds": 0.079,
+            "prompt_tokens": 1160,
+            "prompt_tokens_per_second": 26.07,
+            "eval_tokens": 344,
+            "eval_tokens_per_second": 2.87,
+            "total_seconds": 164.417,
+            "cpu_temp_before_c": 65.0,
+            "cpu_temp_after_c": 83.7,
+            "arm_frequency_before_hz": 1500022656,
+            "arm_frequency_after_hz": 2201030656,
+            "arm_frequency_nominal_hz": 2400000000,
+            "clock_ratio": 0.917,
+            "throttle": {
+              "raw": "0xe0008",
+              "now": {
+                "under_voltage": false,
+                "arm_frequency_capped": false,
+                "throttled": false,
+                "soft_temp_limit": true
+              },
+              "since_boot": {
+                "under_voltage": false,
+                "arm_frequency_capped": true,
+                "throttled": true,
+                "soft_temp_limit": true
+              }
+            }
+          },
+          {
+            "wall_seconds": 138.283,
+            "load_seconds": 0.075,
+            "prompt_tokens": 1160,
+            "prompt_tokens_per_second": 26.29,
+            "eval_tokens": 268,
+            "eval_tokens_per_second": 2.85,
+            "total_seconds": 138.274,
+            "cpu_temp_before_c": 63.35,
+            "cpu_temp_after_c": 83.7,
+            "arm_frequency_before_hz": 1500016128,
+            "arm_frequency_after_hz": 2256026112,
+            "arm_frequency_nominal_hz": 2400000000,
+            "clock_ratio": 0.94,
+            "throttle": {
+              "raw": "0xe0008",
+              "now": {
+                "under_voltage": false,
+                "arm_frequency_capped": false,
+                "throttled": false,
+                "soft_temp_limit": true
+              },
+              "since_boot": {
+                "under_voltage": false,
+                "arm_frequency_capped": true,
+                "throttled": true,
+                "soft_temp_limit": true
+              }
+            }
+          },
+          {
+            "wall_seconds": 91.097,
+            "load_seconds": 0.076,
+            "prompt_tokens": 1160,
+            "prompt_tokens_per_second": 26.29,
+            "eval_tokens": 139,
+            "eval_tokens_per_second": 2.97,
+            "total_seconds": 91.09,
+            "cpu_temp_before_c": 62.25,
+            "cpu_temp_after_c": 83.15,
+            "arm_frequency_before_hz": 1500012800,
+            "arm_frequency_after_hz": 2311024640,
+            "arm_frequency_nominal_hz": 2400000000,
+            "clock_ratio": 0.963,
+            "throttle": {
+              "raw": "0xe0000",
+              "now": {
+                "under_voltage": false,
+                "arm_frequency_capped": false,
+                "throttled": false,
+                "soft_temp_limit": false
+              },
+              "since_boot": {
+                "under_voltage": false,
+                "arm_frequency_capped": true,
+                "throttled": true,
+                "soft_temp_limit": true
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "model": "gemma:2b",
+      "timed_out": false,
+      "timeout_detail": null,
+      "gpu_offload_fraction": 0.0,
+      "short": {
+        "eval_tokens_per_second": {
+          "mean": 5.66,
+          "median": 5.57,
+          "min": 5.5,
+          "max": 6.05,
+          "n": 5
+        },
+        "wall_seconds": {
+          "mean": 37.67,
+          "median": 38.76,
+          "min": 31.48,
+          "max": 40.7,
+          "n": 5
+        },
+        "runs": [
+          {
+            "wall_seconds": 37.249,
+            "load_seconds": 0.565,
+            "prompt_tokens": 62,
+            "prompt_tokens_per_second": 79.01,
+            "eval_tokens": 200,
+            "eval_tokens_per_second": 5.57,
+            "total_seconds": 37.245
+          },
+          {
+            "wall_seconds": 38.762,
+            "load_seconds": 0.604,
+            "prompt_tokens": 62,
+            "prompt_tokens_per_second": 79.64,
+            "eval_tokens": 206,
+            "eval_tokens_per_second": 5.51,
+            "total_seconds": 38.758
+          },
+          {
+            "wall_seconds": 40.142,
+            "load_seconds": 0.602,
+            "prompt_tokens": 62,
+            "prompt_tokens_per_second": 53.52,
+            "eval_tokens": 217,
+            "eval_tokens_per_second": 5.66,
+            "total_seconds": 40.138
+          },
+          {
+            "wall_seconds": 40.699,
+            "load_seconds": 0.646,
+            "prompt_tokens": 62,
+            "prompt_tokens_per_second": 78.94,
+            "eval_tokens": 216,
+            "eval_tokens_per_second": 5.5,
+            "total_seconds": 40.696
+          },
+          {
+            "wall_seconds": 31.482,
+            "load_seconds": 0.615,
+            "prompt_tokens": 62,
+            "prompt_tokens_per_second": 78.86,
+            "eval_tokens": 182,
+            "eval_tokens_per_second": 6.05,
+            "total_seconds": 31.478
+          }
+        ]
+      },
+      "long": {
+        "prompt_tokens": 960,
+        "eval_tokens_per_second": {
+          "mean": 5.27,
+          "median": 5.24,
+          "min": 5.1,
+          "max": 5.63,
+          "n": 5
+        },
+        "prompt_tokens_per_second": {
+          "mean": 54.5,
+          "median": 54.42,
+          "min": 54.36,
+          "max": 54.66,
+          "n": 5
+        },
+        "wall_seconds": {
+          "mean": 27.9,
+          "median": 27.9,
+          "min": 27.34,
+          "max": 28.19,
+          "n": 5
+        },
+        "runs": [
+          {
+            "wall_seconds": 28.194,
+            "load_seconds": 0.586,
+            "prompt_tokens": 960,
+            "prompt_tokens_per_second": 54.62,
+            "eval_tokens": 51,
+            "eval_tokens_per_second": 5.1,
+            "total_seconds": 28.187,
+            "cpu_temp_before_c": 72.15,
+            "cpu_temp_after_c": 84.25,
+            "arm_frequency_before_hz": 2400030464,
+            "arm_frequency_after_hz": 2146028800,
+            "arm_frequency_nominal_hz": 2400000000,
+            "clock_ratio": 0.894,
+            "throttle": {
+              "raw": "0xe0008",
+              "now": {
+                "under_voltage": false,
+                "arm_frequency_capped": false,
+                "throttled": false,
+                "soft_temp_limit": true
+              },
+              "since_boot": {
+                "under_voltage": false,
+                "arm_frequency_capped": true,
+                "throttled": true,
+                "soft_temp_limit": true
+              }
+            }
+          },
+          {
+            "wall_seconds": 27.899,
+            "load_seconds": 0.587,
+            "prompt_tokens": 960,
+            "prompt_tokens_per_second": 54.42,
+            "eval_tokens": 51,
+            "eval_tokens_per_second": 5.28,
+            "total_seconds": 27.892,
+            "cpu_temp_before_c": 64.45,
+            "cpu_temp_after_c": 83.7,
+            "arm_frequency_before_hz": 1500012800,
+            "arm_frequency_after_hz": 2201030656,
+            "arm_frequency_nominal_hz": 2400000000,
+            "clock_ratio": 0.917,
+            "throttle": {
+              "raw": "0xe0008",
+              "now": {
+                "under_voltage": false,
+                "arm_frequency_capped": false,
+                "throttled": false,
+                "soft_temp_limit": true
+              },
+              "since_boot": {
+                "under_voltage": false,
+                "arm_frequency_capped": true,
+                "throttled": true,
+                "soft_temp_limit": true
+              }
+            }
+          },
+          {
+            "wall_seconds": 27.341,
+            "load_seconds": 0.595,
+            "prompt_tokens": 960,
+            "prompt_tokens_per_second": 54.36,
+            "eval_tokens": 51,
+            "eval_tokens_per_second": 5.63,
+            "total_seconds": 27.334,
+            "cpu_temp_before_c": 64.45,
+            "cpu_temp_after_c": 83.15,
+            "arm_frequency_before_hz": 1500019456,
+            "arm_frequency_after_hz": 2256026112,
+            "arm_frequency_nominal_hz": 2400000000,
+            "clock_ratio": 0.94,
+            "throttle": {
+              "raw": "0xe0008",
+              "now": {
+                "under_voltage": false,
+                "arm_frequency_capped": false,
+                "throttled": false,
+                "soft_temp_limit": true
+              },
+              "since_boot": {
+                "under_voltage": false,
+                "arm_frequency_capped": true,
+                "throttled": true,
+                "soft_temp_limit": true
+              }
+            }
+          },
+          {
+            "wall_seconds": 28.183,
+            "load_seconds": 0.559,
+            "prompt_tokens": 960,
+            "prompt_tokens_per_second": 54.42,
+            "eval_tokens": 51,
+            "eval_tokens_per_second": 5.12,
+            "total_seconds": 28.175,
+            "cpu_temp_before_c": 65.0,
+            "cpu_temp_after_c": 83.15,
+            "arm_frequency_before_hz": 1500019456,
+            "arm_frequency_after_hz": 2256019456,
+            "arm_frequency_nominal_hz": 2400000000,
+            "clock_ratio": 0.94,
+            "throttle": {
+              "raw": "0xe0008",
+              "now": {
+                "under_voltage": false,
+                "arm_frequency_capped": false,
+                "throttled": false,
+                "soft_temp_limit": true
+              },
+              "since_boot": {
+                "under_voltage": false,
+                "arm_frequency_capped": true,
+                "throttled": true,
+                "soft_temp_limit": true
+              }
+            }
+          },
+          {
+            "wall_seconds": 27.895,
+            "load_seconds": 0.588,
+            "prompt_tokens": 960,
+            "prompt_tokens_per_second": 54.66,
+            "eval_tokens": 51,
+            "eval_tokens_per_second": 5.24,
+            "total_seconds": 27.888,
+            "cpu_temp_before_c": 63.9,
+            "cpu_temp_after_c": 83.7,
+            "arm_frequency_before_hz": 1500012800,
+            "arm_frequency_after_hz": 2366036736,
+            "arm_frequency_nominal_hz": 2400000000,
+            "clock_ratio": 0.986,
+            "throttle": {
+              "raw": "0xe0008",
+              "now": {
+                "under_voltage": false,
+                "arm_frequency_capped": false,
+                "throttled": false,
+                "soft_temp_limit": true
+              },
+              "since_boot": {
+                "under_voltage": false,
+                "arm_frequency_capped": true,
+                "throttled": true,
+                "soft_temp_limit": true
+              }
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "embedding": {
+    "model": "nomic-embed-text",
+    "options": {},
+    "cold_start_ms": 847.9,
+    "repeat": 15,
+    "warm_mean_ms": 72.3,
+    "warm_median_ms": 71.6,
+    "warm_min_ms": 70.8,
+    "warm_max_ms": 79.8,
+    "vram_resident_fraction": 0.0
+  }
+}
