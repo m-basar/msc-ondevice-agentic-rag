@@ -2,7 +2,7 @@
   "_warning": "Evaluation configuration. Deliberately NOT part of config.json. The runtime Config object cannot reach this file, so no inference component can address gold data even by an incorrect config lookup.",
   "paths": {
     "conflicts": "gold/conflicts.json",
-    "test_set": "gold/test_set.json"
+    "question_set": "gold/question_set.json"
   },
   "protocol": {
     "cross_validation": "leave_one_family_out",
@@ -24,6 +24,7 @@
       "tuning_boundary": "sme_assistant.evaluation.question_set._validate_against_registry; ConflictRegistry.families returns the reported set only, all_families is used for corpus validation"
     },
     "tuning_rule": "Conflict families carry split: 'reported' or 'tuning'. Tuning families (TUNE-01, TUNE-02) exist so prompt wording, thresholds and verifier output format can be developed against real conflicts without inspecting a family that will later be scored. A reported family may not appear in the development split and a tuning family may not appear in the test split.",
-    "preregistration": "docs/PREREGISTRATION.md, registered 8 August 2026"
+    "preregistration": "docs/PREREGISTRATION.md, registered 8 August 2026",
+    "question_set": "gold/question_set.json holds both splits in one file, built by scripts/build_question_set.py. It is not named test_set because it also contains the development questions, and a name that hides that invites someone to load the wrong half."
   }
 }

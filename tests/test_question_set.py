@@ -336,3 +336,77 @@ def test_tuning_families_are_not_counted_as_reported(registry):
     assert len(registry.tuning_families) == 2
     assert len(registry.all_families) == 11
     assert all(f.family_id.startswith("CONF-") for f in registry.families)
+
+
+# --- the real question set ---------------------------------------------------
+
+
+@pytest.fixture(scope="module")
+def real_question_set():
+    from sme_assistant.evaluation.question_set import load_question_set
+
+    return load_question_set(load_evaluation_config().path("question_set"))
+
+
+def test_the_written_question_set_is_valid(real_question_set, registry, kb):
+    """Guards the frozen artefact against corpus drift.
+
+    If a document is edited such that an expected chunk no longer exists, or a
+    family stops being current_current, this fails here rather than silently
+    producing a run scored against stale gold data.
+    """
+    validate_question_set(real_question_set, registry=registry, kb=kb)
+
+
+def test_every_expected_chunk_still_exists(real_question_set, kb):
+    from sme_assistant.common.config import load_config
+    from sme_assistant.ingest.chunker import chunk_corpus
+
+    config = load_config()
+    known = {
+        c.chunk_id
+        for c in chunk_corpus(
+            kb,
+            config.require("chunking.max_words"),
+            config.require("chunking.overlap_sentences"),
+            config.require("chunking.min_words"),
+        )
+    }
+    missing = [
+        (q.question_id, c)
+        for q in real_question_set
+        for c in q.expected_chunks
+        if c not in known
+    ]
+    assert not missing, f"expected chunks no longer in the chunk set: {missing}"
+
+
+def test_no_reported_family_appears_in_the_development_split(real_question_set, registry):
+    reported = {f.family_id for f in registry.families}
+    leaked = [
+        q.question_id
+        for q in real_question_set.split("dev")
+        if q.family_id in reported
+    ]
+    assert not leaked, f"reported families in the development split: {leaked}"
+
+
+def test_the_conflict_families_are_the_largest_category(real_question_set):
+    """The set is conflict-weighted by design; a drift away from that is a
+    change to the study, not a tidy-up."""
+    summary = real_question_set.summary()
+    assert summary["by_category"]["conflict"] >= summary["by_category"]["factual"]
+    assert summary["family_group_count"] == 11
+
+
+def test_the_test_split_covers_every_reported_family(real_question_set, registry):
+    covered = {q.family_id for q in real_question_set.split("test") if q.family_id}
+    assert covered == {f.family_id for f in registry.families}
+
+
+def test_paraphrases_number_three_per_conflict_family(real_question_set):
+    for group in real_question_set.family_groups:
+        assert len(real_question_set.of_group(group)) == 3, (
+            f"{group} does not have three paraphrases, so families contribute "
+            "unequal weight to the question-level figure"
+        )

@@ -36,7 +36,9 @@ SRC = Path(__file__).resolve().parents[1] / "src" / "sme_assistant"
 INFERENCE_PACKAGES = ("kb", "ingest", "retrieve", "generate", "verify", "agent", "common")
 
 FORBIDDEN_IMPORT_TOKENS = ("conflicts", "gold")
-FORBIDDEN_CONFIG_LOOKUPS = ("evaluation.conflicts", "evaluation.test_set", "evaluation")
+FORBIDDEN_CONFIG_LOOKUPS = (
+    "evaluation.conflicts", "evaluation.test_set", "evaluation.question_set", "evaluation",
+)
 FORBIDDEN_TEXT_TOKENS = ("gold/", "gold\\\\", "conflicts.json")
 
 
@@ -115,7 +117,7 @@ def test_runtime_config_contains_no_route_to_gold_data():
     """
     config = load_config()
     serialised = json.dumps(config.as_dict()).lower()
-    for token in ("gold", "conflicts", "test_set", "evaluation"):
+    for token in ("gold", "conflicts", "test_set", "question_set", "evaluation"):
         assert token not in serialised, (
             f"Runtime config mentions {token!r}. Gold data must not be "
             "addressable from config.json at all."
