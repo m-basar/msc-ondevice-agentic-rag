@@ -12,7 +12,15 @@ owner: Finance Manager
 
 ## Scope
 
-This procedure covers refunding money to customers. The physical handling and inspection of returned goods is covered in OPS-02. A refund is not processed until the disposition in OPS-02 has been recorded.
+This procedure covers refunding money to customers. The physical handling and inspection of returned goods is covered in OPS-02.
+
+Three routes exist and they are not interchangeable:
+
+| Route | Basis | Inspection first? |
+|---|---|---|
+| Statutory cancellation | Consumer Contracts Regulations 2013 | No. The deadline runs from receipt of the goods or from the customer's evidence of dispatch, whichever is earlier, so a refund may fall due before inspection is complete. |
+| Faulty goods | Consumer Rights Act 2015 | Normally yes, but a short clear-cut fault must not be used to delay a refund beyond a reasonable period. |
+| Discretionary change of mind | Company policy only | Yes. Disposition under OPS-02 must be recorded first. |
 
 ## Timing
 
@@ -34,7 +42,7 @@ Refunds are never issued in cash, and never through petty cash.
 
 The refund covers the price paid for the goods. Original outbound delivery is refunded where the customer is exercising a statutory cancellation right or where the goods were faulty, and is not refunded for a discretionary change-of-mind return.
 
-Where disposition B has been recorded, a restocking deduction of up to 15% may be applied at the discretion of the Customer Services Manager, and the customer must be told before the deduction is made.
+Where disposition B has been recorded on a discretionary change-of-mind return, a deduction may be applied for the actual reduction in value caused by the customer handling the goods beyond what is necessary to establish their nature and function. The deduction must reflect the assessed diminished value, not a fixed percentage, must be evidenced by the disposition record, and must be explained to the customer before it is applied. No deduction is made where the customer is exercising a statutory cancellation right and has handled the goods no more than they would in a shop.
 
 ## Authorisation
 

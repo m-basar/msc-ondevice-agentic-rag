@@ -26,7 +26,9 @@ Assess the load before lifting: check the weight marking, test the load, keep it
 
 ## Racking
 
-Do not climb racking under any circumstances. Use the designated step ladders for the lower two levels and request a forklift with a cage for anything higher.
+Do not climb racking under any circumstances. Use the designated step ladders for the lower two levels.
+
+Routine picking above the lower two levels is done with the order picker truck, which has an integrated operator platform designed for the purpose. The non-integrated man-riding cage is not for planned work. It may be used only for occasional, exceptional access where no suitable purpose-designed equipment is reasonably available, and only with a documented work-at-height assessment approved by the Warehouse Manager on the day.
 
 Report damaged racking uprights or beams to the Warehouse Supervisor immediately and cordon off the bay. Damaged racking is not used until inspected.
 

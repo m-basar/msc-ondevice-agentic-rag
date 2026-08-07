@@ -301,3 +301,31 @@ def environment(base_url: str) -> dict[str, Any]:
         "ollama": ollama,
         "gpu_offload_fraction": gpu_offload_fraction(ollama),
     }
+
+
+# --- source provenance ------------------------------------------------------
+
+
+def git_commit(repo_root: Path | None = None) -> dict[str, Any]:
+    """Current commit, branch and working-tree cleanliness.
+
+    Recorded per run so a results file identifies the exact source that
+    produced it. ``dirty`` matters as much as the SHA: a run made with
+    uncommitted changes is not reproducible from the commit alone, and that
+    should be visible rather than assumed away.
+    """
+    root = repo_root or Path(__file__).resolve().parents[3]
+    base = ["git", "-C", str(root)]
+    sha = _run([*base, "rev-parse", "HEAD"])
+    if sha is None:
+        return {"available": False}
+    status = _run([*base, "status", "--porcelain"])
+    return {
+        "available": True,
+        "commit": sha,
+        "commit_short": sha[:12],
+        "branch": _run([*base, "rev-parse", "--abbrev-ref", "HEAD"]),
+        "dirty": bool(status),
+        # Porcelain format is two status characters, a space, then the path.
+        "dirty_files": [line[2:].strip() for line in status.splitlines()] if status else [],
+    }

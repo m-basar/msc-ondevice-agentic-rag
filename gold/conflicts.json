@@ -1,0 +1,314 @@
+{
+  "schema_version": "2.0",
+  "purpose": "Registry of deliberate conflicts planted in the knowledge base, and of topics deliberately absent from it. Every contradiction between documents must appear here. A contradiction that is not registered is a defect in the corpus, not an experimental condition.",
+  "gold_data_warning": "THIS FILE IS EVALUATION GOLD DATA. It contains expected answers, prohibited assertions and the list of unanswerable topics. No component of the inference pipeline may read it. It is addressed under config.evaluation, never under config.paths, and tests assert that no pipeline module imports it. Reading it at inference time would be oracle leakage and would invalidate every result.",
+  "notes": [
+    "Superseded documents are indexed rather than filtered out at ingestion time. Filtering would remove the conflict before the model saw it, and detecting conflicts is the capability under evaluation.",
+    "Families of type version_supersession can in principle be resolved by a metadata filter on status alone, without any claim-level reasoning. They are therefore not sufficient on their own to demonstrate that verification adds value. Families of type current_current exist for that reason: both documents are live, both are authoritative, and no metadata field distinguishes them. A filter cannot resolve them.",
+    "The evaluation should compare three arms: naive retrieval over all documents, retrieval filtered to current documents only, and the full verification pipeline. The second arm is the obvious cheap alternative to this project's contribution and must be beaten on the current_current families to justify it.",
+    "The share of superseded documents is deliberately higher than would be typical for a real SME so that conflict handling can be measured rather than illustrated. This is a threat to external validity and is stated as such in docs/CORPUS.md.",
+    "Multiple paraphrased questions drawn from one family are not independent observations. Results must be macro-averaged by family, not micro-averaged by question."
+  ],
+  "confidence_policy": {
+    "resolved_supersession": {
+      "answer_with": "authoritative version only",
+      "flag": "superseded_evidence_present",
+      "confidence": "may reach high",
+      "rationale": "Once the system has identified which document supersedes which and answered from the current one, the answer is correct and well grounded. Capping it at medium would understate a resolution the system genuinely achieved, and would make the confidence signal uninformative."
+    },
+    "unresolved_conflict": {
+      "answer_with": "both positions, neither asserted as authoritative",
+      "flag": "unresolved_conflict",
+      "confidence": "capped at low",
+      "next_action": "escalate to the named document owners for reconciliation",
+      "rationale": "Two live documents disagree and nothing in the corpus establishes precedence. Choosing one silently is the failure mode this project exists to prevent."
+    },
+    "unanswerable": {
+      "answer_with": "explicit refusal",
+      "flag": "not_covered",
+      "confidence": "low",
+      "rationale": "Refusing is correct. Estimating from adjacent material is the hallucination this project measures."
+    }
+  },
+  "families": [
+    {
+      "id": "CONF-01",
+      "name": "Business mileage reimbursement rate",
+      "type": "version_supersession",
+      "domain": "finance",
+      "risk_level": "medium",
+      "documents": ["HR-03", "HR-13"],
+      "authoritative": "HR-13",
+      "resolution": "prefer_current",
+      "conflicting_facts": [
+        {
+          "fact": "mileage rate for the first 10,000 business miles",
+          "values": {
+            "HR-03": "40 pence per mile, flat rate",
+            "HR-13": "55 pence per mile, then 25 pence thereafter"
+          },
+          "anchors": {
+            "HR-03": "40 pence per mile",
+            "HR-13": "55 pence per mile"
+          }
+        },
+        {
+          "fact": "claim submission window",
+          "values": {
+            "HR-03": "60 days",
+            "HR-13": "30 days, refused after 90 days"
+          },
+          "anchors": {
+            "HR-03": "within 60 days of the expenditure",
+            "HR-13": "within 30 days of the expenditure"
+          }
+        },
+        {
+          "fact": "reimbursement method",
+          "values": {
+            "HR-03": "with the following month's salary",
+            "HR-13": "BACS within ten working days of approval"
+          },
+          "anchors": {
+            "HR-03": "reimbursed with the following month's salary",
+            "HR-13": "reimbursed by BACS within ten working days"
+          }
+        }
+      ],
+      "must_cite": ["HR-13"],
+      "must_not_assert": ["40 pence per mile as the current rate"]
+    },
+    {
+      "id": "CONF-02",
+      "name": "Statutory Sick Pay waiting days and eligibility",
+      "type": "version_supersession",
+      "domain": "hr",
+      "risk_level": "high",
+      "documents": ["HR-02", "HR-12"],
+      "authoritative": "HR-12",
+      "resolution": "prefer_current",
+      "conflicting_facts": [
+        {
+          "fact": "first payable day of Statutory Sick Pay",
+          "values": {
+            "HR-02": "fourth qualifying day, three unpaid waiting days",
+            "HR-12": "first qualifying day, no waiting days"
+          },
+          "anchors": {
+            "HR-02": "payable from the fourth qualifying day",
+            "HR-12": "payable from the first qualifying day"
+          }
+        },
+        {
+          "fact": "earnings eligibility threshold",
+          "values": {
+            "HR-02": "employee must earn at least the Lower Earnings Limit",
+            "HR-12": "all employees qualify regardless of earnings"
+          },
+          "anchors": {
+            "HR-02": "must earn at least the Lower Earnings Limit",
+            "HR-12": "All employees qualify for Statutory Sick Pay regardless of their earnings"
+          }
+        }
+      ],
+      "must_cite": ["HR-12"],
+      "must_not_assert": [
+        "three unpaid waiting days apply",
+        "employees below the Lower Earnings Limit do not qualify"
+      ],
+      "risk_note": "Highest-risk supersession family. An answer from the withdrawn version would tell an employee they are not entitled to money they are legally owed."
+    },
+    {
+      "id": "CONF-03",
+      "name": "Password rotation and multi-factor authentication",
+      "type": "version_supersession",
+      "domain": "information_security",
+      "risk_level": "medium",
+      "documents": ["IT-01", "IT-11"],
+      "authoritative": "IT-11",
+      "resolution": "prefer_current",
+      "conflicting_facts": [
+        {
+          "fact": "minimum password length",
+          "values": {
+            "IT-01": "8 characters with complexity requirements",
+            "IT-11": "14 characters, three random words encouraged"
+          },
+          "anchors": {
+            "IT-01": "at least 8 characters",
+            "IT-11": "at least 14 characters"
+          }
+        },
+        {
+          "fact": "scheduled password rotation",
+          "values": {
+            "IT-01": "every 90 days for all accounts",
+            "IT-11": "none for standard accounts, 180 days for administrators"
+          },
+          "anchors": {
+            "IT-01": "changed every 90 days",
+            "IT-11": "Scheduled password rotation has been discontinued"
+          }
+        },
+        {
+          "fact": "SMS as a second authentication factor",
+          "values": {
+            "IT-01": "acceptable where an authenticator app is unavailable",
+            "IT-11": "not accepted"
+          },
+          "anchors": {
+            "IT-01": "code sent by SMS is acceptable",
+            "IT-11": "Codes sent by SMS are no longer accepted"
+          }
+        }
+      ],
+      "must_cite": ["IT-11"],
+      "must_not_assert": ["passwords must be changed every 90 days"]
+    },
+    {
+      "id": "CONF-04",
+      "name": "Delivery charges and free delivery threshold",
+      "type": "version_supersession",
+      "domain": "customer_service",
+      "risk_level": "low",
+      "documents": ["CS-01", "CS-11"],
+      "authoritative": "CS-11",
+      "resolution": "prefer_current",
+      "conflicting_facts": [
+        {
+          "fact": "free delivery threshold",
+          "values": {"CS-01": "£50 excluding VAT", "CS-11": "£75 excluding VAT"},
+          "anchors": {"CS-01": "orders £50 and over", "CS-11": "orders £75 and over"}
+        },
+        {
+          "fact": "standard delivery charge",
+          "values": {"CS-01": "£4.95", "CS-11": "£6.95"},
+          "anchors": {"CS-01": "£4.95", "CS-11": "£6.95"}
+        },
+        {
+          "fact": "next working day charge",
+          "values": {"CS-01": "£9.95", "CS-11": "£12.95"},
+          "anchors": {"CS-01": "£9.95", "CS-11": "£12.95"}
+        }
+      ],
+      "must_cite": ["CS-11"],
+      "must_not_assert": ["free delivery applies from £50"]
+    },
+    {
+      "id": "CONF-05",
+      "name": "Deadline for reporting lost or stolen equipment",
+      "type": "current_current",
+      "domain": "information_security",
+      "risk_level": "high",
+      "documents": ["GEN-04", "IT-03"],
+      "authoritative": null,
+      "resolution": "escalate_unresolved",
+      "conflicting_facts": [
+        {
+          "fact": "time limit for reporting a lost or stolen company device",
+          "values": {
+            "GEN-04": "within 24 hours, to the IT helpdesk",
+            "IT-03": "within 1 hour of becoming aware"
+          },
+          "anchors": {
+            "GEN-04": "reported to the IT helpdesk within 24 hours",
+            "IT-03": "Within 1 hour of becoming aware"
+          }
+        }
+      ],
+      "must_cite": ["GEN-04", "IT-03"],
+      "must_not_assert": [
+        "a single reporting deadline as authoritative",
+        "that the two documents agree"
+      ],
+      "why_a_filter_cannot_solve_this": "Both documents are status: current, both are in force, both are owned by different departments, and no metadata field ranks one above the other. Resolving it requires reading the claims and noticing they are incompatible.",
+      "risk_note": "The gap is not academic. A device lost at 09:00 reported at 17:00 is compliant under GEN-04 and eight hours late under IT-03, and the difference bears on the 72-hour ICO notification window."
+    },
+    {
+      "id": "CONF-06",
+      "name": "Backup retention against the data retention schedule",
+      "type": "current_current",
+      "domain": "data_protection",
+      "risk_level": "medium",
+      "documents": ["IT-04", "REG-02"],
+      "authoritative": null,
+      "resolution": "escalate_unresolved",
+      "conflicting_facts": [
+        {
+          "fact": "how long data survives once its retention period has expired",
+          "values": {
+            "IT-04": "an annual backup of all business systems is kept for seven years",
+            "REG-02": "records are deleted at the end of their retention period, including from backups at the next rollover"
+          },
+          "anchors": {
+            "IT-04": "An annual backup is retained for seven years",
+            "REG-02": "deleted, including from backups at the next backup cycle rollover"
+          }
+        }
+      ],
+      "must_cite": ["IT-04", "REG-02"],
+      "must_not_assert": [
+        "that data is fully deleted at the end of its retention period",
+        "that a seven-year backup is compatible with a 31-day CCTV retention period"
+      ],
+      "why_a_filter_cannot_solve_this": "Both documents are current and neither is a version of the other. The conflict is between an operational practice and a compliance requirement, which is precisely the kind of contradiction that survives in real organisations because each document is correct within its own department's frame.",
+      "risk_note": "CCTV is scheduled for deletion after 31 days, yet an annual backup would preserve it for seven years. That is a live UK GDPR storage limitation exposure."
+    }
+  ],
+  "deliberate_gaps": {
+    "purpose": "Topics absent from the corpus by design, used to generate unanswerable questions. A correct system refuses; an incorrect one invents policy. Probes are stored here rather than in code so that adding a gap does not require a code change.",
+    "fully_absent": [
+      {
+        "topic": "pensions and auto-enrolment",
+        "probes": ["auto-enrol", "workplace pension", "pension scheme", "pension contribution"]
+      },
+      {
+        "topic": "maternity, paternity and shared parental leave",
+        "probes": ["maternity", "paternity", "parental leave", "adoption leave"]
+      },
+      {
+        "topic": "redundancy and notice periods",
+        "probes": ["redundanc", "notice period", "period of notice"]
+      },
+      {
+        "topic": "company car and vehicle allowance schemes",
+        "probes": ["company car", "car allowance", "vehicle allowance"]
+      },
+      {
+        "topic": "share options and bonus schemes",
+        "probes": ["share option", "share scheme", "bonus scheme", "annual bonus"]
+      },
+      {
+        "topic": "export documentation procedure",
+        "probes": ["export documentation", "customs declaration", "commodity code", "commercial invoice", "proof of origin"],
+        "note": "Whether the company ships internationally IS answerable from CS-11, which states it does not ship outside the United Kingdom. Only the export documentation procedure is absent. Questions must target the procedure, not the availability, or they are not unanswerable."
+      },
+      {
+        "topic": "flexible working requests",
+        "probes": ["flexible working request", "statutory flexible working", "request flexible working"]
+      },
+      {
+        "topic": "staff purchase and employee discount",
+        "probes": ["staff discount", "employee discount", "staff purchase"]
+      }
+    ],
+    "partially_present": [
+      {
+        "topic": "probationary period",
+        "mentioned_in": "HR-04",
+        "must_contain": "probationary period",
+        "missing_detail_probes": ["probationary period is", "probation lasts", "months probation", "probationary period of"],
+        "gap": "HR-04 states that new employees work on site for the duration of their probationary period, but no document defines how long that period is or what happens at the end of it.",
+        "expected_behaviour": "state what is known, state explicitly that the duration is not covered, do not estimate"
+      },
+      {
+        "topic": "grievance procedure",
+        "mentioned_in": "HR-05",
+        "must_contain": "grievance",
+        "missing_detail_probes": ["raise a grievance", "grievance hearing", "grievance in writing", "grievance stage"],
+        "gap": "HR-05 names the ACAS Code of Practice on disciplinary and grievance procedures, so the word appears in the corpus, but no grievance procedure is documented. Retrieval will surface HR-05 with reasonable similarity and HR-05 cannot answer the question.",
+        "expected_behaviour": "refuse, and say that only the disciplinary procedure is documented; do not describe HR-05 as if it were a grievance procedure"
+      }
+    ]
+  }
+}

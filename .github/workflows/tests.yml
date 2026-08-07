@@ -1,0 +1,37 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Run tests
+        run: python -m pytest -q
+
+      # Corpus integrity is checked separately from the unit tests so that a
+      # failure here is unambiguous: it means a document was edited into a state
+      # that contradicts the conflict registry, not that code is broken.
+      - name: Validate corpus and conflict registry
+        run: python scripts/kb_summary.py
+
+      - name: Record fingerprints in the job summary
+        if: always()
+        run: |
+          python scripts/kb_summary.py --json >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true

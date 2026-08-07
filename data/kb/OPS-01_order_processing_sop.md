@@ -16,7 +16,7 @@ This procedure covers trade and web orders from receipt to despatch. It does not
 
 ## 1. Order receipt
 
-Orders arrive through the web store, by email to sales@, or by telephone. Telephone orders are entered into the order system by the sales advisor while the customer is on the line and read back for confirmation.
+Orders arrive through the web store, by email to sales@northgate-kitchenware.invalid, or by telephone. Telephone orders are entered into the order system by the sales advisor while the customer is on the line and read back for confirmation.
 
 Every order receives a system-generated order number in the format NK-YYYYMMDD-NNNN.
 

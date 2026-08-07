@@ -219,21 +219,30 @@ class KnowledgeBase:
         return [doc for doc in self.documents if not doc.is_current]
 
     def fingerprint(self) -> str:
-        """Stable hash of the whole corpus.
+        """Full SHA-256 of the whole corpus.
 
         Built from the per-document hashes rather than from a directory walk,
         so it changes if and only if document content changes, and does not
         depend on file modification times or on the order files are read.
+
+        Returned at full length. A truncated hash is fine for a terminal and
+        not fine for a reproducibility record, so the truncation happens at the
+        point of display, not at the point of storage.
         """
         canonical = "\n".join(
-            f"{doc.doc_id}:{doc.content_hash}" for doc in sorted(self.documents, key=lambda d: d.doc_id)
+            f"{doc.doc_id}:{doc.content_hash}"
+            for doc in sorted(self.documents, key=lambda d: d.doc_id)
         )
-        return hashlib.sha256(canonical.encode("utf-8")).hexdigest()[:12]
+        return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+    def short_fingerprint(self) -> str:
+        """First 12 characters of the corpus fingerprint, for terminal output."""
+        return self.fingerprint()[:12]
 
     def manifest(self) -> dict[str, Any]:
         """Full provenance record, written into every results file."""
         return {
-            "corpus_fingerprint": self.fingerprint(),
+            "corpus_sha256": self.fingerprint(),
             "document_count": len(self.documents),
             "documents": [
                 {
@@ -266,7 +275,8 @@ class KnowledgeBase:
             "mean_words": round(sum(words) / len(words), 1) if words else 0,
             "min_words": min(words) if words else 0,
             "max_words": max(words) if words else 0,
-            "corpus_fingerprint": self.fingerprint(),
+            "corpus_sha256": self.fingerprint(),
+            "corpus_fingerprint_short": self.short_fingerprint(),
         }
 
 

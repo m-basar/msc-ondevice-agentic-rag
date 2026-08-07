@@ -86,10 +86,14 @@ class Config:
         import hashlib
 
         canonical = json.dumps(self._data, sort_keys=True, separators=(",", ":"))
-        return hashlib.sha256(canonical.encode("utf-8")).hexdigest()[:12]
+        return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+    def short_fingerprint(self) -> str:
+        """First 12 characters of the configuration hash, for terminal output."""
+        return self.fingerprint()[:12]
 
     def __repr__(self) -> str:
-        return f"Config(source={self.source}, fingerprint={self.fingerprint()})"
+        return f"Config(source={self.source}, fingerprint={self.short_fingerprint()})"
 
 
 @lru_cache(maxsize=None)

@@ -15,7 +15,7 @@ This policy replaces HR-03 with effect from 1 April 2026.
 
 ## Mileage
 
-Employees using a private vehicle for business travel may claim 45 pence per mile for the first 10,000 business miles in a tax year, and 25 pence per mile thereafter. These rates match HMRC approved mileage allowance payments, so no tax liability arises.
+Employees using a private vehicle for business travel may claim 55 pence per mile for the first 10,000 business miles in a tax year, and 25 pence per mile thereafter. These rates match the HMRC approved mileage allowance payment rates that took effect on 6 April 2026, so no tax liability arises and no Mileage Allowance Relief is due.
 
 Journeys between home and the normal place of work are not claimable. Where an employee travels from home directly to a customer site, the claimable distance is the lesser of the actual journey and the journey from the office.
 

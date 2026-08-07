@@ -81,12 +81,38 @@ def build_long_prompt(config) -> str:
     )
 
 
+class BenchmarkTimeout(RuntimeError):
+    """A single generation exceeded the timeout."""
+
+
 def time_generation(
-    base_url: str, model: str, prompt: str, options: dict[str, Any], timeout: int
+    base_url: str,
+    model: str,
+    prompt: str,
+    options: dict[str, Any],
+    timeout: int,
+    cache_buster: str = "",
 ) -> dict[str, Any]:
+    """Time one generation.
+
+    ``cache_buster`` is appended to the prompt. Ollama caches the KV state of a
+    repeated prompt prefix, so an identical prompt on a second run skips prompt
+    processing almost entirely and reports a prompt rate in the tens of
+    thousands of tokens per second. That number is meaningless. Varying the
+    prompt forces the work to be done every time, which is what the real
+    pipeline experiences, since every question is different.
+    """
+    if cache_buster:
+        prompt = f"{prompt}\n\n[run {cache_buster}]"
     payload = {"model": model, "prompt": prompt, "stream": False, "options": options}
     wall_start = time.perf_counter()
-    response = post_json(f"{base_url}/api/generate", payload, timeout)
+    try:
+        response = post_json(f"{base_url}/api/generate", payload, timeout)
+    except (TimeoutError, urllib.error.URLError, OSError) as exc:
+        raise BenchmarkTimeout(
+            f"{model} exceeded {timeout}s. On a CPU-only edge device a prompt of "
+            f"{len(prompt.split())} words can take several minutes to process alone."
+        ) from exc
     wall = time.perf_counter() - wall_start
 
     def rate(count_key: str, duration_key: str) -> float | None:
@@ -123,6 +149,24 @@ def time_embedding(base_url: str, model: str, repeat: int, timeout: int) -> dict
     }
 
 
+def model_offload(base_url: str, model: str) -> float | None:
+    """Fraction of THIS model resident in VRAM.
+
+    Reported per model, not across everything Ollama has loaded. The embedding
+    model may well be on the GPU while a generation model is deliberately
+    pinned to CPU, and aggregating the two produced a nonsensical figure for
+    the CPU-only condition.
+    """
+    info = ollama_info(base_url)
+    for entry in info.get("loaded") or []:
+        name = entry.get("name") or ""
+        if name == model or name.split(":")[0] == model.split(":")[0]:
+            total = entry.get("size") or 0
+            vram = entry.get("size_vram") or 0
+            return round(vram / total, 4) if total else None
+    return None
+
+
 def summarise(runs: list[dict[str, Any]], key: str) -> dict[str, Any] | None:
     values = [r[key] for r in runs if r.get(key) is not None]
     if not values:
@@ -149,18 +193,34 @@ def benchmark_model(
     # Warm-up. The first call pays model load cost, which would otherwise
     # dominate the first timing and skew the mean.
     print("    warm-up ...", end="", flush=True)
-    warm = time_generation(base_url, model, "Say OK.", {**options, "num_predict": 5}, timeout)
+    try:
+        warm = time_generation(base_url, model, "Say OK.", {**options, "num_predict": 5}, timeout)
+    except BenchmarkTimeout as exc:
+        print(f" TIMED OUT: {exc}")
+        return {"model": model, "timed_out": True, "stage": "warm-up", "error": str(exc)}
     print(f" loaded in {warm['load_seconds']}s")
 
     short_runs, long_runs = [], []
+    timed_out = None
     for i in range(repeat):
+        stamp = f"{time.time_ns()}-{i}"
         print(f"    run {i + 1}/{repeat} short ...", end="", flush=True)
-        short = time_generation(base_url, model, SHORT_PROMPT, options, timeout)
+        try:
+            short = time_generation(base_url, model, SHORT_PROMPT, options, timeout, stamp)
+        except BenchmarkTimeout as exc:
+            print(f" TIMED OUT")
+            timed_out = {"stage": "short", "run": i + 1, "error": str(exc)}
+            break
         short_runs.append(short)
         print(f" {short['eval_tokens_per_second']} tok/s", end="", flush=True)
 
         print("  long ...", end="", flush=True)
-        long = time_generation(base_url, model, long_prompt, options, timeout)
+        try:
+            long = time_generation(base_url, model, long_prompt, options, timeout, stamp)
+        except BenchmarkTimeout as exc:
+            print(f" TIMED OUT")
+            timed_out = {"stage": "long", "run": i + 1, "error": str(exc)}
+            break
         long_runs.append(long)
         print(
             f" {long['eval_tokens_per_second']} tok/s eval,"
@@ -169,8 +229,14 @@ def benchmark_model(
             f" {long['wall_seconds']}s wall"
         )
 
+    if not long_runs:
+        return {"model": model, "timed_out": True, **(timed_out or {})}
+
     return {
         "model": model,
+        "timed_out": bool(timed_out),
+        "timeout_detail": timed_out,
+        "gpu_offload_fraction": model_offload(base_url, model),
         "short": {
             "eval_tokens_per_second": summarise(short_runs, "eval_tokens_per_second"),
             "wall_seconds": summarise(short_runs, "wall_seconds"),
@@ -194,11 +260,16 @@ def main() -> int:
     parser.add_argument("--cpu-only", action="store_true", help="force CPU execution with num_gpu=0")
     parser.add_argument("--tag", default="", help="label recorded in the results filename")
     parser.add_argument("--no-save", action="store_true", help="print only, do not write a results file")
+    parser.add_argument(
+        "--timeout", type=int, default=None,
+        help="per-request timeout in seconds; overrides llm.timeout_seconds. "
+             "A CPU-only Pi needs several hundred seconds for a single "
+             "retrieval-sized prompt, so the default is often too low.")
     args = parser.parse_args()
 
     config = load_config()
     base_url = config.require("llm.ollama_url")
-    timeout = config.require("llm.timeout_seconds")
+    timeout = args.timeout or config.require("llm.timeout_seconds")
 
     probe = ollama_info(base_url)
     if not probe.get("reachable"):
@@ -245,6 +316,7 @@ def main() -> int:
     print(f"Ollama        {probe.get('version')} at {base_url}")
     print(f"Model store   fingerprint {probe.get('model_store_fingerprint')}")
     print(f"Options       {json.dumps(options)}")
+    print(f"Timeout       {timeout}s per request")
     print(f"Mode          {'CPU only (num_gpu=0)' if args.cpu_only else 'default placement'}")
     print("=" * 72)
 
@@ -265,6 +337,9 @@ def main() -> int:
     print("\n" + "=" * 72)
     print(f"{'Model':<16} {'short eval':>11} {'long eval':>11} {'long prompt':>12} {'long wall':>10}")
     for entry in results:
+        if entry.get("timed_out") and "short" not in entry:
+            print(f"{entry['model']:<16} {'TIMED OUT at ' + str(timeout) + 's':>45}")
+            continue
         short = entry["short"]["eval_tokens_per_second"]
         long_eval = entry["long"]["eval_tokens_per_second"]
         long_prompt_rate = entry["long"]["prompt_tokens_per_second"]
@@ -277,6 +352,10 @@ def main() -> int:
             f"{(wall['median'] if wall else 0):>8.2f}s"
         )
     print("=" * 72)
+    for entry in results:
+        frac = entry.get("gpu_offload_fraction")
+        if frac is not None:
+            print(f"  {entry['model']:<16} {frac:.0%} resident in VRAM")
     if offload is not None:
         print(f"GPU offload   {offload:.0%} of loaded model resident in VRAM")
     temp_after = cpu_temperature_c()

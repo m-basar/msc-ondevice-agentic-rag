@@ -6,9 +6,7 @@
   "paths": {
     "kb_docs": "data/kb",
     "index": "data/index.json",
-    "test_set": "data/test_set.json",
-    "results": "results/runs",
-    "conflicts": "data/conflicts.json"
+    "results": "results/runs"
   },
   "llm": {
     "backend": "ollama",
@@ -16,12 +14,14 @@
     "generation_model": "llama3.2:3b",
     "embedding_model": "nomic-embed-text",
     "candidate_models": [
+      "llama3.2:1b",
       "llama3.2:3b",
       "qwen2.5:3b",
       "phi3:mini",
       "gemma:2b"
     ],
-    "timeout_seconds": 300
+    "timeout_seconds": 1200,
+    "verification_model": "llama3.2:3b"
   },
   "generation": {
     "temperature": 0.1,
@@ -56,5 +56,9 @@
       "B": "laptop_cpu_only",
       "C": "pi5_cpu_only"
     }
+  },
+  "evaluation": {
+    "conflicts": "gold/conflicts.json",
+    "test_set": "gold/test_set.json"
   }
 }

@@ -13,7 +13,7 @@ import json
 import pytest
 
 from sme_assistant.common.config import load_config
-from sme_assistant.kb.conflicts import (
+from sme_assistant.evaluation.conflicts import (
     ConflictRegistryError,
     load_conflicts,
     validate_against_corpus,
@@ -33,7 +33,7 @@ def kb(config):
 
 @pytest.fixture(scope="module")
 def registry(config):
-    return load_conflicts(config.path("paths.conflicts"))
+    return load_conflicts(config.path("evaluation.conflicts"))
 
 
 # --- the registry itself ----------------------------------------------------
@@ -48,8 +48,10 @@ def test_every_family_declares_facts_and_expectations(registry):
         assert family.conflicting_facts, f"{family.family_id} declares no facts"
         assert family.must_cite, f"{family.family_id} declares no required citation"
         for fact in family.conflicting_facts:
-            assert set(fact) == {"fact", "superseded_value", "current_value"}
-            assert fact["superseded_value"] != fact["current_value"]
+            assert set(fact.values) == set(fact.anchors)
+            assert set(fact.values) <= set(family.documents)
+            distinct = {v.strip().lower() for v in fact.values.values()}
+            assert len(distinct) >= 2, f"{family.family_id}: {fact.fact} has no disagreement"
 
 
 def test_families_have_unique_ids(registry):
@@ -66,17 +68,53 @@ def test_at_least_one_high_risk_family(registry):
     assert any(f.risk_level == "high" for f in registry.families)
 
 
+def test_registry_contains_conflicts_a_metadata_filter_cannot_solve(registry):
+    """The finding that justifies the whole contribution.
+
+    Every version_supersession family can be resolved by filtering on the
+    status field, with no reasoning about claims at all. If the registry
+    contained only those, an examiner could reasonably ask why the
+    verification layer exists. At least two current_current families must be
+    present, where both documents are live and no metadata distinguishes them.
+    """
+    unresolvable = registry.of_type("current_current")
+    assert len(unresolvable) >= 2, (
+        "Fewer than two current_current families. Every conflict would be "
+        "solvable by a three-line metadata filter, and the verification layer "
+        "would have nothing to demonstrate."
+    )
+    for family in unresolvable:
+        assert family.authoritative is None
+        assert family.resolution == "escalate_unresolved"
+        assert not family.is_filter_resolvable
+
+
+def test_current_current_families_involve_only_live_documents(registry, kb):
+    for family in registry.of_type("current_current"):
+        for doc_id in family.documents:
+            assert kb.by_id(doc_id).is_current, (
+                f"{family.family_id}: {doc_id} is not current, so a status filter "
+                "would resolve this conflict after all"
+            )
+
+
 def test_lookup_by_document(registry):
-    family = registry.for_document("HR-03")
-    assert family is not None
-    assert family.current_document == "HR-13"
-    assert registry.for_document("GEN-01") is None
+    families = registry.for_document("HR-03")
+    assert len(families) == 1
+    assert families[0].authoritative == "HR-13"
+    assert registry.for_document("GEN-01") == []
 
 
-def test_expected_answer_policy_is_declared(registry):
-    policy = registry.expected_answer_policy
-    for key in ("answer_with", "cite", "flag", "confidence_ceiling", "rationale"):
-        assert key in policy, f"expected_answer_policy is missing {key!r}"
+def test_confidence_policy_covers_every_outcome(registry):
+    policy = registry.confidence_policy
+    for outcome in ("resolved_supersession", "unresolved_conflict", "unanswerable"):
+        assert outcome in policy, f"confidence_policy is missing {outcome!r}"
+        assert "rationale" in policy[outcome]
+    assert policy["unresolved_conflict"]["confidence"] == "capped at low"
+    assert "high" in policy["resolved_supersession"]["confidence"], (
+        "A conflict the system genuinely resolved should be allowed high confidence, "
+        "otherwise the confidence signal carries no information"
+    )
 
 
 # --- registry against corpus ------------------------------------------------
@@ -98,7 +136,31 @@ def test_every_superseded_document_is_registered(registry, kb):
 def test_declared_gaps_are_genuinely_absent(registry, kb):
     """Guards the unanswerable question set against corpus drift."""
     validate_against_corpus(registry, kb)  # gap probes run inside
-    assert len(registry.fully_absent_topics) >= 5
+    assert len(registry.fully_absent) >= 5
+
+
+def test_partial_gaps_have_their_near_miss_evidence(registry, kb):
+    """A partial gap needs a document that looks relevant and is not.
+
+    If the near-miss text disappears the question stops being partial and
+    becomes plainly unanswerable, which is a different and easier category.
+    """
+    for partial in registry.partially_present:
+        body = kb.by_id(partial.mentioned_in).body.lower()
+        assert partial.must_contain.lower() in body
+        assert partial.missing_detail_probes, (
+            f"{partial.topic}: no probes, so nothing verifies the detail is still missing"
+        )
+
+
+def test_anchors_are_present_in_the_documents(registry, kb):
+    """Every declared conflicting value must be evidenced by literal text."""
+    for family in registry.families:
+        for fact in family.conflicting_facts:
+            for doc_id, anchor in fact.anchors.items():
+                assert anchor in kb.by_id(doc_id).body, (
+                    f"{family.family_id}: {doc_id} does not contain {anchor!r}"
+                )
 
 
 def test_unregistered_superseded_document_is_rejected(registry, kb, monkeypatch):
@@ -106,7 +168,7 @@ def test_unregistered_superseded_document_is_rejected(registry, kb, monkeypatch)
     trimmed = type(registry)(
         {
             "families": [],
-            "expected_answer_policy": registry.expected_answer_policy,
+            "confidence_policy": registry.confidence_policy,
             "deliberate_gaps": {"fully_absent": [], "partially_present": []},
         },
         registry.source,
@@ -124,9 +186,18 @@ def test_corpus_fingerprint_is_stable(config):
     assert a == b
 
 
+def test_fingerprints_are_full_length_sha256(kb, registry, config):
+    """Truncated hashes are for terminals, not for reproducibility records."""
+    assert len(kb.fingerprint()) == 64
+    assert len(registry.fingerprint()) == 64
+    assert len(config.fingerprint()) == 64
+    assert len(kb.short_fingerprint()) == 12
+
+
 def test_manifest_records_every_document(kb):
     manifest = kb.manifest()
     assert manifest["document_count"] == len(kb)
+    assert len(manifest["corpus_sha256"]) == 64
     assert len(manifest["documents"]) == len(kb)
     for entry in manifest["documents"]:
         assert len(entry["sha256"]) == 64
