@@ -1,0 +1,378 @@
+{
+  "timestamp": "2026-08-07T18:16:10.910883+00:00",
+  "tag": "laptop_cpu_v2",
+  "provenance": {
+    "config_sha256": "b159968e3078b581eb52db7b485d1c0b3e05273a4212081e5e747979f19f0d23",
+    "corpus_sha256": "dd51cf741e597459f782bf351f4a789654de53ab072f7853d7faf0368cfa4866",
+    "conflict_registry_sha256": "e7a74d6e34c67a3a3bf6ed49996c2e9c932d1d0ca45d3a2698bacf048efc4bcd",
+    "benchmark_script_sha256": "4f397a8c61fa7cdb9391d61e5cc012052e539844b37278c60fcccaa59c23a5db",
+    "long_prompt_sha256": "191ccfd3e8c5ed2117f7c5f2aba8b4da50d7a476bd6f7048c757d2007a649091",
+    "long_prompt_tokens_reported_by_server": 903,
+    "git": {
+      "available": true,
+      "commit": "ca511829602f884c1e3672265ab2ff97ae246c4d",
+      "commit_short": "ca511829602f",
+      "branch": "main",
+      "dirty": true,
+      "dirty_files": [
+        "results/benchmarks/20260807_181428_Basar_laptop_gpu_v2.json"
+      ]
+    },
+    "seed": 42,
+    "command": "scripts/benchmark.py --repeat 5 --cpu-only --tag laptop_cpu_v2",
+    "arguments": {
+      "model": null,
+      "all_models": false,
+      "repeat": 5,
+      "cpu_only": true,
+      "tag": "laptop_cpu_v2",
+      "no_save": false,
+      "cool_to": null,
+      "cool_max_wait": 300,
+      "timeout": null
+    }
+  },
+  "config_fingerprint": "b159968e3078b581eb52db7b485d1c0b3e05273a4212081e5e747979f19f0d23",
+  "generation_options": {
+    "temperature": 0.1,
+    "num_ctx": 4096,
+    "num_predict": 400,
+    "num_gpu": 0
+  },
+  "cpu_only": true,
+  "environment_before": {
+    "host": {
+      "hostname": "Basar",
+      "system": "Windows",
+      "release": "11",
+      "machine": "AMD64",
+      "processor": "AMD64 Family 25 Model 116 Stepping 1, AuthenticAMD",
+      "cpu_count": 16,
+      "python": "3.13.5",
+      "memory_total_gb": 15.29,
+      "memory_available_gb": 6.63,
+      "cpu_temperature_c": null,
+      "throttle": null,
+      "power_profile": "Balanced",
+      "gpus": [
+        {
+          "name": "NVIDIA GeForce RTX 4050 Laptop GPU",
+          "memory_total_mb": 6141,
+          "memory_used_mb": 1184,
+          "temperature_c": 56
+        }
+      ]
+    },
+    "ollama": {
+      "base_url": "http://localhost:11434",
+      "reachable": true,
+      "version": "0.32.6",
+      "models": [
+        {
+          "name": "gemma:2b",
+          "digest": "b50d6c999e59",
+          "size": 1678456656
+        },
+        {
+          "name": "llama3.2:1b",
+          "digest": "baf6a787fdff",
+          "size": 1321098329
+        },
+        {
+          "name": "llama3.2:3b",
+          "digest": "a80c4f17acd5",
+          "size": 2019393189
+        },
+        {
+          "name": "nomic-embed-text:latest",
+          "digest": "0a109f422b47",
+          "size": 274302450
+        },
+        {
+          "name": "phi3:mini",
+          "digest": "4f2222927938",
+          "size": 2176178913
+        },
+        {
+          "name": "qwen2.5:3b",
+          "digest": "357c53fb659c",
+          "size": 1929912432
+        }
+      ],
+      "model_store_fingerprint": "e39bc25c0edd",
+      "loaded": [
+        {
+          "name": "nomic-embed-text:latest",
+          "size": 323150151,
+          "size_vram": 323150151,
+          "context_length": 2048
+        }
+      ]
+    },
+    "gpu_offload_fraction": 1.0
+  },
+  "environment_after": {
+    "host": {
+      "hostname": "Basar",
+      "system": "Windows",
+      "release": "11",
+      "machine": "AMD64",
+      "processor": "AMD64 Family 25 Model 116 Stepping 1, AuthenticAMD",
+      "cpu_count": 16,
+      "python": "3.13.5",
+      "memory_total_gb": 15.29,
+      "memory_available_gb": 6.83,
+      "cpu_temperature_c": null,
+      "throttle": null,
+      "power_profile": "Balanced",
+      "gpus": [
+        {
+          "name": "NVIDIA GeForce RTX 4050 Laptop GPU",
+          "memory_total_mb": 6141,
+          "memory_used_mb": 771,
+          "temperature_c": 55
+        }
+      ]
+    },
+    "ollama": {
+      "base_url": "http://localhost:11434",
+      "reachable": true,
+      "version": "0.32.6",
+      "models": [
+        {
+          "name": "gemma:2b",
+          "digest": "b50d6c999e59",
+          "size": 1678456656
+        },
+        {
+          "name": "llama3.2:1b",
+          "digest": "baf6a787fdff",
+          "size": 1321098329
+        },
+        {
+          "name": "llama3.2:3b",
+          "digest": "a80c4f17acd5",
+          "size": 2019393189
+        },
+        {
+          "name": "nomic-embed-text:latest",
+          "digest": "0a109f422b47",
+          "size": 274302450
+        },
+        {
+          "name": "phi3:mini",
+          "digest": "4f2222927938",
+          "size": 2176178913
+        },
+        {
+          "name": "qwen2.5:3b",
+          "digest": "357c53fb659c",
+          "size": 1929912432
+        }
+      ],
+      "model_store_fingerprint": "e39bc25c0edd",
+      "loaded": [
+        {
+          "name": "nomic-embed-text:latest",
+          "size": 376449269,
+          "size_vram": 0,
+          "context_length": 2048
+        }
+      ]
+    },
+    "gpu_offload_fraction": 0.0
+  },
+  "gpu_offload_by_model": {
+    "llama3.2:3b": 0.0
+  },
+  "models": [
+    {
+      "model": "llama3.2:3b",
+      "timed_out": false,
+      "timeout_detail": null,
+      "gpu_offload_fraction": 0.0,
+      "short": {
+        "eval_tokens_per_second": {
+          "mean": 25.99,
+          "median": 26.02,
+          "min": 25.86,
+          "max": 26.04,
+          "n": 5
+        },
+        "wall_seconds": {
+          "mean": 7.3,
+          "median": 7.31,
+          "min": 7.1,
+          "max": 7.46,
+          "n": 5
+        },
+        "runs": [
+          {
+            "wall_seconds": 7.459,
+            "load_seconds": 0.187,
+            "prompt_tokens": 50,
+            "prompt_tokens_per_second": 253.19,
+            "eval_tokens": 184,
+            "eval_tokens_per_second": 26.03,
+            "total_seconds": 7.456
+          },
+          {
+            "wall_seconds": 7.27,
+            "load_seconds": 0.252,
+            "prompt_tokens": 50,
+            "prompt_tokens_per_second": 279.41,
+            "eval_tokens": 176,
+            "eval_tokens_per_second": 25.86,
+            "total_seconds": 7.26
+          },
+          {
+            "wall_seconds": 7.308,
+            "load_seconds": 0.192,
+            "prompt_tokens": 50,
+            "prompt_tokens_per_second": 308.33,
+            "eval_tokens": 180,
+            "eval_tokens_per_second": 25.98,
+            "total_seconds": 7.305
+          },
+          {
+            "wall_seconds": 7.341,
+            "load_seconds": 0.205,
+            "prompt_tokens": 50,
+            "prompt_tokens_per_second": 312.08,
+            "eval_tokens": 181,
+            "eval_tokens_per_second": 26.04,
+            "total_seconds": 7.338
+          },
+          {
+            "wall_seconds": 7.104,
+            "load_seconds": 0.184,
+            "prompt_tokens": 50,
+            "prompt_tokens_per_second": 300.33,
+            "eval_tokens": 175,
+            "eval_tokens_per_second": 26.02,
+            "total_seconds": 7.101
+          }
+        ]
+      },
+      "long": {
+        "prompt_tokens": 903,
+        "eval_tokens_per_second": {
+          "mean": 22.49,
+          "median": 22.5,
+          "min": 22.35,
+          "max": 22.71,
+          "n": 5
+        },
+        "prompt_tokens_per_second": {
+          "mean": 183.41,
+          "median": 183.91,
+          "min": 180.97,
+          "max": 186.66,
+          "n": 5
+        },
+        "wall_seconds": {
+          "mean": 7.99,
+          "median": 7.96,
+          "min": 7.87,
+          "max": 8.09,
+          "n": 5
+        },
+        "runs": [
+          {
+            "wall_seconds": 7.872,
+            "load_seconds": 0.19,
+            "prompt_tokens": 903,
+            "prompt_tokens_per_second": 183.91,
+            "eval_tokens": 62,
+            "eval_tokens_per_second": 22.5,
+            "total_seconds": 7.868,
+            "cpu_temp_before_c": null,
+            "cpu_temp_after_c": null,
+            "arm_frequency_before_hz": null,
+            "arm_frequency_after_hz": null,
+            "arm_frequency_nominal_hz": null,
+            "clock_ratio": null,
+            "throttle": null
+          },
+          {
+            "wall_seconds": 7.963,
+            "load_seconds": 0.191,
+            "prompt_tokens": 903,
+            "prompt_tokens_per_second": 186.66,
+            "eval_tokens": 65,
+            "eval_tokens_per_second": 22.35,
+            "total_seconds": 7.949,
+            "cpu_temp_before_c": null,
+            "cpu_temp_after_c": null,
+            "arm_frequency_before_hz": null,
+            "arm_frequency_after_hz": null,
+            "arm_frequency_nominal_hz": null,
+            "clock_ratio": null,
+            "throttle": null
+          },
+          {
+            "wall_seconds": 8.086,
+            "load_seconds": 0.194,
+            "prompt_tokens": 903,
+            "prompt_tokens_per_second": 181.01,
+            "eval_tokens": 65,
+            "eval_tokens_per_second": 22.52,
+            "total_seconds": 8.082,
+            "cpu_temp_before_c": null,
+            "cpu_temp_after_c": null,
+            "arm_frequency_before_hz": null,
+            "arm_frequency_after_hz": null,
+            "arm_frequency_nominal_hz": null,
+            "clock_ratio": null,
+            "throttle": null
+          },
+          {
+            "wall_seconds": 8.093,
+            "load_seconds": 0.186,
+            "prompt_tokens": 903,
+            "prompt_tokens_per_second": 184.51,
+            "eval_tokens": 67,
+            "eval_tokens_per_second": 22.36,
+            "total_seconds": 8.089,
+            "cpu_temp_before_c": null,
+            "cpu_temp_after_c": null,
+            "arm_frequency_before_hz": null,
+            "arm_frequency_after_hz": null,
+            "arm_frequency_nominal_hz": null,
+            "clock_ratio": null,
+            "throttle": null
+          },
+          {
+            "wall_seconds": 7.945,
+            "load_seconds": 0.209,
+            "prompt_tokens": 903,
+            "prompt_tokens_per_second": 180.97,
+            "eval_tokens": 62,
+            "eval_tokens_per_second": 22.71,
+            "total_seconds": 7.942,
+            "cpu_temp_before_c": null,
+            "cpu_temp_after_c": null,
+            "arm_frequency_before_hz": null,
+            "arm_frequency_after_hz": null,
+            "arm_frequency_nominal_hz": null,
+            "clock_ratio": null,
+            "throttle": null
+          }
+        ]
+      }
+    }
+  ],
+  "embedding": {
+    "model": "nomic-embed-text",
+    "options": {
+      "num_gpu": 0
+    },
+    "cold_start_ms": 315.7,
+    "repeat": 15,
+    "warm_mean_ms": 30.8,
+    "warm_median_ms": 27.2,
+    "warm_min_ms": 24.4,
+    "warm_max_ms": 46.7,
+    "vram_resident_fraction": 0.0
+  }
+}

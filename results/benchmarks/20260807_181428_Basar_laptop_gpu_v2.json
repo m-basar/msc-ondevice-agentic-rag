@@ -1,0 +1,1077 @@
+{
+  "timestamp": "2026-08-07T18:14:28.171241+00:00",
+  "tag": "laptop_gpu_v2",
+  "provenance": {
+    "config_sha256": "b159968e3078b581eb52db7b485d1c0b3e05273a4212081e5e747979f19f0d23",
+    "corpus_sha256": "dd51cf741e597459f782bf351f4a789654de53ab072f7853d7faf0368cfa4866",
+    "conflict_registry_sha256": "e7a74d6e34c67a3a3bf6ed49996c2e9c932d1d0ca45d3a2698bacf048efc4bcd",
+    "benchmark_script_sha256": "4f397a8c61fa7cdb9391d61e5cc012052e539844b37278c60fcccaa59c23a5db",
+    "long_prompt_sha256": "191ccfd3e8c5ed2117f7c5f2aba8b4da50d7a476bd6f7048c757d2007a649091",
+    "long_prompt_tokens_reported_by_server": 903,
+    "git": {
+      "available": true,
+      "commit": "ca511829602f884c1e3672265ab2ff97ae246c4d",
+      "commit_short": "ca511829602f",
+      "branch": "main",
+      "dirty": false,
+      "dirty_files": []
+    },
+    "seed": 42,
+    "command": "scripts/benchmark.py --all-models --repeat 5 --tag laptop_gpu_v2",
+    "arguments": {
+      "model": null,
+      "all_models": true,
+      "repeat": 5,
+      "cpu_only": false,
+      "tag": "laptop_gpu_v2",
+      "no_save": false,
+      "cool_to": null,
+      "cool_max_wait": 300,
+      "timeout": null
+    }
+  },
+  "config_fingerprint": "b159968e3078b581eb52db7b485d1c0b3e05273a4212081e5e747979f19f0d23",
+  "generation_options": {
+    "temperature": 0.1,
+    "num_ctx": 4096,
+    "num_predict": 400
+  },
+  "cpu_only": false,
+  "environment_before": {
+    "host": {
+      "hostname": "Basar",
+      "system": "Windows",
+      "release": "11",
+      "machine": "AMD64",
+      "processor": "AMD64 Family 25 Model 116 Stepping 1, AuthenticAMD",
+      "cpu_count": 16,
+      "python": "3.13.5",
+      "memory_total_gb": 15.29,
+      "memory_available_gb": 6.7,
+      "cpu_temperature_c": null,
+      "throttle": null,
+      "power_profile": "Balanced",
+      "gpus": [
+        {
+          "name": "NVIDIA GeForce RTX 4050 Laptop GPU",
+          "memory_total_mb": 6141,
+          "memory_used_mb": 782,
+          "temperature_c": 46
+        }
+      ]
+    },
+    "ollama": {
+      "base_url": "http://localhost:11434",
+      "reachable": true,
+      "version": "0.32.6",
+      "models": [
+        {
+          "name": "gemma:2b",
+          "digest": "b50d6c999e59",
+          "size": 1678456656
+        },
+        {
+          "name": "llama3.2:1b",
+          "digest": "baf6a787fdff",
+          "size": 1321098329
+        },
+        {
+          "name": "llama3.2:3b",
+          "digest": "a80c4f17acd5",
+          "size": 2019393189
+        },
+        {
+          "name": "nomic-embed-text:latest",
+          "digest": "0a109f422b47",
+          "size": 274302450
+        },
+        {
+          "name": "phi3:mini",
+          "digest": "4f2222927938",
+          "size": 2176178913
+        },
+        {
+          "name": "qwen2.5:3b",
+          "digest": "357c53fb659c",
+          "size": 1929912432
+        }
+      ],
+      "model_store_fingerprint": "e39bc25c0edd",
+      "loaded": [
+        {
+          "name": "nomic-embed-text:latest",
+          "size": 376449269,
+          "size_vram": 0,
+          "context_length": 2048
+        }
+      ]
+    },
+    "gpu_offload_fraction": 0.0
+  },
+  "environment_after": {
+    "host": {
+      "hostname": "Basar",
+      "system": "Windows",
+      "release": "11",
+      "machine": "AMD64",
+      "processor": "AMD64 Family 25 Model 116 Stepping 1, AuthenticAMD",
+      "cpu_count": 16,
+      "python": "3.13.5",
+      "memory_total_gb": 15.29,
+      "memory_available_gb": 6.65,
+      "cpu_temperature_c": null,
+      "throttle": null,
+      "power_profile": "Balanced",
+      "gpus": [
+        {
+          "name": "NVIDIA GeForce RTX 4050 Laptop GPU",
+          "memory_total_mb": 6141,
+          "memory_used_mb": 1174,
+          "temperature_c": 62
+        }
+      ]
+    },
+    "ollama": {
+      "base_url": "http://localhost:11434",
+      "reachable": true,
+      "version": "0.32.6",
+      "models": [
+        {
+          "name": "gemma:2b",
+          "digest": "b50d6c999e59",
+          "size": 1678456656
+        },
+        {
+          "name": "llama3.2:1b",
+          "digest": "baf6a787fdff",
+          "size": 1321098329
+        },
+        {
+          "name": "llama3.2:3b",
+          "digest": "a80c4f17acd5",
+          "size": 2019393189
+        },
+        {
+          "name": "nomic-embed-text:latest",
+          "digest": "0a109f422b47",
+          "size": 274302450
+        },
+        {
+          "name": "phi3:mini",
+          "digest": "4f2222927938",
+          "size": 2176178913
+        },
+        {
+          "name": "qwen2.5:3b",
+          "digest": "357c53fb659c",
+          "size": 1929912432
+        }
+      ],
+      "model_store_fingerprint": "e39bc25c0edd",
+      "loaded": [
+        {
+          "name": "nomic-embed-text:latest",
+          "size": 323150151,
+          "size_vram": 323150151,
+          "context_length": 2048
+        }
+      ]
+    },
+    "gpu_offload_fraction": 1.0
+  },
+  "gpu_offload_by_model": {
+    "llama3.2:1b": 1.0,
+    "llama3.2:3b": 1.0,
+    "qwen2.5:3b": 1.0,
+    "phi3:mini": 1.0,
+    "gemma:2b": 1.0
+  },
+  "models": [
+    {
+      "model": "llama3.2:1b",
+      "timed_out": false,
+      "timeout_detail": null,
+      "gpu_offload_fraction": 1.0,
+      "short": {
+        "eval_tokens_per_second": {
+          "mean": 120.78,
+          "median": 119.51,
+          "min": 116.45,
+          "max": 128.29,
+          "n": 5
+        },
+        "wall_seconds": {
+          "mean": 1.2,
+          "median": 1.66,
+          "min": 0.29,
+          "max": 1.91,
+          "n": 5
+        },
+        "runs": [
+          {
+            "wall_seconds": 1.664,
+            "load_seconds": 0.171,
+            "prompt_tokens": 50,
+            "prompt_tokens_per_second": 3967.94,
+            "eval_tokens": 174,
+            "eval_tokens_per_second": 119.51,
+            "total_seconds": 1.642
+          },
+          {
+            "wall_seconds": 0.286,
+            "load_seconds": 0.188,
+            "prompt_tokens": 50,
+            "prompt_tokens_per_second": 2459.66,
+            "eval_tokens": 8,
+            "eval_tokens_per_second": 128.29,
+            "total_seconds": 0.283
+          },
+          {
+            "wall_seconds": 1.909,
+            "load_seconds": 0.198,
+            "prompt_tokens": 50,
+            "prompt_tokens_per_second": 3925.88,
+            "eval_tokens": 200,
+            "eval_tokens_per_second": 118.88,
+            "total_seconds": 1.905
+          },
+          {
+            "wall_seconds": 1.728,
+            "load_seconds": 0.18,
+            "prompt_tokens": 50,
+            "prompt_tokens_per_second": 3889.54,
+            "eval_tokens": 177,
+            "eval_tokens_per_second": 116.45,
+            "total_seconds": 1.724
+          },
+          {
+            "wall_seconds": 0.415,
+            "load_seconds": 0.173,
+            "prompt_tokens": 50,
+            "prompt_tokens_per_second": 4166.67,
+            "eval_tokens": 26,
+            "eval_tokens_per_second": 120.77,
+            "total_seconds": 0.412
+          }
+        ]
+      },
+      "long": {
+        "prompt_tokens": 903,
+        "eval_tokens_per_second": {
+          "mean": 118.0,
+          "median": 118.24,
+          "min": 116.44,
+          "max": 119.12,
+          "n": 5
+        },
+        "prompt_tokens_per_second": {
+          "mean": 12251.97,
+          "median": 12299.77,
+          "min": 12009.26,
+          "max": 12363.26,
+          "n": 5
+        },
+        "wall_seconds": {
+          "mean": 0.92,
+          "median": 0.89,
+          "min": 0.74,
+          "max": 1.1,
+          "n": 5
+        },
+        "runs": [
+          {
+            "wall_seconds": 1.089,
+            "load_seconds": 0.199,
+            "prompt_tokens": 903,
+            "prompt_tokens_per_second": 12009.26,
+            "eval_tokens": 95,
+            "eval_tokens_per_second": 118.24,
+            "total_seconds": 1.085,
+            "cpu_temp_before_c": null,
+            "cpu_temp_after_c": null,
+            "arm_frequency_before_hz": null,
+            "arm_frequency_after_hz": null,
+            "arm_frequency_nominal_hz": null,
+            "clock_ratio": null,
+            "throttle": null
+          },
+          {
+            "wall_seconds": 0.806,
+            "load_seconds": 0.186,
+            "prompt_tokens": 903,
+            "prompt_tokens_per_second": 12254.7,
+            "eval_tokens": 62,
+            "eval_tokens_per_second": 117.45,
+            "total_seconds": 0.797,
+            "cpu_temp_before_c": null,
+            "cpu_temp_after_c": null,
+            "arm_frequency_before_hz": null,
+            "arm_frequency_after_hz": null,
+            "arm_frequency_nominal_hz": null,
+            "clock_ratio": null,
+            "throttle": null
+          },
+          {
+            "wall_seconds": 1.096,
+            "load_seconds": 0.185,
+            "prompt_tokens": 903,
+            "prompt_tokens_per_second": 12363.26,
+            "eval_tokens": 96,
+            "eval_tokens_per_second": 116.44,
+            "total_seconds": 1.091,
+            "cpu_temp_before_c": null,
+            "cpu_temp_after_c": null,
+            "arm_frequency_before_hz": null,
+            "arm_frequency_after_hz": null,
+            "arm_frequency_nominal_hz": null,
+            "clock_ratio": null,
+            "throttle": null
+          },
+          {
+            "wall_seconds": 0.887,
+            "load_seconds": 0.192,
+            "prompt_tokens": 903,
+            "prompt_tokens_per_second": 12299.77,
+            "eval_tokens": 70,
+            "eval_tokens_per_second": 118.77,
+            "total_seconds": 0.863,
+            "cpu_temp_before_c": null,
+            "cpu_temp_after_c": null,
+            "arm_frequency_before_hz": null,
+            "arm_frequency_after_hz": null,
+            "arm_frequency_nominal_hz": null,
+            "clock_ratio": null,
+            "throttle": null
+          },
+          {
+            "wall_seconds": 0.745,
+            "load_seconds": 0.177,
+            "prompt_tokens": 903,
+            "prompt_tokens_per_second": 12332.86,
+            "eval_tokens": 55,
+            "eval_tokens_per_second": 119.12,
+            "total_seconds": 0.718,
+            "cpu_temp_before_c": null,
+            "cpu_temp_after_c": null,
+            "arm_frequency_before_hz": null,
+            "arm_frequency_after_hz": null,
+            "arm_frequency_nominal_hz": null,
+            "clock_ratio": null,
+            "throttle": null
+          }
+        ]
+      }
+    },
+    {
+      "model": "llama3.2:3b",
+      "timed_out": false,
+      "timeout_detail": null,
+      "gpu_offload_fraction": 1.0,
+      "short": {
+        "eval_tokens_per_second": {
+          "mean": 79.7,
+          "median": 78.57,
+          "min": 78.11,
+          "max": 84.54,
+          "n": 5
+        },
+        "wall_seconds": {
+          "mean": 2.12,
+          "median": 2.49,
+          "min": 0.32,
+          "max": 2.69,
+          "n": 5
+        },
+        "runs": [
+          {
+            "wall_seconds": 2.454,
+            "load_seconds": 0.183,
+            "prompt_tokens": 50,
+            "prompt_tokens_per_second": 2569.9,
+            "eval_tokens": 177,
+            "eval_tokens_per_second": 78.82,
+            "total_seconds": 2.451
+          },
+          {
+            "wall_seconds": 2.633,
+            "load_seconds": 0.196,
+            "prompt_tokens": 50,
+            "prompt_tokens_per_second": 2632.55,
+            "eval_tokens": 187,
+            "eval_tokens_per_second": 78.57,
+            "total_seconds": 2.618
+          },
+          {
+            "wall_seconds": 2.49,
+            "load_seconds": 0.18,
+            "prompt_tokens": 50,
+            "prompt_tokens_per_second": 2491.28,
+            "eval_tokens": 175,
+            "eval_tokens_per_second": 78.11,
+            "total_seconds": 2.462
+          },
+          {
+            "wall_seconds": 0.321,
+            "load_seconds": 0.18,
+            "prompt_tokens": 50,
+            "prompt_tokens_per_second": 2647.88,
+            "eval_tokens": 8,
+            "eval_tokens_per_second": 84.54,
+            "total_seconds": 0.318
+          },
+          {
+            "wall_seconds": 2.691,
+            "load_seconds": 0.187,
+            "prompt_tokens": 50,
+            "prompt_tokens_per_second": 2661.41,
+            "eval_tokens": 193,
+            "eval_tokens_per_second": 78.45,
+            "total_seconds": 2.687
+          }
+        ]
+      },
+      "long": {
+        "prompt_tokens": 903,
+        "eval_tokens_per_second": {
+          "mean": 76.17,
+          "median": 76.19,
+          "min": 75.93,
+          "max": 76.43,
+          "n": 5
+        },
+        "prompt_tokens_per_second": {
+          "mean": 4429.92,
+          "median": 4434.8,
+          "min": 4408.04,
+          "max": 4452.2,
+          "n": 5
+        },
+        "wall_seconds": {
+          "mean": 1.36,
+          "median": 1.26,
+          "min": 1.24,
+          "max": 1.59,
+          "n": 5
+        },
+        "runs": [
+          {
+            "wall_seconds": 1.261,
+            "load_seconds": 0.186,
+            "prompt_tokens": 903,
+            "prompt_tokens_per_second": 4408.04,
+            "eval_tokens": 65,
+            "eval_tokens_per_second": 76.19,
+            "total_seconds": 1.257,
+            "cpu_temp_before_c": null,
+            "cpu_temp_after_c": null,
+            "arm_frequency_before_hz": null,
+            "arm_frequency_after_hz": null,
+            "arm_frequency_nominal_hz": null,
+            "clock_ratio": null,
+            "throttle": null
+          },
+          {
+            "wall_seconds": 1.235,
+            "load_seconds": 0.176,
+            "prompt_tokens": 903,
+            "prompt_tokens_per_second": 4439.94,
+            "eval_tokens": 64,
+            "eval_tokens_per_second": 76.43,
+            "total_seconds": 1.23,
+            "cpu_temp_before_c": null,
+            "cpu_temp_after_c": null,
+            "arm_frequency_before_hz": null,
+            "arm_frequency_after_hz": null,
+            "arm_frequency_nominal_hz": null,
+            "clock_ratio": null,
+            "throttle": null
+          },
+          {
+            "wall_seconds": 1.472,
+            "load_seconds": 0.174,
+            "prompt_tokens": 903,
+            "prompt_tokens_per_second": 4452.2,
+            "eval_tokens": 82,
+            "eval_tokens_per_second": 76.05,
+            "total_seconds": 1.468,
+            "cpu_temp_before_c": null,
+            "cpu_temp_after_c": null,
+            "arm_frequency_before_hz": null,
+            "arm_frequency_after_hz": null,
+            "arm_frequency_nominal_hz": null,
+            "clock_ratio": null,
+            "throttle": null
+          },
+          {
+            "wall_seconds": 1.235,
+            "load_seconds": 0.205,
+            "prompt_tokens": 903,
+            "prompt_tokens_per_second": 4434.8,
+            "eval_tokens": 62,
+            "eval_tokens_per_second": 76.24,
+            "total_seconds": 1.231,
+            "cpu_temp_before_c": null,
+            "cpu_temp_after_c": null,
+            "arm_frequency_before_hz": null,
+            "arm_frequency_after_hz": null,
+            "arm_frequency_nominal_hz": null,
+            "clock_ratio": null,
+            "throttle": null
+          },
+          {
+            "wall_seconds": 1.589,
+            "load_seconds": 0.21,
+            "prompt_tokens": 903,
+            "prompt_tokens_per_second": 4414.63,
+            "eval_tokens": 88,
+            "eval_tokens_per_second": 75.93,
+            "total_seconds": 1.585,
+            "cpu_temp_before_c": null,
+            "cpu_temp_after_c": null,
+            "arm_frequency_before_hz": null,
+            "arm_frequency_after_hz": null,
+            "arm_frequency_nominal_hz": null,
+            "clock_ratio": null,
+            "throttle": null
+          }
+        ]
+      }
+    },
+    {
+      "model": "qwen2.5:3b",
+      "timed_out": false,
+      "timeout_detail": null,
+      "gpu_offload_fraction": 1.0,
+      "short": {
+        "eval_tokens_per_second": {
+          "mean": 80.2,
+          "median": 80.09,
+          "min": 80.03,
+          "max": 80.67,
+          "n": 5
+        },
+        "wall_seconds": {
+          "mean": 1.83,
+          "median": 1.76,
+          "min": 1.68,
+          "max": 2.18,
+          "n": 5
+        },
+        "runs": [
+          {
+            "wall_seconds": 1.681,
+            "load_seconds": 0.158,
+            "prompt_tokens": 68,
+            "prompt_tokens_per_second": 2425.54,
+            "eval_tokens": 120,
+            "eval_tokens_per_second": 80.67,
+            "total_seconds": 1.678
+          },
+          {
+            "wall_seconds": 1.699,
+            "load_seconds": 0.148,
+            "prompt_tokens": 68,
+            "prompt_tokens_per_second": 1975.02,
+            "eval_tokens": 120,
+            "eval_tokens_per_second": 80.19,
+            "total_seconds": 1.695
+          },
+          {
+            "wall_seconds": 1.815,
+            "load_seconds": 0.146,
+            "prompt_tokens": 68,
+            "prompt_tokens_per_second": 2879.04,
+            "eval_tokens": 129,
+            "eval_tokens_per_second": 80.03,
+            "total_seconds": 1.797
+          },
+          {
+            "wall_seconds": 2.183,
+            "load_seconds": 0.155,
+            "prompt_tokens": 68,
+            "prompt_tokens_per_second": 2886.74,
+            "eval_tokens": 159,
+            "eval_tokens_per_second": 80.09,
+            "total_seconds": 2.18
+          },
+          {
+            "wall_seconds": 1.76,
+            "load_seconds": 0.142,
+            "prompt_tokens": 68,
+            "prompt_tokens_per_second": 2746.7,
+            "eval_tokens": 126,
+            "eval_tokens_per_second": 80.03,
+            "total_seconds": 1.756
+          }
+        ]
+      },
+      "long": {
+        "prompt_tokens": 952,
+        "eval_tokens_per_second": {
+          "mean": 78.42,
+          "median": 78.39,
+          "min": 78.35,
+          "max": 78.5,
+          "n": 5
+        },
+        "prompt_tokens_per_second": {
+          "mean": 4105.61,
+          "median": 4124.34,
+          "min": 3980.67,
+          "max": 4155.37,
+          "n": 5
+        },
+        "wall_seconds": {
+          "mean": 1.54,
+          "median": 1.62,
+          "min": 1.41,
+          "max": 1.64,
+          "n": 5
+        },
+        "runs": [
+          {
+            "wall_seconds": 1.636,
+            "load_seconds": 0.157,
+            "prompt_tokens": 952,
+            "prompt_tokens_per_second": 3980.67,
+            "eval_tokens": 96,
+            "eval_tokens_per_second": 78.5,
+            "total_seconds": 1.631,
+            "cpu_temp_before_c": null,
+            "cpu_temp_after_c": null,
+            "arm_frequency_before_hz": null,
+            "arm_frequency_after_hz": null,
+            "arm_frequency_nominal_hz": null,
+            "clock_ratio": null,
+            "throttle": null
+          },
+          {
+            "wall_seconds": 1.625,
+            "load_seconds": 0.141,
+            "prompt_tokens": 952,
+            "prompt_tokens_per_second": 4152.0,
+            "eval_tokens": 96,
+            "eval_tokens_per_second": 78.39,
+            "total_seconds": 1.608,
+            "cpu_temp_before_c": null,
+            "cpu_temp_after_c": null,
+            "arm_frequency_before_hz": null,
+            "arm_frequency_after_hz": null,
+            "arm_frequency_nominal_hz": null,
+            "clock_ratio": null,
+            "throttle": null
+          },
+          {
+            "wall_seconds": 1.411,
+            "load_seconds": 0.144,
+            "prompt_tokens": 952,
+            "prompt_tokens_per_second": 4155.37,
+            "eval_tokens": 79,
+            "eval_tokens_per_second": 78.35,
+            "total_seconds": 1.395,
+            "cpu_temp_before_c": null,
+            "cpu_temp_after_c": null,
+            "arm_frequency_before_hz": null,
+            "arm_frequency_after_hz": null,
+            "arm_frequency_nominal_hz": null,
+            "clock_ratio": null,
+            "throttle": null
+          },
+          {
+            "wall_seconds": 1.627,
+            "load_seconds": 0.143,
+            "prompt_tokens": 952,
+            "prompt_tokens_per_second": 4115.65,
+            "eval_tokens": 95,
+            "eval_tokens_per_second": 78.36,
+            "total_seconds": 1.6,
+            "cpu_temp_before_c": null,
+            "cpu_temp_after_c": null,
+            "arm_frequency_before_hz": null,
+            "arm_frequency_after_hz": null,
+            "arm_frequency_nominal_hz": null,
+            "clock_ratio": null,
+            "throttle": null
+          },
+          {
+            "wall_seconds": 1.423,
+            "load_seconds": 0.145,
+            "prompt_tokens": 952,
+            "prompt_tokens_per_second": 4124.34,
+            "eval_tokens": 79,
+            "eval_tokens_per_second": 78.48,
+            "total_seconds": 1.395,
+            "cpu_temp_before_c": null,
+            "cpu_temp_after_c": null,
+            "arm_frequency_before_hz": null,
+            "arm_frequency_after_hz": null,
+            "arm_frequency_nominal_hz": null,
+            "clock_ratio": null,
+            "throttle": null
+          }
+        ]
+      }
+    },
+    {
+      "model": "phi3:mini",
+      "timed_out": false,
+      "timeout_detail": null,
+      "gpu_offload_fraction": 1.0,
+      "short": {
+        "eval_tokens_per_second": {
+          "mean": 71.69,
+          "median": 71.61,
+          "min": 71.48,
+          "max": 71.99,
+          "n": 5
+        },
+        "wall_seconds": {
+          "mean": 5.24,
+          "median": 5.59,
+          "min": 4.34,
+          "max": 5.8,
+          "n": 5
+        },
+        "runs": [
+          {
+            "wall_seconds": 4.702,
+            "load_seconds": 0.032,
+            "prompt_tokens": 51,
+            "prompt_tokens_per_second": 1271.12,
+            "eval_tokens": 332,
+            "eval_tokens_per_second": 71.86,
+            "total_seconds": 4.698
+          },
+          {
+            "wall_seconds": 5.59,
+            "load_seconds": 0.027,
+            "prompt_tokens": 51,
+            "prompt_tokens_per_second": 2359.25,
+            "eval_tokens": 386,
+            "eval_tokens_per_second": 71.61,
+            "total_seconds": 5.585
+          },
+          {
+            "wall_seconds": 4.337,
+            "load_seconds": 0.029,
+            "prompt_tokens": 51,
+            "prompt_tokens_per_second": 2372.31,
+            "eval_tokens": 297,
+            "eval_tokens_per_second": 71.99,
+            "total_seconds": 4.333
+          },
+          {
+            "wall_seconds": 5.786,
+            "load_seconds": 0.028,
+            "prompt_tokens": 51,
+            "prompt_tokens_per_second": 2378.84,
+            "eval_tokens": 400,
+            "eval_tokens_per_second": 71.49,
+            "total_seconds": 5.781
+          },
+          {
+            "wall_seconds": 5.796,
+            "load_seconds": 0.029,
+            "prompt_tokens": 51,
+            "prompt_tokens_per_second": 2371.65,
+            "eval_tokens": 400,
+            "eval_tokens_per_second": 71.48,
+            "total_seconds": 5.792
+          }
+        ]
+      },
+      "long": {
+        "prompt_tokens": 1160,
+        "eval_tokens_per_second": {
+          "mean": 60.64,
+          "median": 60.32,
+          "min": 59.54,
+          "max": 61.98,
+          "n": 5
+        },
+        "prompt_tokens_per_second": {
+          "mean": 3683.35,
+          "median": 3675.84,
+          "min": 3662.95,
+          "max": 3707.2,
+          "n": 5
+        },
+        "wall_seconds": {
+          "mean": 5.11,
+          "median": 5.75,
+          "min": 2.57,
+          "max": 7.11,
+          "n": 5
+        },
+        "runs": [
+          {
+            "wall_seconds": 7.114,
+            "load_seconds": 0.027,
+            "prompt_tokens": 1160,
+            "prompt_tokens_per_second": 3701.08,
+            "eval_tokens": 400,
+            "eval_tokens_per_second": 59.54,
+            "total_seconds": 7.099,
+            "cpu_temp_before_c": null,
+            "cpu_temp_after_c": null,
+            "arm_frequency_before_hz": null,
+            "arm_frequency_after_hz": null,
+            "arm_frequency_nominal_hz": null,
+            "clock_ratio": null,
+            "throttle": null
+          },
+          {
+            "wall_seconds": 7.074,
+            "load_seconds": 0.034,
+            "prompt_tokens": 1160,
+            "prompt_tokens_per_second": 3707.2,
+            "eval_tokens": 400,
+            "eval_tokens_per_second": 59.96,
+            "total_seconds": 7.066,
+            "cpu_temp_before_c": null,
+            "cpu_temp_after_c": null,
+            "arm_frequency_before_hz": null,
+            "arm_frequency_after_hz": null,
+            "arm_frequency_nominal_hz": null,
+            "clock_ratio": null,
+            "throttle": null
+          },
+          {
+            "wall_seconds": 3.062,
+            "load_seconds": 0.029,
+            "prompt_tokens": 1160,
+            "prompt_tokens_per_second": 3675.84,
+            "eval_tokens": 162,
+            "eval_tokens_per_second": 61.38,
+            "total_seconds": 3.033,
+            "cpu_temp_before_c": null,
+            "cpu_temp_after_c": null,
+            "arm_frequency_before_hz": null,
+            "arm_frequency_after_hz": null,
+            "arm_frequency_nominal_hz": null,
+            "clock_ratio": null,
+            "throttle": null
+          },
+          {
+            "wall_seconds": 5.75,
+            "load_seconds": 0.036,
+            "prompt_tokens": 1160,
+            "prompt_tokens_per_second": 3669.69,
+            "eval_tokens": 322,
+            "eval_tokens_per_second": 60.32,
+            "total_seconds": 5.743,
+            "cpu_temp_before_c": null,
+            "cpu_temp_after_c": null,
+            "arm_frequency_before_hz": null,
+            "arm_frequency_after_hz": null,
+            "arm_frequency_nominal_hz": null,
+            "clock_ratio": null,
+            "throttle": null
+          },
+          {
+            "wall_seconds": 2.572,
+            "load_seconds": 0.03,
+            "prompt_tokens": 1160,
+            "prompt_tokens_per_second": 3662.95,
+            "eval_tokens": 134,
+            "eval_tokens_per_second": 61.98,
+            "total_seconds": 2.566,
+            "cpu_temp_before_c": null,
+            "cpu_temp_after_c": null,
+            "arm_frequency_before_hz": null,
+            "arm_frequency_after_hz": null,
+            "arm_frequency_nominal_hz": null,
+            "clock_ratio": null,
+            "throttle": null
+          }
+        ]
+      }
+    },
+    {
+      "model": "gemma:2b",
+      "timed_out": false,
+      "timeout_detail": null,
+      "gpu_offload_fraction": 1.0,
+      "short": {
+        "eval_tokens_per_second": {
+          "mean": 97.2,
+          "median": 97.23,
+          "min": 97.03,
+          "max": 97.3,
+          "n": 5
+        },
+        "wall_seconds": {
+          "mean": 2.46,
+          "median": 2.44,
+          "min": 2.38,
+          "max": 2.57,
+          "n": 5
+        },
+        "runs": [
+          {
+            "wall_seconds": 2.572,
+            "load_seconds": 0.189,
+            "prompt_tokens": 62,
+            "prompt_tokens_per_second": 3208.45,
+            "eval_tokens": 227,
+            "eval_tokens_per_second": 97.03,
+            "total_seconds": 2.553
+          },
+          {
+            "wall_seconds": 2.503,
+            "load_seconds": 0.189,
+            "prompt_tokens": 62,
+            "prompt_tokens_per_second": 3382.43,
+            "eval_tokens": 222,
+            "eval_tokens_per_second": 97.23,
+            "total_seconds": 2.498
+          },
+          {
+            "wall_seconds": 2.444,
+            "load_seconds": 0.192,
+            "prompt_tokens": 62,
+            "prompt_tokens_per_second": 3563.22,
+            "eval_tokens": 216,
+            "eval_tokens_per_second": 97.23,
+            "total_seconds": 2.439
+          },
+          {
+            "wall_seconds": 2.383,
+            "load_seconds": 0.184,
+            "prompt_tokens": 62,
+            "prompt_tokens_per_second": 3660.62,
+            "eval_tokens": 211,
+            "eval_tokens_per_second": 97.19,
+            "total_seconds": 2.38
+          },
+          {
+            "wall_seconds": 2.397,
+            "load_seconds": 0.195,
+            "prompt_tokens": 62,
+            "prompt_tokens_per_second": 3422.01,
+            "eval_tokens": 209,
+            "eval_tokens_per_second": 97.3,
+            "total_seconds": 2.371
+          }
+        ]
+      },
+      "long": {
+        "prompt_tokens": 960,
+        "eval_tokens_per_second": {
+          "mean": 97.9,
+          "median": 97.95,
+          "min": 97.6,
+          "max": 98.12,
+          "n": 5
+        },
+        "prompt_tokens_per_second": {
+          "mean": 6403.27,
+          "median": 6392.37,
+          "min": 6365.37,
+          "max": 6446.24,
+          "n": 5
+        },
+        "wall_seconds": {
+          "mean": 0.88,
+          "median": 0.87,
+          "min": 0.87,
+          "max": 0.89,
+          "n": 5
+        },
+        "runs": [
+          {
+            "wall_seconds": 0.871,
+            "load_seconds": 0.184,
+            "prompt_tokens": 960,
+            "prompt_tokens_per_second": 6365.37,
+            "eval_tokens": 51,
+            "eval_tokens_per_second": 97.95,
+            "total_seconds": 0.865,
+            "cpu_temp_before_c": null,
+            "cpu_temp_after_c": null,
+            "arm_frequency_before_hz": null,
+            "arm_frequency_after_hz": null,
+            "arm_frequency_nominal_hz": null,
+            "clock_ratio": null,
+            "throttle": null
+          },
+          {
+            "wall_seconds": 0.874,
+            "load_seconds": 0.185,
+            "prompt_tokens": 960,
+            "prompt_tokens_per_second": 6392.37,
+            "eval_tokens": 51,
+            "eval_tokens_per_second": 97.71,
+            "total_seconds": 0.867,
+            "cpu_temp_before_c": null,
+            "cpu_temp_after_c": null,
+            "arm_frequency_before_hz": null,
+            "arm_frequency_after_hz": null,
+            "arm_frequency_nominal_hz": null,
+            "clock_ratio": null,
+            "throttle": null
+          },
+          {
+            "wall_seconds": 0.893,
+            "load_seconds": 0.189,
+            "prompt_tokens": 960,
+            "prompt_tokens_per_second": 6367.69,
+            "eval_tokens": 51,
+            "eval_tokens_per_second": 98.1,
+            "total_seconds": 0.874,
+            "cpu_temp_before_c": null,
+            "cpu_temp_after_c": null,
+            "arm_frequency_before_hz": null,
+            "arm_frequency_after_hz": null,
+            "arm_frequency_nominal_hz": null,
+            "clock_ratio": null,
+            "throttle": null
+          },
+          {
+            "wall_seconds": 0.867,
+            "load_seconds": 0.182,
+            "prompt_tokens": 960,
+            "prompt_tokens_per_second": 6446.24,
+            "eval_tokens": 51,
+            "eval_tokens_per_second": 98.12,
+            "total_seconds": 0.861,
+            "cpu_temp_before_c": null,
+            "cpu_temp_after_c": null,
+            "arm_frequency_before_hz": null,
+            "arm_frequency_after_hz": null,
+            "arm_frequency_nominal_hz": null,
+            "clock_ratio": null,
+            "throttle": null
+          },
+          {
+            "wall_seconds": 0.888,
+            "load_seconds": 0.175,
+            "prompt_tokens": 960,
+            "prompt_tokens_per_second": 6444.68,
+            "eval_tokens": 51,
+            "eval_tokens_per_second": 97.6,
+            "total_seconds": 0.857,
+            "cpu_temp_before_c": null,
+            "cpu_temp_after_c": null,
+            "arm_frequency_before_hz": null,
+            "arm_frequency_after_hz": null,
+            "arm_frequency_nominal_hz": null,
+            "clock_ratio": null,
+            "throttle": null
+          }
+        ]
+      }
+    }
+  ],
+  "embedding": {
+    "model": "nomic-embed-text",
+    "options": {},
+    "cold_start_ms": 1073.7,
+    "repeat": 15,
+    "warm_mean_ms": 28.7,
+    "warm_median_ms": 25.1,
+    "warm_min_ms": 20.8,
+    "warm_max_ms": 48.9,
+    "vram_resident_fraction": 1.0
+  }
+}
