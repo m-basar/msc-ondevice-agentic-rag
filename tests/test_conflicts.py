@@ -79,8 +79,8 @@ def test_registry_contains_conflicts_a_metadata_filter_cannot_solve(registry):
     present, where both documents are live and no metadata distinguishes them.
     """
     unresolvable = registry.of_type("current_current")
-    assert len(unresolvable) >= 2, (
-        "Fewer than two current_current families. Every conflict would be "
+    assert len(unresolvable) >= 4, (
+        "Fewer than four current_current families. Every conflict would be "
         "solvable by a three-line metadata filter, and the verification layer "
         "would have nothing to demonstrate."
     )

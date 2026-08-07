@@ -33,6 +33,10 @@ Emails containing confidential or sensitive data sent outside the company must b
 
 Paper records containing personal data are locked away when unattended and shredded when no longer needed, never placed in general waste.
 
+## Access review
+
+Access to systems holding personal data is reviewed annually by the Data Protection Lead. Managers confirm in writing that every account in their area is still required.
+
 ## Individual rights
 
 Requests from individuals to access, correct or erase their data are forwarded to the Data Protection Lead on the day received. The company must respond within one calendar month, so delay in forwarding a request creates real risk.

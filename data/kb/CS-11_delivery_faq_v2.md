@@ -35,7 +35,7 @@ Mainland Great Britain, Northern Ireland, the Isle of Man and the Channel Island
 
 ## Can I collect my order?
 
-Yes. Select collection at checkout and collect from the trade counter, open Monday to Friday 08:00 to 17:00. Orders are normally ready within two hours of confirmation. Bring the order number and photographic identification.
+Yes. Select collection at checkout and collect from the trade counter, open Monday to Friday 08:30 to 16:30. Orders are normally ready within two hours of confirmation. Bring the order number and photographic identification.
 
 ## What if I am not in?
 

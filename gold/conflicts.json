@@ -37,7 +37,10 @@
       "type": "version_supersession",
       "domain": "finance",
       "risk_level": "medium",
-      "documents": ["HR-03", "HR-13"],
+      "documents": [
+        "HR-03",
+        "HR-13"
+      ],
       "authoritative": "HR-13",
       "resolution": "prefer_current",
       "conflicting_facts": [
@@ -75,8 +78,12 @@
           }
         }
       ],
-      "must_cite": ["HR-13"],
-      "must_not_assert": ["40 pence per mile as the current rate"]
+      "must_cite": [
+        "HR-13"
+      ],
+      "must_not_assert": [
+        "40 pence per mile as the current rate"
+      ]
     },
     {
       "id": "CONF-02",
@@ -84,7 +91,10 @@
       "type": "version_supersession",
       "domain": "hr",
       "risk_level": "high",
-      "documents": ["HR-02", "HR-12"],
+      "documents": [
+        "HR-02",
+        "HR-12"
+      ],
       "authoritative": "HR-12",
       "resolution": "prefer_current",
       "conflicting_facts": [
@@ -111,7 +121,9 @@
           }
         }
       ],
-      "must_cite": ["HR-12"],
+      "must_cite": [
+        "HR-12"
+      ],
       "must_not_assert": [
         "three unpaid waiting days apply",
         "employees below the Lower Earnings Limit do not qualify"
@@ -124,7 +136,10 @@
       "type": "version_supersession",
       "domain": "information_security",
       "risk_level": "medium",
-      "documents": ["IT-01", "IT-11"],
+      "documents": [
+        "IT-01",
+        "IT-11"
+      ],
       "authoritative": "IT-11",
       "resolution": "prefer_current",
       "conflicting_facts": [
@@ -162,8 +177,12 @@
           }
         }
       ],
-      "must_cite": ["IT-11"],
-      "must_not_assert": ["passwords must be changed every 90 days"]
+      "must_cite": [
+        "IT-11"
+      ],
+      "must_not_assert": [
+        "passwords must be changed every 90 days"
+      ]
     },
     {
       "id": "CONF-04",
@@ -171,28 +190,53 @@
       "type": "version_supersession",
       "domain": "customer_service",
       "risk_level": "low",
-      "documents": ["CS-01", "CS-11"],
+      "documents": [
+        "CS-01",
+        "CS-11"
+      ],
       "authoritative": "CS-11",
       "resolution": "prefer_current",
       "conflicting_facts": [
         {
           "fact": "free delivery threshold",
-          "values": {"CS-01": "£50 excluding VAT", "CS-11": "£75 excluding VAT"},
-          "anchors": {"CS-01": "orders £50 and over", "CS-11": "orders £75 and over"}
+          "values": {
+            "CS-01": "\u00a350 excluding VAT",
+            "CS-11": "\u00a375 excluding VAT"
+          },
+          "anchors": {
+            "CS-01": "orders \u00a350 and over",
+            "CS-11": "orders \u00a375 and over"
+          }
         },
         {
           "fact": "standard delivery charge",
-          "values": {"CS-01": "£4.95", "CS-11": "£6.95"},
-          "anchors": {"CS-01": "£4.95", "CS-11": "£6.95"}
+          "values": {
+            "CS-01": "\u00a34.95",
+            "CS-11": "\u00a36.95"
+          },
+          "anchors": {
+            "CS-01": "\u00a34.95",
+            "CS-11": "\u00a36.95"
+          }
         },
         {
           "fact": "next working day charge",
-          "values": {"CS-01": "£9.95", "CS-11": "£12.95"},
-          "anchors": {"CS-01": "£9.95", "CS-11": "£12.95"}
+          "values": {
+            "CS-01": "\u00a39.95",
+            "CS-11": "\u00a312.95"
+          },
+          "anchors": {
+            "CS-01": "\u00a39.95",
+            "CS-11": "\u00a312.95"
+          }
         }
       ],
-      "must_cite": ["CS-11"],
-      "must_not_assert": ["free delivery applies from £50"]
+      "must_cite": [
+        "CS-11"
+      ],
+      "must_not_assert": [
+        "free delivery applies from \u00a350"
+      ]
     },
     {
       "id": "CONF-05",
@@ -200,7 +244,10 @@
       "type": "current_current",
       "domain": "information_security",
       "risk_level": "high",
-      "documents": ["GEN-04", "IT-03"],
+      "documents": [
+        "GEN-04",
+        "IT-03"
+      ],
       "authoritative": null,
       "resolution": "escalate_unresolved",
       "conflicting_facts": [
@@ -216,7 +263,10 @@
           }
         }
       ],
-      "must_cite": ["GEN-04", "IT-03"],
+      "must_cite": [
+        "GEN-04",
+        "IT-03"
+      ],
       "must_not_assert": [
         "a single reporting deadline as authoritative",
         "that the two documents agree"
@@ -230,7 +280,10 @@
       "type": "current_current",
       "domain": "data_protection",
       "risk_level": "medium",
-      "documents": ["IT-04", "REG-02"],
+      "documents": [
+        "IT-04",
+        "REG-02"
+      ],
       "authoritative": null,
       "resolution": "escalate_unresolved",
       "conflicting_facts": [
@@ -246,13 +299,122 @@
           }
         }
       ],
-      "must_cite": ["IT-04", "REG-02"],
+      "must_cite": [
+        "IT-04",
+        "REG-02"
+      ],
       "must_not_assert": [
         "that data is fully deleted at the end of its retention period",
         "that a seven-year backup is compatible with a 31-day CCTV retention period"
       ],
       "why_a_filter_cannot_solve_this": "Both documents are current and neither is a version of the other. The conflict is between an operational practice and a compliance requirement, which is precisely the kind of contradiction that survives in real organisations because each document is correct within its own department's frame.",
       "risk_note": "CCTV is scheduled for deletion after 31 days, yet an annual backup would preserve it for seven years. That is a live UK GDPR storage limitation exposure."
+    },
+    {
+      "id": "CONF-07",
+      "name": "Approval authority for IT equipment purchases",
+      "type": "current_current",
+      "domain": "finance",
+      "risk_level": "low",
+      "documents": [
+        "GEN-04",
+        "FIN-03"
+      ],
+      "authoritative": null,
+      "resolution": "escalate_unresolved",
+      "conflicting_facts": [
+        {
+          "fact": "who approves an IT equipment purchase of \u00a3800",
+          "values": {
+            "GEN-04": "the Finance Manager, because the cost exceeds \u00a3750",
+            "FIN-03": "the department head, because \u00a3800 falls in the \u00a3501 to \u00a32,500 band"
+          },
+          "anchors": {
+            "GEN-04": "where the cost exceeds \u00a3750, from the Finance Manager",
+            "FIN-03": "| \u00a3501 to \u00a32,500 | Department head |"
+          }
+        }
+      ],
+      "must_cite": [
+        "GEN-04",
+        "FIN-03"
+      ],
+      "must_not_assert": [
+        "a single approver for an \u00a3800 IT purchase"
+      ],
+      "why_a_filter_cannot_solve_this": "Both documents are current and neither supersedes the other. The general procurement policy and the IT-specific policy overlap without either stating precedence.",
+      "origin": "Found during review as an accidental contradiction and registered rather than harmonised. Real organisations acquire exactly these overlaps when a specific policy is written without reconciling it against the general one."
+    },
+    {
+      "id": "CONF-08",
+      "name": "Trade counter opening hours",
+      "type": "current_current",
+      "domain": "customer_service",
+      "risk_level": "low",
+      "documents": [
+        "GEN-02",
+        "CS-11"
+      ],
+      "authoritative": null,
+      "resolution": "escalate_unresolved",
+      "conflicting_facts": [
+        {
+          "fact": "trade counter opening hours",
+          "values": {
+            "GEN-02": "Monday to Friday, 08:00 to 17:00",
+            "CS-11": "Monday to Friday, 08:30 to 16:30"
+          },
+          "anchors": {
+            "GEN-02": "| Trade counter | Monday to Friday | 08:00 to 17:00 |",
+            "CS-11": "open Monday to Friday 08:30 to 16:30"
+          }
+        }
+      ],
+      "must_cite": [
+        "GEN-02",
+        "CS-11"
+      ],
+      "must_not_assert": [
+        "a single set of trade counter opening hours"
+      ],
+      "why_a_filter_cannot_solve_this": "The internal timetable and the customer-facing FAQ are both in force and both current. Nothing in the metadata says which is authoritative for opening hours.",
+      "origin": "Planted. A purely operational disagreement with no legal or safety dimension, included so the current_current class is not composed only of higher-risk cases."
+    },
+    {
+      "id": "CONF-09",
+      "name": "Frequency of user access reviews",
+      "type": "current_current",
+      "domain": "information_security",
+      "risk_level": "medium",
+      "documents": [
+        "IT-11",
+        "IT-02"
+      ],
+      "authoritative": null,
+      "resolution": "escalate_unresolved",
+      "conflicting_facts": [
+        {
+          "fact": "how often user access rights are reviewed",
+          "values": {
+            "IT-11": "every six months, by each department head",
+            "IT-02": "annually, by the Data Protection Lead"
+          },
+          "anchors": {
+            "IT-11": "Access rights are reviewed every six months by each department head",
+            "IT-02": "reviewed annually by the Data Protection Lead"
+          }
+        }
+      ],
+      "must_cite": [
+        "IT-11",
+        "IT-02"
+      ],
+      "must_not_assert": [
+        "a single access review frequency",
+        "a single owner of the access review"
+      ],
+      "why_a_filter_cannot_solve_this": "Both are current. The two documents disagree on both the interval and the owner, and the disagreement is only visible by reading the claims.",
+      "origin": "Planted. The access control policy and the data protection policy are owned by different roles, which is how this divergence arises in practice."
     }
   ],
   "deliberate_gaps": {
@@ -260,36 +422,73 @@
     "fully_absent": [
       {
         "topic": "pensions and auto-enrolment",
-        "probes": ["auto-enrol", "workplace pension", "pension scheme", "pension contribution"]
+        "probes": [
+          "auto-enrol",
+          "workplace pension",
+          "pension scheme",
+          "pension contribution"
+        ]
       },
       {
         "topic": "maternity, paternity and shared parental leave",
-        "probes": ["maternity", "paternity", "parental leave", "adoption leave"]
+        "probes": [
+          "maternity",
+          "paternity",
+          "parental leave",
+          "adoption leave"
+        ]
       },
       {
         "topic": "redundancy and notice periods",
-        "probes": ["redundanc", "notice period", "period of notice"]
+        "probes": [
+          "redundanc",
+          "notice period",
+          "period of notice"
+        ]
       },
       {
         "topic": "company car and vehicle allowance schemes",
-        "probes": ["company car", "car allowance", "vehicle allowance"]
+        "probes": [
+          "company car",
+          "car allowance",
+          "vehicle allowance"
+        ]
       },
       {
         "topic": "share options and bonus schemes",
-        "probes": ["share option", "share scheme", "bonus scheme", "annual bonus"]
+        "probes": [
+          "share option",
+          "share scheme",
+          "bonus scheme",
+          "annual bonus"
+        ]
       },
       {
         "topic": "export documentation procedure",
-        "probes": ["export documentation", "customs declaration", "commodity code", "commercial invoice", "proof of origin"],
+        "probes": [
+          "export documentation",
+          "customs declaration",
+          "commodity code",
+          "commercial invoice",
+          "proof of origin"
+        ],
         "note": "Whether the company ships internationally IS answerable from CS-11, which states it does not ship outside the United Kingdom. Only the export documentation procedure is absent. Questions must target the procedure, not the availability, or they are not unanswerable."
       },
       {
         "topic": "flexible working requests",
-        "probes": ["flexible working request", "statutory flexible working", "request flexible working"]
+        "probes": [
+          "flexible working request",
+          "statutory flexible working",
+          "request flexible working"
+        ]
       },
       {
         "topic": "staff purchase and employee discount",
-        "probes": ["staff discount", "employee discount", "staff purchase"]
+        "probes": [
+          "staff discount",
+          "employee discount",
+          "staff purchase"
+        ]
       }
     ],
     "partially_present": [
@@ -297,7 +496,12 @@
         "topic": "probationary period",
         "mentioned_in": "HR-04",
         "must_contain": "probationary period",
-        "missing_detail_probes": ["probationary period is", "probation lasts", "months probation", "probationary period of"],
+        "missing_detail_probes": [
+          "probationary period is",
+          "probation lasts",
+          "months probation",
+          "probationary period of"
+        ],
         "gap": "HR-04 states that new employees work on site for the duration of their probationary period, but no document defines how long that period is or what happens at the end of it.",
         "expected_behaviour": "state what is known, state explicitly that the duration is not covered, do not estimate"
       },
@@ -305,7 +509,12 @@
         "topic": "grievance procedure",
         "mentioned_in": "HR-05",
         "must_contain": "grievance",
-        "missing_detail_probes": ["raise a grievance", "grievance hearing", "grievance in writing", "grievance stage"],
+        "missing_detail_probes": [
+          "raise a grievance",
+          "grievance hearing",
+          "grievance in writing",
+          "grievance stage"
+        ],
         "gap": "HR-05 names the ACAS Code of Practice on disciplinary and grievance procedures, so the word appears in the corpus, but no grievance procedure is documented. Retrieval will surface HR-05 with reasonable similarity and HR-05 cannot answer the question.",
         "expected_behaviour": "refuse, and say that only the disciplinary procedure is documented; do not describe HR-05 as if it were a grievance procedure"
       }
