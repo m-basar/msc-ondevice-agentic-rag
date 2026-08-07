@@ -99,6 +99,7 @@ class Chunk:
     superseded_by: str | None = None
     supersedes: str | None = None
     contains_table: bool = False
+    overlap_source: tuple[str, ...] = ()
 
     @property
     def word_count(self) -> int:
@@ -126,6 +127,20 @@ class Chunk:
         location = " > ".join(self.heading_path) if self.heading_path else "(document body)"
         return f"{self.doc_id} {self.doc_title} (v{self.version}), {location}"
 
+    @property
+    def has_carried_text(self) -> bool:
+        """Whether this chunk opens with a sentence from the previous section.
+
+        Overlap protects facts that straddle a boundary, but it means the first
+        sentence of a chunk may belong to a different section than the chunk's
+        heading path describes. A chunk labelled "Accommodation" that opens
+        with a sentence about meals would, unmarked, invite the generator to
+        cite the wrong section. Since citation accuracy is what this project
+        measures, the carried text is marked inline and its true source is
+        recorded here.
+        """
+        return bool(self.overlap_source)
+
     def to_dict(self) -> dict:
         return {
             "chunk_id": self.chunk_id,
@@ -142,6 +157,7 @@ class Chunk:
             "text": self.text,
             "word_count": self.word_count,
             "contains_table": self.contains_table,
+            "overlap_source": list(self.overlap_source),
         }
 
 
@@ -280,18 +296,26 @@ def chunk_document(
     pending_sections: list[str] = []
     pending_words = 0
     carry_over = ""
+    carry_path: tuple[str, ...] = ()
 
     def emit() -> None:
-        nonlocal pending, pending_words, carry_over, pending_sections
+        nonlocal pending, pending_words, carry_over, carry_path, pending_sections
         if not pending:
             return
         body_text = "\n\n".join(block.text for block in pending).strip()
-        if carry_over:
+        path = tuple(pending_sections) if pending_sections else _heading_path(stack)
+        overlap_source: tuple[str, ...] = ()
+        if carry_over and carry_path != path:
+            # The carried sentence comes from a different section, so say so.
+            # Four tokens of marker buys correct attribution.
+            source = " > ".join(carry_path)
+            body_text = f"(continues from {source}) {carry_over}\n\n{body_text}"
+            overlap_source = carry_path
+        elif carry_over:
             body_text = f"{carry_over}\n\n{body_text}"
         if not body_text:
             pending, pending_words = [], 0
             return
-        path = tuple(pending_sections) if pending_sections else _heading_path(stack)
         ordinal = len(chunks) + 1
         chunks.append(
             Chunk(
@@ -308,11 +332,13 @@ def chunk_document(
                 superseded_by=doc.superseded_by,
                 supersedes=doc.supersedes,
                 contains_table=any(b.kind == "table" for b in pending),
+                overlap_source=overlap_source,
             )
         )
         # Overlap comes from prose only.
         prose = "\n\n".join(b.text for b in pending if b.kind == "paragraph")
         carry_over = _overlap_text(prose, overlap_sentences)
+        carry_path = path
         pending, pending_words = [], 0
         # The next chunk continues under the section the last one ended in.
         pending_sections = pending_sections[-1:] if pending_sections else []
@@ -367,6 +393,7 @@ def chunk_document(
                 superseded_by=previous.superseded_by,
                 supersedes=previous.supersedes,
                 contains_table=previous.contains_table or tail.contains_table,
+                overlap_source=previous.overlap_source,
             )
         )
 
@@ -410,6 +437,7 @@ def summarise_chunks(chunks: Sequence[Chunk]) -> dict:
         "min_words": min(words),
         "max_words": max(words),
         "chunks_containing_tables": len(oversized),
+        "chunks_with_carried_text": sum(1 for c in chunks if c.has_carried_text),
         "current_chunks": sum(1 for c in chunks if c.is_current),
         "superseded_chunks": sum(1 for c in chunks if not c.is_current),
     }

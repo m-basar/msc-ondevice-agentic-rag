@@ -272,3 +272,59 @@ def test_empty_document_body_is_rejected(kb, config):
 def test_invalid_max_words_is_rejected(kb):
     with pytest.raises(ChunkingError, match="max_words must be positive"):
         chunk_document(next(iter(kb)), 0)
+
+
+# --- citation attribution ---------------------------------------------------
+
+
+def test_carried_text_is_never_silently_misattributed(chunks):
+    """The failure this guards against is a wrong citation, not a wrong answer.
+
+    Overlap carries the last sentence of one chunk into the next. Where the two
+    chunks sit in different sections, the carried sentence would otherwise be
+    presented under a heading path it does not belong to, and the generator
+    would cite the wrong section for it. Every such chunk must declare the
+    true source both in metadata and inline in the text the model sees.
+    """
+    for chunk in chunks:
+        if not chunk.overlap_source:
+            continue
+        assert chunk.overlap_source != chunk.heading_path, (
+            f"{chunk.chunk_id} records an overlap source identical to its own "
+            "section, which should not have been marked"
+        )
+        marker = f"(continues from {' > '.join(chunk.overlap_source)})"
+        assert chunk.text.startswith(marker), (
+            f"{chunk.chunk_id} carries text from {chunk.overlap_source} but does "
+            "not say so in the text the model reads"
+        )
+
+
+def test_unmarked_chunks_start_with_their_own_content(chunks, kb):
+    """A chunk without an overlap marker must open with text from its own section.
+
+    This is the converse check: it catches carried text that was not marked,
+    which is the silent failure the marker exists to prevent.
+    """
+    by_doc = {}
+    for chunk in chunks:
+        by_doc.setdefault(chunk.doc_id, []).append(chunk)
+
+    for doc_id, doc_chunks in by_doc.items():
+        for previous, current in zip(doc_chunks, doc_chunks[1:]):
+            if current.overlap_source:
+                continue
+            if previous.heading_path == current.heading_path:
+                continue
+            first_sentence = split_sentences(current.text)[0] if current.text else ""
+            assert first_sentence not in previous.text, (
+                f"{current.chunk_id} opens with a sentence from {previous.chunk_id}, "
+                f"which sits in a different section, but carries no marker"
+            )
+
+
+def test_overlap_can_be_disabled(kb, config):
+    """Overlap is a configurable choice, so it must be switchable off cleanly."""
+    without = chunk_corpus(kb, config.require("chunking.max_words"), overlap_sentences=0)
+    assert all(not c.overlap_source for c in without)
+    assert all("(continues from" not in c.text for c in without)
