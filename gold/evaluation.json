@@ -7,6 +7,17 @@
   "protocol": {
     "cross_validation": "leave_one_family_out",
     "aggregation": "macro_average_by_family",
-    "rationale": "Paraphrased questions drawn from one conflict family test the same document pair and are not independent observations. With a small number of families, leave-one-family-out cross-validation uses every family as a held-out fold and is the correct technique at this scale; a three-way family split would leave too few families per partition to support any estimate."
+    "unit_of_independence": "group",
+    "rationale": "Paraphrased questions drawn from one conflict family test the same document pair and are not independent observations. With a small number of families, leave-one-family-out cross-validation uses every family as a held-out fold and is the correct technique at this scale; a three-way family split would leave too few families per partition to support any estimate.",
+    "grouping_rule": "Every question declares a group_id: the conflict family for a conflict question, the gap topic for an unanswerable one, otherwise the question itself. Aggregation is a mean within groups followed by a mean across groups.",
+    "split_integrity_rule": "A group must lie entirely within one split. A paraphrase of a family in the development set may not appear in the test set, because both interrogate the same document pair, the same conflicting figures and the same retrieval behaviour. The leak is invisible in the results, since the question strings differ.",
+    "reporting_rule": "Both question-level and family-level figures are reported. Question-level is the plain mean and is included for readability. Inference, standard errors and arm comparisons use the family level, and the sample size cited is the number of groups.",
+    "enforced_by": {
+      "split_integrity": "sme_assistant.evaluation.question_set.validate_question_set, on both the load and the write path",
+      "fold_construction": "sme_assistant.evaluation.question_set.QuestionSet.leave_one_family_out",
+      "two_level_reporting": "sme_assistant.evaluation.aggregate.aggregate",
+      "record_grouping": "sme_assistant.evaluation.run_writer.RunWriter.record writes group_id into every answer",
+      "tests": ["tests/test_question_set.py", "tests/test_aggregate.py"]
+    }
   }
 }
