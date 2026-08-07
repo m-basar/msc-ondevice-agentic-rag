@@ -216,17 +216,98 @@ def test_no_content_is_lost(chunks, kb):
             )
 
 
-def test_every_chunk_has_a_heading_path(chunks):
-    """The contextual header is worthless if the path is empty."""
-    missing = [c.chunk_id for c in chunks if not c.heading_path]
-    assert not missing, f"chunks with no section context: {missing[:5]}"
+def test_sections_are_real_headings_of_their_own_document(chunks, kb):
+    """The test the old one should have been.
+
+    Asserting only that a section list is non-empty is satisfied by inventing
+    one, which is exactly what the previous implementation did: it accumulated
+    every heading a chunk passed through, so a chunk containing only Principle
+    content was labelled Principle > Schedule. Correctness means every named
+    section is a genuine heading of that document.
+    """
+    for chunk in chunks:
+        headings = {
+            line.lstrip("#").strip()
+            for line in kb.by_id(chunk.doc_id).body.splitlines()
+            if line.startswith("##")
+        }
+        for section in chunk.sections:
+            assert section in headings, (
+                f"{chunk.chunk_id} claims section {section!r}, which is not a "
+                f"heading in {chunk.doc_id}"
+            )
+
+
+def test_a_chunk_only_names_sections_whose_content_it_contains(chunks, kb):
+    """REG-02 is the case that exposed the original bug.
+
+    Its four sections are Principle, Schedule, Disposal and Review. A chunk
+    holding only the Principle paragraph must not claim Schedule.
+    """
+    doc = kb.by_id("REG-02")
+    body = doc.body
+    for chunk in [c for c in chunks if c.doc_id == "REG-02"]:
+        for section in chunk.sections:
+            start = body.index(f"## {section}")
+            following = [
+                body.index(f"## {s}") for s in ("Principle", "Schedule", "Disposal", "Review")
+                if f"## {s}" in body and body.index(f"## {s}") > start
+            ]
+            end = min(following) if following else len(body)
+            section_body = body[start:end]
+            words = [w for w in section_body.split() if len(w) > 4][:40]
+            assert any(w in chunk.text for w in words), (
+                f"{chunk.chunk_id} names section {section!r} but contains none "
+                "of that section's text"
+            )
+
+
+def test_sections_are_siblings_not_a_hierarchy(chunks):
+    """The corpus uses only H1 and H2, so no nesting exists to express.
+
+    Rendering two adjacent sections with " > " implied one was inside the
+    other. The separator must say "and", not "within".
+    """
+    for chunk in chunks:
+        if len(chunk.sections) > 1:
+            header = chunk.embedding_text.split("\n")[0]
+            assert "; ".join(chunk.sections) in header
+            assert f"{chunk.sections[0]} > {chunk.sections[1]}" not in header
+
+
+def test_overlap_never_crosses_a_section_boundary(chunks):
+    """Carried text belongs to the section it came from."""
+    by_id = {c.chunk_id: c for c in chunks}
+    for chunk in chunks:
+        source_id = chunk.overlap_source_chunk_id
+        if not source_id:
+            continue
+        source = by_id[source_id]
+        assert set(source.sections) & set(chunk.sections), (
+            f"{chunk.chunk_id} {chunk.sections} carries text from "
+            f"{source_id} {source.sections}, a different section"
+        )
+
+
+def test_almost_no_chunk_is_too_small_to_retrieve(chunks, config):
+    """One section per chunk is correct but produces unusable fragments.
+
+    Splitting strictly at every section boundary gave 45% of chunks under 40
+    words, including 10-word chunks. Adjacent short sections may therefore
+    share a chunk, provided both are named.
+    """
+    minimum = config.require("chunking.min_words")
+    tiny = [c.chunk_id for c in chunks if c.word_count < minimum]
+    assert len(tiny) / len(chunks) < 0.05, (
+        f"{len(tiny)} of {len(chunks)} chunks are below {minimum} words"
+    )
 
 
 def test_embedding_text_prepends_context(chunks):
     for chunk in chunks[:20]:
         text = chunk.embedding_text
         assert text.startswith(chunk.doc_title)
-        assert chunk.heading_path[0] in text.split("\n")[0]
+        assert chunk.sections[0] in text.split("\n")[0]
         assert chunk.text in text
 
 
@@ -289,7 +370,7 @@ def test_carried_text_is_never_silently_misattributed(chunks):
     for chunk in chunks:
         if not chunk.overlap_source:
             continue
-        assert chunk.overlap_source != chunk.heading_path, (
+        assert chunk.overlap_source != chunk.sections, (
             f"{chunk.chunk_id} records an overlap source identical to its own "
             "section, which should not have been marked"
         )
@@ -314,7 +395,7 @@ def test_unmarked_chunks_start_with_their_own_content(chunks, kb):
         for previous, current in zip(doc_chunks, doc_chunks[1:]):
             if current.overlap_source:
                 continue
-            if previous.heading_path == current.heading_path:
+            if previous.sections == current.sections:
                 continue
             first_sentence = split_sentences(current.text)[0] if current.text else ""
             assert first_sentence not in previous.text, (

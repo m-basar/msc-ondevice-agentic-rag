@@ -141,6 +141,15 @@ class OllamaClient:
         merged = dict(self.config.require("generation"))
         if options:
             merged.update(options)
+        # Ollama only makes a generation reproducible when `seed` is passed in
+        # options. It was previously recorded in the provenance block and never
+        # sent, which made every result look controlled while being subject to
+        # sampling variation. Fail loudly rather than repeat that.
+        if "seed" not in merged:
+            raise LLMError(
+                "No seed in generation options. Results would not be reproducible. "
+                "Set generation.seed in config.json."
+            )
 
         temp_before = cpu_temperature_c()
         started = time.perf_counter()

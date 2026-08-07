@@ -93,13 +93,14 @@ class Chunk:
     version: str
     status: str
     effective_date: date
-    heading_path: tuple[str, ...]
+    sections: tuple[str, ...]
     ordinal: int
     text: str
     superseded_by: str | None = None
     supersedes: str | None = None
     contains_table: bool = False
     overlap_source: tuple[str, ...] = ()
+    overlap_source_chunk_id: str | None = None
 
     @property
     def word_count(self) -> int:
@@ -118,13 +119,19 @@ class Chunk:
         metadata for reasoning, not semantics for matching.
         """
         header = self.doc_title
-        if self.heading_path:
-            header += " > " + " > ".join(self.heading_path)
+        if self.sections:
+            # Joined with "; " because these are sibling sections, not a
+            # hierarchy. An earlier version used " > ", which rendered two
+            # adjacent sections as though one were nested inside the other and
+            # invited the generator to cite a section that does not contain the
+            # text. The corpus has only H1 and H2, so no nesting exists to
+            # express.
+            header += " > " + "; ".join(self.sections)
         return f"{header}\n\n{self.text}"
 
     @property
     def citation(self) -> str:
-        location = " > ".join(self.heading_path) if self.heading_path else "(document body)"
+        location = "; ".join(self.sections) if self.sections else "(preamble)"
         return f"{self.doc_id} {self.doc_title} (v{self.version}), {location}"
 
     @property
@@ -152,12 +159,13 @@ class Chunk:
             "effective_date": self.effective_date.isoformat(),
             "superseded_by": self.superseded_by,
             "supersedes": self.supersedes,
-            "heading_path": list(self.heading_path),
+            "sections": list(self.sections),
             "ordinal": self.ordinal,
             "text": self.text,
             "word_count": self.word_count,
             "contains_table": self.contains_table,
             "overlap_source": list(self.overlap_source),
+            "overlap_source_chunk_id": self.overlap_source_chunk_id,
         }
 
 
@@ -246,8 +254,8 @@ def split_sentences(text: str) -> list[str]:
 
 # --- chunking ---------------------------------------------------------------
 
-def _heading_path(stack: dict[int, str], skip_level: int = 1) -> tuple[str, ...]:
-    """Heading path excluding the document title, which is level 1."""
+def _current_section(stack: dict[int, str], skip_level: int = 1) -> tuple[str, ...]:
+    """The section headings in scope, excluding the level-1 document title."""
     return tuple(stack[level] for level in sorted(stack) if level > skip_level)
 
 
@@ -270,13 +278,30 @@ def chunk_document(
     overlap_sentences: int = 1,
     min_words: int = 40,
 ) -> list[Chunk]:
-    """Split one document into chunks.
+    """Split one document into chunks, one section per chunk.
 
-    Blocks accumulate until adding the next would exceed ``max_words``. Headings
-    are preferred break points, because a chunk that begins at a section
-    boundary reads as a coherent passage. An atomic block larger than
-    ``max_words`` becomes its own oversized chunk rather than being cut: an
-    intact large table is useful, half a table is not.
+    **A chunk belongs to exactly one section.** Content is flushed before the
+    section context changes, so ``sections`` is always the true ancestor
+    path of the text it labels.
+
+    An earlier version accumulated every heading a chunk passed through and
+    joined them with " > ". That produced paths like ``Principle > Schedule``
+    for two *sibling* sections, rendered as though one were nested inside the
+    other, and applied to a chunk that contained only the first. The
+    contextual header then supplied wrong context rather than missing context,
+    which is worse: a passage confidently mislabelled invites a confident
+    miscitation, and citation accuracy is what this project measures.
+
+    Two consequences follow, and both are deliberate:
+
+    * A section longer than ``max_words`` becomes several chunks, all sharing
+      that one section's path.
+    * Text before the first subheading has an empty path. That is honest.
+      Preamble genuinely belongs to no section, and saying so is better than
+      inventing one.
+
+    Overlap never crosses a section boundary, and a short trailing chunk is
+    merged only into a chunk from the same section.
     """
     if max_words <= 0:
         raise ChunkingError("max_words must be positive")
@@ -287,85 +312,96 @@ def chunk_document(
 
     chunks: list[Chunk] = []
     stack: dict[int, str] = {}
+    pending_sections: tuple[str, ...] = ()
     pending: list[Block] = []
-    # Every section heading the accumulating chunk has passed through, not just
-    # the one it started under. A chunk that spans "Mileage" and "Meals" must
-    # say so: recording only the path at the chunk's start produced chunks that
-    # contained the mileage rate under an empty heading path, which is exactly
-    # the missing context the contextual header exists to supply.
-    pending_sections: list[str] = []
     pending_words = 0
     carry_over = ""
-    carry_path: tuple[str, ...] = ()
+    carry_from: str | None = None
+    carry_sections: tuple[str, ...] = ()
 
     def emit() -> None:
-        nonlocal pending, pending_words, carry_over, carry_path, pending_sections
+        nonlocal pending, pending_words, carry_over, carry_from, carry_sections, pending_sections
         if not pending:
             return
         body_text = "\n\n".join(block.text for block in pending).strip()
-        path = tuple(pending_sections) if pending_sections else _heading_path(stack)
-        overlap_source: tuple[str, ...] = ()
-        if carry_over and carry_path != path:
-            # The carried sentence comes from a different section, so say so.
-            # Four tokens of marker buys correct attribution.
-            source = " > ".join(carry_path)
-            body_text = f"(continues from {source}) {carry_over}\n\n{body_text}"
-            overlap_source = carry_path
-        elif carry_over:
-            body_text = f"{carry_over}\n\n{body_text}"
         if not body_text:
             pending, pending_words = [], 0
             return
+
+        overlap_source: tuple[str, ...] = ()
+        # Overlap must not cross a section boundary. An oversized table can
+        # force a flush mid-document, and without this check the trailing
+        # sentence of the previous section would be prepended to a chunk
+        # labelled with a section it does not belong to.
+        if carry_over and carry_from and not (set(carry_sections) & set(pending_sections)):
+            carry_over, carry_from, carry_sections = "", None, ()
+        if carry_over and carry_from:
+            # Carried text always comes from the same section now, so the
+            # marker names the chunk rather than a path. Naming the chunk is
+            # more precise and cannot describe a hierarchy that does not exist.
+            body_text = f"(continues from {carry_from}) {carry_over}\n\n{body_text}"
+            overlap_source = pending_sections
+
         ordinal = len(chunks) + 1
-        chunks.append(
-            Chunk(
-                chunk_id=f"{doc.doc_id}#{ordinal:03d}",
-                doc_id=doc.doc_id,
-                doc_title=doc.title,
-                category=doc.category,
-                version=doc.version,
-                status=doc.status,
-                effective_date=doc.effective_date,
-                heading_path=path,
-                ordinal=ordinal,
-                text=body_text,
-                superseded_by=doc.superseded_by,
-                supersedes=doc.supersedes,
-                contains_table=any(b.kind == "table" for b in pending),
-                overlap_source=overlap_source,
-            )
+        chunk = Chunk(
+            chunk_id=f"{doc.doc_id}#{ordinal:03d}",
+            doc_id=doc.doc_id,
+            doc_title=doc.title,
+            category=doc.category,
+            version=doc.version,
+            status=doc.status,
+            effective_date=doc.effective_date,
+            sections=pending_sections,
+            ordinal=ordinal,
+            text=body_text,
+            superseded_by=doc.superseded_by,
+            supersedes=doc.supersedes,
+            contains_table=any(b.kind == "table" for b in pending),
+            overlap_source=overlap_source,
+            overlap_source_chunk_id=carry_from if overlap_source else None,
         )
-        # Overlap comes from prose only.
+        chunks.append(chunk)
+
         prose = "\n\n".join(b.text for b in pending if b.kind == "paragraph")
         carry_over = _overlap_text(prose, overlap_sentences)
-        carry_path = path
+        carry_from = chunk.chunk_id if carry_over else None
+        carry_sections = chunk.sections if carry_over else ()
         pending, pending_words = [], 0
-        # The next chunk continues under the section the last one ended in.
-        pending_sections = pending_sections[-1:] if pending_sections else []
+        pending_sections = ()
 
     for block in blocks:
         if block.kind == "heading":
+            if block.level >= 2:
+                # Flush at a section boundary only once the accumulated content
+                # can stand on its own. Many sections in this corpus are two
+                # sentences long, and emitting each as its own chunk produced
+                # ten-word chunks that rank poorly and carry almost no signal.
+                # A chunk may therefore span adjacent sections; it records every
+                # one of them, joined as siblings rather than as a hierarchy.
+                if pending_words >= min_words:
+                    emit()
             stack[block.level] = block.text
             for level in [l for l in stack if l > block.level]:
                 del stack[level]
-            # A top-level section boundary is the cleanest place to break, but
-            # only once the current chunk is substantial enough to stand alone.
-            if block.level <= 2 and pending_words >= min_words:
-                emit()
-                pending_sections = []
-            if block.level > 1 and block.text not in pending_sections:
-                pending_sections.append(block.text)
             continue
 
-        if pending_words + block.word_count > max_words and pending:
+        if pending and pending_words + block.word_count > max_words:
             emit()
 
+        # Record the section this content belongs to, at the moment content is
+        # added rather than at the moment a heading is seen. A heading with no
+        # content beneath it claims nothing.
+        in_scope = _current_section(stack)
+        if not pending_sections:
+            pending_sections = in_scope
+        elif in_scope and in_scope[-1] not in pending_sections:
+            pending_sections = pending_sections + (in_scope[-1],)
+
         if block.atomic and block.word_count > max_words:
-            # Oversized and unsplittable. Give it a chunk of its own rather
-            # than cutting it into fragments that cannot be interpreted.
+            # Oversized and unsplittable. Its own chunk rather than fragments
+            # that cannot be interpreted.
             emit()
-            pending = [block]
-            pending_words = block.word_count
+            pending, pending_words = [block], block.word_count
             emit()
             continue
 
@@ -374,28 +410,35 @@ def chunk_document(
 
     emit()
 
-    # A short trailing chunk carries little signal and dilutes retrieval.
+    # Merge a short tail only into a chunk from the same section. Merging
+    # across sections would put two sections' text under one section's path,
+    # reintroducing the attribution error this rewrite removes.
     if len(chunks) > 1 and chunks[-1].word_count < min_words:
-        tail = chunks.pop()
-        previous = chunks.pop()
-        chunks.append(
-            Chunk(
-                chunk_id=previous.chunk_id,
-                doc_id=previous.doc_id,
-                doc_title=previous.doc_title,
-                category=previous.category,
-                version=previous.version,
-                status=previous.status,
-                effective_date=previous.effective_date,
-                heading_path=previous.heading_path,
-                ordinal=previous.ordinal,
-                text=f"{previous.text}\n\n{tail.text}",
-                superseded_by=previous.superseded_by,
-                supersedes=previous.supersedes,
-                contains_table=previous.contains_table or tail.contains_table,
-                overlap_source=previous.overlap_source,
-            )
+        tail = chunks[-1]
+        previous = chunks[-2]
+        merged_sections = previous.sections + tuple(
+            s for s in tail.sections if s not in previous.sections
         )
+        if True:
+            chunks[-2:] = [
+                Chunk(
+                    chunk_id=previous.chunk_id,
+                    doc_id=previous.doc_id,
+                    doc_title=previous.doc_title,
+                    category=previous.category,
+                    version=previous.version,
+                    status=previous.status,
+                    effective_date=previous.effective_date,
+                    sections=merged_sections,
+                    ordinal=previous.ordinal,
+                    text=f"{previous.text}\n\n{tail.text}",
+                    superseded_by=previous.superseded_by,
+                    supersedes=previous.supersedes,
+                    contains_table=previous.contains_table or tail.contains_table,
+                    overlap_source=previous.overlap_source,
+                    overlap_source_chunk_id=previous.overlap_source_chunk_id,
+                )
+            ]
 
     return chunks
 

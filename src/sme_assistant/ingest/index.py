@@ -163,7 +163,7 @@ class Index:
         entries = []
         for record in payload["chunks"]:
             vector = record.pop("vector")
-            record["heading_path"] = tuple(record["heading_path"])
+            record["sections"] = tuple(record["sections"])
             record["overlap_source"] = tuple(record.get("overlap_source", ()))
             record["effective_date"] = date.fromisoformat(record["effective_date"])
             record.pop("word_count", None)

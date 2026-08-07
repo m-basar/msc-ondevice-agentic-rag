@@ -83,7 +83,7 @@ def main() -> int:
             return 1
         print(f"{args.doc}  {selected[0].doc_title}  ({selected[0].status})")
         for chunk in selected:
-            path = " > ".join(chunk.heading_path) or "-"
+            path = "; ".join(chunk.sections) or "-"
             flag = " [table]" if chunk.contains_table else ""
             print(f"  {chunk.chunk_id}  {chunk.word_count:>4}w  {path}{flag}")
             print(f"      {chunk.text[:110].replace(chr(10), ' ')}...")
@@ -128,7 +128,7 @@ def main() -> int:
 
     print_cost(summary["mean_words"], config.require("retrieval.top_k"))
 
-    missing_context = [c.chunk_id for c in chunks if not c.heading_path]
+    missing_context = [c.chunk_id for c in chunks if not c.sections]
     print()
     if missing_context:
         print(f"WARNING: {len(missing_context)} chunks have no heading path: {missing_context[:5]}")

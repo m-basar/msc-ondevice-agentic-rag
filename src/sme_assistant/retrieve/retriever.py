@@ -124,7 +124,7 @@ class RetrievalResult:
             marker = "" if chunk.is_current else f" [SUPERSEDED, replaced by {chunk.superseded_by}]"
             blocks.append(
                 f"[{chunk.chunk_id}] {chunk.doc_title}"
-                + (f" > {' > '.join(chunk.heading_path)}" if chunk.heading_path else "")
+                + (f" > {' > '.join(chunk.sections)}" if chunk.sections else "")
                 + f" (v{chunk.version}, effective {chunk.effective_date}){marker}\n{chunk.text}"
             )
         return "\n\n---\n\n".join(blocks)

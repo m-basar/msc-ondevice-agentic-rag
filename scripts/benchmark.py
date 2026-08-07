@@ -421,6 +421,7 @@ def main() -> int:
         return 1
 
     options = dict(config.require("generation"))
+    options.setdefault("seed", config.get("project.seed", 42))
     if args.cpu_only:
         # num_gpu is the number of layers offloaded to the GPU. Zero forces
         # CPU execution without restarting the server or touching environment

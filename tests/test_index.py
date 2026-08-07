@@ -171,7 +171,7 @@ def test_index_round_trips(index, kb, tmp_path):
         assert restored.chunk.text == original.chunk.text
         assert restored.chunk.status == original.chunk.status
         assert restored.chunk.effective_date == original.chunk.effective_date
-        assert restored.chunk.heading_path == original.chunk.heading_path
+        assert restored.chunk.sections == original.chunk.sections
         assert restored.chunk.overlap_source == original.chunk.overlap_source
         assert restored.vector == original.vector
 

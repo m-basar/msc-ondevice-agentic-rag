@@ -24,11 +24,13 @@
     "verification_model": "llama3.2:3b"
   },
   "generation": {
+    "seed": 42,
     "temperature": 0.1,
     "num_ctx": 4096,
     "num_predict": 400
   },
   "verification": {
+    "seed": 42,
     "temperature": 0.0,
     "num_predict": 10
   },
