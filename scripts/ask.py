@@ -42,7 +42,7 @@ def main() -> int:
     question = " ".join(args.question)
     config = load_config()
     kb = load_knowledge_base(config.path("paths.kb_docs"))
-    index = Index.load(index_path_for(config, mock=args.mock), kb=kb)
+    index = Index.load(index_path_for(config, mock=args.mock), kb=kb, config=config)
     client = build_client(config, mock=args.mock)
 
     retrieval = Retriever(index, client, config).retrieve(
@@ -82,8 +82,8 @@ def main() -> int:
         print(f"  Cited documents     {list(result.document_citations)}")
     print(f"  Hallucinated        {list(result.hallucinated_citations) or 'none'}")
     print(f"  Retrieved, uncited  {list(result.uncited_chunks) or 'none'}")
-    print(f"  Grounded            {result.is_grounded}")
-    print(f"  Looks like refusal  {result.looks_like_refusal}")
+    print(f"  Valid citation ids  {result.has_valid_citation_ids}")
+    print(f"  Refusal heuristic   {result.refusal_heuristic}  (diagnostic only)")
     if result.cited_superseded:
         print()
         print(f"  *** CITED A WITHDRAWN DOCUMENT: {list(result.cited_superseded)}")

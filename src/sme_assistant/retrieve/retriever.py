@@ -41,6 +41,24 @@ from ..ingest.chunker import Chunk
 from ..ingest.index import Index, IndexedChunk
 
 
+class EvidenceFormat(str, Enum):
+    """How retrieved chunks are presented to the generator.
+
+    This is the controlled variable that separates experimental arm A from arm
+    B. ``PLAIN`` omits the ``[SUPERSEDED, replaced by X]`` marker and the
+    effective date, leaving only what a naive retrieval-augmented pipeline
+    would supply: an identifier and the text.
+
+    The pilot showed a 3B model resolving a supersession conflict correctly
+    when the marker was present, which means the marker was doing work that
+    might otherwise have been attributed to the model. Without arm A there is
+    no way to tell how much.
+    """
+
+    PLAIN = "plain"
+    WITH_STATUS = "with_status"
+
+
 class RetrievalMode(str, Enum):
     """Which chunks are eligible for ranking.
 
@@ -116,17 +134,28 @@ class RetrievalResult:
         """
         return self.below_threshold or not self.results
 
-    def evidence_text(self) -> str:
-        """Retrieved chunks formatted for a prompt, with citable identifiers."""
+    def evidence_text(
+        self, evidence_format: "EvidenceFormat" = None
+    ) -> str:
+        """Retrieved chunks formatted for a prompt, with citable identifiers.
+
+        ``PLAIN`` withholds version, effective date and supersession marker.
+        Nothing else differs between the two formats: same chunks, same order,
+        same text, so any difference in the answers is attributable to the
+        metadata alone.
+        """
+        chosen = evidence_format or EvidenceFormat.WITH_STATUS
         blocks = []
         for scored in self.results:
             chunk = scored.chunk
-            marker = "" if chunk.is_current else f" [SUPERSEDED, replaced by {chunk.superseded_by}]"
-            blocks.append(
-                f"[{chunk.chunk_id}] {chunk.doc_title}"
-                + (f" > {' > '.join(chunk.sections)}" if chunk.sections else "")
-                + f" (v{chunk.version}, effective {chunk.effective_date}){marker}\n{chunk.text}"
-            )
+            header = f"[{chunk.chunk_id}] {chunk.doc_title}"
+            if chunk.sections:
+                header += " > " + "; ".join(chunk.sections)
+            if chosen is EvidenceFormat.WITH_STATUS:
+                header += f" (v{chunk.version}, effective {chunk.effective_date})"
+                if not chunk.is_current:
+                    header += f" [SUPERSEDED, replaced by {chunk.superseded_by}]"
+            blocks.append(f"{header}\n{chunk.text}")
         return "\n\n---\n\n".join(blocks)
 
     def to_dict(self) -> dict[str, Any]:
@@ -154,6 +183,14 @@ def cosine_similarity(a: Sequence[float], b: Sequence[float]) -> float:
     would rank by magnitude as well as direction and quietly favour longer
     chunks.
     """
+    if len(a) != len(b):
+        # zip() would silently truncate to the shorter vector and return a
+        # plausible score computed over a prefix. A wrong number that looks
+        # right is worse than an exception.
+        raise ValueError(
+            f"Cannot compare vectors of length {len(a)} and {len(b)}. "
+            "They come from different embedding models or a corrupted index."
+        )
     dot = 0.0
     norm_a = 0.0
     norm_b = 0.0

@@ -409,3 +409,46 @@ def test_overlap_can_be_disabled(kb, config):
     without = chunk_corpus(kb, config.require("chunking.max_words"), overlap_sentences=0)
     assert all(not c.overlap_source for c in without)
     assert all("(continues from" not in c.text for c in without)
+
+
+def test_overlap_has_no_effect_on_this_corpus(kb, config):
+    """A documented finding, not a bug.
+
+    Overlap exists to protect a fact that straddles a chunk boundary. Since the
+    rewrite, boundaries fall at section headings rather than at arbitrary word
+    counts, so a boundary is a semantic break rather than a cut through prose.
+    Overlap now applies only when a single section is longer than ``max_words``
+    and must be split internally.
+
+    No section in this corpus is. The largest is REG-02's Schedule at 197
+    words, and that is an atomic table which is never split. Every other
+    section fits inside the 180-word limit.
+
+    ``chunking.overlap_sentences`` therefore affects zero of 133 chunks and is
+    not a meaningful experimental variable for this study. The mechanism is
+    retained because a corpus with longer sections would need it, and the test
+    below proves it still works.
+    """
+    baseline = chunk_corpus(kb, 180, 0, 40)
+    with_overlap = chunk_corpus(kb, 180, 2, 40)
+    assert [c.text for c in baseline] == [c.text for c in with_overlap]
+    assert all(not c.overlap_source_chunk_id for c in with_overlap)
+
+
+def test_overlap_still_works_when_a_section_is_long_enough_to_split(kb):
+    """Guards the mechanism against silently rotting while unused."""
+    from dataclasses import replace
+
+    long_section = "\n\n".join(
+        f"Sentence number {i} describes a distinct operational requirement in detail."
+        for i in range(1, 61)
+    )
+    doc = replace(kb.by_id("HR-01"), body=f"# Title\n\n## One Long Section\n\n{long_section}\n")
+
+    produced = chunk_document(doc, max_words=60, overlap_sentences=1, min_words=20)
+    assert len(produced) > 1, "the synthetic section should have split"
+    carried = [c for c in produced if c.overlap_source_chunk_id]
+    assert carried, "overlap did not fire on a section that was split internally"
+    for chunk in carried:
+        assert chunk.text.startswith("(continues from ")
+        assert chunk.sections == ("One Long Section",)

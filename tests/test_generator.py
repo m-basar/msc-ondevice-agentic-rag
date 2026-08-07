@@ -128,7 +128,7 @@ def test_hallucinated_citation_is_detected(retriever, config):
     client = MockClient(config, responses={"EVIDENCE": "Leave is 25 days [ZZ-99#001]."})
     result = Generator(client, config).answer("How much leave?", retrieval)
     assert "ZZ-99#001" in result.hallucinated_citations
-    assert not result.is_grounded
+    assert not result.has_valid_citation_ids
 
 
 def test_citing_a_withdrawn_document_is_flagged(retriever, config):
@@ -168,7 +168,7 @@ def test_a_well_cited_answer_is_grounded(retriever, config):
     cited = retrieval.results[0].chunk_id
     client = MockClient(config, responses={"EVIDENCE": f"25 days [{cited}]."})
     result = Generator(client, config).answer("How much leave?", retrieval)
-    assert result.is_grounded
+    assert result.has_valid_citation_ids
     assert result.citations == (cited,)
 
 
@@ -177,7 +177,7 @@ def test_an_uncited_answer_is_not_grounded(retriever, config):
     retrieval = retriever.retrieve("annual leave entitlement")
     client = MockClient(config, responses={"EVIDENCE": "Twenty five days."})
     result = Generator(client, config).answer("How much leave?", retrieval)
-    assert not result.is_grounded
+    assert not result.has_valid_citation_ids
     assert result.citations == ()
 
 
@@ -197,7 +197,7 @@ def test_result_serialises_for_a_results_file(retriever, config):
     result = Generator(MockClient(config), config).answer("How much leave?", retrieval)
     payload = result.to_dict()
     for key in ("question", "answer", "citations", "hallucinated_citations",
-                "cited_superseded", "is_grounded", "looks_like_refusal",
+                "cited_superseded", "has_valid_citation_ids", "refusal_heuristic",
                 "generation", "retrieval"):
         assert key in payload
     import json
@@ -209,5 +209,89 @@ def test_wall_time_includes_retrieval_and_generation(retriever, config):
     retrieval = retriever.retrieve("annual leave")
     result = Generator(MockClient(config), config).answer("How much leave?", retrieval)
     assert result.wall_seconds == pytest.approx(
-        retrieval.embed_seconds + result.generation.wall_seconds
+        retrieval.embed_seconds + retrieval.search_seconds + result.generation.wall_seconds
+    ), "end-to-end time must include vector search, not only embedding and generation"
+
+
+# --- the refusal the heuristic missed ---------------------------------------
+
+
+def test_the_pilot_refusal_is_now_detected():
+    """Regression test for a real miss.
+
+    During the Stage 4 pilot llama3.2:3b produced this exact sentence in
+    response to a question about pensions, a topic the corpus does not cover.
+    The model was right and the evaluator was wrong: none of the markers
+    matched, so a correct refusal was scored as a non-refusal.
+    """
+    answer = (
+        "I cannot provide an answer about the company pension scheme "
+        "as it is not present in the provided evidence."
     )
+    assert looks_like_refusal(answer), (
+        "the pilot refusal is still not detected; extending the marker list "
+        "did not cover the phrasing that actually occurred"
+    )
+
+
+def test_refusal_heuristic_is_labelled_as_diagnostic_in_saved_results(retriever, config):
+    """Anyone reading a results file must see that this number is not scoring.
+
+    Keyword matching over free text cannot be trusted for a reported metric.
+    The flag stays as a diagnostic; final refusal scoring uses a predefined
+    rubric or structured output from the verification layer.
+    """
+    retrieval = retriever.retrieve("annual leave")
+    payload = Generator(MockClient(config), config).answer("q", retrieval).to_dict()
+    assert payload["refusal_heuristic_is_diagnostic_only"] is True
+
+
+# --- experimental arm A ------------------------------------------------------
+
+
+def test_plain_evidence_withholds_status_and_dates(retriever, config):
+    """Arm A against arm B, the only difference being the metadata.
+
+    The pilot showed a 3B model resolving a supersession conflict correctly
+    when the marker was present. Without a no-marker arm there is no way to
+    tell whether the model reasoned or simply read the label.
+    """
+    from sme_assistant.retrieve.retriever import EvidenceFormat
+
+    retrieval = retriever.retrieve(
+        "expenses mileage pence per mile claim", top_k=40, min_similarity=0.0
+    )
+    assert retrieval.has_superseded, "this test needs a superseded chunk retrieved"
+
+    plain = retrieval.evidence_text(EvidenceFormat.PLAIN)
+    marked = retrieval.evidence_text(EvidenceFormat.WITH_STATUS)
+
+    assert "SUPERSEDED" in marked
+    assert "SUPERSEDED" not in plain
+    assert "effective" not in plain
+    for scored in retrieval:
+        assert f"[{scored.chunk_id}]" in plain, "arm A must keep citable identifiers"
+        assert scored.chunk.text in plain, "arm A must present the same text"
+
+
+def test_the_two_arms_differ_only_in_metadata(retriever, config):
+    """Same chunks, same order, same text. Any difference in answers is
+    attributable to the metadata rather than to what was retrieved."""
+    from sme_assistant.retrieve.retriever import EvidenceFormat
+
+    retrieval = retriever.retrieve("annual leave entitlement", min_similarity=0.0)
+    plain = retrieval.evidence_text(EvidenceFormat.PLAIN)
+    marked = retrieval.evidence_text(EvidenceFormat.WITH_STATUS)
+    assert plain.count("---") == marked.count("---")
+    assert len(plain) < len(marked)
+
+
+def test_generator_passes_the_evidence_format_through(retriever, config):
+    from sme_assistant.retrieve.retriever import EvidenceFormat
+
+    retrieval = retriever.retrieve("mileage", top_k=40, min_similarity=0.0)
+    generator = Generator(MockClient(config), config)
+    plain = generator.answer("q", retrieval, evidence_format=EvidenceFormat.PLAIN)
+    marked = generator.answer("q", retrieval, evidence_format=EvidenceFormat.WITH_STATUS)
+    assert "SUPERSEDED" not in plain.prompt
+    assert "SUPERSEDED" in marked.prompt

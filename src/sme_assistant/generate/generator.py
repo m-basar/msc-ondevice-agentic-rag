@@ -32,7 +32,7 @@ from typing import Any
 
 from ..common.config import Config, load_config
 from ..common.llm_client import Generation, LLMClient
-from ..retrieve.retriever import RetrievalResult
+from ..retrieve.retriever import EvidenceFormat, RetrievalResult
 from .prompts import build_baseline_prompt
 
 # Chunk identifiers look like HR-13#001. Matching the document part separately
@@ -40,10 +40,19 @@ from .prompts import build_baseline_prompt
 # being discarded as malformed.
 CITATION_RE = re.compile(r"\[([A-Z]{2,4}-\d{2})(?:#(\d{1,3}))?\]")
 
+# Extended after the pilot, where the model produced "I cannot provide an
+# answer about the company pension scheme as it is not present in the provided
+# evidence" and this list matched none of it. Extending the list does not make
+# the approach sound: it remains a diagnostic, and final refusal scoring uses a
+# rubric or structured output. The regression test exists so the specific miss
+# cannot recur silently.
 REFUSAL_MARKERS = (
     "does not contain", "no evidence", "not covered", "cannot answer",
-    "does not say", "not stated", "no information", "does not specify",
-    "unable to answer", "not provided in the evidence", "not mentioned",
+    "cannot provide an answer", "not present in the provided evidence",
+    "not present in the evidence", "does not say", "not stated",
+    "no information", "does not specify", "unable to answer",
+    "not provided in the evidence", "not mentioned", "is not available in",
+    "do not contain", "cannot be answered",
 )
 
 
@@ -61,20 +70,34 @@ class GroundedAnswer:
     hallucinated_citations: tuple[str, ...]
     uncited_chunks: tuple[str, ...]
     cited_superseded: tuple[str, ...]
-    looks_like_refusal: bool
+    refusal_heuristic: bool
 
     @property
-    def is_grounded(self) -> bool:
-        """Cited something, and invented nothing.
+    def has_valid_citation_ids(self) -> bool:
+        """Cited at least one identifier, and every identifier was retrieved.
 
-        An uncited answer is not necessarily wrong, but it is unverifiable,
-        which for this project amounts to the same thing.
+        Deliberately **not** called "grounded". It was, and the name claimed
+        far more than the check delivered: an answer citing IT-03#001 for a
+        deadline that appears only in IT-03#002 satisfied it completely. The
+        identifier was real and retrieved; the passage did not support the
+        claim. Whether a citation supports what it is attached to is measured
+        in ``sme_assistant.evaluation.answer_scoring``, not here.
         """
         return bool(self.citations) and not self.hallucinated_citations
 
     @property
     def wall_seconds(self) -> float:
-        return self.retrieval.embed_seconds + self.generation.wall_seconds
+        """End to end: query embedding, vector search, and generation.
+
+        Search time was previously omitted. It is only a few milliseconds, but
+        an end-to-end figure that quietly excludes a stage is the wrong number
+        however small the omission.
+        """
+        return (
+            self.retrieval.embed_seconds
+            + self.retrieval.search_seconds
+            + self.generation.wall_seconds
+        )
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -85,8 +108,9 @@ class GroundedAnswer:
             "hallucinated_citations": list(self.hallucinated_citations),
             "uncited_chunks": list(self.uncited_chunks),
             "cited_superseded": list(self.cited_superseded),
-            "looks_like_refusal": self.looks_like_refusal,
-            "is_grounded": self.is_grounded,
+            "refusal_heuristic": self.refusal_heuristic,
+            "refusal_heuristic_is_diagnostic_only": True,
+            "has_valid_citation_ids": self.has_valid_citation_ids,
             "wall_seconds": round(self.wall_seconds, 3),
             "generation": self.generation.to_dict(),
             "retrieval": self.retrieval.to_dict(),
@@ -137,8 +161,9 @@ class Generator:
         *,
         model: str | None = None,
         options: dict[str, Any] | None = None,
+        evidence_format: EvidenceFormat | None = None,
     ) -> GroundedAnswer:
-        evidence = "" if retrieval.should_refuse else retrieval.evidence_text()
+        evidence = "" if retrieval.should_refuse else retrieval.evidence_text(evidence_format)
         prompt = build_baseline_prompt(question, evidence)
 
         generation = self.client.generate(prompt, model=model, options=options)
@@ -174,5 +199,5 @@ class Generator:
             hallucinated_citations=hallucinated,
             uncited_chunks=uncited,
             cited_superseded=cited_superseded,
-            looks_like_refusal=looks_like_refusal(text),
+            refusal_heuristic=looks_like_refusal(text),
         )

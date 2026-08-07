@@ -232,3 +232,98 @@ def test_summary_reports_what_is_needed_to_trust_the_index(index):
                 "corpus_sha256", "built_at", "current_chunks", "superseded_chunks"):
         assert key in summary
     assert summary["current_chunks"] + summary["superseded_chunks"] == summary["chunk_count"]
+
+
+# --- the guard the corpus fingerprint could not provide ---------------------
+
+
+def test_chunk_set_change_is_detected_when_the_corpus_is_unchanged(index, kb, config, tmp_path):
+    """The failure that actually happened.
+
+    Rewriting the chunker changed every chunk while leaving the documents
+    untouched. ``corpus_sha256`` was identical before and after, so the only
+    existing guard passed and a stale index would have loaded: retrieval would
+    have returned text under identifiers that no longer referred to it.
+    """
+    path = index.save(tmp_path / "index.json")
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    assert payload["metadata"]["chunk_set_sha256"], "chunk set hash was not recorded"
+    payload["metadata"]["chunk_set_sha256"] = "0" * 64
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(IndexError_, match="chunker or the chunking configuration"):
+        Index.load(path, kb=kb, config=config)
+
+    assert len(Index.load(path, kb=kb, config=config, allow_stale=True)) == len(index)
+
+
+def test_chunk_set_fingerprint_tracks_chunking_settings(kb, config):
+    from sme_assistant.ingest.chunker import chunk_corpus
+    from sme_assistant.ingest.index import chunk_set_fingerprint
+
+    a = chunk_set_fingerprint(chunk_corpus(kb, 180, 1, 40))
+    b = chunk_set_fingerprint(chunk_corpus(kb, 180, 1, 40))
+    assert a == b, "the fingerprint is not deterministic"
+
+    # 220 is deliberately excluded: no section in this corpus exceeds 180
+    # words except REG-02's atomic table, so 180 and 220 produce identical
+    # chunks. That is a property of the corpus, not of the fingerprint.
+    for max_words in (100, 140):
+        assert a != chunk_set_fingerprint(chunk_corpus(kb, max_words, 1, 40)), (
+            f"changing max_words to {max_words} did not change the chunk set hash"
+        )
+    for min_words in (20, 80):
+        assert a != chunk_set_fingerprint(chunk_corpus(kb, 180, 1, min_words)), (
+            f"changing min_words to {min_words} did not change the chunk set hash"
+        )
+
+    # overlap_sentences deliberately excluded: it has no effect on this corpus.
+    # See test_overlap_has_no_effect_on_this_corpus.
+
+
+# --- structural validation --------------------------------------------------
+
+
+def test_duplicate_chunk_ids_are_rejected(index, tmp_path):
+    path = index.save(tmp_path / "index.json")
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload["chunks"][1]["chunk_id"] = payload["chunks"][0]["chunk_id"]
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    with pytest.raises(IndexError_, match="Duplicate chunk id"):
+        Index.load(path)
+
+
+def test_mixed_vector_dimensions_are_rejected(index, tmp_path):
+    path = index.save(tmp_path / "index.json")
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload["chunks"][0]["vector"] = payload["chunks"][0]["vector"][:10]
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    with pytest.raises(IndexError_, match="differing dimensions"):
+        Index.load(path)
+
+
+def test_non_finite_vector_values_are_rejected(index, tmp_path):
+    """NaN in a vector makes cosine return NaN and ranking arbitrary."""
+    path = index.save(tmp_path / "index.json")
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload["chunks"][0]["vector"][0] = float("nan")
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    with pytest.raises(IndexError_, match="non-finite"):
+        Index.load(path)
+
+
+def test_declared_dimensions_must_match_the_vectors(index, tmp_path):
+    path = index.save(tmp_path / "index.json")
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload["metadata"]["dimensions"] = 999
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    with pytest.raises(IndexError_, match="declares 999 dimensions"):
+        Index.load(path)
+
+
+def test_cosine_rejects_mismatched_dimensions():
+    """zip() would truncate and return a plausible score over a prefix."""
+    from sme_assistant.retrieve.retriever import cosine_similarity
+
+    with pytest.raises(ValueError, match="different embedding models"):
+        cosine_similarity([1.0, 0.0, 0.0], [1.0, 0.0])

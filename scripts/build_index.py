@@ -62,7 +62,7 @@ def main() -> int:
     print(f"\nSaved to {out}  ({out.stat().st_size / 1024:.0f} KB)")
 
     # Prove it round-trips and that the staleness guard is live.
-    reloaded = Index.load(out, kb=kb)
+    reloaded = Index.load(out, kb=kb, config=config)
     assert len(reloaded) == len(index)
     print("Reloaded and verified against the corpus fingerprint.")
     return 0

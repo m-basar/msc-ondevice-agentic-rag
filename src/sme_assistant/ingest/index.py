@@ -19,7 +19,9 @@ match unless the caller explicitly overrides.
 
 from __future__ import annotations
 
+import hashlib
 import json
+import math
 import time
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
@@ -31,7 +33,27 @@ from ..common.llm_client import LLMClient
 from ..kb.loader import KnowledgeBase
 from .chunker import Chunk, chunk_corpus
 
-SCHEMA_VERSION = "1.0"
+SCHEMA_VERSION = "2.0"
+
+
+def chunk_set_fingerprint(chunks: Sequence[Chunk]) -> str:
+    """Hash of the chunks themselves, not of the corpus they came from.
+
+    This is the guard the corpus fingerprint could not provide. Rewriting the
+    chunker changed every chunk in the corpus while leaving the documents
+    untouched, so ``corpus_sha256`` was identical before and after and a stale
+    index would have loaded without complaint: retrieval would have returned
+    text under identifiers that no longer referred to it, and the citations in
+    every answer would have pointed at the wrong passages.
+
+    Hashing the chunk identifiers and their text subsumes the corpus, the
+    chunking parameters and the chunker's behaviour in a single value. If the
+    chunks differ for any reason at all, this differs.
+    """
+    canonical = "\n".join(
+        f"{c.chunk_id}\x00{c.text}" for c in sorted(chunks, key=lambda c: c.chunk_id)
+    )
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
 def index_path_for(config: "Config", *, mock: bool = False) -> "Path":
@@ -96,6 +118,10 @@ class Index:
         return self.metadata.get("corpus_sha256", "")
 
     @property
+    def chunk_set_sha256(self) -> str:
+        return self.metadata.get("chunk_set_sha256", "")
+
+    @property
     def embedding_model(self) -> str:
         return self.metadata.get("embedding_model", "")
 
@@ -110,6 +136,7 @@ class Index:
             "embedding_model": self.embedding_model,
             "backend": self.backend,
             "corpus_sha256": self.corpus_sha256[:12] + "...",
+            "chunk_set_sha256": self.chunk_set_sha256[:12] + "...",
             "built_at": self.metadata.get("built_at"),
             "build_seconds": self.metadata.get("build_seconds"),
             "current_chunks": sum(1 for e in self.entries if e.chunk.is_current),
@@ -132,8 +159,48 @@ class Index:
         target.write_text(json.dumps(payload), encoding="utf-8")
         return target
 
+    def validate_structure(self) -> None:
+        """Checks that do not need the corpus: the file must be internally sane.
+
+        None of these should ever fail in normal operation. They exist because
+        a corrupted or hand-edited index would otherwise produce similarity
+        scores rather than an error, and a wrong number is harder to notice
+        than a crash.
+        """
+        if not self.entries:
+            raise IndexError_("Index contains no chunks")
+
+        seen: set[str] = set()
+        for entry in self.entries:
+            if entry.chunk_id in seen:
+                raise IndexError_(f"Duplicate chunk id {entry.chunk_id!r} in the index")
+            seen.add(entry.chunk_id)
+
+        dimensions = {len(e.vector) for e in self.entries}
+        if len(dimensions) > 1:
+            raise IndexError_(
+                f"Index contains vectors of differing dimensions {sorted(dimensions)}. "
+                "Similarity between them would be meaningless."
+            )
+
+        for entry in self.entries:
+            for value in entry.vector:
+                if not math.isfinite(value):
+                    raise IndexError_(
+                        f"{entry.chunk_id} has a non-finite value in its vector. "
+                        "Cosine similarity would return NaN and ranking would be arbitrary."
+                    )
+
+        declared = self.metadata.get("dimensions")
+        if declared and declared != self.dimensions:
+            raise IndexError_(
+                f"Index metadata declares {declared} dimensions but the vectors "
+                f"have {self.dimensions}"
+            )
+
     @classmethod
     def load(cls, path: Path | str, *, kb: KnowledgeBase | None = None,
+             config: Config | None = None,
              allow_stale: bool = False) -> "Index":
         """Load an index, refusing a stale one unless explicitly permitted.
 
@@ -170,6 +237,7 @@ class Index:
             entries.append(IndexedChunk(chunk=Chunk(**record), vector=tuple(vector)))
 
         index = cls(entries, metadata)
+        index.validate_structure()
 
         if kb is not None and not allow_stale:
             expected = kb.fingerprint()
@@ -178,6 +246,26 @@ class Index:
                     f"Index was built from corpus {index.corpus_sha256[:12]}... but the "
                     f"knowledge base is now {expected[:12]}.... Rebuild the index, or "
                     "pass allow_stale=True if you know what you are doing."
+                )
+
+            # The corpus can be unchanged while the chunks are entirely
+            # different, which is exactly what happened when the chunker was
+            # rewritten. Re-chunking costs about fifty milliseconds and is the
+            # only check that catches it.
+            active = config or load_config()
+            current = chunk_set_fingerprint(chunk_corpus(
+                kb,
+                active.require("chunking.max_words"),
+                active.require("chunking.overlap_sentences"),
+                active.require("chunking.min_words"),
+            ))
+            if index.chunk_set_sha256 and index.chunk_set_sha256 != current:
+                raise IndexError_(
+                    f"Index holds chunk set {index.chunk_set_sha256[:12]}... but the "
+                    f"corpus now chunks to {current[:12]}.... The documents are "
+                    "unchanged, so the chunker or the chunking configuration has "
+                    "changed. Rebuild the index:\n"
+                    "  python scripts/build_index.py"
                 )
         return index
 
@@ -231,6 +319,7 @@ def build_index(
         "embedding_model": getattr(client, "embedding_model", "unknown"),
         "endpoint": endpoint,
         "corpus_sha256": kb.fingerprint(),
+        "chunk_set_sha256": chunk_set_fingerprint(chunks),
         "document_count": len(kb),
         "chunk_count": len(entries),
         "dimensions": dimensions.pop() if dimensions else 0,

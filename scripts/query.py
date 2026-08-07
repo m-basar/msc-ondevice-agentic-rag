@@ -38,7 +38,7 @@ def main() -> int:
     question = " ".join(args.question)
     config = load_config()
     kb = load_knowledge_base(config.path("paths.kb_docs"))
-    index = Index.load(index_path_for(config, mock=args.mock), kb=kb)
+    index = Index.load(index_path_for(config, mock=args.mock), kb=kb, config=config)
     client = build_client(config, mock=args.mock)
     retriever = Retriever(index, client, config)
 
