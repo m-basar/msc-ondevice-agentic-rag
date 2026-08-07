@@ -310,14 +310,32 @@ def _validate_paraphrases(question_set: QuestionSet) -> None:
 
 def _validate_against_registry(question_set: QuestionSet, registry: Any) -> None:
     known = {family.family_id for family in registry.families}
+    tuning = {family.family_id for family in getattr(registry, "tuning_families", ())}
     topics = {gap.topic for gap in registry.fully_absent}
     topics |= {gap.topic for gap in registry.partially_present}
 
     for question in question_set:
-        if question.family_id and question.family_id not in known:
+        if question.family_id and question.family_id not in (known | tuning):
             raise QuestionSetError(
                 f"{question.question_id}: family {question.family_id!r} is not in "
                 "the conflict registry"
+            )
+        # Tuning families exist so the pipeline can be developed against real
+        # conflicts. That only works if they are the *only* conflicts anyone
+        # develops against, which means the boundary has to run both ways: a
+        # reported family may not be inspected during tuning, and a tuning
+        # family may not contribute to a result.
+        if question.family_id in known and question.split != "test":
+            raise QuestionSetError(
+                f"{question.question_id}: {question.family_id} is a reported family "
+                f"and cannot sit in the {question.split!r} split. Tuning against a "
+                "family that is later scored contaminates the result."
+            )
+        if question.family_id in tuning and question.split != "dev":
+            raise QuestionSetError(
+                f"{question.question_id}: {question.family_id} is a tuning family "
+                f"and cannot sit in the {question.split!r} split. Tuning families "
+                "were inspected during development and must never be reported."
             )
         if question.gap_topic and question.gap_topic not in topics:
             raise QuestionSetError(

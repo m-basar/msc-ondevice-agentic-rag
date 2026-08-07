@@ -42,6 +42,10 @@ Safety matters are a standing item at the monthly team briefing. Employees may r
 
 Fire evacuation is covered in OPS-07, first aid and accident reporting in OPS-08, warehouse rules in OPS-05, and forklift operation in OPS-06.
 
+## Accident records
+
+All accidents, injuries and near misses are recorded in the accident book. The Health and Safety Coordinator reviews each entry within five working days and determines whether it is reportable to the Health and Safety Executive.
+
 ## Monitoring
 
 The Health and Safety Coordinator conducts a documented site inspection monthly. Findings and outstanding actions are reported to the senior team. An external health and safety consultant audits the site annually.

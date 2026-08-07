@@ -175,7 +175,7 @@ def test_expected_behaviour_must_match_the_conflict_type(registry):
     """A supersession family is resolvable; a current_current family is not."""
     question_set = QuestionSet((
         conflict_question(
-            "Q1", "CONF-01", "dev", expected_behaviour="surface_both_and_qualify"
+            "Q1", "CONF-01", "test", expected_behaviour="surface_both_and_qualify"
         ),
     ))
     with pytest.raises(QuestionSetError, match="cite_current_only"):
@@ -190,7 +190,7 @@ def test_an_unregistered_family_is_rejected(registry):
 
 def test_every_registered_family_must_be_exercised(registry):
     """A family with no question inflates the apparent scope of the evaluation."""
-    question_set = QuestionSet((conflict_question("Q1", "CONF-05", "dev"),))
+    question_set = QuestionSet((conflict_question("Q1", "CONF-05", "test"),))
     with pytest.raises(QuestionSetError, match="No question exercises"):
         validate_question_set(question_set, registry=registry)
 
@@ -288,3 +288,51 @@ def test_round_trip_preserves_grouping(tmp_path):
     assert reloaded.by_id("Q2").paraphrase_of == "Q1"
     assert reloaded.metadata["corpus_sha256"] == "abc"
     assert reloaded.split("test").groups == ("CONF-05",)
+
+
+# --- the tuning boundary ----------------------------------------------------
+
+
+def test_a_reported_family_cannot_appear_in_the_development_split(registry):
+    """Tuning against a family that is later scored contaminates the result."""
+    question_set = QuestionSet((conflict_question("Q1", "CONF-05", "dev"),))
+    with pytest.raises(QuestionSetError, match="reported family"):
+        validate_question_set(question_set, registry=registry)
+
+
+def test_a_tuning_family_cannot_appear_in_the_test_split(registry):
+    """The boundary runs both ways.
+
+    A tuning family was inspected during development, so reporting it would be
+    reporting a result the design was fitted to.
+    """
+    question_set = QuestionSet((
+        conflict_question("Q1", "TUNE-01", "test"),
+    ))
+    with pytest.raises(QuestionSetError, match="tuning family"):
+        validate_question_set(question_set, registry=registry)
+
+
+def test_a_tuning_family_in_the_development_split_is_accepted(registry):
+    question_set = QuestionSet(
+        tuple(conflict_question(f"Q{i}", f, "dev") for i, f in enumerate(("TUNE-01", "TUNE-02")))
+        + tuple(
+            conflict_question(
+                f"T{i}", f, "test",
+                expected_behaviour="cite_current_only" if f in ("CONF-01", "CONF-02", "CONF-03", "CONF-04") else "surface_both_and_qualify",
+            )
+            for i, f in enumerate(
+                ("CONF-01", "CONF-02", "CONF-03", "CONF-04",
+                 "CONF-05", "CONF-06", "CONF-07", "CONF-08", "CONF-09")
+            )
+        )
+    )
+    validate_question_set(question_set, registry=registry)
+
+
+def test_tuning_families_are_not_counted_as_reported(registry):
+    """A reader must not be able to mistake eleven families for the sample size."""
+    assert len(registry.families) == 9
+    assert len(registry.tuning_families) == 2
+    assert len(registry.all_families) == 11
+    assert all(f.family_id.startswith("CONF-") for f in registry.families)

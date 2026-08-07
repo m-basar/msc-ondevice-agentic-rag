@@ -44,6 +44,12 @@ from ..kb.loader import KnowledgeBase
 VALID_TYPES = {"version_supersession", "current_current"}
 VALID_RESOLUTIONS = {"prefer_current", "escalate_unresolved"}
 
+# "reported" families appear in results. "tuning" families exist only so the
+# pipeline can be developed against real conflicts without inspecting a family
+# that will later be scored. Nothing else distinguishes them: both are planted
+# the same way, validated the same way, and present in the same corpus.
+VALID_SPLITS = {"reported", "tuning"}
+
 
 class ConflictRegistryError(RuntimeError):
     """Raised when the registry and the corpus disagree."""
@@ -73,6 +79,10 @@ class ConflictFamily:
     conflicting_facts: tuple[ConflictFact, ...]
     must_cite: tuple[str, ...]
     must_not_assert: tuple[str, ...]
+    # "reported" or "tuning". Defaulted so every existing family keeps its
+    # meaning without the file being rewritten: absence means reported, which
+    # is the conservative reading.
+    split: str = "reported"
 
     @property
     def is_filter_resolvable(self) -> bool:
@@ -109,9 +119,10 @@ class ConflictRegistry:
         self.source = source
         self.schema_version = data.get("schema_version", "1.0")
 
-        self.families = tuple(
+        parsed = tuple(
             ConflictFamily(
                 family_id=entry["id"],
+                split=entry.get("split", "reported"),
                 name=entry["name"],
                 conflict_type=entry["type"],
                 domain=entry["domain"],
@@ -132,6 +143,24 @@ class ConflictRegistry:
             )
             for entry in data["families"]
         )
+
+        # ``families`` is the reported set, not everything in the file. Tuning
+        # families exist so that prompt wording, thresholds and verifier output
+        # format can be developed against real conflicts without ever touching a
+        # family that appears in a result. Making the reported set the default
+        # means that code which forgets to filter gets the safe answer rather
+        # than a contaminated one; ``all_families`` is what corpus validation
+        # uses, because an unregistered contradiction is a problem wherever it
+        # sits.
+        self.all_families = parsed
+        self.families = tuple(f for f in parsed if f.split == "reported")
+        self.tuning_families = tuple(f for f in parsed if f.split == "tuning")
+        for family in parsed:
+            if family.split not in VALID_SPLITS:
+                raise ConflictRegistryError(
+                    f"{family.family_id}: split {family.split!r} must be one of "
+                    f"{sorted(VALID_SPLITS)}"
+                )
 
         gaps = data["deliberate_gaps"]
         self.fully_absent = tuple(
@@ -154,7 +183,7 @@ class ConflictRegistry:
         return len(self.families)
 
     def by_id(self, family_id: str) -> ConflictFamily:
-        for family in self.families:
+        for family in self.all_families:
             if family.family_id == family_id:
                 return family
         raise ConflictRegistryError(f"No conflict family {family_id!r}")
@@ -179,6 +208,7 @@ class ConflictRegistry:
         return {
             "schema_version": self.schema_version,
             "family_count": len(self.families),
+            "tuning_family_count": len(self.tuning_families),
             "by_type": {
                 t: len(self.of_type(t)) for t in sorted(VALID_TYPES)
             },
@@ -328,14 +358,14 @@ def validate_against_corpus(registry: ConflictRegistry, kb: KnowledgeBase) -> No
        detail has been filled in
     """
     seen_ids: set[str] = set()
-    for family in registry.families:
+    for family in registry.all_families:
         if family.family_id in seen_ids:
             raise ConflictRegistryError(f"Duplicate family id {family.family_id!r}")
         seen_ids.add(family.family_id)
         _validate_family_shape(family)
         _validate_family_against_corpus(family, kb)
 
-    registered = {doc_id for family in registry.families for doc_id in family.documents}
+    registered = {doc_id for family in registry.all_families for doc_id in family.documents}
     unaccounted = [doc.doc_id for doc in kb.superseded() if doc.doc_id not in registered]
     if unaccounted:
         raise ConflictRegistryError(

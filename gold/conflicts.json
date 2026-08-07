@@ -200,34 +200,34 @@
         {
           "fact": "free delivery threshold",
           "values": {
-            "CS-01": "\u00a350 excluding VAT",
-            "CS-11": "\u00a375 excluding VAT"
+            "CS-01": "£50 excluding VAT",
+            "CS-11": "£75 excluding VAT"
           },
           "anchors": {
-            "CS-01": "orders \u00a350 and over",
-            "CS-11": "orders \u00a375 and over"
+            "CS-01": "orders £50 and over",
+            "CS-11": "orders £75 and over"
           }
         },
         {
           "fact": "standard delivery charge",
           "values": {
-            "CS-01": "\u00a34.95",
-            "CS-11": "\u00a36.95"
+            "CS-01": "£4.95",
+            "CS-11": "£6.95"
           },
           "anchors": {
-            "CS-01": "\u00a34.95",
-            "CS-11": "\u00a36.95"
+            "CS-01": "£4.95",
+            "CS-11": "£6.95"
           }
         },
         {
           "fact": "next working day charge",
           "values": {
-            "CS-01": "\u00a39.95",
-            "CS-11": "\u00a312.95"
+            "CS-01": "£9.95",
+            "CS-11": "£12.95"
           },
           "anchors": {
-            "CS-01": "\u00a39.95",
-            "CS-11": "\u00a312.95"
+            "CS-01": "£9.95",
+            "CS-11": "£12.95"
           }
         }
       ],
@@ -235,7 +235,7 @@
         "CS-11"
       ],
       "must_not_assert": [
-        "free delivery applies from \u00a350"
+        "free delivery applies from £50"
       ]
     },
     {
@@ -324,14 +324,14 @@
       "resolution": "escalate_unresolved",
       "conflicting_facts": [
         {
-          "fact": "who approves an IT equipment purchase of \u00a3800",
+          "fact": "who approves an IT equipment purchase of £800",
           "values": {
-            "GEN-04": "the Finance Manager, because the cost exceeds \u00a3750",
-            "FIN-03": "the department head, because \u00a3800 falls in the \u00a3501 to \u00a32,500 band"
+            "GEN-04": "the Finance Manager, because the cost exceeds £750",
+            "FIN-03": "the department head, because £800 falls in the £501 to £2,500 band"
           },
           "anchors": {
-            "GEN-04": "where the cost exceeds \u00a3750, from the Finance Manager",
-            "FIN-03": "| \u00a3501 to \u00a32,500 | Department head |"
+            "GEN-04": "where the cost exceeds £750, from the Finance Manager",
+            "FIN-03": "| £501 to £2,500 | Department head |"
           }
         }
       ],
@@ -340,7 +340,7 @@
         "FIN-03"
       ],
       "must_not_assert": [
-        "a single approver for an \u00a3800 IT purchase"
+        "a single approver for an £800 IT purchase"
       ],
       "why_a_filter_cannot_solve_this": "Both documents are current and neither supersedes the other. The general procurement policy and the IT-specific policy overlap without either stating precedence.",
       "origin": "Found during review as an accidental contradiction and registered rather than harmonised. Real organisations acquire exactly these overlaps when a specific policy is written without reconciling it against the general one."
@@ -415,6 +415,78 @@
       ],
       "why_a_filter_cannot_solve_this": "Both are current. The two documents disagree on both the interval and the owner, and the disagreement is only visible by reading the claims.",
       "origin": "Planted. The access control policy and the data protection policy are owned by different roles, which is how this divergence arises in practice."
+    },
+    {
+      "id": "TUNE-01",
+      "split": "tuning",
+      "name": "Returns window",
+      "type": "current_current",
+      "domain": "customer_service",
+      "risk_level": "low",
+      "documents": [
+        "OPS-02",
+        "CS-03"
+      ],
+      "authoritative": null,
+      "resolution": "escalate_unresolved",
+      "note": "Tuning only. Never appears in a reported result. Planted to give the verifier a realistic current_current conflict to be developed against, of the same shape as the reported families without duplicating any of their facts.",
+      "conflicting_facts": [
+        {
+          "fact": "how many days after delivery an unwanted item may be returned",
+          "values": {
+            "OPS-02": "30 days",
+            "CS-03": "28 days"
+          },
+          "anchors": {
+            "OPS-02": "returned within 30 days of delivery",
+            "CS-03": "returned within 28 days of delivery"
+          }
+        }
+      ],
+      "must_cite": [
+        "OPS-02",
+        "CS-03"
+      ],
+      "must_not_assert": [
+        "that either figure is the single correct returns window",
+        "that one document supersedes the other"
+      ]
+    },
+    {
+      "id": "TUNE-02",
+      "split": "tuning",
+      "name": "Accident record review timescale",
+      "type": "current_current",
+      "domain": "health_and_safety",
+      "risk_level": "medium",
+      "documents": [
+        "OPS-08",
+        "REG-01"
+      ],
+      "authoritative": null,
+      "resolution": "escalate_unresolved",
+      "note": "Tuning only. A general policy and a specific procedure disagreeing on a timescale, which is the commonest real shape of this failure.",
+      "conflicting_facts": [
+        {
+          "fact": "how long the Health and Safety Coordinator has to review an accident book entry",
+          "values": {
+            "OPS-08": "two working days",
+            "REG-01": "five working days"
+          },
+          "anchors": {
+            "OPS-08": "reviews every entry within two working days",
+            "REG-01": "reviews each entry within five working days"
+          }
+        }
+      ],
+      "must_cite": [
+        "OPS-08",
+        "REG-01"
+      ],
+      "must_not_assert": [
+        "that either timescale is the operative one",
+        "that the general policy overrides the specific procedure, or the reverse"
+      ]
     }
   ],
   "deliberate_gaps": {

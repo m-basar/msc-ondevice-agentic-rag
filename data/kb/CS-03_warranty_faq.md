@@ -10,6 +10,10 @@ owner: Customer Services Manager
 
 # Warranty Frequently Asked Questions
 
+## How long do I have to return an item?
+
+Unwanted items may be returned within 28 days of delivery provided they are unused and in their original packaging. This is separate from a warranty claim, which may be made at any point during the warranty period.
+
 ## What warranty do you offer?
 
 | Use | Warranty period |

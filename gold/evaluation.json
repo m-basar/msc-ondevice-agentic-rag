@@ -17,7 +17,13 @@
       "fold_construction": "sme_assistant.evaluation.question_set.QuestionSet.leave_one_family_out",
       "two_level_reporting": "sme_assistant.evaluation.aggregate.aggregate",
       "record_grouping": "sme_assistant.evaluation.run_writer.RunWriter.record writes group_id into every answer",
-      "tests": ["tests/test_question_set.py", "tests/test_aggregate.py"]
-    }
+      "tests": [
+        "tests/test_question_set.py",
+        "tests/test_aggregate.py"
+      ],
+      "tuning_boundary": "sme_assistant.evaluation.question_set._validate_against_registry; ConflictRegistry.families returns the reported set only, all_families is used for corpus validation"
+    },
+    "tuning_rule": "Conflict families carry split: 'reported' or 'tuning'. Tuning families (TUNE-01, TUNE-02) exist so prompt wording, thresholds and verifier output format can be developed against real conflicts without inspecting a family that will later be scored. A reported family may not appear in the development split and a tuning family may not appear in the test split.",
+    "preregistration": "docs/PREREGISTRATION.md, registered 8 August 2026"
   }
 }
