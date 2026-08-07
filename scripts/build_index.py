@@ -20,7 +20,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from sme_assistant.common.config import load_config  # noqa: E402
 from sme_assistant.common.llm_client import LLMError, build_client  # noqa: E402
-from sme_assistant.ingest.index import Index, build_index  # noqa: E402
+from sme_assistant.ingest.index import Index, build_index, index_path_for  # noqa: E402
 from sme_assistant.kb.loader import load_knowledge_base  # noqa: E402
 
 
@@ -54,7 +54,7 @@ def main() -> int:
         print(f"Embedding failed: {exc}", file=sys.stderr)
         return 1
 
-    out = Path(args.out) if args.out else config.path("paths.index")
+    out = Path(args.out) if args.out else index_path_for(config, mock=args.mock)
     index.save(out)
 
     print()

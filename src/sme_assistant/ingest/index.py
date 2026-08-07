@@ -34,6 +34,24 @@ from .chunker import Chunk, chunk_corpus
 SCHEMA_VERSION = "1.0"
 
 
+def index_path_for(config: "Config", *, mock: bool = False) -> "Path":
+    """Where the index for a given backend lives.
+
+    Mock and real indexes are kept in separate files. They are not
+    interchangeable: mock vectors have 256 dimensions from a hashing
+    vectoriser, real ones have 768 from nomic-embed-text, and a query embedded
+    by one backend against an index built by the other produces similarity
+    scores that are not merely wrong but meaningless.
+
+    They were originally written to the same path, and a mock build during
+    development silently replaced a real index. The embedding-model check
+    caught it, but relying on a check to catch a collision that need not exist
+    is worse than making the collision impossible.
+    """
+    base = config.path("paths.index")
+    return base.with_name(f"{base.stem}_mock{base.suffix}") if mock else base
+
+
 class IndexError_(RuntimeError):
     """Raised when the index is missing, malformed, or does not match the corpus."""
 

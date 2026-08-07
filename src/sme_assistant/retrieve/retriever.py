@@ -203,7 +203,10 @@ class Retriever:
             raise ValueError(
                 f"Index was built with embedding model {expected!r} but the client uses "
                 f"{actual!r}. Query and chunk vectors would be from different spaces "
-                "and every similarity score would be meaningless."
+                "and every similarity score would be meaningless.\n"
+                "Rebuild the index for this backend:\n"
+                "  python scripts/build_index.py           (real)\n"
+                "  python scripts/build_index.py --mock    (mock)"
             )
 
     def retrieve(

@@ -13,6 +13,7 @@ env/
 
 # Generated index (rebuild with scripts/build_index.py)
 data/index.json
+data/index_mock.json
 data/index_*.json
 
 # OS

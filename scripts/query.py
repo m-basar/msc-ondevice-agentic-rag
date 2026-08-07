@@ -20,7 +20,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from sme_assistant.common.config import load_config  # noqa: E402
 from sme_assistant.common.llm_client import build_client  # noqa: E402
-from sme_assistant.ingest.index import Index  # noqa: E402
+from sme_assistant.ingest.index import Index, index_path_for  # noqa: E402
 from sme_assistant.kb.loader import load_knowledge_base  # noqa: E402
 from sme_assistant.retrieve.retriever import RetrievalMode, Retriever  # noqa: E402
 
@@ -38,7 +38,7 @@ def main() -> int:
     question = " ".join(args.question)
     config = load_config()
     kb = load_knowledge_base(config.path("paths.kb_docs"))
-    index = Index.load(config.path("paths.index"), kb=kb)
+    index = Index.load(index_path_for(config, mock=args.mock), kb=kb)
     client = build_client(config, mock=args.mock)
     retriever = Retriever(index, client, config)
 
