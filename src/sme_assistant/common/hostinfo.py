@@ -329,3 +329,32 @@ def git_commit(repo_root: Path | None = None) -> dict[str, Any]:
         # Porcelain format is two status characters, a space, then the path.
         "dirty_files": [line[2:].strip() for line in status.splitlines()] if status else [],
     }
+
+
+def arm_frequency_hz() -> int | None:
+    """Current ARM core clock in Hz, Raspberry Pi only.
+
+    Throttle flags report *that* the clock was capped, not *what* it was capped
+    to. An earlier version of the benchmark write-up inferred a 1.7 GHz clock
+    for every run from a single reading taken afterwards, which was an
+    inference presented as a measurement. Recording the frequency immediately
+    before and after each request replaces that inference with data.
+    """
+    output = _run(["vcgencmd", "measure_clock", "arm"])
+    if not output or "=" not in output:
+        return None
+    try:
+        return int(output.split("=")[1])
+    except (ValueError, IndexError):
+        return None
+
+
+def nominal_frequency_hz() -> int | None:
+    """Maximum configured ARM clock, for computing the throttle ratio."""
+    output = _run(["vcgencmd", "get_config", "arm_freq"])
+    if not output or "=" not in output:
+        return None
+    try:
+        return int(output.split("=")[1]) * 1_000_000
+    except (ValueError, IndexError):
+        return None

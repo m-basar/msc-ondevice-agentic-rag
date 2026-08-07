@@ -1,0 +1,12 @@
+{
+  "_warning": "Evaluation configuration. Deliberately NOT part of config.json. The runtime Config object cannot reach this file, so no inference component can address gold data even by an incorrect config lookup.",
+  "paths": {
+    "conflicts": "gold/conflicts.json",
+    "test_set": "gold/test_set.json"
+  },
+  "protocol": {
+    "cross_validation": "leave_one_family_out",
+    "aggregation": "macro_average_by_family",
+    "rationale": "Paraphrased questions drawn from one conflict family test the same document pair and are not independent observations. With a small number of families, leave-one-family-out cross-validation uses every family as a held-out fold and is the correct technique at this scale; a three-way family split would leave too few families per partition to support any estimate."
+  }
+}

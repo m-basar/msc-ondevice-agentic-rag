@@ -27,6 +27,7 @@ retyped from a terminal.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import statistics
 import sys
@@ -41,12 +42,16 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from sme_assistant.common.config import load_config  # noqa: E402
 from sme_assistant.common.hostinfo import (  # noqa: E402
+    arm_frequency_hz,
     cpu_temperature_c,
     environment,
-    gpu_offload_fraction,
+    git_commit,
+    nominal_frequency_hz,
     ollama_info,
     throttle_state,
 )
+from sme_assistant.evaluation.conflicts import load_conflicts  # noqa: E402
+from sme_assistant.evaluation.config import load_evaluation_config  # noqa: E402
 from sme_assistant.kb.loader import load_knowledge_base  # noqa: E402
 
 SHORT_PROMPT = "Write a 150 word summary of workplace fire safety procedures."
@@ -135,19 +140,43 @@ def time_generation(
     }
 
 
-def time_embedding(base_url: str, model: str, repeat: int, timeout: int) -> dict[str, Any]:
+def time_embedding(
+    base_url: str, model: str, repeat: int, timeout: int, options: dict[str, Any] | None = None
+) -> dict[str, Any]:
+    """Time query embedding, honouring device placement and separating cold start.
+
+    Two bugs are fixed here. The first is that this function previously sent no
+    options at all, so ``--cpu-only`` silently did not apply to the embedding
+    model: a reported "CPU-only" embedding latency was in fact measured with
+    the model resident in VRAM. The second is that the first call after a load
+    pays model initialisation, which was being averaged in with warm calls.
+    """
     prompt = "How many days of annual leave do I get?"
+    payload_base: dict[str, Any] = {"model": model, "prompt": prompt}
+    if options:
+        payload_base["options"] = options
+
+    unload_all(base_url)
+
+    cold_start = time.perf_counter()
+    post_json(f"{base_url}/api/embeddings", payload_base, timeout)
+    cold_ms = (time.perf_counter() - cold_start) * 1000
+
     timings = []
     for _ in range(repeat):
         start = time.perf_counter()
-        post_json(f"{base_url}/api/embeddings", {"model": model, "prompt": prompt}, timeout)
+        post_json(f"{base_url}/api/embeddings", payload_base, timeout)
         timings.append(time.perf_counter() - start)
+
     return {
+        "options": options or {},
+        "cold_start_ms": round(cold_ms, 1),
         "repeat": repeat,
-        "mean_ms": round(statistics.mean(timings) * 1000, 1),
-        "median_ms": round(statistics.median(timings) * 1000, 1),
-        "min_ms": round(min(timings) * 1000, 1),
-        "max_ms": round(max(timings) * 1000, 1),
+        "warm_mean_ms": round(statistics.mean(timings) * 1000, 1),
+        "warm_median_ms": round(statistics.median(timings) * 1000, 1),
+        "warm_min_ms": round(min(timings) * 1000, 1),
+        "warm_max_ms": round(max(timings) * 1000, 1),
+        "vram_resident_fraction": model_offload(base_url, model),
     }
 
 
@@ -241,6 +270,8 @@ def benchmark_model(
     long_prompt: str,
     repeat: int,
     timeout: int,
+    cool_to: float | None = None,
+    cool_max_wait: int = 300,
 ) -> dict[str, Any]:
     print(f"\n  {model}")
 
@@ -265,7 +296,18 @@ def benchmark_model(
     timed_out = None
     for i in range(repeat):
         stamp = f"{time.time_ns()}-{i}"
+        # Cool before EVERY repetition, not only between models. Without this a
+        # second repetition begins at the temperature the first one ended at,
+        # which for this board is the throttle point.
+        if cool_to is not None and i > 0:
+            cooled = cool_down(cool_to, cool_max_wait)
+            if not cooled.get("skipped") and not cooled["reached_target"]:
+                print(f"    ABORTING: could not cool below {cool_to}C "
+                      f"(stuck at {cooled['end_c']:.1f}C after {cooled['waited_s']:.0f}s)")
+                timed_out = {"stage": "cooling", "run": i + 1, "error": "cool-down target not reached"}
+                break
         temp_before = cpu_temperature_c()
+        freq_before = arm_frequency_hz()
         print(f"    run {i + 1}/{repeat} short ...", end="", flush=True)
         try:
             short = time_generation(base_url, model, SHORT_PROMPT, options, timeout, stamp)
@@ -284,14 +326,24 @@ def benchmark_model(
             timed_out = {"stage": "long", "run": i + 1, "error": str(exc)}
             break
         temp_after = cpu_temperature_c()
+        freq_after = arm_frequency_hz()
         long["cpu_temp_before_c"] = temp_before
         long["cpu_temp_after_c"] = temp_after
+        long["arm_frequency_before_hz"] = freq_before
+        long["arm_frequency_after_hz"] = freq_after
+        nominal = nominal_frequency_hz()
+        long["arm_frequency_nominal_hz"] = nominal
+        long["clock_ratio"] = round(freq_after / nominal, 3) if (freq_after and nominal) else None
         long["throttle"] = throttle_state()
         long_runs.append(long)
         temp_note = ""
         if temp_after is not None:
             throttled = (long["throttle"] or {}).get("now", {}).get("throttled")
-            temp_note = f", {temp_after:.1f}C{' THROTTLED' if throttled else ''}"
+            temp_note = f", {temp_after:.1f}C"
+            if freq_after:
+                temp_note += f" @{freq_after / 1e9:.2f}GHz"
+            if throttled:
+                temp_note += " THROTTLED"
         print(
             f" {long['eval_tokens_per_second']} tok/s eval,"
             f" {long['prompt_tokens_per_second']} tok/s prompt"
@@ -401,7 +453,7 @@ def main() -> int:
 
     results = []
     for index, model in enumerate(models):
-        if index > 0 and args.cool_to is not None:
+        if args.cool_to is not None:
             print(f"\n  cooling to {args.cool_to}C ...", end="", flush=True)
             cooled = cool_down(args.cool_to, args.cool_max_wait)
             if "skipped" in cooled:
@@ -410,12 +462,18 @@ def main() -> int:
                 print(f" {cooled['start_c']:.1f} -> {cooled['end_c']:.1f}C "
                       f"after {cooled['waited_s']:.0f}s"
                       f"{'' if cooled['reached_target'] else ' (gave up)'}")
-        results.append(benchmark_model(base_url, model, options, long_prompt, args.repeat, timeout))
+        results.append(benchmark_model(
+            base_url, model, options, long_prompt, args.repeat, timeout,
+            args.cool_to, args.cool_max_wait))
 
     embed_model = config.require("llm.embedding_model")
     print(f"\n  {embed_model} (embedding)")
-    embedding = time_embedding(base_url, embed_model, max(args.repeat * 3, 5), timeout)
-    print(f"    {embedding['median_ms']} ms median over {embedding['repeat']} calls")
+    embed_options = {"num_gpu": 0} if args.cpu_only else None
+    embedding = time_embedding(
+        base_url, embed_model, max(args.repeat * 3, 5), timeout, embed_options)
+    print(f"    cold start {embedding['cold_start_ms']} ms, "
+          f"warm {embedding['warm_median_ms']} ms median over {embedding['repeat']} calls, "
+          f"{(embedding['vram_resident_fraction'] or 0):.0%} in VRAM")
 
     after = environment(base_url)
     offload = gpu_offload_fraction(after["ollama"])
@@ -451,9 +509,27 @@ def main() -> int:
         historic = [k for k, v in throttle["since_boot"].items() if v]
         print(f"Throttle      now={active or 'none'}  since boot={historic or 'none'}")
 
+    kb = load_knowledge_base(config.path("paths.kb_docs"))
+    registry = load_conflicts(load_evaluation_config().path("conflicts"))
+    script_sha = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+    prompt_sha = hashlib.sha256(long_prompt.encode("utf-8")).hexdigest()
+
     record = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "tag": args.tag,
+        "provenance": {
+            "config_sha256": config.fingerprint(),
+            "corpus_sha256": kb.fingerprint(),
+            "conflict_registry_sha256": registry.fingerprint(),
+            "benchmark_script_sha256": script_sha,
+            "long_prompt_sha256": prompt_sha,
+            "long_prompt_tokens_reported_by_server": results[0].get("long", {}).get("prompt_tokens")
+                if results and "long" in results[0] else None,
+            "git": git_commit(),
+            "seed": config.get("project.seed"),
+            "command": " ".join(sys.argv),
+            "arguments": vars(args),
+        },
         "config_fingerprint": config.fingerprint(),
         "generation_options": options,
         "cpu_only": args.cpu_only,

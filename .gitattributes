@@ -1,0 +1,28 @@
+# Normalise line endings so that a git SHA and a dirty-tree flag recorded in a
+# benchmark provenance block mean what they claim to mean.
+#
+# Without this, result files written on Windows and inspected on Linux (or vice
+# versa) show as modified on CRLF alone. Seven benchmark JSON files were dirty
+# on line endings with zero content change, which would have made any recorded
+# "tree was clean" assertion false for no real reason.
+
+* text=auto eol=lf
+
+# Data and results are read back byte-for-byte and hashed for provenance.
+# Pin them to LF explicitly so a hash computed on one platform matches another.
+*.json    text eol=lf
+*.md      text eol=lf
+*.py      text eol=lf
+*.yml     text eol=lf
+*.yaml    text eol=lf
+*.toml    text eol=lf
+
+# Never touch binaries.
+*.png     binary
+*.jpg     binary
+*.pdf     binary
+*.docx    binary
+*.xlsx    binary
+*.pptx    binary
+*.gguf    binary
+*.bin     binary

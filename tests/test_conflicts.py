@@ -13,6 +13,7 @@ import json
 import pytest
 
 from sme_assistant.common.config import load_config
+from sme_assistant.evaluation.config import load_evaluation_config
 from sme_assistant.evaluation.conflicts import (
     ConflictRegistryError,
     load_conflicts,
@@ -33,7 +34,7 @@ def kb(config):
 
 @pytest.fixture(scope="module")
 def registry(config):
-    return load_conflicts(config.path("evaluation.conflicts"))
+    return load_conflicts(load_evaluation_config().path("conflicts"))
 
 
 # --- the registry itself ----------------------------------------------------

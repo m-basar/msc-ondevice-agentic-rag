@@ -12,7 +12,7 @@ owner: Managing Director
 
 Northgate Kitchenware Ltd is a wholesale distributor of professional and domestic kitchen equipment. The company was founded in 2011 and employs 47 staff.
 
-Northgate Kitchenware Ltd is a fictional organisation created for research purposes. It is not registered at Companies House, and no company registration number is quoted anywhere in this knowledge base. All telephone numbers use the Ofcom range reserved for drama, all email addresses use the reserved .invalid domain, and the postcode is deliberately outside any allocated postcode area.
+Northgate Kitchenware is a fictional organisation created for research purposes and is not an incorporated company. The suffix "Ltd" is used only for narrative realism and carries no legal meaning here. No company of this name is registered at Companies House, and no company registration number is quoted anywhere in this knowledge base. All telephone numbers use the Ofcom range reserved for drama, all email addresses use the reserved .invalid domain, and the postcode is deliberately outside any allocated postcode area.
 
 ## Site
 

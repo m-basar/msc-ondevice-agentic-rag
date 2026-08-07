@@ -24,6 +24,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from sme_assistant.common.config import load_config  # noqa: E402
 from sme_assistant.common.hostinfo import git_commit  # noqa: E402
+from sme_assistant.evaluation.config import load_evaluation_config  # noqa: E402
 from sme_assistant.evaluation.conflicts import (  # noqa: E402
     ConflictRegistryError,
     load_conflicts,
@@ -61,7 +62,7 @@ def main() -> int:
 
     config = load_config()
     kb = load_knowledge_base(config.path("paths.kb_docs"))
-    registry = load_conflicts(config.path("evaluation.conflicts"))
+    registry = load_conflicts(load_evaluation_config().path("conflicts"))
 
     if args.manifest:
         print(json.dumps(build_manifest(config, kb, registry), indent=2))

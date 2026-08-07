@@ -16,9 +16,11 @@ All identifiers now use ranges reserved for exactly this purpose:
 |---|---|---|
 | Telephone numbers | `01632 960 xxx` | Ofcom, reserved for drama and fiction |
 | Email domain | `northgate-kitchenware.invalid` | RFC 2606, `.invalid` can never be registered |
-| Company registration | None quoted | Removed; the corpus states the company is unregistered |
+| Company registration | None quoted | Removed; the corpus states that no company of this name is registered |
 | Postcode | `XX1 4LP` | `XX` is not an allocated UK postcode area |
-| Address | Unit 12, Halden Industrial Park, Middleton | Invented site and town |
+| Address | Unit 12, Halden Industrial Park, Middleton | Fictional composite address |
+
+The address is a composite rather than an invention. "Middleton" is a common English place name borne by several real settlements, so it is not claimed here as fictional; the unit number, the industrial park and the postcode are invented, and the postcode uses an unallocated area code so the combined address cannot resolve to a real location.
 
 **Nothing in this corpus should be treated as a real address, number or organisation.**
 

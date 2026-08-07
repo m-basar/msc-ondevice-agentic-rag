@@ -11,8 +11,9 @@ introduce the dependency by accident. So it is enforced here instead:
 
 - No module in the inference packages may import the conflicts registry
 - No module in the inference packages may reference the gold directory
-- Gold data is addressed under ``config.evaluation``, never ``config.paths``,
-  so a pipeline component using only ``paths`` cannot reach it
+- Gold data locations live in a **separate configuration file** that the
+  runtime ``Config`` object never loads, so there is no config lookup at all,
+  correct or otherwise, that reaches the answer key
 
 The separation is also visible in the layout: the registry lives in
 ``sme_assistant.evaluation``, not ``sme_assistant.kb``.
@@ -21,6 +22,7 @@ The separation is also visible in the layout: the registry lives in
 from __future__ import annotations
 
 import ast
+import json
 from pathlib import Path
 
 import pytest
@@ -34,6 +36,7 @@ SRC = Path(__file__).resolve().parents[1] / "src" / "sme_assistant"
 INFERENCE_PACKAGES = ("kb", "ingest", "retrieve", "generate", "verify", "agent", "common")
 
 FORBIDDEN_IMPORT_TOKENS = ("conflicts", "gold")
+FORBIDDEN_CONFIG_LOOKUPS = ("evaluation.conflicts", "evaluation.test_set", "evaluation")
 FORBIDDEN_TEXT_TOKENS = ("gold/", "gold\\\\", "conflicts.json")
 
 
@@ -85,31 +88,61 @@ def test_module_does_not_reference_gold_paths(module: Path):
     for node in ast.walk(tree):
         if isinstance(node, ast.Constant) and isinstance(node.value, str):
             lowered = node.value.lower()
-            for token in ("gold/", "conflicts.json"):
+            for token in ("gold/", "gold\\", "conflicts.json", "evaluation.json"):
                 assert token not in lowered, (
                     f"{module.relative_to(SRC)} contains the literal {node.value!r}. "
                     "Inference code must not address gold data by path."
                 )
+            for token in FORBIDDEN_CONFIG_LOOKUPS:
+                assert lowered != token, (
+                    f"{module.relative_to(SRC)} performs a config lookup for "
+                    f"{node.value!r}. Even though that key no longer exists, an "
+                    "inference module must never attempt to reach evaluation data."
+                )
 
 
-def test_gold_data_is_not_reachable_from_runtime_paths():
-    """A component using only config.paths cannot find the gold data."""
+def test_runtime_config_contains_no_route_to_gold_data():
+    """The structural guarantee, not a behavioural observation.
+
+    An earlier design put evaluation paths under ``config.evaluation``. That
+    proved no *current* leakage while leaving the route open: an inference
+    module could have called ``config.path("evaluation.conflicts")`` and read
+    the answer key, importing nothing and containing no literal path, so the
+    other tests here would have passed.
+
+    The files are now separate. This test asserts there is no key anywhere in
+    the runtime configuration that leads to gold data.
+    """
     config = load_config()
-    runtime_paths = config.require("paths")
-    serialised = " ".join(str(v).lower() for v in runtime_paths.values())
-    assert "gold" not in serialised
-    assert "conflicts" not in serialised
-    assert "test_set" not in serialised, (
-        "The test set is gold data and must live under config.evaluation, "
-        "not config.paths"
+    serialised = json.dumps(config.as_dict()).lower()
+    for token in ("gold", "conflicts", "test_set", "evaluation"):
+        assert token not in serialised, (
+            f"Runtime config mentions {token!r}. Gold data must not be "
+            "addressable from config.json at all."
+        )
+
+
+def test_evaluation_config_is_a_separate_file():
+    from sme_assistant.evaluation.config import (
+        DEFAULT_EVALUATION_CONFIG,
+        load_evaluation_config,
     )
 
+    runtime = load_config()
+    evaluation = load_evaluation_config()
+    assert evaluation.source != runtime.source
+    assert DEFAULT_EVALUATION_CONFIG.name == "evaluation.json"
+    assert evaluation.path("conflicts").exists()
 
-def test_gold_data_is_reachable_from_evaluation_config():
-    config = load_config()
-    evaluation = config.require("evaluation")
-    assert "conflicts" in evaluation
-    assert config.path("evaluation.conflicts").exists()
+
+def test_evaluation_protocol_is_declared():
+    """Aggregation and cross-validation are decided once, in one place."""
+    from sme_assistant.evaluation.config import load_evaluation_config
+
+    protocol = load_evaluation_config().protocol
+    assert protocol.get("cross_validation") == "leave_one_family_out"
+    assert protocol.get("aggregation") == "macro_average_by_family"
+    assert protocol.get("rationale")
 
 
 def test_registry_lives_in_the_evaluation_package():

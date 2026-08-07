@@ -56,9 +56,5 @@
       "B": "laptop_cpu_only",
       "C": "pi5_cpu_only"
     }
-  },
-  "evaluation": {
-    "conflicts": "gold/conflicts.json",
-    "test_set": "gold/test_set.json"
   }
 }
