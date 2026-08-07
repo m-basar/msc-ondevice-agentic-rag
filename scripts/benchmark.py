@@ -95,15 +95,17 @@ def time_generation(
 ) -> dict[str, Any]:
     """Time one generation.
 
-    ``cache_buster`` is appended to the prompt. Ollama caches the KV state of a
-    repeated prompt prefix, so an identical prompt on a second run skips prompt
-    processing almost entirely and reports a prompt rate in the tens of
-    thousands of tokens per second. That number is meaningless. Varying the
-    prompt forces the work to be done every time, which is what the real
-    pipeline experiences, since every question is different.
+    ``cache_buster`` is prepended to the prompt, not appended. Ollama caches the
+    KV state of a repeated prompt *prefix*. An earlier version of this function
+    appended the marker, which left the entire 900-token prefix cached and only
+    forced reprocessing of the ten-token suffix. The reported prompt rate then
+    reached seventy thousand tokens per second, which is not a measurement of
+    anything. Putting the marker first invalidates the whole prefix, so the work
+    is done every time, exactly as it is for the real pipeline where every
+    question differs.
     """
     if cache_buster:
-        prompt = f"{prompt}\n\n[run {cache_buster}]"
+        prompt = f"[run {cache_buster}]\n\n{prompt}"
     payload = {"model": model, "prompt": prompt, "stream": False, "options": options}
     wall_start = time.perf_counter()
     try:
@@ -149,6 +151,58 @@ def time_embedding(base_url: str, model: str, repeat: int, timeout: int) -> dict
     }
 
 
+def unload_all(base_url: str, timeout: int = 30) -> list[str]:
+    """Evict every loaded model so the next load starts from a known state.
+
+    Ollama keeps a model resident for keep_alive after a request, *with the
+    device placement it was originally loaded with*. Running a CPU-only
+    benchmark and then a default-placement benchmark within that window means
+    the second run silently re-measures the CPU-pinned copy. That produced a
+    laptop figure for llama3.2:3b identical to its CPU-only figure, with 0% of
+    the model resident in VRAM, while every other model correctly used the GPU.
+
+    Sending keep_alive=0 evicts the model immediately.
+    """
+    evicted = []
+    for entry in ollama_info(base_url).get("loaded") or []:
+        name = entry.get("name")
+        if not name:
+            continue
+        try:
+            post_json(f"{base_url}/api/generate", {"model": name, "keep_alive": 0}, timeout)
+            evicted.append(name)
+        except (TimeoutError, urllib.error.URLError, OSError):
+            pass
+    if evicted:
+        time.sleep(2)
+    return evicted
+
+
+def cool_down(target_c: float, max_wait_s: int) -> dict[str, Any]:
+    """Wait for the CPU to drop below ``target_c`` before the next model.
+
+    Without this the benchmark measures a thermal ramp rather than a set of
+    models. In the first Pi run the board started at 63C and finished at 85C,
+    actively frequency-capped, so the model benchmarked first ran cool and the
+    model benchmarked last ran throttled. Any comparison between them confounds
+    model with temperature.
+    """
+    start_temp = cpu_temperature_c()
+    if start_temp is None:
+        return {"skipped": "no temperature sensor"}
+    waited = 0.0
+    while cpu_temperature_c() > target_c and waited < max_wait_s:
+        time.sleep(5)
+        waited += 5
+    end_temp = cpu_temperature_c()
+    return {
+        "start_c": start_temp,
+        "end_c": end_temp,
+        "waited_s": waited,
+        "reached_target": end_temp is not None and end_temp <= target_c,
+    }
+
+
 def model_offload(base_url: str, model: str) -> float | None:
     """Fraction of THIS model resident in VRAM.
 
@@ -190,6 +244,13 @@ def benchmark_model(
 ) -> dict[str, Any]:
     print(f"\n  {model}")
 
+    # Evict anything resident. A model left loaded from a previous run keeps
+    # its original device placement, so without this the benchmark can silently
+    # re-measure a CPU-pinned copy under a GPU-enabled configuration.
+    evicted = unload_all(base_url)
+    if evicted:
+        print(f"    evicted {', '.join(evicted)}")
+
     # Warm-up. The first call pays model load cost, which would otherwise
     # dominate the first timing and skew the mean.
     print("    warm-up ...", end="", flush=True)
@@ -204,6 +265,7 @@ def benchmark_model(
     timed_out = None
     for i in range(repeat):
         stamp = f"{time.time_ns()}-{i}"
+        temp_before = cpu_temperature_c()
         print(f"    run {i + 1}/{repeat} short ...", end="", flush=True)
         try:
             short = time_generation(base_url, model, SHORT_PROMPT, options, timeout, stamp)
@@ -221,12 +283,20 @@ def benchmark_model(
             print(f" TIMED OUT")
             timed_out = {"stage": "long", "run": i + 1, "error": str(exc)}
             break
+        temp_after = cpu_temperature_c()
+        long["cpu_temp_before_c"] = temp_before
+        long["cpu_temp_after_c"] = temp_after
+        long["throttle"] = throttle_state()
         long_runs.append(long)
+        temp_note = ""
+        if temp_after is not None:
+            throttled = (long["throttle"] or {}).get("now", {}).get("throttled")
+            temp_note = f", {temp_after:.1f}C{' THROTTLED' if throttled else ''}"
         print(
             f" {long['eval_tokens_per_second']} tok/s eval,"
             f" {long['prompt_tokens_per_second']} tok/s prompt"
             f" ({long['prompt_tokens']} prompt tokens),"
-            f" {long['wall_seconds']}s wall"
+            f" {long['wall_seconds']}s wall{temp_note}"
         )
 
     if not long_runs:
@@ -260,6 +330,13 @@ def main() -> int:
     parser.add_argument("--cpu-only", action="store_true", help="force CPU execution with num_gpu=0")
     parser.add_argument("--tag", default="", help="label recorded in the results filename")
     parser.add_argument("--no-save", action="store_true", help="print only, do not write a results file")
+    parser.add_argument(
+        "--cool-to", type=float, default=None,
+        help="wait between models until CPU temperature falls below this, in Celsius. "
+             "Without it the benchmark measures a thermal ramp rather than a set of models.")
+    parser.add_argument(
+        "--cool-max-wait", type=int, default=300,
+        help="give up cooling after this many seconds (default 300)")
     parser.add_argument(
         "--timeout", type=int, default=None,
         help="per-request timeout in seconds; overrides llm.timeout_seconds. "
@@ -323,7 +400,16 @@ def main() -> int:
     long_prompt = build_long_prompt(config)
 
     results = []
-    for model in models:
+    for index, model in enumerate(models):
+        if index > 0 and args.cool_to is not None:
+            print(f"\n  cooling to {args.cool_to}C ...", end="", flush=True)
+            cooled = cool_down(args.cool_to, args.cool_max_wait)
+            if "skipped" in cooled:
+                print(f" {cooled['skipped']}")
+            else:
+                print(f" {cooled['start_c']:.1f} -> {cooled['end_c']:.1f}C "
+                      f"after {cooled['waited_s']:.0f}s"
+                      f"{'' if cooled['reached_target'] else ' (gave up)'}")
         results.append(benchmark_model(base_url, model, options, long_prompt, args.repeat, timeout))
 
     embed_model = config.require("llm.embedding_model")
@@ -356,8 +442,6 @@ def main() -> int:
         frac = entry.get("gpu_offload_fraction")
         if frac is not None:
             print(f"  {entry['model']:<16} {frac:.0%} resident in VRAM")
-    if offload is not None:
-        print(f"GPU offload   {offload:.0%} of loaded model resident in VRAM")
     temp_after = cpu_temperature_c()
     if temp_after is not None:
         print(f"CPU temp      {temp_after:.1f} C (after)")

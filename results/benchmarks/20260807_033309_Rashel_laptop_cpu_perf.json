@@ -1,0 +1,268 @@
+{
+  "timestamp": "2026-08-07T03:33:09.111704+00:00",
+  "tag": "laptop_cpu_perf",
+  "config_fingerprint": "ac224132dacdae82e883cb81a9f57d34f5c2894d846a7c6a05a9bfe3feba54fa",
+  "generation_options": {
+    "temperature": 0.1,
+    "num_ctx": 4096,
+    "num_predict": 400,
+    "num_gpu": 0
+  },
+  "cpu_only": true,
+  "environment_before": {
+    "host": {
+      "hostname": "Rashel",
+      "system": "Windows",
+      "release": "11",
+      "machine": "AMD64",
+      "processor": "AMD64 Family 25 Model 116 Stepping 1, AuthenticAMD",
+      "cpu_count": 16,
+      "python": "3.13.5",
+      "memory_total_gb": 15.29,
+      "memory_available_gb": 6.81,
+      "cpu_temperature_c": null,
+      "throttle": null,
+      "power_profile": "Balanced",
+      "gpus": [
+        {
+          "name": "NVIDIA GeForce RTX 4050 Laptop GPU",
+          "memory_total_mb": 6141,
+          "memory_used_mb": 1112,
+          "temperature_c": 46
+        }
+      ]
+    },
+    "ollama": {
+      "base_url": "http://localhost:11434",
+      "reachable": true,
+      "version": "0.32.6",
+      "models": [
+        {
+          "name": "gemma:2b",
+          "digest": "b50d6c999e59",
+          "size": 1678456656
+        },
+        {
+          "name": "llama3.2:1b",
+          "digest": "baf6a787fdff",
+          "size": 1321098329
+        },
+        {
+          "name": "llama3.2:3b",
+          "digest": "a80c4f17acd5",
+          "size": 2019393189
+        },
+        {
+          "name": "nomic-embed-text:latest",
+          "digest": "0a109f422b47",
+          "size": 274302450
+        },
+        {
+          "name": "phi3:mini",
+          "digest": "4f2222927938",
+          "size": 2176178913
+        },
+        {
+          "name": "qwen2.5:3b",
+          "digest": "357c53fb659c",
+          "size": 1929912432
+        }
+      ],
+      "model_store_fingerprint": "e39bc25c0edd",
+      "loaded": []
+    },
+    "gpu_offload_fraction": null
+  },
+  "environment_after": {
+    "host": {
+      "hostname": "Rashel",
+      "system": "Windows",
+      "release": "11",
+      "machine": "AMD64",
+      "processor": "AMD64 Family 25 Model 116 Stepping 1, AuthenticAMD",
+      "cpu_count": 16,
+      "python": "3.13.5",
+      "memory_total_gb": 15.29,
+      "memory_available_gb": 3.93,
+      "cpu_temperature_c": null,
+      "throttle": null,
+      "power_profile": "Balanced",
+      "gpus": [
+        {
+          "name": "NVIDIA GeForce RTX 4050 Laptop GPU",
+          "memory_total_mb": 6141,
+          "memory_used_mb": 1509,
+          "temperature_c": 46
+        }
+      ]
+    },
+    "ollama": {
+      "base_url": "http://localhost:11434",
+      "reachable": true,
+      "version": "0.32.6",
+      "models": [
+        {
+          "name": "gemma:2b",
+          "digest": "b50d6c999e59",
+          "size": 1678456656
+        },
+        {
+          "name": "llama3.2:1b",
+          "digest": "baf6a787fdff",
+          "size": 1321098329
+        },
+        {
+          "name": "llama3.2:3b",
+          "digest": "a80c4f17acd5",
+          "size": 2019393189
+        },
+        {
+          "name": "nomic-embed-text:latest",
+          "digest": "0a109f422b47",
+          "size": 274302450
+        },
+        {
+          "name": "phi3:mini",
+          "digest": "4f2222927938",
+          "size": 2176178913
+        },
+        {
+          "name": "qwen2.5:3b",
+          "digest": "357c53fb659c",
+          "size": 1929912432
+        }
+      ],
+      "model_store_fingerprint": "e39bc25c0edd",
+      "loaded": [
+        {
+          "name": "nomic-embed-text:latest",
+          "size": 323150151,
+          "size_vram": 323150151,
+          "context_length": 2048
+        },
+        {
+          "name": "llama3.2:3b",
+          "size": 2561524365,
+          "size_vram": 0,
+          "context_length": 4096
+        }
+      ]
+    },
+    "gpu_offload_fraction": 0.112
+  },
+  "gpu_offload_fraction": 0.112,
+  "models": [
+    {
+      "model": "llama3.2:3b",
+      "timed_out": false,
+      "timeout_detail": null,
+      "gpu_offload_fraction": 0.0,
+      "short": {
+        "eval_tokens_per_second": {
+          "mean": 25.46,
+          "median": 25.82,
+          "min": 24.54,
+          "max": 26.01,
+          "n": 3
+        },
+        "wall_seconds": {
+          "mean": 7.5,
+          "median": 7.35,
+          "min": 7.34,
+          "max": 7.81,
+          "n": 3
+        },
+        "runs": [
+          {
+            "wall_seconds": 7.813,
+            "load_seconds": 0.244,
+            "prompt_tokens": 50,
+            "prompt_tokens_per_second": 219.12,
+            "eval_tokens": 180,
+            "eval_tokens_per_second": 24.54,
+            "total_seconds": 7.809
+          },
+          {
+            "wall_seconds": 7.34,
+            "load_seconds": 0.254,
+            "prompt_tokens": 50,
+            "prompt_tokens_per_second": 249.91,
+            "eval_tokens": 177,
+            "eval_tokens_per_second": 25.82,
+            "total_seconds": 7.337
+          },
+          {
+            "wall_seconds": 7.349,
+            "load_seconds": 0.239,
+            "prompt_tokens": 50,
+            "prompt_tokens_per_second": 241.39,
+            "eval_tokens": 179,
+            "eval_tokens_per_second": 26.01,
+            "total_seconds": 7.346
+          }
+        ]
+      },
+      "long": {
+        "prompt_tokens": 903,
+        "eval_tokens_per_second": {
+          "mean": 22.16,
+          "median": 22.2,
+          "min": 21.78,
+          "max": 22.5,
+          "n": 3
+        },
+        "prompt_tokens_per_second": {
+          "mean": 3510.27,
+          "median": 5010.01,
+          "min": 172.49,
+          "max": 5348.32,
+          "n": 3
+        },
+        "wall_seconds": {
+          "mean": 5.25,
+          "median": 3.83,
+          "min": 3.37,
+          "max": 8.55,
+          "n": 3
+        },
+        "runs": [
+          {
+            "wall_seconds": 8.553,
+            "load_seconds": 0.264,
+            "prompt_tokens": 903,
+            "prompt_tokens_per_second": 172.49,
+            "eval_tokens": 66,
+            "eval_tokens_per_second": 21.78,
+            "total_seconds": 8.549
+          },
+          {
+            "wall_seconds": 3.825,
+            "load_seconds": 0.227,
+            "prompt_tokens": 903,
+            "prompt_tokens_per_second": 5010.01,
+            "eval_tokens": 75,
+            "eval_tokens_per_second": 22.2,
+            "total_seconds": 3.819
+          },
+          {
+            "wall_seconds": 3.371,
+            "load_seconds": 0.241,
+            "prompt_tokens": 903,
+            "prompt_tokens_per_second": 5348.32,
+            "eval_tokens": 66,
+            "eval_tokens_per_second": 22.5,
+            "total_seconds": 3.367
+          }
+        ]
+      }
+    }
+  ],
+  "embedding": {
+    "model": "nomic-embed-text",
+    "repeat": 9,
+    "mean_ms": 200.9,
+    "median_ms": 30.6,
+    "min_ms": 22.4,
+    "max_ms": 1540.8
+  }
+}
