@@ -476,7 +476,6 @@ def main() -> int:
           f"{(embedding['vram_resident_fraction'] or 0):.0%} in VRAM")
 
     after = environment(base_url)
-    offload = gpu_offload_fraction(after["ollama"])
 
     print("\n" + "=" * 72)
     print(f"{'Model':<16} {'short eval':>11} {'long eval':>11} {'long prompt':>12} {'long wall':>10}")
@@ -535,7 +534,13 @@ def main() -> int:
         "cpu_only": args.cpu_only,
         "environment_before": before,
         "environment_after": after,
-        "gpu_offload_fraction": offload,
+        # Per model, never aggregated. Summing residency across everything Ollama
+        # has loaded once made a CPU-only run appear 46% GPU-offloaded, because
+        # the embedding model was still on the GPU.
+        "gpu_offload_by_model": {
+            entry["model"]: entry.get("gpu_offload_fraction")
+            for entry in results
+        },
         "models": results,
         "embedding": {"model": embed_model, **embedding},
     }
