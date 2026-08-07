@@ -1,18 +1,17 @@
 ---
-id: HR-02
+id: HR-12
 title: Sickness Absence Policy
 category: HR
-version: 2.2
-effective_date: 2025-10-01
-status: superseded
-superseded_by: HR-12
-withdrawn: 2026-04-06
+version: 3.0
+effective_date: 2026-04-06
+status: current
+supersedes: HR-02
 owner: People Team
 ---
 
 # Sickness Absence Policy
 
-> This version has been withdrawn. See HR-12 for the policy in force.
+This policy replaces HR-02 with effect from 6 April 2026, reflecting the statutory changes to sick pay that took effect on that date.
 
 ## Reporting absence
 
@@ -29,9 +28,11 @@ The employee must contact their manager again on day three and thereafter as agr
 
 ## Sick pay
 
-Statutory Sick Pay is payable from the fourth qualifying day of absence. The first three days of any period of incapacity are waiting days and are unpaid.
+Statutory Sick Pay is payable from the first qualifying day of absence. There are no longer any unpaid waiting days.
 
-To qualify for Statutory Sick Pay an employee must earn at least the Lower Earnings Limit for National Insurance purposes. Employees earning below that threshold do not qualify.
+All employees qualify for Statutory Sick Pay regardless of their earnings. The Lower Earnings Limit no longer applies to sick pay, so part-time and lower-paid staff who were previously excluded are now covered.
+
+Statutory Sick Pay is paid at the lower of the statutory weekly rate or 80 per cent of the employee's average weekly earnings. The statutory weekly rate for 2026/27 is £123.25.
 
 Employees with more than 12 months of continuous service receive company sick pay at full salary for up to four weeks in any rolling 12-month period, inclusive of SSP. Company sick pay is discretionary and may be withheld where the absence procedure has not been followed.
 

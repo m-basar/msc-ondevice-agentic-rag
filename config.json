@@ -7,7 +7,8 @@
     "kb_docs": "data/kb",
     "index": "data/index.json",
     "test_set": "data/test_set.json",
-    "results": "results/runs"
+    "results": "results/runs",
+    "conflicts": "data/conflicts.json"
   },
   "llm": {
     "backend": "ollama",

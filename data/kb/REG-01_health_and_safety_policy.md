@@ -14,7 +14,7 @@ owner: Managing Director
 
 Northgate Kitchenware Ltd is committed to providing a safe and healthy working environment for employees, contractors, visitors and anyone affected by its activities, so far as is reasonably practicable. This policy is reviewed annually and is signed by the Managing Director.
 
-The company has more than five employees, so this policy is written down as required by the Health and Safety at Work etc. Act 1974.
+The company has five or more employees, so this policy is written down as required by the Health and Safety at Work etc. Act 1974.
 
 ## Responsibilities
 

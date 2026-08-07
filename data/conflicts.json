@@ -1,0 +1,161 @@
+{
+  "schema_version": "1.0",
+  "purpose": "Registry of deliberate conflicts planted in the knowledge base. Every contradiction between documents must appear here. A contradiction that is not registered is a defect in the corpus, not an experimental condition, and must be fixed. This file is the boundary between the two.",
+  "status": "PROVISIONAL - expected_answer_policy awaits sign-off, see notes",
+  "notes": [
+    "Superseded documents are indexed rather than filtered out at ingestion time. Filtering would remove the conflict before the model ever saw it, and detecting the conflict is the contribution under evaluation. Whether filtering outperforms verification is itself a candidate experimental arm.",
+    "The share of superseded documents in this corpus is deliberately higher than would be typical for a real SME, so that conflict handling can be measured rather than merely illustrated. The share is reported in the corpus summary and must be stated as a limitation in the discussion of external validity."
+  ],
+  "expected_answer_policy": {
+    "answer_with": "current_version_only",
+    "cite": "current version, and the superseded version only when explaining the change",
+    "flag": "conflicting_evidence",
+    "confidence_ceiling": "medium",
+    "rationale": "Answering with the current value alone risks the user acting on a figure without knowing it recently changed. Refusing outright is unhelpful when the correct answer is knowable. Stating the current value, flagging that superseded evidence was retrieved, and capping confidence gives the user the answer and the reason to check."
+  },
+  "families": [
+    {
+      "id": "CONF-01",
+      "name": "Business mileage reimbursement rate",
+      "type": "version_supersession",
+      "domain": "finance",
+      "risk_level": "medium",
+      "superseded_document": "HR-03",
+      "current_document": "HR-13",
+      "conflicting_facts": [
+        {
+          "fact": "mileage rate",
+          "superseded_value": "40 pence per mile, flat rate",
+          "current_value": "45 pence per mile for the first 10,000 business miles, then 25 pence"
+        },
+        {
+          "fact": "claim submission window",
+          "superseded_value": "60 days",
+          "current_value": "30 days, refused after 90 days"
+        },
+        {
+          "fact": "reimbursement method",
+          "superseded_value": "with the following month's salary",
+          "current_value": "BACS within ten working days of approval"
+        }
+      ],
+      "must_cite": ["HR-13"],
+      "must_not_assert": ["40 pence per mile as the current rate"]
+    },
+    {
+      "id": "CONF-02",
+      "name": "Statutory Sick Pay waiting days and eligibility",
+      "type": "version_supersession",
+      "domain": "hr",
+      "risk_level": "high",
+      "superseded_document": "HR-02",
+      "current_document": "HR-12",
+      "conflicting_facts": [
+        {
+          "fact": "first payable day of SSP",
+          "superseded_value": "fourth qualifying day, three unpaid waiting days",
+          "current_value": "first qualifying day, no waiting days"
+        },
+        {
+          "fact": "earnings eligibility",
+          "superseded_value": "employee must earn at least the Lower Earnings Limit",
+          "current_value": "all employees qualify regardless of earnings"
+        }
+      ],
+      "must_cite": ["HR-12"],
+      "must_not_assert": [
+        "three unpaid waiting days apply",
+        "employees below the Lower Earnings Limit do not qualify"
+      ],
+      "risk_note": "Highest-risk family in the corpus. An answer based on the superseded version would tell an employee they are not entitled to money they are legally owed."
+    },
+    {
+      "id": "CONF-03",
+      "name": "Password rotation and multi-factor authentication",
+      "type": "version_supersession",
+      "domain": "information_security",
+      "risk_level": "medium",
+      "superseded_document": "IT-01",
+      "current_document": "IT-11",
+      "conflicting_facts": [
+        {
+          "fact": "minimum password length",
+          "superseded_value": "8 characters with complexity requirements",
+          "current_value": "14 characters, three random words encouraged"
+        },
+        {
+          "fact": "password rotation",
+          "superseded_value": "every 90 days for all accounts",
+          "current_value": "no scheduled rotation for standard accounts, 180 days for administrators"
+        },
+        {
+          "fact": "SMS as a second factor",
+          "superseded_value": "acceptable where an authenticator app is unavailable",
+          "current_value": "not accepted"
+        }
+      ],
+      "must_cite": ["IT-11"],
+      "must_not_assert": ["passwords must be changed every 90 days"]
+    },
+    {
+      "id": "CONF-04",
+      "name": "Delivery charges and free delivery threshold",
+      "type": "version_supersession",
+      "domain": "customer_service",
+      "risk_level": "low",
+      "superseded_document": "CS-01",
+      "current_document": "CS-11",
+      "conflicting_facts": [
+        {
+          "fact": "free delivery threshold",
+          "superseded_value": "£50 excluding VAT",
+          "current_value": "£75 excluding VAT"
+        },
+        {
+          "fact": "standard delivery charge",
+          "superseded_value": "£4.95",
+          "current_value": "£6.95"
+        },
+        {
+          "fact": "next working day charge",
+          "superseded_value": "£9.95",
+          "current_value": "£12.95"
+        }
+      ],
+      "must_cite": ["CS-11"],
+      "must_not_assert": ["free delivery applies from £50"]
+    }
+  ],
+  "deliberate_gaps": {
+    "purpose": "Topics absent from the corpus by design, used to generate unanswerable questions. A correct system refuses; an incorrect one invents policy.",
+    "fully_absent": [
+      "pensions and auto-enrolment",
+      "maternity, paternity and shared parental leave",
+      "redundancy and notice periods",
+      "company car and vehicle allowance schemes",
+      "share options and bonus schemes",
+      "international shipping and export documentation",
+      "flexible working requests"
+    ],
+    "partially_present": [
+      {
+        "topic": "probationary period",
+        "mentioned_in": "HR-04",
+        "gap": "HR-04 states that new employees work on site for the duration of their probationary period, but no document defines how long that period is or what happens at the end of it.",
+        "expected_behaviour": "state what is known, state explicitly that the duration is not covered, do not estimate"
+      },
+      {
+        "topic": "grievance procedure",
+        "mentioned_in": "HR-05",
+        "gap": "HR-05 names the ACAS Code of Practice on disciplinary AND grievance procedures, so the word 'grievance' is present in the corpus, but no grievance procedure is documented anywhere. This makes it a lexical near-miss: retrieval will surface HR-05 with reasonable similarity, and HR-05 cannot answer the question.",
+        "expected_behaviour": "refuse, and say that only the disciplinary procedure is documented; do not describe HR-05 as if it were a grievance procedure"
+      },
+      {
+        "topic": "employee eligibility for trade discount",
+        "mentioned_in": "none",
+        "gap": "Staff purchase terms are never mentioned despite the company selling the products.",
+        "expected_behaviour": "refuse"
+      }
+    ]
+  }
+}

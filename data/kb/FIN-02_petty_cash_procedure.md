@@ -3,7 +3,7 @@ id: FIN-02
 title: Petty Cash Procedure
 category: FIN
 version: 1.2
-effective_date: 2025-04-01
+effective_date: 2026-04-01
 status: current
 owner: Finance Manager
 ---

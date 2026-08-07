@@ -1,18 +1,17 @@
 ---
-id: CS-01
+id: CS-11
 title: Delivery Frequently Asked Questions
 category: CS
-version: 1.8
-effective_date: 2025-01-01
-status: superseded
-superseded_by: CS-11
-withdrawn: 2026-02-01
+version: 2.2
+effective_date: 2026-02-01
+status: current
+supersedes: CS-01
 owner: Customer Services Manager
 ---
 
 # Delivery Frequently Asked Questions
 
-> This version has been withdrawn. See CS-11 for the current delivery terms.
+These terms replace CS-01 with effect from 1 February 2026, following the annual carrier tender.
 
 ## How long does delivery take?
 
@@ -22,11 +21,11 @@ Standard delivery is 3 to 5 working days from despatch. Next working day deliver
 
 | Service | Cost, excluding VAT |
 |---|---|
-| Standard, orders under £50 | £4.95 |
-| Standard, orders £50 and over | Free |
-| Next working day | £9.95 |
-| Pre-noon next working day | £16.95 |
-| Highlands, islands and Northern Ireland | £11.95, 3 to 7 working days |
+| Standard, orders under £75 | £6.95 |
+| Standard, orders £75 and over | Free |
+| Next working day | £12.95 |
+| Pre-noon next working day | £19.95 |
+| Highlands, islands and Northern Ireland | £14.95, 3 to 7 working days |
 
 Free delivery applies to the goods value excluding VAT and excluding any surcharge postcodes.
 

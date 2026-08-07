@@ -22,7 +22,7 @@ Every order receives a system-generated order number in the format NK-YYYYMMDD-N
 
 ## 2. Credit check
 
-Trade orders are automatically held if the customer's account balance exceeds their credit limit or if any invoice is more than 60 days overdue. Held orders appear on the credit control queue and are released only by Finance under FIN-01.
+Trade orders are automatically held if the customer's account balance exceeds their credit limit or if any invoice is more than 30 days overdue, in line with the credit control stages in FIN-01. Held orders appear on the credit control queue and are released only by Finance under FIN-01.
 
 ## 3. Picking
 

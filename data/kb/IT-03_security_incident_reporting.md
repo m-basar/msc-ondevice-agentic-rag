@@ -26,7 +26,7 @@ If you are unsure whether something is an incident, report it. Reporting somethi
 
 ## How to report
 
-Telephone the IT helpdesk on extension 4040 immediately, and follow up by email to ithelp@northgatekitchenware.co.uk. Do not attempt to fix or investigate the problem yourself, and do not delete anything, as evidence may be needed.
+Telephone the IT helpdesk on extension 4040 immediately, and follow up by email to ithelp@northgate-kitchenware.invalid. Do not attempt to fix or investigate the problem yourself, and do not delete anything, as evidence may be needed.
 
 ## Timescales
 

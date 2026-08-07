@@ -12,7 +12,7 @@ owner: Customer Services Manager
 
 ## My order arrived damaged. What do I do?
 
-Report it to customer services within 48 hours of delivery, on 024 7496 3300 or support@northgatekitchenware.co.uk. Include the order number and photographs of the damage and the outer packaging.
+Report it to customer services within 48 hours of delivery, on 01632 960 300 or support@northgate-kitchenware.invalid. Include the order number and photographs of the damage and the outer packaging.
 
 Keep the packaging until the claim is settled. Carriers routinely require evidence of how the item was packed, and disposing of the box can invalidate the claim.
 

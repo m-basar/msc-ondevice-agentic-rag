@@ -18,7 +18,7 @@ This procedure covers refunding money to customers. The physical handling and in
 
 | Customer type | Refund issued within |
 |---|---|
-| Consumer, statutory cancellation | 14 days of receiving the goods back |
+| Consumer, statutory cancellation | 14 days of receiving the goods back, or of the customer supplying evidence that they have sent them, whichever is earlier |
 | Consumer, standard 30-day return | 10 working days of disposition |
 | Trade account | Credit note within 5 working days of disposition |
 

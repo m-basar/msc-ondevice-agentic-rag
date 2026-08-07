@@ -6,6 +6,7 @@ version: 1.3
 effective_date: 2024-04-01
 status: superseded
 superseded_by: HR-13
+withdrawn: 2026-04-01
 owner: Finance Manager
 ---
 

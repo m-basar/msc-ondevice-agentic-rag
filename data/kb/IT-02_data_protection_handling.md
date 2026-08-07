@@ -12,7 +12,7 @@ owner: Data Protection Lead
 
 ## Legal basis
 
-Northgate Kitchenware Ltd processes personal data under the UK GDPR and the Data Protection Act 2018. The company is registered with the Information Commissioner's Office. The Data Protection Lead is the Finance Manager, contactable at dpo@northgatekitchenware.co.uk.
+Northgate Kitchenware Ltd processes personal data under the UK GDPR and the Data Protection Act 2018. The company is registered with the Information Commissioner's Office. The Data Protection Lead is the Finance Manager, contactable at dpo@northgate-kitchenware.invalid.
 
 ## Classification
 

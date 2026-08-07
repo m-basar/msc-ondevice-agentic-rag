@@ -45,4 +45,4 @@ Park in the designated bay, lower the forks fully, apply the parking brake, swit
 
 ## Statutory inspection
 
-Every truck receives a thorough examination every 12 months under LOLER 1998. Certificates are held in the warehouse office.
+Every truck receives a thorough examination under LOLER 1998. The interval is 12 months for trucks used only to lift loads, and 6 months for any truck fitted with a working platform or man-riding cage, because equipment used to lift people must be examined at the shorter interval. The two counterbalance trucks certified for use with the man-riding cage referred to in OPS-05 are therefore on the 6-month cycle. Certificates are held in the warehouse office.

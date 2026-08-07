@@ -20,19 +20,19 @@ owner: Customer Services Manager
 | Trade counter | Monday to Friday | 08:00 to 17:00 |
 | Customer services phone line | Monday to Friday | 08:30 to 17:00 |
 
-The site is closed on Sundays and on all English bank holidays. The company also closes between Christmas Day and New Year's Day inclusive.
+The site is closed on Sundays. Offices, the trade counter and the customer services line are closed on all English bank holidays. A reduced despatch shift operates in the warehouse on bank holidays during the peak trading period from October to December, and staff rostered onto it receive a day in lieu under HR-01. The company closes entirely between Christmas Day and New Year's Day inclusive.
 
 ## Key contacts
 
 | Purpose | Contact |
 |---|---|
-| Customer services | 024 7496 3300, support@northgatekitchenware.co.uk |
-| Sales and quotations | 024 7496 3310, sales@northgatekitchenware.co.uk |
-| Accounts and invoicing | 024 7496 3320, accounts@northgatekitchenware.co.uk |
-| IT helpdesk | Extension 4040, ithelp@northgatekitchenware.co.uk |
-| People team | Extension 4050, people@northgatekitchenware.co.uk |
+| Customer services | 01632 960 300, support@northgate-kitchenware.invalid |
+| Sales and quotations | 01632 960 310, sales@northgate-kitchenware.invalid |
+| Accounts and invoicing | 01632 960 320, accounts@northgate-kitchenware.invalid |
+| IT helpdesk | Extension 4040, ithelp@northgate-kitchenware.invalid |
+| People team | Extension 4050, people@northgate-kitchenware.invalid |
 | Warehouse office | Extension 4020 |
 
 ## Out of hours
 
-There is no out-of-hours phone service. Emails received outside the hours above are answered on the next working day. For a building emergency outside working hours, contact the security company Bramford Estate Security on 024 7655 8100.
+There is no out-of-hours phone service. Emails received outside the hours above are answered on the next working day. For a building emergency outside working hours, contact the security company Halden Park Security on 01632 960 800.
