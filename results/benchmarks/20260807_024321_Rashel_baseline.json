@@ -1,0 +1,564 @@
+{
+  "timestamp": "2026-08-07T02:43:21.516559+00:00",
+  "tag": "baseline",
+  "config_fingerprint": "e983e5693f00",
+  "generation_options": {
+    "temperature": 0.1,
+    "num_ctx": 4096,
+    "num_predict": 400
+  },
+  "cpu_only": false,
+  "environment_before": {
+    "host": {
+      "hostname": "Rashel",
+      "system": "Windows",
+      "release": "11",
+      "machine": "AMD64",
+      "processor": "AMD64 Family 25 Model 116 Stepping 1, AuthenticAMD",
+      "cpu_count": 16,
+      "python": "3.13.5",
+      "memory_total_gb": 15.29,
+      "memory_available_gb": 3.73,
+      "cpu_temperature_c": null,
+      "throttle": null,
+      "power_profile": "Balanced",
+      "gpus": [
+        {
+          "name": "NVIDIA GeForce RTX 4050 Laptop GPU",
+          "memory_total_mb": 6141,
+          "memory_used_mb": 5122,
+          "temperature_c": 46
+        }
+      ]
+    },
+    "ollama": {
+      "base_url": "http://localhost:11434",
+      "reachable": true,
+      "version": "0.32.6",
+      "models": [
+        {
+          "name": "gemma:2b",
+          "digest": "b50d6c999e59",
+          "size": 1678456656
+        },
+        {
+          "name": "llama3.2:3b",
+          "digest": "a80c4f17acd5",
+          "size": 2019393189
+        },
+        {
+          "name": "nomic-embed-text:latest",
+          "digest": "0a109f422b47",
+          "size": 274302450
+        },
+        {
+          "name": "phi3:mini",
+          "digest": "4f2222927938",
+          "size": 2176178913
+        },
+        {
+          "name": "qwen2.5:3b",
+          "digest": "357c53fb659c",
+          "size": 1929912432
+        }
+      ],
+      "model_store_fingerprint": "9243ce92c4cf",
+      "loaded": [
+        {
+          "name": "llama3.2:3b",
+          "size": 18484444526,
+          "size_vram": 3696482057,
+          "context_length": 131072
+        }
+      ]
+    },
+    "gpu_offload_fraction": 0.2
+  },
+  "environment_after": {
+    "host": {
+      "hostname": "Rashel",
+      "system": "Windows",
+      "release": "11",
+      "machine": "AMD64",
+      "processor": "AMD64 Family 25 Model 116 Stepping 1, AuthenticAMD",
+      "cpu_count": 16,
+      "python": "3.13.5",
+      "memory_total_gb": 15.29,
+      "memory_available_gb": 7.13,
+      "cpu_temperature_c": null,
+      "throttle": null,
+      "power_profile": "Balanced",
+      "gpus": [
+        {
+          "name": "NVIDIA GeForce RTX 4050 Laptop GPU",
+          "memory_total_mb": 6141,
+          "memory_used_mb": 3313,
+          "temperature_c": 46
+        }
+      ]
+    },
+    "ollama": {
+      "base_url": "http://localhost:11434",
+      "reachable": true,
+      "version": "0.32.6",
+      "models": [
+        {
+          "name": "gemma:2b",
+          "digest": "b50d6c999e59",
+          "size": 1678456656
+        },
+        {
+          "name": "llama3.2:3b",
+          "digest": "a80c4f17acd5",
+          "size": 2019393189
+        },
+        {
+          "name": "nomic-embed-text:latest",
+          "digest": "0a109f422b47",
+          "size": 274302450
+        },
+        {
+          "name": "phi3:mini",
+          "digest": "4f2222927938",
+          "size": 2176178913
+        },
+        {
+          "name": "qwen2.5:3b",
+          "digest": "357c53fb659c",
+          "size": 1929912432
+        }
+      ],
+      "model_store_fingerprint": "9243ce92c4cf",
+      "loaded": [
+        {
+          "name": "nomic-embed-text:latest",
+          "size": 323150151,
+          "size_vram": 323150151,
+          "context_length": 2048
+        },
+        {
+          "name": "gemma:2b",
+          "size": 1865353788,
+          "size_vram": 1865353788,
+          "context_length": 4096
+        }
+      ]
+    },
+    "gpu_offload_fraction": 1.0
+  },
+  "gpu_offload_fraction": 1.0,
+  "models": [
+    {
+      "model": "llama3.2:3b",
+      "short": {
+        "eval_tokens_per_second": {
+          "mean": 78.17,
+          "median": 78.25,
+          "min": 77.85,
+          "max": 78.4,
+          "n": 3
+        },
+        "wall_seconds": {
+          "mean": 2.53,
+          "median": 2.53,
+          "min": 2.45,
+          "max": 2.6,
+          "n": 3
+        },
+        "runs": [
+          {
+            "wall_seconds": 2.597,
+            "load_seconds": 0.282,
+            "prompt_tokens": 37,
+            "prompt_tokens_per_second": 1819.34,
+            "eval_tokens": 178,
+            "eval_tokens_per_second": 77.85,
+            "total_seconds": 2.593
+          },
+          {
+            "wall_seconds": 2.451,
+            "load_seconds": 0.23,
+            "prompt_tokens": 37,
+            "prompt_tokens_per_second": 1993.86,
+            "eval_tokens": 169,
+            "eval_tokens_per_second": 78.4,
+            "total_seconds": 2.428
+          },
+          {
+            "wall_seconds": 2.528,
+            "load_seconds": 0.223,
+            "prompt_tokens": 37,
+            "prompt_tokens_per_second": 2043.18,
+            "eval_tokens": 175,
+            "eval_tokens_per_second": 78.25,
+            "total_seconds": 2.502
+          }
+        ]
+      },
+      "long": {
+        "prompt_tokens": 890,
+        "eval_tokens_per_second": {
+          "mean": 75.92,
+          "median": 76.02,
+          "min": 75.53,
+          "max": 76.21,
+          "n": 3
+        },
+        "prompt_tokens_per_second": {
+          "mean": 40708.57,
+          "median": 58456.49,
+          "min": 4403.06,
+          "max": 59266.17,
+          "n": 3
+        },
+        "wall_seconds": {
+          "mean": 1.45,
+          "median": 1.48,
+          "min": 1.15,
+          "max": 1.71,
+          "n": 3
+        },
+        "runs": [
+          {
+            "wall_seconds": 1.713,
+            "load_seconds": 0.261,
+            "prompt_tokens": 890,
+            "prompt_tokens_per_second": 4403.06,
+            "eval_tokens": 93,
+            "eval_tokens_per_second": 75.53,
+            "total_seconds": 1.709
+          },
+          {
+            "wall_seconds": 1.146,
+            "load_seconds": 0.226,
+            "prompt_tokens": 890,
+            "prompt_tokens_per_second": 59266.17,
+            "eval_tokens": 66,
+            "eval_tokens_per_second": 76.21,
+            "total_seconds": 1.143
+          },
+          {
+            "wall_seconds": 1.483,
+            "load_seconds": 0.227,
+            "prompt_tokens": 890,
+            "prompt_tokens_per_second": 58456.49,
+            "eval_tokens": 92,
+            "eval_tokens_per_second": 76.02,
+            "total_seconds": 1.479
+          }
+        ]
+      }
+    },
+    {
+      "model": "qwen2.5:3b",
+      "short": {
+        "eval_tokens_per_second": {
+          "mean": 79.58,
+          "median": 79.43,
+          "min": 79.32,
+          "max": 80.0,
+          "n": 3
+        },
+        "wall_seconds": {
+          "mean": 1.89,
+          "median": 1.99,
+          "min": 1.68,
+          "max": 2.01,
+          "n": 3
+        },
+        "runs": [
+          {
+            "wall_seconds": 1.985,
+            "load_seconds": 0.204,
+            "prompt_tokens": 43,
+            "prompt_tokens_per_second": 1838.31,
+            "eval_tokens": 140,
+            "eval_tokens_per_second": 80.0,
+            "total_seconds": 1.981
+          },
+          {
+            "wall_seconds": 2.009,
+            "load_seconds": 0.191,
+            "prompt_tokens": 43,
+            "prompt_tokens_per_second": 1780.39,
+            "eval_tokens": 141,
+            "eval_tokens_per_second": 79.32,
+            "total_seconds": 2.005
+          },
+          {
+            "wall_seconds": 1.682,
+            "load_seconds": 0.183,
+            "prompt_tokens": 43,
+            "prompt_tokens_per_second": 1878.06,
+            "eval_tokens": 116,
+            "eval_tokens_per_second": 79.43,
+            "total_seconds": 1.679
+          }
+        ]
+      },
+      "long": {
+        "prompt_tokens": 927,
+        "eval_tokens_per_second": {
+          "mean": 78.17,
+          "median": 78.45,
+          "min": 76.95,
+          "max": 79.12,
+          "n": 3
+        },
+        "prompt_tokens_per_second": {
+          "mean": 36597.21,
+          "median": 52625.6,
+          "min": 4073.24,
+          "max": 53092.78,
+          "n": 3
+        },
+        "wall_seconds": {
+          "mean": 1.69,
+          "median": 1.76,
+          "min": 1.4,
+          "max": 1.93,
+          "n": 3
+        },
+        "runs": [
+          {
+            "wall_seconds": 1.93,
+            "load_seconds": 0.181,
+            "prompt_tokens": 927,
+            "prompt_tokens_per_second": 4073.24,
+            "eval_tokens": 118,
+            "eval_tokens_per_second": 78.45,
+            "total_seconds": 1.924
+          },
+          {
+            "wall_seconds": 1.758,
+            "load_seconds": 0.183,
+            "prompt_tokens": 927,
+            "prompt_tokens_per_second": 53092.78,
+            "eval_tokens": 118,
+            "eval_tokens_per_second": 76.95,
+            "total_seconds": 1.753
+          },
+          {
+            "wall_seconds": 1.395,
+            "load_seconds": 0.201,
+            "prompt_tokens": 927,
+            "prompt_tokens_per_second": 52625.6,
+            "eval_tokens": 90,
+            "eval_tokens_per_second": 79.12,
+            "total_seconds": 1.377
+          }
+        ]
+      }
+    },
+    {
+      "model": "phi3:mini",
+      "short": {
+        "eval_tokens_per_second": {
+          "mean": 71.6,
+          "median": 71.9,
+          "min": 70.74,
+          "max": 72.15,
+          "n": 3
+        },
+        "wall_seconds": {
+          "mean": 7.15,
+          "median": 5.23,
+          "min": 4.65,
+          "max": 11.55,
+          "n": 3
+        },
+        "runs": [
+          {
+            "wall_seconds": 11.552,
+            "load_seconds": 0.04,
+            "prompt_tokens": 24,
+            "prompt_tokens_per_second": 3.96,
+            "eval_tokens": 385,
+            "eval_tokens_per_second": 70.74,
+            "total_seconds": 11.548
+          },
+          {
+            "wall_seconds": 5.234,
+            "load_seconds": 0.036,
+            "prompt_tokens": 24,
+            "prompt_tokens_per_second": 1215.31,
+            "eval_tokens": 365,
+            "eval_tokens_per_second": 71.9,
+            "total_seconds": 5.23
+          },
+          {
+            "wall_seconds": 4.65,
+            "load_seconds": 0.038,
+            "prompt_tokens": 24,
+            "prompt_tokens_per_second": 1221.25,
+            "eval_tokens": 325,
+            "eval_tokens_per_second": 72.15,
+            "total_seconds": 4.645
+          }
+        ]
+      },
+      "long": {
+        "prompt_tokens": 1133,
+        "eval_tokens_per_second": {
+          "mean": 60.86,
+          "median": 60.44,
+          "min": 60.01,
+          "max": 62.13,
+          "n": 3
+        },
+        "prompt_tokens_per_second": {
+          "mean": 40117.33,
+          "median": 57756.03,
+          "min": 102.84,
+          "max": 62493.11,
+          "n": 3
+        },
+        "wall_seconds": {
+          "mean": 7.9,
+          "median": 3.33,
+          "min": 2.61,
+          "max": 17.75,
+          "n": 3
+        },
+        "runs": [
+          {
+            "wall_seconds": 17.753,
+            "load_seconds": 0.045,
+            "prompt_tokens": 1133,
+            "prompt_tokens_per_second": 102.84,
+            "eval_tokens": 399,
+            "eval_tokens_per_second": 60.01,
+            "total_seconds": 17.746
+          },
+          {
+            "wall_seconds": 2.609,
+            "load_seconds": 0.039,
+            "prompt_tokens": 1133,
+            "prompt_tokens_per_second": 62493.11,
+            "eval_tokens": 152,
+            "eval_tokens_per_second": 62.13,
+            "total_seconds": 2.604
+          },
+          {
+            "wall_seconds": 3.33,
+            "load_seconds": 0.046,
+            "prompt_tokens": 1133,
+            "prompt_tokens_per_second": 57756.03,
+            "eval_tokens": 191,
+            "eval_tokens_per_second": 60.44,
+            "total_seconds": 3.324
+          }
+        ]
+      }
+    },
+    {
+      "model": "gemma:2b",
+      "short": {
+        "eval_tokens_per_second": {
+          "mean": 97.32,
+          "median": 97.29,
+          "min": 97.28,
+          "max": 97.39,
+          "n": 3
+        },
+        "wall_seconds": {
+          "mean": 3.55,
+          "median": 3.56,
+          "min": 2.72,
+          "max": 4.36,
+          "n": 3
+        },
+        "runs": [
+          {
+            "wall_seconds": 2.717,
+            "load_seconds": 0.239,
+            "prompt_tokens": 36,
+            "prompt_tokens_per_second": 2197.0,
+            "eval_tokens": 239,
+            "eval_tokens_per_second": 97.39,
+            "total_seconds": 2.713
+          },
+          {
+            "wall_seconds": 3.56,
+            "load_seconds": 0.239,
+            "prompt_tokens": 36,
+            "prompt_tokens_per_second": 2222.22,
+            "eval_tokens": 319,
+            "eval_tokens_per_second": 97.29,
+            "total_seconds": 3.542
+          },
+          {
+            "wall_seconds": 4.363,
+            "load_seconds": 0.224,
+            "prompt_tokens": 36,
+            "prompt_tokens_per_second": 2264.15,
+            "eval_tokens": 400,
+            "eval_tokens_per_second": 97.28,
+            "total_seconds": 4.359
+          }
+        ]
+      },
+      "long": {
+        "prompt_tokens": 934,
+        "eval_tokens_per_second": {
+          "mean": 98.16,
+          "median": 98.0,
+          "min": 97.94,
+          "max": 98.55,
+          "n": 3
+        },
+        "prompt_tokens_per_second": {
+          "mean": 50673.9,
+          "median": 71642.25,
+          "min": 6328.86,
+          "max": 74050.58,
+          "n": 3
+        },
+        "wall_seconds": {
+          "mean": 0.83,
+          "median": 0.79,
+          "min": 0.78,
+          "max": 0.93,
+          "n": 3
+        },
+        "runs": [
+          {
+            "wall_seconds": 0.929,
+            "load_seconds": 0.22,
+            "prompt_tokens": 934,
+            "prompt_tokens_per_second": 6328.86,
+            "eval_tokens": 51,
+            "eval_tokens_per_second": 97.94,
+            "total_seconds": 0.9
+          },
+          {
+            "wall_seconds": 0.783,
+            "load_seconds": 0.228,
+            "prompt_tokens": 934,
+            "prompt_tokens_per_second": 74050.58,
+            "eval_tokens": 51,
+            "eval_tokens_per_second": 98.0,
+            "total_seconds": 0.777
+          },
+          {
+            "wall_seconds": 0.792,
+            "load_seconds": 0.22,
+            "prompt_tokens": 934,
+            "prompt_tokens_per_second": 71642.25,
+            "eval_tokens": 51,
+            "eval_tokens_per_second": 98.55,
+            "total_seconds": 0.767
+          }
+        ]
+      }
+    }
+  ],
+  "embedding": {
+    "model": "nomic-embed-text",
+    "repeat": 9,
+    "mean_ms": 278.7,
+    "median_ms": 32.3,
+    "min_ms": 24.1,
+    "max_ms": 2236.1
+  }
+}
