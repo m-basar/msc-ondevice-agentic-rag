@@ -514,3 +514,43 @@ def test_paraphrases_of_a_family_share_one_focal_claim(real_question_set):
             f"{group} has questions with different required claims, so they are "
             "not paraphrases of one focal claim"
         )
+
+
+# --- the conflict-handling rule stays one rule -------------------------------
+
+
+def test_no_unresolvable_conflict_gold_answer_recommends_an_action(real_question_set):
+    """Surface and escalate, never recommend, under amendment 1.1.12.
+
+    The rule is uniform because a conservative reading exists for only one of
+    the five reported current_current families. A rule that fires on one family
+    and not the others cannot be scored on a single rubric, and Arm D's score
+    would depend on how many risk-asymmetric conflicts happened to be in the set
+    rather than on how well it handles conflict.
+    """
+    recommending = (
+        "the safe course", "we recommend", "you should follow", "it is safer to",
+        "err on the side", "the safer option is", "in the meantime, follow",
+        "until this is resolved, apply",
+    )
+    for question in real_question_set:
+        if question.expected_behaviour != "surface_both_and_qualify":
+            continue
+        lowered = question.gold_answer.lower()
+        leaked = [phrase for phrase in recommending if phrase in lowered]
+        assert not leaked, (
+            f"{question.question_id} recommends an action ({leaked}). The rule is "
+            "to surface both positions and escalate, applied uniformly so that "
+            "one rubric can score every family."
+        )
+
+
+def test_every_unresolvable_conflict_requires_the_disagreement_to_be_stated(real_question_set):
+    """Giving both figures without saying they conflict is a lesser behaviour
+    and is scored as 1, not 2."""
+    for question in real_question_set:
+        if question.expected_behaviour != "surface_both_and_qualify":
+            continue
+        assert any("disagree" in claim for claim in question.required_claims), (
+            f"{question.question_id} does not require the disagreement to be stated"
+        )

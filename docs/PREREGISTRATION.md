@@ -477,18 +477,51 @@ current document, so the chunk set is unchanged. Two regression tests cover the
 merge and the refusal. Section metadata is now included in the chunk-set
 fingerprint, which a relabelling with unchanged text previously slipped past.
 
-## 1.1.12 Conflict-handling behaviour is now one consistent rule
+## 1.1.12 Conflict-handling behaviour: surface and escalate, never recommend
 
 **Found.** The CONF-05 gold answer recommended the shorter one-hour deadline as
-a safe interim action while other families only surfaced and escalated.
+a safe interim action, while every other family only surfaced the disagreement
+and escalated. Two rules were in force at once.
 
-**Done.** One rule across all families: **surface both positions, name both
-documents, state that neither supersedes the other, and escalate.** The
-assistant does not recommend an interim action. This is a design decision, not a
-finding, and it is the item most worth confirming with the supervisor before
-Stage 5, because a decision-support system that never recommends the
-conservative option is arguably less useful than one that does. If the rule
-changes, it changes for every family and this amendment records the change.
+**Decided.** One rule across all families: **state both positions, name both
+documents, say that neither supersedes the other, and escalate.** The assistant
+does not recommend which to follow.
+
+This was initially left open as a question for the supervisor. It is settled
+here instead, because the deciding argument is a property of the corpus rather
+than a matter of taste. A "recommend the conservative reading" rule requires
+that a conservative reading exists, and across the five reported
+`current_current` families it usually does not:
+
+| Family | Conservative reading? | |
+|---|---|---|
+| CONF-06, backup retention | **No** | Keeping data is safe for business continuity and unsafe for data protection. "Safe" points both ways. |
+| CONF-07, £800 approver | **No** | Two approval routes. Neither is safer; obtaining both is slower, not safer. |
+| CONF-08, trade counter hours | **No** | Neither set of hours is safer than the other. |
+| CONF-09, access review cadence | Weak | Six months is arguably more diligent, but nothing is at risk in the interval. |
+| CONF-11, visitor safety footwear | **Yes** | Always requiring footwear is unambiguously the safer reading. |
+
+One family of five has a clear conservative reading. A rule that fires on one
+family and not the other four cannot be scored on a single rubric, and Arm D's
+score would then depend on how many risk-asymmetric conflicts happen to be in
+the set rather than on how well it handles conflict. That is a measurement
+defect, not a preference.
+
+The surface-and-escalate rule applies uniformly to all five, so it is scoreable
+on one rubric, and it is also the behaviour the system's stated purpose
+supports: a recommendation the corpus does not contain is not a verifiable
+answer, which is the property the whole design exists to provide.
+
+**Recorded as a limitation.** For risk-asymmetric conflicts such as CONF-11, a
+clearly labelled interim recommendation would be more useful to a real SME user
+than escalation alone, and a system that never offers one is less helpful than
+it could be. Detecting risk asymmetry automatically, rather than by the author's
+judgement, is the natural extension and is proposed as further work in the
+limitations chapter. It is not attempted here because the judgement would be
+mine, applied to families I designed, and unfalsifiable at this sample size.
+
+A test asserts that no `surface_both_and_qualify` gold answer contains
+recommendation language, so the rule cannot drift back.
 
 ## What was not changed
 
