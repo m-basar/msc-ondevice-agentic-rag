@@ -10,7 +10,7 @@ Produced by `scripts/benchmark.py`, measured through the same HTTP API the pipel
 |---|---|
 | Runs cited | `20260807_181428_Basar_laptop_gpu_v2`, `20260807_181611_Basar_laptop_cpu_v2`, `20260807_191119_agi-pi_pi5_v2` |
 | Git commit | `ca511829602f` |
-| Corpus SHA-256 | `dd51cf741e59...` (identical across all three) |
+| Corpus SHA-256 | `dd51cf741e59...` (identical across all three; **historical**, the corpus these runs used, since changed) |
 | Seed | 42 |
 | Ollama | 0.32.6 on both machines |
 | Repetitions | 5 per model, prompt cache defeated on every one |

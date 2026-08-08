@@ -20,7 +20,7 @@ questions belong permanently to the development split.
 | | Value |
 |---|---|
 | Commit | `f274f60` |
-| Corpus SHA-256 | `dd51cf741e59...` |
+| Corpus SHA-256 | `dd51cf741e59...` **(historical: the corpus at the time of the pilot, not the current one)** |
 | Chunks at the time | **147** (the corpus now produces 133; chunk identifiers below refer to the 147-chunk layout and are not comparable to current ones) |
 | Index | 147 chunks, 768 dimensions, `nomic-embed-text` |
 | Model store fingerprint | `e39bc25c0edd` (identical on both machines) |
@@ -155,3 +155,29 @@ different questions and must be labelled accordingly.
 | Chunk identifiers | Refer to the 147-chunk layout at commit `f274f60`, superseded by the current 133-chunk layout |
 | Citable as | Development observations and motivation for design decisions |
 | Not citable as | Baseline performance, arm comparison, or any final result |
+
+
+---
+
+## What was done about this, 8 August 2026
+
+This document says that questions which shape a system cannot afterwards test
+it. Version 1.0 of the question set placed **CONF-01** and **CONF-05** in the
+test split anyway, and `CONF-01-Q1` was the mileage question above, verbatim.
+
+Both families were moved to `split: "tuning"` under **pre-registration
+amendment 1.1**, and two replacements were planted so the reported set keeps
+four supersession and five `current_current` families:
+
+| Moved to tuning | Replaced by |
+|---|---|
+| CONF-01, mileage | CONF-10, complaint response deadlines (CS-04 to CS-14) |
+| CONF-05, lost laptop | CONF-11, visitor safety footwear (GEN-03 against OPS-05) |
+
+`sme_assistant.evaluation.question_set` now refuses a question set that places a
+reported family in the development split or a tuning family in the test split,
+so the specific mistake this document warned about cannot be made silently
+again.
+
+The corpus and chunk hashes recorded above are historical. The pilot outputs are
+kept as they were, unreproducible and excluded from every reported result.

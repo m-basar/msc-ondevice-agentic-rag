@@ -138,13 +138,44 @@ def test_evaluation_config_is_a_separate_file():
 
 
 def test_evaluation_protocol_is_declared():
-    """Aggregation and cross-validation are decided once, in one place."""
+    """The design and its aggregation are decided once, in one place.
+
+    ``cross_validation: leave_one_family_out`` was asserted here until 8 August
+    2026. Nothing is trained on the remaining folds, so there was no model being
+    validated and the name claimed a resampling procedure the study does not
+    perform. The design is a fixed held-out evaluation; leave-one-family-out is
+    retained as a sensitivity analysis and is declared separately so the two
+    cannot be conflated again.
+    """
     from sme_assistant.evaluation.config import load_evaluation_config
 
     protocol = load_evaluation_config().protocol
-    assert protocol.get("cross_validation") == "leave_one_family_out"
+    assert protocol.get("evaluation_design") == "fixed_held_out"
+    assert protocol.get("sensitivity_analysis") == "leave_one_family_out"
+    assert "cross_validation" not in protocol, (
+        "the protocol still calls this cross-validation, which it is not"
+    )
     assert protocol.get("aggregation") == "macro_average_by_family"
     assert protocol.get("rationale")
+    assert protocol.get("confirmatory_contrast", "").startswith("B versus D")
+
+
+def test_the_protocol_names_every_tuning_family():
+    """A tuning rule that lists only some of them is worse than none.
+
+    It reads as complete, so a reader checking whether CONF-01 is excluded from
+    the reported set would conclude it is not.
+    """
+    from sme_assistant.evaluation.config import load_evaluation_config
+    from sme_assistant.evaluation.conflicts import load_conflicts
+
+    evaluation = load_evaluation_config()
+    rule = evaluation.protocol.get("tuning_rule", "")
+    for family in load_conflicts(evaluation.path("conflicts")).tuning_families:
+        assert family.family_id in rule, (
+            f"{family.family_id} is a tuning family but the declared rule does "
+            "not name it"
+        )
 
 
 def test_registry_lives_in_the_evaluation_package():

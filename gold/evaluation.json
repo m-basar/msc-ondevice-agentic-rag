@@ -5,13 +5,12 @@
     "question_set": "gold/question_set.json"
   },
   "protocol": {
-    "cross_validation": "leave_one_family_out",
     "aggregation": "macro_average_by_family",
     "unit_of_independence": "group",
-    "rationale": "Paraphrased questions drawn from one conflict family test the same document pair and are not independent observations. With a small number of families, leave-one-family-out cross-validation uses every family as a held-out fold and is the correct technique at this scale; a three-way family split would leave too few families per partition to support any estimate.",
+    "rationale": "Paraphrased questions drawn from one conflict family test the same document pair and are not independent observations, so results are macro-averaged by family. The nine reported families are a fixed held-out set scored once. This was called leave-one-family-out cross-validation until 8 August 2026, which was wrong: nothing is trained on the remaining folds, so there is no model being validated and the name implied a resampling procedure the study does not perform. The leave-one-family-out calculation is retained as a sensitivity analysis, showing how far the overall figure moves when any single family is removed, which is the honest use of it at nine families.",
     "grouping_rule": "Every question declares a group_id: the conflict family for a conflict question, the gap topic for an unanswerable one, otherwise the question itself. Aggregation is a mean within groups followed by a mean across groups.",
     "split_integrity_rule": "A group must lie entirely within one split. A paraphrase of a family in the development set may not appear in the test set, because both interrogate the same document pair, the same conflicting figures and the same retrieval behaviour. The leak is invisible in the results, since the question strings differ.",
-    "reporting_rule": "Both question-level and family-level figures are reported. Question-level is the plain mean and is included for readability. Inference, standard errors and arm comparisons use the family level, and the sample size cited is the number of groups.",
+    "reporting_rule": "Both question-level and family-level figures are reported. Question-level is the plain mean and is included for readability. Inference, standard errors and arm comparisons use the family level. The reported sample is the test split: 50 questions in 26 groups. The 42-group figure describes the whole artefact including development, and is never a sample size for a result. Per-hypothesis denominators are 4 supersession families, 5 current_current families, 5 gap topics, and 12 factual, partial and synthesis groups.",
     "enforced_by": {
       "split_integrity": "sme_assistant.evaluation.question_set.validate_question_set, on both the load and the write path",
       "fold_construction": "sme_assistant.evaluation.question_set.QuestionSet.leave_one_family_out",
@@ -19,12 +18,22 @@
       "record_grouping": "sme_assistant.evaluation.run_writer.RunWriter.record writes group_id into every answer",
       "tests": [
         "tests/test_question_set.py",
-        "tests/test_aggregate.py"
+        "tests/test_aggregate.py",
+        "tests/test_run_writer.py",
+        "tests/test_conflicts.py",
+        "tests/test_chunker.py"
       ],
-      "tuning_boundary": "sme_assistant.evaluation.question_set._validate_against_registry; ConflictRegistry.families returns the reported set only, all_families is used for corpus validation"
+      "tuning_boundary": "sme_assistant.evaluation.question_set._validate_against_registry; ConflictRegistry.families returns the reported set only, all_families is used for corpus validation",
+      "provenance": "sme_assistant.evaluation.question_set.check_provenance compares corpus, chunk-set and registry hashes on load and refuses a mismatch or a missing recorded hash",
+      "claim_evidence": "scripts/build_question_set.py asserts every expected chunk contains its family's anchor text and that figures in required claims appear in the expected evidence",
+      "evidence_format": "RunWriter.record renders evidence in the arm's own format and raises on an unknown format, so an Arm A record cannot store status markers the model never saw",
+      "blinding": "write_review_sheet omits the evidence block, which identified Arm A on sight through the absence of status markers"
     },
-    "tuning_rule": "Conflict families carry split: 'reported' or 'tuning'. Tuning families (TUNE-01, TUNE-02) exist so prompt wording, thresholds and verifier output format can be developed against real conflicts without inspecting a family that will later be scored. A reported family may not appear in the development split and a tuning family may not appear in the test split.",
-    "preregistration": "docs/PREREGISTRATION.md, registered 8 August 2026",
-    "question_set": "gold/question_set.json holds both splits in one file, built by scripts/build_question_set.py. It is not named test_set because it also contains the development questions, and a name that hides that invites someone to load the wrong half."
+    "tuning_rule": "Conflict families carry split: 'reported' or 'tuning'. The four tuning families are CONF-01, CONF-05, TUNE-01 and TUNE-02. CONF-01 and CONF-05 were moved there on 8 August 2026 under pre-registration amendment 1.1 because both were Stage 4 pilot questions and the lost-laptop pilot answer directly motivated evaluation/answer_scoring.py. A reported family may not appear in the development split and a tuning family may not appear in the test split. Additionally, no test question may expect a chunk carrying a tuning family's disputed fact: the boundary is drawn at the fact, not the document.",
+    "preregistration": "docs/PREREGISTRATION.md, registered 8 August 2026, amendment 1.1 same date",
+    "question_set": "gold/question_set.json holds both splits in one file, built by scripts/build_question_set.py. It is not named test_set because it also contains the development questions, and a name that hides that invites someone to load the wrong half.",
+    "evaluation_design": "fixed_held_out",
+    "sensitivity_analysis": "leave_one_family_out",
+    "confirmatory_contrast": "B versus D. The arms are a tree rooted at B, not a ladder: C to D changes both retrieval mode and verification, so it does not isolate the contribution. C versus D is reported as the practical comparison against the cheap metadata filter and described as such."
   }
 }
