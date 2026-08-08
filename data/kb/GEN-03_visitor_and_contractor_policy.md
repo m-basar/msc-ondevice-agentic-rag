@@ -20,7 +20,7 @@ Every visitor must sign in at reception on arrival and sign out on departure. Vi
 
 Visitors must be accompanied by a member of staff at all times when outside the reception and meeting room areas. The member of staff who arranged the visit is responsible for the visitor's safety and for ensuring they evacuate if the alarm sounds.
 
-Visitors are not permitted in the warehouse unless they have received the site safety briefing and are wearing high-visibility clothing and safety footwear. Both are available at the warehouse office.
+Visitors entering the warehouse must receive the site safety briefing and wear high-visibility clothing, which is issued at reception. Safety footwear is not required for escorted visits of less than fifteen minutes that keep to the marked walkways.
 
 ## Contractors
 

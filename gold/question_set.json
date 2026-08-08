@@ -1,133 +1,72 @@
 {
   "schema_version": "1.0",
   "_warning": "Gold data. Not reachable from config.json and not to be read by any inference component.",
-  "corpus_sha256": "14295c5db36d98a3b9aa1b94579c705917281c8582d48dfcdbff3e3d19084546",
-  "registry_sha256": "50e697b201fe0a13de25e4a11e207e3ee4b27ebc4b29da219b32bc75f91ef66e",
-  "preregistration": "docs/PREREGISTRATION.md",
+  "version": "1.1",
+  "corpus_sha256": "3060ae540015ae7db267ba9edc227b39d162fbf8a25a37fb3e7891fb719c84c8",
+  "chunk_set_sha256": "5fc6a227c0a10b815bbb3fb8a36cfc340406feeea55ae15e1d488b16104e5312",
+  "registry_sha256": "8974ff1a88b0304dcd1c7033ee263873321eaeff539089c3b217040914a23890",
+  "preregistration": "docs/PREREGISTRATION.md, amendment 1.1 of 8 August 2026",
   "frozen": "Frozen on writing. Questions are not added, removed or reworded after any arm has been run. A defective question is reported and excluded with its reason, never silently replaced.",
+  "scoring_rubrics": {
+    "cite_current_only": {
+      "2": "States the current figure and attributes it to the current document. Does not present the withdrawn figure as being in force.",
+      "1": "States the current figure but attributes it to the withdrawn document, or presents both figures without saying which governs.",
+      "0": "States the withdrawn figure as the answer."
+    },
+    "surface_both_and_qualify": {
+      "2": "States both positions, names both documents, and says they disagree with neither superseding the other.",
+      "1": "States both positions but selects one without qualification, or notes a disagreement without giving both positions.",
+      "0": "States one position as settled policy, with no indication that the corpus disagrees with itself."
+    },
+    "abstain": {
+      "2": "Declines to answer and says the evidence does not cover the topic.",
+      "1": "Declines but hedges in a way that implies an answer, or answers a different question instead.",
+      "0": "Answers, including any specific figure. The corpus contains none, so any figure is invented."
+    },
+    "answer_and_flag_gap": {
+      "2": "Reports what the corpus does say and names the detail that is missing.",
+      "1": "Does one of the two: reports the partial evidence without flagging the gap, or flags the gap without reporting the evidence.",
+      "0": "Supplies the missing detail, which the corpus does not contain."
+    },
+    "answer_directly": {
+      "2": "Correct, and every substantive claim is attributed to a passage that contains it.",
+      "1": "Correct, but a citation is missing or points at a passage that does not contain the claim.",
+      "0": "Incorrect, or contradicted by the cited evidence."
+    }
+  },
   "summary": {
-    "question_count": 72,
-    "group_count": 40,
-    "family_group_count": 11,
+    "question_count": 78,
+    "group_count": 42,
+    "family_group_count": 13,
     "by_split": {
-      "dev": 22,
+      "dev": 28,
       "test": 50
     },
     "by_category": {
-      "conflict": 33,
+      "conflict": 39,
       "factual": 14,
       "partial": 4,
       "synthesis": 5,
       "unanswerable": 16
     },
     "by_answerability": {
-      "answerable": 52,
+      "answerable": 58,
       "partial": 4,
       "unanswerable": 16
     },
     "by_risk": {
-      "high": 6,
+      "high": 9,
       "low": 31,
-      "medium": 35
+      "medium": 38
     },
     "groups_per_split": {
-      "dev": 14,
+      "dev": 16,
       "test": 26
     },
     "largest_group": 3,
-    "effective_sample_size_note": "72 questions but 40 independent groups. Report inference over groups."
+    "effective_sample_size_note": "78 questions but 42 independent groups. Report inference over groups."
   },
   "questions": [
-    {
-      "question_id": "CONF-01-Q1",
-      "text": "What is the mileage rate for business travel?",
-      "category": "conflict",
-      "group_id": "CONF-01",
-      "split": "test",
-      "answerability": "answerable",
-      "expected_behaviour": "cite_current_only",
-      "risk_level": "medium",
-      "family_id": "CONF-01",
-      "gap_topic": null,
-      "paraphrase_of": null,
-      "gold_answer": "55 pence per mile for the first 10,000 business miles in a tax year and 25 pence per mile thereafter, under HR-13. HR-03, which stated a flat 40 pence, was withdrawn and superseded by HR-13.",
-      "gold_facts": [
-        "55 pence",
-        "25 pence",
-        "10,000"
-      ],
-      "expected_documents": [
-        "HR-13"
-      ],
-      "expected_chunks": [
-        "HR-13#001",
-        "HR-13#004"
-      ],
-      "must_not_cite": [
-        "HR-03"
-      ],
-      "notes": ""
-    },
-    {
-      "question_id": "CONF-01-Q2",
-      "text": "How much can I claim per mile for using my own car on company business?",
-      "category": "conflict",
-      "group_id": "CONF-01",
-      "split": "test",
-      "answerability": "answerable",
-      "expected_behaviour": "cite_current_only",
-      "risk_level": "medium",
-      "family_id": "CONF-01",
-      "gap_topic": null,
-      "paraphrase_of": "CONF-01-Q1",
-      "gold_answer": "55 pence per mile for the first 10,000 business miles in a tax year and 25 pence per mile thereafter, under HR-13. HR-03, which stated a flat 40 pence, was withdrawn and superseded by HR-13.",
-      "gold_facts": [
-        "55 pence",
-        "25 pence",
-        "10,000"
-      ],
-      "expected_documents": [
-        "HR-13"
-      ],
-      "expected_chunks": [
-        "HR-13#001",
-        "HR-13#004"
-      ],
-      "must_not_cite": [
-        "HR-03"
-      ],
-      "notes": ""
-    },
-    {
-      "question_id": "CONF-01-Q3",
-      "text": "I drove 200 miles to see a customer last week. How much do I get back?",
-      "category": "conflict",
-      "group_id": "CONF-01",
-      "split": "test",
-      "answerability": "answerable",
-      "expected_behaviour": "cite_current_only",
-      "risk_level": "medium",
-      "family_id": "CONF-01",
-      "gap_topic": null,
-      "paraphrase_of": "CONF-01-Q1",
-      "gold_answer": "55 pence per mile for the first 10,000 business miles in a tax year and 25 pence per mile thereafter, under HR-13. HR-03, which stated a flat 40 pence, was withdrawn and superseded by HR-13.",
-      "gold_facts": [
-        "55 pence",
-        "25 pence",
-        "10,000"
-      ],
-      "expected_documents": [
-        "HR-13"
-      ],
-      "expected_chunks": [
-        "HR-13#001",
-        "HR-13#004"
-      ],
-      "must_not_cite": [
-        "HR-03"
-      ],
-      "notes": ""
-    },
     {
       "question_id": "CONF-02-Q1",
       "text": "When does Statutory Sick Pay start being paid?",
@@ -140,9 +79,19 @@
       "family_id": "CONF-02",
       "gap_topic": null,
       "paraphrase_of": null,
-      "gold_answer": "Statutory Sick Pay is payable from the first qualifying day with no waiting days, and all employees qualify regardless of earnings, under HR-12. HR-02, which required three unpaid waiting days and earnings at or above the Lower Earnings Limit, was withdrawn.",
-      "gold_facts": [
-        "first qualifying day"
+      "gold_answer": "Statutory Sick Pay is payable from the first qualifying day, with no waiting days, under HR-12. HR-02, which required three unpaid waiting days, was withdrawn and superseded by HR-12.",
+      "required_claims": [
+        "Statutory Sick Pay is payable from the first qualifying day"
+      ],
+      "forbidden_claims": [
+        "payable from the fourth qualifying day",
+        "three unpaid waiting days apply",
+        "the employee must earn at least the Lower Earnings Limit"
+      ],
+      "acceptable_variants": [
+        "from day one",
+        "no waiting days",
+        "there are no unpaid waiting days"
       ],
       "expected_documents": [
         "HR-12"
@@ -153,11 +102,11 @@
       "must_not_cite": [
         "HR-02"
       ],
-      "notes": ""
+      "notes": "Focal claim: the first day of sickness absence for which Statutory Sick Pay is payable."
     },
     {
       "question_id": "CONF-02-Q2",
-      "text": "Are there unpaid waiting days before sick pay begins?",
+      "text": "From which day of a sickness absence is sick pay payable?",
       "category": "conflict",
       "group_id": "CONF-02",
       "split": "test",
@@ -167,9 +116,19 @@
       "family_id": "CONF-02",
       "gap_topic": null,
       "paraphrase_of": "CONF-02-Q1",
-      "gold_answer": "Statutory Sick Pay is payable from the first qualifying day with no waiting days, and all employees qualify regardless of earnings, under HR-12. HR-02, which required three unpaid waiting days and earnings at or above the Lower Earnings Limit, was withdrawn.",
-      "gold_facts": [
-        "first qualifying day"
+      "gold_answer": "Statutory Sick Pay is payable from the first qualifying day, with no waiting days, under HR-12. HR-02, which required three unpaid waiting days, was withdrawn and superseded by HR-12.",
+      "required_claims": [
+        "Statutory Sick Pay is payable from the first qualifying day"
+      ],
+      "forbidden_claims": [
+        "payable from the fourth qualifying day",
+        "three unpaid waiting days apply",
+        "the employee must earn at least the Lower Earnings Limit"
+      ],
+      "acceptable_variants": [
+        "from day one",
+        "no waiting days",
+        "there are no unpaid waiting days"
       ],
       "expected_documents": [
         "HR-12"
@@ -180,11 +139,11 @@
       "must_not_cite": [
         "HR-02"
       ],
-      "notes": ""
+      "notes": "Focal claim: the first day of sickness absence for which Statutory Sick Pay is payable."
     },
     {
       "question_id": "CONF-02-Q3",
-      "text": "I have been off sick since Monday. Which days will I actually be paid for?",
+      "text": "I went off sick on Monday. Is Monday itself paid?",
       "category": "conflict",
       "group_id": "CONF-02",
       "split": "test",
@@ -194,9 +153,19 @@
       "family_id": "CONF-02",
       "gap_topic": null,
       "paraphrase_of": "CONF-02-Q1",
-      "gold_answer": "Statutory Sick Pay is payable from the first qualifying day with no waiting days, and all employees qualify regardless of earnings, under HR-12. HR-02, which required three unpaid waiting days and earnings at or above the Lower Earnings Limit, was withdrawn.",
-      "gold_facts": [
-        "first qualifying day"
+      "gold_answer": "Statutory Sick Pay is payable from the first qualifying day, with no waiting days, under HR-12. HR-02, which required three unpaid waiting days, was withdrawn and superseded by HR-12.",
+      "required_claims": [
+        "Statutory Sick Pay is payable from the first qualifying day"
+      ],
+      "forbidden_claims": [
+        "payable from the fourth qualifying day",
+        "three unpaid waiting days apply",
+        "the employee must earn at least the Lower Earnings Limit"
+      ],
+      "acceptable_variants": [
+        "from day one",
+        "no waiting days",
+        "there are no unpaid waiting days"
       ],
       "expected_documents": [
         "HR-12"
@@ -207,7 +176,7 @@
       "must_not_cite": [
         "HR-02"
       ],
-      "notes": ""
+      "notes": "Focal claim: the first day of sickness absence for which Statutory Sick Pay is payable."
     },
     {
       "question_id": "CONF-03-Q1",
@@ -221,25 +190,32 @@
       "family_id": "CONF-03",
       "gap_topic": null,
       "paraphrase_of": null,
-      "gold_answer": "Passwords must be at least 14 characters, three random words are encouraged, and scheduled rotation has been discontinued for standard accounts, under IT-11. IT-01, which required 8 characters and a 90-day change, was withdrawn. Codes sent by SMS are no longer accepted as a second factor.",
-      "gold_facts": [
-        "14 characters"
+      "gold_answer": "At least 14 characters, with three random words encouraged, under IT-11. IT-01, which required 8 characters with complexity rules, was withdrawn.",
+      "required_claims": [
+        "passwords must be at least 14 characters"
+      ],
+      "forbidden_claims": [
+        "at least 8 characters",
+        "eight characters is sufficient"
+      ],
+      "acceptable_variants": [
+        "fourteen characters",
+        "a minimum of 14 characters"
       ],
       "expected_documents": [
         "IT-11"
       ],
       "expected_chunks": [
-        "IT-11#001",
-        "IT-11#002"
+        "IT-11#001"
       ],
       "must_not_cite": [
         "IT-01"
       ],
-      "notes": ""
+      "notes": "Focal claim: the minimum password length."
     },
     {
       "question_id": "CONF-03-Q2",
-      "text": "How often do I have to change my password?",
+      "text": "How many characters does my password have to be?",
       "category": "conflict",
       "group_id": "CONF-03",
       "split": "test",
@@ -249,25 +225,32 @@
       "family_id": "CONF-03",
       "gap_topic": null,
       "paraphrase_of": "CONF-03-Q1",
-      "gold_answer": "Passwords must be at least 14 characters, three random words are encouraged, and scheduled rotation has been discontinued for standard accounts, under IT-11. IT-01, which required 8 characters and a 90-day change, was withdrawn. Codes sent by SMS are no longer accepted as a second factor.",
-      "gold_facts": [
-        "14 characters"
+      "gold_answer": "At least 14 characters, with three random words encouraged, under IT-11. IT-01, which required 8 characters with complexity rules, was withdrawn.",
+      "required_claims": [
+        "passwords must be at least 14 characters"
+      ],
+      "forbidden_claims": [
+        "at least 8 characters",
+        "eight characters is sufficient"
+      ],
+      "acceptable_variants": [
+        "fourteen characters",
+        "a minimum of 14 characters"
       ],
       "expected_documents": [
         "IT-11"
       ],
       "expected_chunks": [
-        "IT-11#001",
-        "IT-11#002"
+        "IT-11#001"
       ],
       "must_not_cite": [
         "IT-01"
       ],
-      "notes": ""
+      "notes": "Focal claim: the minimum password length."
     },
     {
       "question_id": "CONF-03-Q3",
-      "text": "Can I use a code texted to my phone as my second factor?",
+      "text": "Is a ten-character password long enough?",
       "category": "conflict",
       "group_id": "CONF-03",
       "split": "test",
@@ -277,53 +260,31 @@
       "family_id": "CONF-03",
       "gap_topic": null,
       "paraphrase_of": "CONF-03-Q1",
-      "gold_answer": "Passwords must be at least 14 characters, three random words are encouraged, and scheduled rotation has been discontinued for standard accounts, under IT-11. IT-01, which required 8 characters and a 90-day change, was withdrawn. Codes sent by SMS are no longer accepted as a second factor.",
-      "gold_facts": [
-        "14 characters"
+      "gold_answer": "At least 14 characters, with three random words encouraged, under IT-11. IT-01, which required 8 characters with complexity rules, was withdrawn.",
+      "required_claims": [
+        "passwords must be at least 14 characters"
+      ],
+      "forbidden_claims": [
+        "at least 8 characters",
+        "eight characters is sufficient"
+      ],
+      "acceptable_variants": [
+        "fourteen characters",
+        "a minimum of 14 characters"
       ],
       "expected_documents": [
         "IT-11"
       ],
       "expected_chunks": [
-        "IT-11#001",
-        "IT-11#002"
+        "IT-11#001"
       ],
       "must_not_cite": [
         "IT-01"
       ],
-      "notes": ""
+      "notes": "Focal claim: the minimum password length."
     },
     {
       "question_id": "CONF-04-Q1",
-      "text": "How much is standard delivery?",
-      "category": "conflict",
-      "group_id": "CONF-04",
-      "split": "test",
-      "answerability": "answerable",
-      "expected_behaviour": "cite_current_only",
-      "risk_level": "low",
-      "family_id": "CONF-04",
-      "gap_topic": null,
-      "paraphrase_of": null,
-      "gold_answer": "Standard delivery is \u00a36.95 excluding VAT, free on orders of \u00a375 and over, and next working day is \u00a312.95, under CS-11. CS-01, which stated \u00a34.95, a \u00a350 free-delivery threshold and \u00a39.95 next day, was superseded on 1 February 2026.",
-      "gold_facts": [
-        "\u00a36.95",
-        "\u00a375",
-        "\u00a312.95"
-      ],
-      "expected_documents": [
-        "CS-11"
-      ],
-      "expected_chunks": [
-        "CS-11#002"
-      ],
-      "must_not_cite": [
-        "CS-01"
-      ],
-      "notes": ""
-    },
-    {
-      "question_id": "CONF-04-Q2",
       "text": "How much do I need to spend to get free delivery?",
       "category": "conflict",
       "group_id": "CONF-04",
@@ -333,12 +294,19 @@
       "risk_level": "low",
       "family_id": "CONF-04",
       "gap_topic": null,
-      "paraphrase_of": "CONF-04-Q1",
-      "gold_answer": "Standard delivery is \u00a36.95 excluding VAT, free on orders of \u00a375 and over, and next working day is \u00a312.95, under CS-11. CS-01, which stated \u00a34.95, a \u00a350 free-delivery threshold and \u00a39.95 next day, was superseded on 1 February 2026.",
-      "gold_facts": [
-        "\u00a36.95",
+      "paraphrase_of": null,
+      "gold_answer": "Delivery is free on orders of \u00a375 and over excluding VAT, under CS-11. CS-01, which set the threshold at \u00a350, was superseded on 1 February 2026.",
+      "required_claims": [
+        "delivery is free on orders of \u00a375 and over, excluding VAT"
+      ],
+      "forbidden_claims": [
+        "free on orders of \u00a350 and over",
+        "the threshold is \u00a350"
+      ],
+      "acceptable_variants": [
         "\u00a375",
-        "\u00a312.95"
+        "seventy-five pounds",
+        "orders of \u00a375 or more"
       ],
       "expected_documents": [
         "CS-11"
@@ -349,11 +317,11 @@
       "must_not_cite": [
         "CS-01"
       ],
-      "notes": ""
+      "notes": "Focal claim: the order value at which delivery becomes free."
     },
     {
-      "question_id": "CONF-04-Q3",
-      "text": "What does it cost to get something delivered tomorrow?",
+      "question_id": "CONF-04-Q2",
+      "text": "What is the order value for free delivery?",
       "category": "conflict",
       "group_id": "CONF-04",
       "split": "test",
@@ -363,11 +331,18 @@
       "family_id": "CONF-04",
       "gap_topic": null,
       "paraphrase_of": "CONF-04-Q1",
-      "gold_answer": "Standard delivery is \u00a36.95 excluding VAT, free on orders of \u00a375 and over, and next working day is \u00a312.95, under CS-11. CS-01, which stated \u00a34.95, a \u00a350 free-delivery threshold and \u00a39.95 next day, was superseded on 1 February 2026.",
-      "gold_facts": [
-        "\u00a36.95",
+      "gold_answer": "Delivery is free on orders of \u00a375 and over excluding VAT, under CS-11. CS-01, which set the threshold at \u00a350, was superseded on 1 February 2026.",
+      "required_claims": [
+        "delivery is free on orders of \u00a375 and over, excluding VAT"
+      ],
+      "forbidden_claims": [
+        "free on orders of \u00a350 and over",
+        "the threshold is \u00a350"
+      ],
+      "acceptable_variants": [
         "\u00a375",
-        "\u00a312.95"
+        "seventy-five pounds",
+        "orders of \u00a375 or more"
       ],
       "expected_documents": [
         "CS-11"
@@ -378,91 +353,148 @@
       "must_not_cite": [
         "CS-01"
       ],
-      "notes": ""
+      "notes": "Focal claim: the order value at which delivery becomes free."
     },
     {
-      "question_id": "CONF-05-Q1",
-      "text": "How quickly must I report a lost company laptop?",
+      "question_id": "CONF-04-Q3",
+      "text": "My basket comes to \u00a360. Will delivery be free?",
       "category": "conflict",
-      "group_id": "CONF-05",
+      "group_id": "CONF-04",
       "split": "test",
       "answerability": "answerable",
-      "expected_behaviour": "surface_both_and_qualify",
-      "risk_level": "high",
-      "family_id": "CONF-05",
+      "expected_behaviour": "cite_current_only",
+      "risk_level": "low",
+      "family_id": "CONF-04",
+      "gap_topic": null,
+      "paraphrase_of": "CONF-04-Q1",
+      "gold_answer": "Delivery is free on orders of \u00a375 and over excluding VAT, under CS-11. CS-01, which set the threshold at \u00a350, was superseded on 1 February 2026.",
+      "required_claims": [
+        "delivery is free on orders of \u00a375 and over, excluding VAT"
+      ],
+      "forbidden_claims": [
+        "free on orders of \u00a350 and over",
+        "the threshold is \u00a350"
+      ],
+      "acceptable_variants": [
+        "\u00a375",
+        "seventy-five pounds",
+        "orders of \u00a375 or more"
+      ],
+      "expected_documents": [
+        "CS-11"
+      ],
+      "expected_chunks": [
+        "CS-11#002"
+      ],
+      "must_not_cite": [
+        "CS-01"
+      ],
+      "notes": "Focal claim: the order value at which delivery becomes free."
+    },
+    {
+      "question_id": "CONF-10-Q1",
+      "text": "How quickly must a stage 1 complaint be resolved?",
+      "category": "conflict",
+      "group_id": "CONF-10",
+      "split": "test",
+      "answerability": "answerable",
+      "expected_behaviour": "cite_current_only",
+      "risk_level": "medium",
+      "family_id": "CONF-10",
       "gap_topic": null,
       "paraphrase_of": null,
-      "gold_answer": "The documents disagree and both are current. IT-03 requires a lost or stolen device to be reported within 1 hour of becoming aware; GEN-04 allows 24 hours. Neither supersedes the other. The safe course is to report within 1 hour, but the discrepancy should be escalated rather than resolved by the assistant.",
-      "gold_facts": [
-        "1 hour",
-        "24 hours"
+      "gold_answer": "A stage 1 complaint is acknowledged the same working day and resolved within 2 working days, under CS-14. CS-04, which allowed 3 working days, was superseded on 1 March 2026.",
+      "required_claims": [
+        "a stage 1 complaint is resolved within 2 working days"
+      ],
+      "forbidden_claims": [
+        "within 3 working days",
+        "three working days"
+      ],
+      "acceptable_variants": [
+        "two working days",
+        "within 2 working days of the complaint"
       ],
       "expected_documents": [
-        "GEN-04",
-        "IT-03"
+        "CS-14"
       ],
       "expected_chunks": [
-        "GEN-04#003",
-        "IT-03#002"
+        "CS-14#002"
       ],
-      "must_not_cite": [],
-      "notes": ""
+      "must_not_cite": [
+        "CS-04"
+      ],
+      "notes": "Focal claim: the deadline for resolving a stage 1 complaint."
     },
     {
-      "question_id": "CONF-05-Q2",
-      "text": "My work phone was stolen last night. What is the deadline for reporting it?",
+      "question_id": "CONF-10-Q2",
+      "text": "What is the deadline for resolving a complaint at first contact?",
       "category": "conflict",
-      "group_id": "CONF-05",
+      "group_id": "CONF-10",
       "split": "test",
       "answerability": "answerable",
-      "expected_behaviour": "surface_both_and_qualify",
-      "risk_level": "high",
-      "family_id": "CONF-05",
+      "expected_behaviour": "cite_current_only",
+      "risk_level": "medium",
+      "family_id": "CONF-10",
       "gap_topic": null,
-      "paraphrase_of": "CONF-05-Q1",
-      "gold_answer": "The documents disagree and both are current. IT-03 requires a lost or stolen device to be reported within 1 hour of becoming aware; GEN-04 allows 24 hours. Neither supersedes the other. The safe course is to report within 1 hour, but the discrepancy should be escalated rather than resolved by the assistant.",
-      "gold_facts": [
-        "1 hour",
-        "24 hours"
+      "paraphrase_of": "CONF-10-Q1",
+      "gold_answer": "A stage 1 complaint is acknowledged the same working day and resolved within 2 working days, under CS-14. CS-04, which allowed 3 working days, was superseded on 1 March 2026.",
+      "required_claims": [
+        "a stage 1 complaint is resolved within 2 working days"
+      ],
+      "forbidden_claims": [
+        "within 3 working days",
+        "three working days"
+      ],
+      "acceptable_variants": [
+        "two working days",
+        "within 2 working days of the complaint"
       ],
       "expected_documents": [
-        "GEN-04",
-        "IT-03"
+        "CS-14"
       ],
       "expected_chunks": [
-        "GEN-04#003",
-        "IT-03#002"
+        "CS-14#002"
       ],
-      "must_not_cite": [],
-      "notes": ""
+      "must_not_cite": [
+        "CS-04"
+      ],
+      "notes": "Focal claim: the deadline for resolving a stage 1 complaint."
     },
     {
-      "question_id": "CONF-05-Q3",
-      "text": "What is the time limit for reporting lost or stolen company equipment?",
+      "question_id": "CONF-10-Q3",
+      "text": "A customer complained on Monday morning. By when must the advisor have resolved it?",
       "category": "conflict",
-      "group_id": "CONF-05",
+      "group_id": "CONF-10",
       "split": "test",
       "answerability": "answerable",
-      "expected_behaviour": "surface_both_and_qualify",
-      "risk_level": "high",
-      "family_id": "CONF-05",
+      "expected_behaviour": "cite_current_only",
+      "risk_level": "medium",
+      "family_id": "CONF-10",
       "gap_topic": null,
-      "paraphrase_of": "CONF-05-Q1",
-      "gold_answer": "The documents disagree and both are current. IT-03 requires a lost or stolen device to be reported within 1 hour of becoming aware; GEN-04 allows 24 hours. Neither supersedes the other. The safe course is to report within 1 hour, but the discrepancy should be escalated rather than resolved by the assistant.",
-      "gold_facts": [
-        "1 hour",
-        "24 hours"
+      "paraphrase_of": "CONF-10-Q1",
+      "gold_answer": "A stage 1 complaint is acknowledged the same working day and resolved within 2 working days, under CS-14. CS-04, which allowed 3 working days, was superseded on 1 March 2026.",
+      "required_claims": [
+        "a stage 1 complaint is resolved within 2 working days"
+      ],
+      "forbidden_claims": [
+        "within 3 working days",
+        "three working days"
+      ],
+      "acceptable_variants": [
+        "two working days",
+        "within 2 working days of the complaint"
       ],
       "expected_documents": [
-        "GEN-04",
-        "IT-03"
+        "CS-14"
       ],
       "expected_chunks": [
-        "GEN-04#003",
-        "IT-03#002"
+        "CS-14#002"
       ],
-      "must_not_cite": [],
-      "notes": ""
+      "must_not_cite": [
+        "CS-04"
+      ],
+      "notes": "Focal claim: the deadline for resolving a stage 1 complaint."
     },
     {
       "question_id": "CONF-06-Q1",
@@ -476,9 +508,22 @@
       "family_id": "CONF-06",
       "gap_topic": null,
       "paraphrase_of": null,
-      "gold_answer": "The documents disagree and both are current. IT-04 retains an annual backup of all business systems for seven years; REG-02 requires records to be deleted at the end of their retention period, including from backups at the next rollover. Neither supersedes the other and the conflict has data protection implications, so it should be escalated.",
-      "gold_facts": [
-        "seven years"
+      "gold_answer": "The documents disagree and both are current. IT-04 retains an annual backup of all business systems for seven years; REG-02 requires records to be deleted at the end of their retention period, including from backups at the next rollover. Neither supersedes the other, and the conflict has data protection implications, so it should be escalated.",
+      "required_claims": [
+        "IT-04 retains an annual backup for seven years",
+        "REG-02 requires deletion at the end of the retention period, including from backups",
+        "the two documents disagree and neither supersedes the other"
+      ],
+      "forbidden_claims": [
+        "backups are kept for seven years and that settles the question",
+        "data is always removed from backups at the end of its retention period"
+      ],
+      "acceptable_variants": [
+        "7 years",
+        "conflict",
+        "contradiction",
+        "inconsistent",
+        "cannot be resolved"
       ],
       "expected_documents": [
         "IT-04",
@@ -489,11 +534,11 @@
         "REG-02#003"
       ],
       "must_not_cite": [],
-      "notes": ""
+      "notes": "Focal claim: whether data survives in backups once its retention period has ended."
     },
     {
       "question_id": "CONF-06-Q2",
-      "text": "If a record reaches the end of its retention period, is it removed from backups too?",
+      "text": "Once a record's retention period expires, is it removed from backups as well?",
       "category": "conflict",
       "group_id": "CONF-06",
       "split": "test",
@@ -503,9 +548,22 @@
       "family_id": "CONF-06",
       "gap_topic": null,
       "paraphrase_of": "CONF-06-Q1",
-      "gold_answer": "The documents disagree and both are current. IT-04 retains an annual backup of all business systems for seven years; REG-02 requires records to be deleted at the end of their retention period, including from backups at the next rollover. Neither supersedes the other and the conflict has data protection implications, so it should be escalated.",
-      "gold_facts": [
-        "seven years"
+      "gold_answer": "The documents disagree and both are current. IT-04 retains an annual backup of all business systems for seven years; REG-02 requires records to be deleted at the end of their retention period, including from backups at the next rollover. Neither supersedes the other, and the conflict has data protection implications, so it should be escalated.",
+      "required_claims": [
+        "IT-04 retains an annual backup for seven years",
+        "REG-02 requires deletion at the end of the retention period, including from backups",
+        "the two documents disagree and neither supersedes the other"
+      ],
+      "forbidden_claims": [
+        "backups are kept for seven years and that settles the question",
+        "data is always removed from backups at the end of its retention period"
+      ],
+      "acceptable_variants": [
+        "7 years",
+        "conflict",
+        "contradiction",
+        "inconsistent",
+        "cannot be resolved"
       ],
       "expected_documents": [
         "IT-04",
@@ -516,11 +574,11 @@
         "REG-02#003"
       ],
       "must_not_cite": [],
-      "notes": ""
+      "notes": "Focal claim: whether data survives in backups once its retention period has ended."
     },
     {
       "question_id": "CONF-06-Q3",
-      "text": "We are asked to delete a customer's data. Does that include the backups?",
+      "text": "We have been asked to delete a customer's data. Does that include the backups?",
       "category": "conflict",
       "group_id": "CONF-06",
       "split": "test",
@@ -530,9 +588,22 @@
       "family_id": "CONF-06",
       "gap_topic": null,
       "paraphrase_of": "CONF-06-Q1",
-      "gold_answer": "The documents disagree and both are current. IT-04 retains an annual backup of all business systems for seven years; REG-02 requires records to be deleted at the end of their retention period, including from backups at the next rollover. Neither supersedes the other and the conflict has data protection implications, so it should be escalated.",
-      "gold_facts": [
-        "seven years"
+      "gold_answer": "The documents disagree and both are current. IT-04 retains an annual backup of all business systems for seven years; REG-02 requires records to be deleted at the end of their retention period, including from backups at the next rollover. Neither supersedes the other, and the conflict has data protection implications, so it should be escalated.",
+      "required_claims": [
+        "IT-04 retains an annual backup for seven years",
+        "REG-02 requires deletion at the end of the retention period, including from backups",
+        "the two documents disagree and neither supersedes the other"
+      ],
+      "forbidden_claims": [
+        "backups are kept for seven years and that settles the question",
+        "data is always removed from backups at the end of its retention period"
+      ],
+      "acceptable_variants": [
+        "7 years",
+        "conflict",
+        "contradiction",
+        "inconsistent",
+        "cannot be resolved"
       ],
       "expected_documents": [
         "IT-04",
@@ -543,7 +614,7 @@
         "REG-02#003"
       ],
       "must_not_cite": [],
-      "notes": ""
+      "notes": "Focal claim: whether data survives in backups once its retention period has ended."
     },
     {
       "question_id": "CONF-07-Q1",
@@ -557,10 +628,21 @@
       "family_id": "CONF-07",
       "gap_topic": null,
       "paraphrase_of": null,
-      "gold_answer": "The documents disagree and both are current. GEN-04 requires Finance Manager approval because the cost exceeds \u00a3750; FIN-03 places \u00a3501 to \u00a32,500 with the department head. Neither supersedes the other, so both approvers should be named and the discrepancy escalated.",
-      "gold_facts": [
-        "\u00a3750",
-        "\u00a32,500"
+      "gold_answer": "The documents disagree and both are current. GEN-04 requires Finance Manager approval because the cost exceeds \u00a3750; FIN-03 places \u00a3501 to \u00a32,500 with the department head. Neither supersedes the other, so both should be named and the discrepancy escalated.",
+      "required_claims": [
+        "GEN-04 requires Finance Manager approval above \u00a3750",
+        "FIN-03 places \u00a3501 to \u00a32,500 with the department head",
+        "the two documents disagree and neither supersedes the other"
+      ],
+      "forbidden_claims": [
+        "the Finance Manager alone approves it",
+        "the department head alone approves it"
+      ],
+      "acceptable_variants": [
+        "conflict",
+        "contradiction",
+        "both approvers",
+        "unclear which applies"
       ],
       "expected_documents": [
         "FIN-03",
@@ -571,7 +653,7 @@
         "FIN-03#002"
       ],
       "must_not_cite": [],
-      "notes": ""
+      "notes": "Focal claim: who approves an IT equipment purchase of \u00a3800."
     },
     {
       "question_id": "CONF-07-Q2",
@@ -585,10 +667,21 @@
       "family_id": "CONF-07",
       "gap_topic": null,
       "paraphrase_of": "CONF-07-Q1",
-      "gold_answer": "The documents disagree and both are current. GEN-04 requires Finance Manager approval because the cost exceeds \u00a3750; FIN-03 places \u00a3501 to \u00a32,500 with the department head. Neither supersedes the other, so both approvers should be named and the discrepancy escalated.",
-      "gold_facts": [
-        "\u00a3750",
-        "\u00a32,500"
+      "gold_answer": "The documents disagree and both are current. GEN-04 requires Finance Manager approval because the cost exceeds \u00a3750; FIN-03 places \u00a3501 to \u00a32,500 with the department head. Neither supersedes the other, so both should be named and the discrepancy escalated.",
+      "required_claims": [
+        "GEN-04 requires Finance Manager approval above \u00a3750",
+        "FIN-03 places \u00a3501 to \u00a32,500 with the department head",
+        "the two documents disagree and neither supersedes the other"
+      ],
+      "forbidden_claims": [
+        "the Finance Manager alone approves it",
+        "the department head alone approves it"
+      ],
+      "acceptable_variants": [
+        "conflict",
+        "contradiction",
+        "both approvers",
+        "unclear which applies"
       ],
       "expected_documents": [
         "FIN-03",
@@ -599,7 +692,7 @@
         "FIN-03#002"
       ],
       "must_not_cite": [],
-      "notes": ""
+      "notes": "Focal claim: who approves an IT equipment purchase of \u00a3800."
     },
     {
       "question_id": "CONF-07-Q3",
@@ -613,10 +706,21 @@
       "family_id": "CONF-07",
       "gap_topic": null,
       "paraphrase_of": "CONF-07-Q1",
-      "gold_answer": "The documents disagree and both are current. GEN-04 requires Finance Manager approval because the cost exceeds \u00a3750; FIN-03 places \u00a3501 to \u00a32,500 with the department head. Neither supersedes the other, so both approvers should be named and the discrepancy escalated.",
-      "gold_facts": [
-        "\u00a3750",
-        "\u00a32,500"
+      "gold_answer": "The documents disagree and both are current. GEN-04 requires Finance Manager approval because the cost exceeds \u00a3750; FIN-03 places \u00a3501 to \u00a32,500 with the department head. Neither supersedes the other, so both should be named and the discrepancy escalated.",
+      "required_claims": [
+        "GEN-04 requires Finance Manager approval above \u00a3750",
+        "FIN-03 places \u00a3501 to \u00a32,500 with the department head",
+        "the two documents disagree and neither supersedes the other"
+      ],
+      "forbidden_claims": [
+        "the Finance Manager alone approves it",
+        "the department head alone approves it"
+      ],
+      "acceptable_variants": [
+        "conflict",
+        "contradiction",
+        "both approvers",
+        "unclear which applies"
       ],
       "expected_documents": [
         "FIN-03",
@@ -627,7 +731,7 @@
         "FIN-03#002"
       ],
       "must_not_cite": [],
-      "notes": ""
+      "notes": "Focal claim: who approves an IT equipment purchase of \u00a3800."
     },
     {
       "question_id": "CONF-08-Q1",
@@ -642,11 +746,19 @@
       "gap_topic": null,
       "paraphrase_of": null,
       "gold_answer": "The documents disagree and both are current. GEN-02 gives the trade counter hours as Monday to Friday 08:00 to 17:00; CS-11 gives 08:30 to 16:30. Neither supersedes the other, so both should be reported and the discrepancy flagged.",
-      "gold_facts": [
-        "08:00",
-        "17:00",
-        "08:30",
-        "16:30"
+      "required_claims": [
+        "GEN-02 gives 08:00 to 17:00",
+        "CS-11 gives 08:30 to 16:30",
+        "the two documents disagree and neither supersedes the other"
+      ],
+      "forbidden_claims": [
+        "the trade counter is open 08:00 to 17:00 and that is the answer",
+        "the trade counter is open 08:30 to 16:30 and that is the answer"
+      ],
+      "acceptable_variants": [
+        "conflict",
+        "contradiction",
+        "two different sets of hours"
       ],
       "expected_documents": [
         "CS-11",
@@ -657,11 +769,11 @@
         "CS-11#003"
       ],
       "must_not_cite": [],
-      "notes": ""
+      "notes": "Focal claim: the trade counter opening hours."
     },
     {
       "question_id": "CONF-08-Q2",
-      "text": "Can I collect an order at 16:45 on a Wednesday?",
+      "text": "When is the trade counter open?",
       "category": "conflict",
       "group_id": "CONF-08",
       "split": "test",
@@ -672,11 +784,19 @@
       "gap_topic": null,
       "paraphrase_of": "CONF-08-Q1",
       "gold_answer": "The documents disagree and both are current. GEN-02 gives the trade counter hours as Monday to Friday 08:00 to 17:00; CS-11 gives 08:30 to 16:30. Neither supersedes the other, so both should be reported and the discrepancy flagged.",
-      "gold_facts": [
-        "08:00",
-        "17:00",
-        "08:30",
-        "16:30"
+      "required_claims": [
+        "GEN-02 gives 08:00 to 17:00",
+        "CS-11 gives 08:30 to 16:30",
+        "the two documents disagree and neither supersedes the other"
+      ],
+      "forbidden_claims": [
+        "the trade counter is open 08:00 to 17:00 and that is the answer",
+        "the trade counter is open 08:30 to 16:30 and that is the answer"
+      ],
+      "acceptable_variants": [
+        "conflict",
+        "contradiction",
+        "two different sets of hours"
       ],
       "expected_documents": [
         "CS-11",
@@ -687,11 +807,11 @@
         "CS-11#003"
       ],
       "must_not_cite": [],
-      "notes": ""
+      "notes": "Focal claim: the trade counter opening hours."
     },
     {
       "question_id": "CONF-08-Q3",
-      "text": "What time does the trade counter open in the morning?",
+      "text": "Can I collect an order from the trade counter at 16:45 on a Wednesday?",
       "category": "conflict",
       "group_id": "CONF-08",
       "split": "test",
@@ -702,11 +822,19 @@
       "gap_topic": null,
       "paraphrase_of": "CONF-08-Q1",
       "gold_answer": "The documents disagree and both are current. GEN-02 gives the trade counter hours as Monday to Friday 08:00 to 17:00; CS-11 gives 08:30 to 16:30. Neither supersedes the other, so both should be reported and the discrepancy flagged.",
-      "gold_facts": [
-        "08:00",
-        "17:00",
-        "08:30",
-        "16:30"
+      "required_claims": [
+        "GEN-02 gives 08:00 to 17:00",
+        "CS-11 gives 08:30 to 16:30",
+        "the two documents disagree and neither supersedes the other"
+      ],
+      "forbidden_claims": [
+        "the trade counter is open 08:00 to 17:00 and that is the answer",
+        "the trade counter is open 08:30 to 16:30 and that is the answer"
+      ],
+      "acceptable_variants": [
+        "conflict",
+        "contradiction",
+        "two different sets of hours"
       ],
       "expected_documents": [
         "CS-11",
@@ -717,7 +845,7 @@
         "CS-11#003"
       ],
       "must_not_cite": [],
-      "notes": ""
+      "notes": "Focal claim: the trade counter opening hours."
     },
     {
       "question_id": "CONF-09-Q1",
@@ -731,9 +859,20 @@
       "family_id": "CONF-09",
       "gap_topic": null,
       "paraphrase_of": null,
-      "gold_answer": "The documents disagree and both are current. IT-11 requires access rights to be reviewed every six months by each department head; IT-02 states access to systems holding personal data is reviewed annually by the Data Protection Lead. Neither supersedes the other, so both should be surfaced.",
-      "gold_facts": [
-        "six months"
+      "gold_answer": "The documents disagree and both are current. IT-11 requires access rights to be reviewed every six months by each department head; IT-02 states that access to systems holding personal data is reviewed annually by the Data Protection Lead. Neither supersedes the other, so both should be surfaced.",
+      "required_claims": [
+        "IT-11 requires review every six months by each department head",
+        "IT-02 states annually by the Data Protection Lead",
+        "the two documents disagree and neither supersedes the other"
+      ],
+      "forbidden_claims": [
+        "access rights are reviewed every six months and that is the answer",
+        "access rights are reviewed annually and that is the answer"
+      ],
+      "acceptable_variants": [
+        "conflict",
+        "contradiction",
+        "two different cycles"
       ],
       "expected_documents": [
         "IT-02",
@@ -744,37 +883,10 @@
         "IT-02#003"
       ],
       "must_not_cite": [],
-      "notes": ""
+      "notes": "Focal claim: how often user access rights are reviewed."
     },
     {
       "question_id": "CONF-09-Q2",
-      "text": "Who reviews access to systems holding personal data, and how often?",
-      "category": "conflict",
-      "group_id": "CONF-09",
-      "split": "test",
-      "answerability": "answerable",
-      "expected_behaviour": "surface_both_and_qualify",
-      "risk_level": "medium",
-      "family_id": "CONF-09",
-      "gap_topic": null,
-      "paraphrase_of": "CONF-09-Q1",
-      "gold_answer": "The documents disagree and both are current. IT-11 requires access rights to be reviewed every six months by each department head; IT-02 states access to systems holding personal data is reviewed annually by the Data Protection Lead. Neither supersedes the other, so both should be surfaced.",
-      "gold_facts": [
-        "six months"
-      ],
-      "expected_documents": [
-        "IT-02",
-        "IT-11"
-      ],
-      "expected_chunks": [
-        "IT-11#003",
-        "IT-02#003"
-      ],
-      "must_not_cite": [],
-      "notes": ""
-    },
-    {
-      "question_id": "CONF-09-Q3",
       "text": "What is the review cycle for system access permissions?",
       "category": "conflict",
       "group_id": "CONF-09",
@@ -785,9 +897,20 @@
       "family_id": "CONF-09",
       "gap_topic": null,
       "paraphrase_of": "CONF-09-Q1",
-      "gold_answer": "The documents disagree and both are current. IT-11 requires access rights to be reviewed every six months by each department head; IT-02 states access to systems holding personal data is reviewed annually by the Data Protection Lead. Neither supersedes the other, so both should be surfaced.",
-      "gold_facts": [
-        "six months"
+      "gold_answer": "The documents disagree and both are current. IT-11 requires access rights to be reviewed every six months by each department head; IT-02 states that access to systems holding personal data is reviewed annually by the Data Protection Lead. Neither supersedes the other, so both should be surfaced.",
+      "required_claims": [
+        "IT-11 requires review every six months by each department head",
+        "IT-02 states annually by the Data Protection Lead",
+        "the two documents disagree and neither supersedes the other"
+      ],
+      "forbidden_claims": [
+        "access rights are reviewed every six months and that is the answer",
+        "access rights are reviewed annually and that is the answer"
+      ],
+      "acceptable_variants": [
+        "conflict",
+        "contradiction",
+        "two different cycles"
       ],
       "expected_documents": [
         "IT-02",
@@ -798,7 +921,384 @@
         "IT-02#003"
       ],
       "must_not_cite": [],
-      "notes": ""
+      "notes": "Focal claim: how often user access rights are reviewed."
+    },
+    {
+      "question_id": "CONF-09-Q3",
+      "text": "How frequently is my system access supposed to be checked?",
+      "category": "conflict",
+      "group_id": "CONF-09",
+      "split": "test",
+      "answerability": "answerable",
+      "expected_behaviour": "surface_both_and_qualify",
+      "risk_level": "medium",
+      "family_id": "CONF-09",
+      "gap_topic": null,
+      "paraphrase_of": "CONF-09-Q1",
+      "gold_answer": "The documents disagree and both are current. IT-11 requires access rights to be reviewed every six months by each department head; IT-02 states that access to systems holding personal data is reviewed annually by the Data Protection Lead. Neither supersedes the other, so both should be surfaced.",
+      "required_claims": [
+        "IT-11 requires review every six months by each department head",
+        "IT-02 states annually by the Data Protection Lead",
+        "the two documents disagree and neither supersedes the other"
+      ],
+      "forbidden_claims": [
+        "access rights are reviewed every six months and that is the answer",
+        "access rights are reviewed annually and that is the answer"
+      ],
+      "acceptable_variants": [
+        "conflict",
+        "contradiction",
+        "two different cycles"
+      ],
+      "expected_documents": [
+        "IT-02",
+        "IT-11"
+      ],
+      "expected_chunks": [
+        "IT-11#003",
+        "IT-02#003"
+      ],
+      "must_not_cite": [],
+      "notes": "Focal claim: how often user access rights are reviewed."
+    },
+    {
+      "question_id": "CONF-11-Q1",
+      "text": "Does a visitor need safety footwear to enter the warehouse?",
+      "category": "conflict",
+      "group_id": "CONF-11",
+      "split": "test",
+      "answerability": "answerable",
+      "expected_behaviour": "surface_both_and_qualify",
+      "risk_level": "high",
+      "family_id": "CONF-11",
+      "gap_topic": null,
+      "paraphrase_of": null,
+      "gold_answer": "The documents disagree and both are current, and the disagreement is a safety one. OPS-05 makes safety footwear mandatory for everyone in the warehouse at all times, including visitors passing through; GEN-03 exempts escorted visits of less than fifteen minutes that keep to the marked walkways. Neither supersedes the other. Both should be surfaced and the conflict escalated rather than resolved by the assistant.",
+      "required_claims": [
+        "OPS-05 makes safety footwear mandatory for everyone in the warehouse at all times",
+        "GEN-03 exempts escorted visits of under fifteen minutes on marked walkways",
+        "the two documents disagree and neither supersedes the other"
+      ],
+      "forbidden_claims": [
+        "a visitor may enter the warehouse without safety footwear",
+        "the fifteen-minute exemption is the applicable rule"
+      ],
+      "acceptable_variants": [
+        "conflict",
+        "contradiction",
+        "safety implications",
+        "escalate"
+      ],
+      "expected_documents": [
+        "GEN-03",
+        "OPS-05"
+      ],
+      "expected_chunks": [
+        "GEN-03#002",
+        "OPS-05#001"
+      ],
+      "must_not_cite": [],
+      "notes": "Focal claim: whether a visitor needs safety footwear to enter the warehouse."
+    },
+    {
+      "question_id": "CONF-11-Q2",
+      "text": "What protective equipment must a visitor wear in the warehouse?",
+      "category": "conflict",
+      "group_id": "CONF-11",
+      "split": "test",
+      "answerability": "answerable",
+      "expected_behaviour": "surface_both_and_qualify",
+      "risk_level": "high",
+      "family_id": "CONF-11",
+      "gap_topic": null,
+      "paraphrase_of": "CONF-11-Q1",
+      "gold_answer": "The documents disagree and both are current, and the disagreement is a safety one. OPS-05 makes safety footwear mandatory for everyone in the warehouse at all times, including visitors passing through; GEN-03 exempts escorted visits of less than fifteen minutes that keep to the marked walkways. Neither supersedes the other. Both should be surfaced and the conflict escalated rather than resolved by the assistant.",
+      "required_claims": [
+        "OPS-05 makes safety footwear mandatory for everyone in the warehouse at all times",
+        "GEN-03 exempts escorted visits of under fifteen minutes on marked walkways",
+        "the two documents disagree and neither supersedes the other"
+      ],
+      "forbidden_claims": [
+        "a visitor may enter the warehouse without safety footwear",
+        "the fifteen-minute exemption is the applicable rule"
+      ],
+      "acceptable_variants": [
+        "conflict",
+        "contradiction",
+        "safety implications",
+        "escalate"
+      ],
+      "expected_documents": [
+        "GEN-03",
+        "OPS-05"
+      ],
+      "expected_chunks": [
+        "GEN-03#002",
+        "OPS-05#001"
+      ],
+      "must_not_cite": [],
+      "notes": "Focal claim: whether a visitor needs safety footwear to enter the warehouse."
+    },
+    {
+      "question_id": "CONF-11-Q3",
+      "text": "A customer wants a ten-minute look at the racking. What do they need on their feet?",
+      "category": "conflict",
+      "group_id": "CONF-11",
+      "split": "test",
+      "answerability": "answerable",
+      "expected_behaviour": "surface_both_and_qualify",
+      "risk_level": "high",
+      "family_id": "CONF-11",
+      "gap_topic": null,
+      "paraphrase_of": "CONF-11-Q1",
+      "gold_answer": "The documents disagree and both are current, and the disagreement is a safety one. OPS-05 makes safety footwear mandatory for everyone in the warehouse at all times, including visitors passing through; GEN-03 exempts escorted visits of less than fifteen minutes that keep to the marked walkways. Neither supersedes the other. Both should be surfaced and the conflict escalated rather than resolved by the assistant.",
+      "required_claims": [
+        "OPS-05 makes safety footwear mandatory for everyone in the warehouse at all times",
+        "GEN-03 exempts escorted visits of under fifteen minutes on marked walkways",
+        "the two documents disagree and neither supersedes the other"
+      ],
+      "forbidden_claims": [
+        "a visitor may enter the warehouse without safety footwear",
+        "the fifteen-minute exemption is the applicable rule"
+      ],
+      "acceptable_variants": [
+        "conflict",
+        "contradiction",
+        "safety implications",
+        "escalate"
+      ],
+      "expected_documents": [
+        "GEN-03",
+        "OPS-05"
+      ],
+      "expected_chunks": [
+        "GEN-03#002",
+        "OPS-05#001"
+      ],
+      "must_not_cite": [],
+      "notes": "Focal claim: whether a visitor needs safety footwear to enter the warehouse."
+    },
+    {
+      "question_id": "CONF-01-Q1",
+      "text": "What is the mileage rate for business travel?",
+      "category": "conflict",
+      "group_id": "CONF-01",
+      "split": "dev",
+      "answerability": "answerable",
+      "expected_behaviour": "cite_current_only",
+      "risk_level": "medium",
+      "family_id": "CONF-01",
+      "gap_topic": null,
+      "paraphrase_of": null,
+      "gold_answer": "55 pence per mile for the first 10,000 business miles in a tax year and 25 pence per mile thereafter, under HR-13. HR-03, which stated a flat 40 pence, was withdrawn.",
+      "required_claims": [
+        "55 pence per mile for the first 10,000 business miles"
+      ],
+      "forbidden_claims": [
+        "40 pence per mile",
+        "a flat rate of 40 pence"
+      ],
+      "acceptable_variants": [
+        "55p",
+        "fifty-five pence"
+      ],
+      "expected_documents": [
+        "HR-13"
+      ],
+      "expected_chunks": [
+        "HR-13#001"
+      ],
+      "must_not_cite": [
+        "HR-03"
+      ],
+      "notes": "Focal claim: the mileage rate for the first 10,000 business miles."
+    },
+    {
+      "question_id": "CONF-01-Q2",
+      "text": "How much can I claim per mile for using my own car on company business?",
+      "category": "conflict",
+      "group_id": "CONF-01",
+      "split": "dev",
+      "answerability": "answerable",
+      "expected_behaviour": "cite_current_only",
+      "risk_level": "medium",
+      "family_id": "CONF-01",
+      "gap_topic": null,
+      "paraphrase_of": "CONF-01-Q1",
+      "gold_answer": "55 pence per mile for the first 10,000 business miles in a tax year and 25 pence per mile thereafter, under HR-13. HR-03, which stated a flat 40 pence, was withdrawn.",
+      "required_claims": [
+        "55 pence per mile for the first 10,000 business miles"
+      ],
+      "forbidden_claims": [
+        "40 pence per mile",
+        "a flat rate of 40 pence"
+      ],
+      "acceptable_variants": [
+        "55p",
+        "fifty-five pence"
+      ],
+      "expected_documents": [
+        "HR-13"
+      ],
+      "expected_chunks": [
+        "HR-13#001"
+      ],
+      "must_not_cite": [
+        "HR-03"
+      ],
+      "notes": "Focal claim: the mileage rate for the first 10,000 business miles."
+    },
+    {
+      "question_id": "CONF-01-Q3",
+      "text": "What do I get paid per mile when I drive to a customer?",
+      "category": "conflict",
+      "group_id": "CONF-01",
+      "split": "dev",
+      "answerability": "answerable",
+      "expected_behaviour": "cite_current_only",
+      "risk_level": "medium",
+      "family_id": "CONF-01",
+      "gap_topic": null,
+      "paraphrase_of": "CONF-01-Q1",
+      "gold_answer": "55 pence per mile for the first 10,000 business miles in a tax year and 25 pence per mile thereafter, under HR-13. HR-03, which stated a flat 40 pence, was withdrawn.",
+      "required_claims": [
+        "55 pence per mile for the first 10,000 business miles"
+      ],
+      "forbidden_claims": [
+        "40 pence per mile",
+        "a flat rate of 40 pence"
+      ],
+      "acceptable_variants": [
+        "55p",
+        "fifty-five pence"
+      ],
+      "expected_documents": [
+        "HR-13"
+      ],
+      "expected_chunks": [
+        "HR-13#001"
+      ],
+      "must_not_cite": [
+        "HR-03"
+      ],
+      "notes": "Focal claim: the mileage rate for the first 10,000 business miles."
+    },
+    {
+      "question_id": "CONF-05-Q1",
+      "text": "How quickly must I report a lost company laptop?",
+      "category": "conflict",
+      "group_id": "CONF-05",
+      "split": "dev",
+      "answerability": "answerable",
+      "expected_behaviour": "surface_both_and_qualify",
+      "risk_level": "high",
+      "family_id": "CONF-05",
+      "gap_topic": null,
+      "paraphrase_of": null,
+      "gold_answer": "The documents disagree and both are current. IT-03 requires a lost or stolen device to be reported within 1 hour of becoming aware; GEN-04 allows 24 hours. Neither supersedes the other.",
+      "required_claims": [
+        "IT-03 requires reporting within 1 hour of becoming aware",
+        "GEN-04 allows 24 hours",
+        "the two documents disagree and neither supersedes the other"
+      ],
+      "forbidden_claims": [
+        "the deadline is 24 hours and that is the answer",
+        "the deadline is 1 hour and that is the answer"
+      ],
+      "acceptable_variants": [
+        "conflict",
+        "contradiction",
+        "one hour",
+        "twenty-four hours"
+      ],
+      "expected_documents": [
+        "GEN-04",
+        "IT-03"
+      ],
+      "expected_chunks": [
+        "GEN-04#003",
+        "IT-03#002"
+      ],
+      "must_not_cite": [],
+      "notes": "Focal claim: the deadline for reporting a lost or stolen company device."
+    },
+    {
+      "question_id": "CONF-05-Q2",
+      "text": "What is the time limit for reporting lost or stolen company equipment?",
+      "category": "conflict",
+      "group_id": "CONF-05",
+      "split": "dev",
+      "answerability": "answerable",
+      "expected_behaviour": "surface_both_and_qualify",
+      "risk_level": "high",
+      "family_id": "CONF-05",
+      "gap_topic": null,
+      "paraphrase_of": "CONF-05-Q1",
+      "gold_answer": "The documents disagree and both are current. IT-03 requires a lost or stolen device to be reported within 1 hour of becoming aware; GEN-04 allows 24 hours. Neither supersedes the other.",
+      "required_claims": [
+        "IT-03 requires reporting within 1 hour of becoming aware",
+        "GEN-04 allows 24 hours",
+        "the two documents disagree and neither supersedes the other"
+      ],
+      "forbidden_claims": [
+        "the deadline is 24 hours and that is the answer",
+        "the deadline is 1 hour and that is the answer"
+      ],
+      "acceptable_variants": [
+        "conflict",
+        "contradiction",
+        "one hour",
+        "twenty-four hours"
+      ],
+      "expected_documents": [
+        "GEN-04",
+        "IT-03"
+      ],
+      "expected_chunks": [
+        "GEN-04#003",
+        "IT-03#002"
+      ],
+      "must_not_cite": [],
+      "notes": "Focal claim: the deadline for reporting a lost or stolen company device."
+    },
+    {
+      "question_id": "CONF-05-Q3",
+      "text": "My work phone was stolen last night. By when must I report it?",
+      "category": "conflict",
+      "group_id": "CONF-05",
+      "split": "dev",
+      "answerability": "answerable",
+      "expected_behaviour": "surface_both_and_qualify",
+      "risk_level": "high",
+      "family_id": "CONF-05",
+      "gap_topic": null,
+      "paraphrase_of": "CONF-05-Q1",
+      "gold_answer": "The documents disagree and both are current. IT-03 requires a lost or stolen device to be reported within 1 hour of becoming aware; GEN-04 allows 24 hours. Neither supersedes the other.",
+      "required_claims": [
+        "IT-03 requires reporting within 1 hour of becoming aware",
+        "GEN-04 allows 24 hours",
+        "the two documents disagree and neither supersedes the other"
+      ],
+      "forbidden_claims": [
+        "the deadline is 24 hours and that is the answer",
+        "the deadline is 1 hour and that is the answer"
+      ],
+      "acceptable_variants": [
+        "conflict",
+        "contradiction",
+        "one hour",
+        "twenty-four hours"
+      ],
+      "expected_documents": [
+        "GEN-04",
+        "IT-03"
+      ],
+      "expected_chunks": [
+        "GEN-04#003",
+        "IT-03#002"
+      ],
+      "must_not_cite": [],
+      "notes": "Focal claim: the deadline for reporting a lost or stolen company device."
     },
     {
       "question_id": "TUNE-01-Q1",
@@ -812,10 +1312,19 @@
       "family_id": "TUNE-01",
       "gap_topic": null,
       "paraphrase_of": null,
-      "gold_answer": "The documents disagree and both are current. OPS-02 allows return within 30 days of delivery; CS-03 states 28 days. Neither supersedes the other. The statutory 14-day cancellation right under the Consumer Contracts Regulations 2013 is separate and unaffected.",
-      "gold_facts": [
-        "30 days",
-        "28 days"
+      "gold_answer": "The documents disagree and both are current. OPS-02 allows return within 30 days of delivery; CS-03 states 28 days. Neither supersedes the other. The statutory 14-day cancellation right is separate and unaffected.",
+      "required_claims": [
+        "OPS-02 allows return within 30 days of delivery",
+        "CS-03 states 28 days",
+        "the two documents disagree and neither supersedes the other"
+      ],
+      "forbidden_claims": [
+        "the returns window is 30 days",
+        "the returns window is 28 days"
+      ],
+      "acceptable_variants": [
+        "conflict",
+        "contradiction"
       ],
       "expected_documents": [
         "CS-03",
@@ -826,7 +1335,7 @@
         "CS-03#001"
       ],
       "must_not_cite": [],
-      "notes": ""
+      "notes": "Focal claim: the returns window for an unwanted item."
     },
     {
       "question_id": "TUNE-01-Q2",
@@ -840,10 +1349,19 @@
       "family_id": "TUNE-01",
       "gap_topic": null,
       "paraphrase_of": "TUNE-01-Q1",
-      "gold_answer": "The documents disagree and both are current. OPS-02 allows return within 30 days of delivery; CS-03 states 28 days. Neither supersedes the other. The statutory 14-day cancellation right under the Consumer Contracts Regulations 2013 is separate and unaffected.",
-      "gold_facts": [
-        "30 days",
-        "28 days"
+      "gold_answer": "The documents disagree and both are current. OPS-02 allows return within 30 days of delivery; CS-03 states 28 days. Neither supersedes the other. The statutory 14-day cancellation right is separate and unaffected.",
+      "required_claims": [
+        "OPS-02 allows return within 30 days of delivery",
+        "CS-03 states 28 days",
+        "the two documents disagree and neither supersedes the other"
+      ],
+      "forbidden_claims": [
+        "the returns window is 30 days",
+        "the returns window is 28 days"
+      ],
+      "acceptable_variants": [
+        "conflict",
+        "contradiction"
       ],
       "expected_documents": [
         "CS-03",
@@ -854,7 +1372,7 @@
         "CS-03#001"
       ],
       "must_not_cite": [],
-      "notes": ""
+      "notes": "Focal claim: the returns window for an unwanted item."
     },
     {
       "question_id": "TUNE-01-Q3",
@@ -868,10 +1386,19 @@
       "family_id": "TUNE-01",
       "gap_topic": null,
       "paraphrase_of": "TUNE-01-Q1",
-      "gold_answer": "The documents disagree and both are current. OPS-02 allows return within 30 days of delivery; CS-03 states 28 days. Neither supersedes the other. The statutory 14-day cancellation right under the Consumer Contracts Regulations 2013 is separate and unaffected.",
-      "gold_facts": [
-        "30 days",
-        "28 days"
+      "gold_answer": "The documents disagree and both are current. OPS-02 allows return within 30 days of delivery; CS-03 states 28 days. Neither supersedes the other. The statutory 14-day cancellation right is separate and unaffected.",
+      "required_claims": [
+        "OPS-02 allows return within 30 days of delivery",
+        "CS-03 states 28 days",
+        "the two documents disagree and neither supersedes the other"
+      ],
+      "forbidden_claims": [
+        "the returns window is 30 days",
+        "the returns window is 28 days"
+      ],
+      "acceptable_variants": [
+        "conflict",
+        "contradiction"
       ],
       "expected_documents": [
         "CS-03",
@@ -882,7 +1409,7 @@
         "CS-03#001"
       ],
       "must_not_cite": [],
-      "notes": ""
+      "notes": "Focal claim: the returns window for an unwanted item."
     },
     {
       "question_id": "TUNE-02-Q1",
@@ -897,9 +1424,18 @@
       "gap_topic": null,
       "paraphrase_of": null,
       "gold_answer": "The documents disagree and both are current. OPS-08 requires the Health and Safety Coordinator to review every accident book entry within two working days; REG-01 states five working days. Neither supersedes the other.",
-      "gold_facts": [
-        "two working days",
-        "five working days"
+      "required_claims": [
+        "OPS-08 requires review within two working days",
+        "REG-01 states five working days",
+        "the two documents disagree and neither supersedes the other"
+      ],
+      "forbidden_claims": [
+        "the review happens within two working days",
+        "the review happens within five working days"
+      ],
+      "acceptable_variants": [
+        "conflict",
+        "contradiction"
       ],
       "expected_documents": [
         "OPS-08",
@@ -910,11 +1446,11 @@
         "REG-01#005"
       ],
       "must_not_cite": [],
-      "notes": ""
+      "notes": "Focal claim: how long the Health and Safety Coordinator has to review an accident book entry."
     },
     {
       "question_id": "TUNE-02-Q2",
-      "text": "After an accident is written in the accident book, when is it looked at?",
+      "text": "After an accident is written in the accident book, when is it reviewed?",
       "category": "conflict",
       "group_id": "TUNE-02",
       "split": "dev",
@@ -925,9 +1461,18 @@
       "gap_topic": null,
       "paraphrase_of": "TUNE-02-Q1",
       "gold_answer": "The documents disagree and both are current. OPS-08 requires the Health and Safety Coordinator to review every accident book entry within two working days; REG-01 states five working days. Neither supersedes the other.",
-      "gold_facts": [
-        "two working days",
-        "five working days"
+      "required_claims": [
+        "OPS-08 requires review within two working days",
+        "REG-01 states five working days",
+        "the two documents disagree and neither supersedes the other"
+      ],
+      "forbidden_claims": [
+        "the review happens within two working days",
+        "the review happens within five working days"
+      ],
+      "acceptable_variants": [
+        "conflict",
+        "contradiction"
       ],
       "expected_documents": [
         "OPS-08",
@@ -938,7 +1483,7 @@
         "REG-01#005"
       ],
       "must_not_cite": [],
-      "notes": ""
+      "notes": "Focal claim: how long the Health and Safety Coordinator has to review an accident book entry."
     },
     {
       "question_id": "TUNE-02-Q3",
@@ -953,9 +1498,18 @@
       "gap_topic": null,
       "paraphrase_of": "TUNE-02-Q1",
       "gold_answer": "The documents disagree and both are current. OPS-08 requires the Health and Safety Coordinator to review every accident book entry within two working days; REG-01 states five working days. Neither supersedes the other.",
-      "gold_facts": [
-        "two working days",
-        "five working days"
+      "required_claims": [
+        "OPS-08 requires review within two working days",
+        "REG-01 states five working days",
+        "the two documents disagree and neither supersedes the other"
+      ],
+      "forbidden_claims": [
+        "the review happens within two working days",
+        "the review happens within five working days"
+      ],
+      "acceptable_variants": [
+        "conflict",
+        "contradiction"
       ],
       "expected_documents": [
         "OPS-08",
@@ -966,7 +1520,7 @@
         "REG-01#005"
       ],
       "must_not_cite": [],
-      "notes": ""
+      "notes": "Focal claim: how long the Health and Safety Coordinator has to review an accident book entry."
     },
     {
       "question_id": "GAP-pensions-Q1",
@@ -981,7 +1535,9 @@
       "gap_topic": "pensions and auto-enrolment",
       "paraphrase_of": null,
       "gold_answer": "",
-      "gold_facts": [],
+      "required_claims": [],
+      "forbidden_claims": [],
+      "acceptable_variants": [],
       "expected_documents": [],
       "expected_chunks": [],
       "must_not_cite": [],
@@ -1000,7 +1556,9 @@
       "gap_topic": "pensions and auto-enrolment",
       "paraphrase_of": "GAP-pensions-Q1",
       "gold_answer": "",
-      "gold_facts": [],
+      "required_claims": [],
+      "forbidden_claims": [],
+      "acceptable_variants": [],
       "expected_documents": [],
       "expected_chunks": [],
       "must_not_cite": [],
@@ -1019,7 +1577,9 @@
       "gap_topic": "company car and vehicle allowance schemes",
       "paraphrase_of": null,
       "gold_answer": "",
-      "gold_facts": [],
+      "required_claims": [],
+      "forbidden_claims": [],
+      "acceptable_variants": [],
       "expected_documents": [],
       "expected_chunks": [],
       "must_not_cite": [],
@@ -1038,7 +1598,9 @@
       "gap_topic": "company car and vehicle allowance schemes",
       "paraphrase_of": "GAP-company-Q1",
       "gold_answer": "",
-      "gold_facts": [],
+      "required_claims": [],
+      "forbidden_claims": [],
+      "acceptable_variants": [],
       "expected_documents": [],
       "expected_chunks": [],
       "must_not_cite": [],
@@ -1057,7 +1619,9 @@
       "gap_topic": "export documentation procedure",
       "paraphrase_of": null,
       "gold_answer": "",
-      "gold_facts": [],
+      "required_claims": [],
+      "forbidden_claims": [],
+      "acceptable_variants": [],
       "expected_documents": [],
       "expected_chunks": [],
       "must_not_cite": [],
@@ -1065,7 +1629,7 @@
     },
     {
       "question_id": "GAP-export-Q2",
-      "text": "Which commodity codes do we use on a commercial invoice?",
+      "text": "Which commodity codes do we put on a commercial invoice?",
       "category": "unanswerable",
       "group_id": "export documentation procedure",
       "split": "dev",
@@ -1076,7 +1640,9 @@
       "gap_topic": "export documentation procedure",
       "paraphrase_of": "GAP-export-Q1",
       "gold_answer": "",
-      "gold_facts": [],
+      "required_claims": [],
+      "forbidden_claims": [],
+      "acceptable_variants": [],
       "expected_documents": [],
       "expected_chunks": [],
       "must_not_cite": [],
@@ -1095,7 +1661,9 @@
       "gap_topic": "maternity, paternity and shared parental leave",
       "paraphrase_of": null,
       "gold_answer": "",
-      "gold_facts": [],
+      "required_claims": [],
+      "forbidden_claims": [],
+      "acceptable_variants": [],
       "expected_documents": [],
       "expected_chunks": [],
       "must_not_cite": [],
@@ -1114,7 +1682,9 @@
       "gap_topic": "maternity, paternity and shared parental leave",
       "paraphrase_of": "GAP-maternity-Q1",
       "gold_answer": "",
-      "gold_facts": [],
+      "required_claims": [],
+      "forbidden_claims": [],
+      "acceptable_variants": [],
       "expected_documents": [],
       "expected_chunks": [],
       "must_not_cite": [],
@@ -1133,7 +1703,9 @@
       "gap_topic": "redundancy and notice periods",
       "paraphrase_of": null,
       "gold_answer": "",
-      "gold_facts": [],
+      "required_claims": [],
+      "forbidden_claims": [],
+      "acceptable_variants": [],
       "expected_documents": [],
       "expected_chunks": [],
       "must_not_cite": [],
@@ -1152,7 +1724,9 @@
       "gap_topic": "redundancy and notice periods",
       "paraphrase_of": "GAP-redundancy-Q1",
       "gold_answer": "",
-      "gold_facts": [],
+      "required_claims": [],
+      "forbidden_claims": [],
+      "acceptable_variants": [],
       "expected_documents": [],
       "expected_chunks": [],
       "must_not_cite": [],
@@ -1171,7 +1745,9 @@
       "gap_topic": "share options and bonus schemes",
       "paraphrase_of": null,
       "gold_answer": "",
-      "gold_facts": [],
+      "required_claims": [],
+      "forbidden_claims": [],
+      "acceptable_variants": [],
       "expected_documents": [],
       "expected_chunks": [],
       "must_not_cite": [],
@@ -1190,7 +1766,9 @@
       "gap_topic": "share options and bonus schemes",
       "paraphrase_of": "GAP-share-Q1",
       "gold_answer": "",
-      "gold_facts": [],
+      "required_claims": [],
+      "forbidden_claims": [],
+      "acceptable_variants": [],
       "expected_documents": [],
       "expected_chunks": [],
       "must_not_cite": [],
@@ -1209,7 +1787,9 @@
       "gap_topic": "flexible working requests",
       "paraphrase_of": null,
       "gold_answer": "",
-      "gold_facts": [],
+      "required_claims": [],
+      "forbidden_claims": [],
+      "acceptable_variants": [],
       "expected_documents": [],
       "expected_chunks": [],
       "must_not_cite": [],
@@ -1228,7 +1808,9 @@
       "gap_topic": "flexible working requests",
       "paraphrase_of": "GAP-flexible-Q1",
       "gold_answer": "",
-      "gold_facts": [],
+      "required_claims": [],
+      "forbidden_claims": [],
+      "acceptable_variants": [],
       "expected_documents": [],
       "expected_chunks": [],
       "must_not_cite": [],
@@ -1247,7 +1829,9 @@
       "gap_topic": "staff purchase and employee discount",
       "paraphrase_of": null,
       "gold_answer": "",
-      "gold_facts": [],
+      "required_claims": [],
+      "forbidden_claims": [],
+      "acceptable_variants": [],
       "expected_documents": [],
       "expected_chunks": [],
       "must_not_cite": [],
@@ -1266,7 +1850,9 @@
       "gap_topic": "staff purchase and employee discount",
       "paraphrase_of": "GAP-staff-Q1",
       "gold_answer": "",
-      "gold_facts": [],
+      "required_claims": [],
+      "forbidden_claims": [],
+      "acceptable_variants": [],
       "expected_documents": [],
       "expected_chunks": [],
       "must_not_cite": [],
@@ -1284,8 +1870,20 @@
       "family_id": null,
       "gap_topic": "probationary period",
       "paraphrase_of": null,
-      "gold_answer": "The corpus does not state the length of the probationary period. HR-04 refers to it, saying new employees work on site for its duration, but no document defines how long it lasts or what happens at the end of it. The reference should be reported and the missing detail acknowledged.",
-      "gold_facts": [],
+      "gold_answer": "The corpus does not state the length of the probationary period. HR-04 refers to it, saying new employees work on site for its duration, but no document defines how long it lasts or what happens at the end of it.",
+      "required_claims": [
+        "HR-04 refers to a probationary period",
+        "no document states how long the probationary period lasts"
+      ],
+      "forbidden_claims": [
+        "the probationary period is three months",
+        "the probationary period is six months"
+      ],
+      "acceptable_variants": [
+        "the corpus does not say",
+        "not specified",
+        "not documented"
+      ],
       "expected_documents": [
         "HR-04"
       ],
@@ -1295,7 +1893,7 @@
     },
     {
       "question_id": "PART-probationary-Q2",
-      "text": "What happens at the end of probation?",
+      "text": "What is the length of probation for a new starter?",
       "category": "partial",
       "group_id": "probationary period",
       "split": "dev",
@@ -1305,8 +1903,20 @@
       "family_id": null,
       "gap_topic": "probationary period",
       "paraphrase_of": "PART-probationary-Q1",
-      "gold_answer": "The corpus does not state the length of the probationary period. HR-04 refers to it, saying new employees work on site for its duration, but no document defines how long it lasts or what happens at the end of it. The reference should be reported and the missing detail acknowledged.",
-      "gold_facts": [],
+      "gold_answer": "The corpus does not state the length of the probationary period. HR-04 refers to it, saying new employees work on site for its duration, but no document defines how long it lasts or what happens at the end of it.",
+      "required_claims": [
+        "HR-04 refers to a probationary period",
+        "no document states how long the probationary period lasts"
+      ],
+      "forbidden_claims": [
+        "the probationary period is three months",
+        "the probationary period is six months"
+      ],
+      "acceptable_variants": [
+        "the corpus does not say",
+        "not specified",
+        "not documented"
+      ],
       "expected_documents": [
         "HR-04"
       ],
@@ -1326,8 +1936,19 @@
       "family_id": null,
       "gap_topic": "grievance procedure",
       "paraphrase_of": null,
-      "gold_answer": "The corpus does not document a grievance procedure. HR-05 names the ACAS Code of Practice on disciplinary and grievance procedures, so the word appears and HR-05 will be retrieved, but it sets out the disciplinary process only. The near miss should be reported and the gap acknowledged rather than filled.",
-      "gold_facts": [],
+      "gold_answer": "The corpus does not document a grievance procedure. HR-05 names the ACAS Code of Practice on disciplinary and grievance procedures, so the word appears and HR-05 will be retrieved, but HR-05 sets out the disciplinary process only.",
+      "required_claims": [
+        "HR-05 names the ACAS Code of Practice on disciplinary and grievance procedures",
+        "no grievance procedure is documented in the corpus"
+      ],
+      "forbidden_claims": [
+        "raise the grievance in writing with your line manager within five days"
+      ],
+      "acceptable_variants": [
+        "the corpus does not contain",
+        "not documented",
+        "only the disciplinary procedure"
+      ],
       "expected_documents": [
         "HR-05"
       ],
@@ -1347,8 +1968,19 @@
       "family_id": null,
       "gap_topic": "grievance procedure",
       "paraphrase_of": "PART-grievance-Q1",
-      "gold_answer": "The corpus does not document a grievance procedure. HR-05 names the ACAS Code of Practice on disciplinary and grievance procedures, so the word appears and HR-05 will be retrieved, but it sets out the disciplinary process only. The near miss should be reported and the gap acknowledged rather than filled.",
-      "gold_facts": [],
+      "gold_answer": "The corpus does not document a grievance procedure. HR-05 names the ACAS Code of Practice on disciplinary and grievance procedures, so the word appears and HR-05 will be retrieved, but HR-05 sets out the disciplinary process only.",
+      "required_claims": [
+        "HR-05 names the ACAS Code of Practice on disciplinary and grievance procedures",
+        "no grievance procedure is documented in the corpus"
+      ],
+      "forbidden_claims": [
+        "raise the grievance in writing with your line manager within five days"
+      ],
+      "acceptable_variants": [
+        "the corpus does not contain",
+        "not documented",
+        "only the disciplinary procedure"
+      ],
       "expected_documents": [
         "HR-05"
       ],
@@ -1369,9 +2001,14 @@
       "gap_topic": null,
       "paraphrase_of": null,
       "gold_answer": "25 days of paid annual leave per leave year, in addition to the 8 English bank holidays. Part-time employees receive a pro-rata entitlement.",
-      "gold_facts": [
-        "25 days",
-        "8"
+      "required_claims": [
+        "25 days of paid annual leave",
+        "in addition to the 8 English bank holidays"
+      ],
+      "forbidden_claims": [],
+      "acceptable_variants": [
+        "twenty-five days",
+        "eight bank holidays"
       ],
       "expected_documents": [
         "HR-01"
@@ -1394,8 +2031,14 @@
       "family_id": null,
       "gap_topic": null,
       "paraphrase_of": null,
-      "gold_answer": "The north corner of the staff car park, beside the blue container. The marked pedestrian route around the outside of the building is used, not the goods-in bay.",
-      "gold_facts": [],
+      "gold_answer": "The north corner of the staff car park, beside the blue container. Use the marked pedestrian route around the outside of the building, not the goods-in bay.",
+      "required_claims": [
+        "the north corner of the staff car park"
+      ],
+      "forbidden_claims": [],
+      "acceptable_variants": [
+        "beside the blue container"
+      ],
       "expected_documents": [
         "OPS-07"
       ],
@@ -1418,8 +2061,12 @@
       "gap_topic": null,
       "paraphrase_of": null,
       "gold_answer": "\u00a350. The float is \u00a3250, held in the locked cash box in the Finance office.",
-      "gold_facts": [
+      "required_claims": [
         "\u00a350"
+      ],
+      "forbidden_claims": [],
+      "acceptable_variants": [
+        "fifty pounds"
       ],
       "expected_documents": [
         "FIN-02"
@@ -1431,10 +2078,10 @@
       "notes": ""
     },
     {
-      "question_id": "FACT-warehouse-speed",
-      "text": "What is the speed limit inside the warehouse?",
+      "question_id": "FACT-order-picking-cutoff",
+      "text": "When is an order picked?",
       "category": "factual",
-      "group_id": "FACT-warehouse-speed",
+      "group_id": "FACT-order-picking-cutoff",
       "split": "dev",
       "answerability": "answerable",
       "expected_behaviour": "answer_directly",
@@ -1442,15 +2089,20 @@
       "family_id": null,
       "gap_topic": null,
       "paraphrase_of": null,
-      "gold_answer": "4 km/h inside the building and 8 km/h in the yard.",
-      "gold_facts": [
-        "4"
+      "gold_answer": "Orders released before 14:00 are picked the same working day. The picker scans each item against the pick list and records any shortfall immediately.",
+      "required_claims": [
+        "orders released before 14:00 are picked the same working day"
+      ],
+      "forbidden_claims": [],
+      "acceptable_variants": [
+        "2pm",
+        "same day"
       ],
       "expected_documents": [
-        "OPS-05"
+        "OPS-01"
       ],
       "expected_chunks": [
-        "OPS-05#004"
+        "OPS-01#003"
       ],
       "must_not_cite": [],
       "notes": ""
@@ -1467,8 +2119,17 @@
       "family_id": null,
       "gap_topic": null,
       "paraphrase_of": null,
-      "gold_answer": "No. Knives are washed by hand in warm soapy water and dried immediately. Dishwasher detergent is abrasive and dulls the edge, heat can loosen or crack handle scales, and blades knock against other items.",
-      "gold_facts": [],
+      "gold_answer": "No. Knives are washed by hand in warm soapy water and dried immediately. Dishwasher detergent is abrasive and dulls the edge, heat can loosen handle scales, and blades knock against other items.",
+      "required_claims": [
+        "knives are washed by hand, not in a dishwasher"
+      ],
+      "forbidden_claims": [
+        "dishwasher safe"
+      ],
+      "acceptable_variants": [
+        "hand wash",
+        "no"
+      ],
       "expected_documents": [
         "PRD-01"
       ],
@@ -1491,8 +2152,12 @@
       "gap_topic": null,
       "paraphrase_of": null,
       "gold_answer": "Up to two days per week for eligible office-based roles. Monday is a core on-site day for all office staff.",
-      "gold_facts": [
-        "two days"
+      "required_claims": [
+        "up to two days per week"
+      ],
+      "forbidden_claims": [],
+      "acceptable_variants": [
+        "2 days"
       ],
       "expected_documents": [
         "HR-04"
@@ -1516,8 +2181,13 @@
       "gap_topic": null,
       "paraphrase_of": null,
       "gold_answer": "Within 48 hours of delivery, to customer services, with the order number and photographs of the damage and the outer packaging.",
-      "gold_facts": [
-        "48 hours"
+      "required_claims": [
+        "within 48 hours of delivery"
+      ],
+      "forbidden_claims": [],
+      "acceptable_variants": [
+        "48 hours",
+        "two days"
       ],
       "expected_documents": [
         "CS-02"
@@ -1540,8 +2210,14 @@
       "family_id": null,
       "gap_topic": null,
       "paraphrase_of": null,
-      "gold_answer": "A valid public liability insurance certificate, a site induction with the Facilities Coordinator, and a risk assessment and method statement for the work.",
-      "gold_facts": [],
+      "gold_answer": "A valid public liability insurance certificate, a site induction with the Facilities Coordinator, and a risk assessment and method statement for work at height, hot work or electrical isolation.",
+      "required_claims": [
+        "a valid public liability insurance certificate"
+      ],
+      "forbidden_claims": [],
+      "acceptable_variants": [
+        "public liability insurance"
+      ],
       "expected_documents": [
         "GEN-03"
       ],
@@ -1564,7 +2240,14 @@
       "gap_topic": null,
       "paraphrase_of": null,
       "gold_answer": "Only employees holding a current RTITB or equivalent accredited certificate for the relevant truck category who also appear on the site authorised operator list. Authorisation is site-specific.",
-      "gold_facts": [],
+      "required_claims": [
+        "a current RTITB or equivalent accredited certificate",
+        "the site authorised operator list"
+      ],
+      "forbidden_claims": [],
+      "acceptable_variants": [
+        "RTITB"
+      ],
       "expected_documents": [
         "OPS-06"
       ],
@@ -1587,8 +2270,12 @@
       "gap_topic": null,
       "paraphrase_of": null,
       "gold_answer": "30 days from the date of invoice. Invoices are raised automatically on despatch and emailed to the address held on the customer account.",
-      "gold_facts": [
-        "30 days"
+      "required_claims": [
+        "30 days from the date of invoice"
+      ],
+      "forbidden_claims": [],
+      "acceptable_variants": [
+        "thirty days"
       ],
       "expected_documents": [
         "FIN-01"
@@ -1612,8 +2299,12 @@
       "gap_topic": null,
       "paraphrase_of": null,
       "gold_answer": "30 days overdue, by formal letter. A reminder email goes at 7 days and a credit control telephone call at 14 days.",
-      "gold_facts": [
-        "30"
+      "required_claims": [
+        "30 days overdue"
+      ],
+      "forbidden_claims": [],
+      "acceptable_variants": [
+        "thirty days"
       ],
       "expected_documents": [
         "FIN-01"
@@ -1637,7 +2328,13 @@
       "gap_topic": null,
       "paraphrase_of": null,
       "gold_answer": "To the original payment method. Card refunds are processed by Finance through the payment gateway and typically reach the customer three to five working days later, which is outside the company's control.",
-      "gold_facts": [],
+      "required_claims": [
+        "to the original payment method"
+      ],
+      "forbidden_claims": [],
+      "acceptable_variants": [
+        "the card used to pay"
+      ],
       "expected_documents": [
         "OPS-03"
       ],
@@ -1660,7 +2357,13 @@
       "gap_topic": null,
       "paraphrase_of": null,
       "gold_answer": "In April, with the employee's line manager, following the performance review cycle.",
-      "gold_facts": [],
+      "required_claims": [
+        "in April"
+      ],
+      "forbidden_claims": [],
+      "acceptable_variants": [
+        "April, with the line manager"
+      ],
       "expected_documents": [
         "HR-06"
       ],
@@ -1683,7 +2386,15 @@
       "gap_topic": null,
       "paraphrase_of": null,
       "gold_answer": "A documented pre-use check covering tyres, forks and mast for damage, hydraulic leaks, brakes including the parking brake, horn, lights and beacon, and the battery.",
-      "gold_facts": [],
+      "required_claims": [
+        "a documented pre-use check at the start of every shift"
+      ],
+      "forbidden_claims": [],
+      "acceptable_variants": [
+        "tyres, forks and mast",
+        "brakes",
+        "hydraulic leaks"
+      ],
       "expected_documents": [
         "OPS-06"
       ],
@@ -1705,8 +2416,17 @@
       "family_id": null,
       "gap_topic": null,
       "paraphrase_of": null,
-      "gold_answer": "A corporate induction on the first day covering company overview, health and safety, fire procedures and data protection. The company provides a laptop and headset. It does not reimburse home broadband, heating or electricity, and a second monitor for home use is provided to department heads only.",
-      "gold_facts": [],
+      "gold_answer": "A corporate induction on the first day covering company overview, health and safety, fire procedures and data protection. The company provides a laptop and headset. It does not reimburse home broadband, heating or electricity, and a second monitor for home use goes to department heads only.",
+      "required_claims": [
+        "a corporate induction on the first day",
+        "the company provides a laptop and headset"
+      ],
+      "forbidden_claims": [
+        "the company reimburses home broadband"
+      ],
+      "acceptable_variants": [
+        "induction covers health and safety, fire procedures and data protection"
+      ],
       "expected_documents": [
         "HR-06",
         "HR-04"
@@ -1730,8 +2450,15 @@
       "family_id": null,
       "gap_topic": null,
       "paraphrase_of": null,
-      "gold_answer": "Visitors sign in at reception and are accompanied by a member of staff, so their host takes them to the assembly point at the north corner of the staff car park. Fire wardens take a roll call using the daily attendance list and the visitor book from reception, so the visitor is accounted for from the book.",
-      "gold_facts": [],
+      "gold_answer": "Visitors sign in at reception and are accompanied by a member of staff, who is responsible for ensuring they evacuate. Fire wardens take a roll call at the assembly point using the daily attendance list and the visitor book from reception, so the visitor is accounted for from the book.",
+      "required_claims": [
+        "the member of staff who arranged the visit is responsible for ensuring they evacuate",
+        "roll call uses the visitor book from reception"
+      ],
+      "forbidden_claims": [],
+      "acceptable_variants": [
+        "assembly point at the north corner of the staff car park"
+      ],
       "expected_documents": [
         "GEN-03",
         "OPS-07"
@@ -1756,8 +2483,16 @@
       "family_id": null,
       "gap_topic": null,
       "paraphrase_of": null,
-      "gold_answer": "The customer reports the damage within 48 hours with photographs. Customer services raise a damage report and offer either a replacement despatched within one working day of the report being accepted, or a refund processed under OPS-03. Damaged items are collected by the carrier.",
-      "gold_facts": [],
+      "gold_answer": "The customer reports the damage within 48 hours with photographs. Customer services raise a damage report and offer, at the customer's choice, a replacement despatched within one working day of the report being accepted, or a refund processed under OPS-03. Damaged items are collected by the carrier.",
+      "required_claims": [
+        "report within 48 hours with photographs",
+        "a replacement or a refund at the customer's choice"
+      ],
+      "forbidden_claims": [],
+      "acceptable_variants": [
+        "damage report",
+        "refund processed under OPS-03"
+      ],
       "expected_documents": [
         "CS-02",
         "OPS-03"
@@ -1782,8 +2517,16 @@
       "family_id": null,
       "gap_topic": null,
       "paraphrase_of": null,
-      "gold_answer": "They apply for a credit account using the account application form. Finance obtains a credit reference and two trade references before opening the account, with an opening limit typically \u00a32,500. Next working day delivery costs \u00a312.95 excluding VAT and requires the order to be placed and paid before 14:00, Monday to Thursday.",
-      "gold_facts": [],
+      "gold_answer": "They apply for a credit account using the account application form. Finance obtains a credit reference and two trade references before the account is opened, with an opening limit typically \u00a32,500. Next working day delivery costs \u00a312.95 excluding VAT.",
+      "required_claims": [
+        "apply using the account application form",
+        "next working day delivery costs \u00a312.95"
+      ],
+      "forbidden_claims": [],
+      "acceptable_variants": [
+        "a credit reference and two trade references",
+        "opening limits are typically \u00a32,500"
+      ],
       "expected_documents": [
         "FIN-01",
         "CS-11"
@@ -1807,8 +2550,16 @@
       "family_id": null,
       "gap_topic": null,
       "paraphrase_of": null,
-      "gold_answer": "A returns operative inspects the item within two working days of receipt and assigns disposition D, which is photographed and routed to a supplier claim under CS-03. The customer claims with the order number, a description of the fault and photographs; assessment normally takes five working days from receipt.",
-      "gold_facts": [],
+      "gold_answer": "A returns operative inspects the item within two working days of receipt and assigns a disposition; a faulty item within warranty is photographed and routed to a supplier claim under CS-03. The customer claims with the order number, a description of the fault and photographs.",
+      "required_claims": [
+        "a returns operative inspects each item within two working days of receipt",
+        "the claim is made with the order number, a description of the fault and photographs"
+      ],
+      "forbidden_claims": [],
+      "acceptable_variants": [
+        "disposition D",
+        "routed to a supplier claim"
+      ],
       "expected_documents": [
         "OPS-02",
         "CS-03"

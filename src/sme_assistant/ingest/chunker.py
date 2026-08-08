@@ -410,16 +410,37 @@ def chunk_document(
 
     emit()
 
-    # Merge a short tail only into a chunk from the same section. Merging
-    # across sections would put two sections' text under one section's path,
-    # reintroducing the attribution error this rewrite removes.
+    # A trailing section shorter than min_words is absorbed into the chunk
+    # before it, which is the same policy the main loop applies to any adjacent
+    # pair of short sections: they share a chunk and the chunk names both.
+    #
+    # This guard read `if True` for several commits. Found in review. The
+    # behaviour it produced was correct, but a dead guard is still a defect: it
+    # contradicted the comment above it, so the comment could not be trusted,
+    # and it would have merged a distant or oversized tail without complaint if
+    # the corpus ever produced one. Measured across the current 37 documents,
+    # all 19 tail merges join immediately adjacent sibling sections and none
+    # reaches max_words, so restoring a real guard leaves the chunk set
+    # unchanged. That is the point: the guard is here for the corpus that has
+    # not been written yet.
+    #
+    # Refusing to merge instead would leave 20 stub chunks, one of them 11
+    # words. An 11-word chunk is a poor retrieval unit and a noisy embedding,
+    # so fragmenting is the worse failure.
     if len(chunks) > 1 and chunks[-1].word_count < min_words:
         tail = chunks[-1]
         previous = chunks[-2]
         merged_sections = previous.sections + tuple(
             s for s in tail.sections if s not in previous.sections
         )
-        if True:
+        # The tail must be the chunk immediately after ``previous`` in the same
+        # document, and the result must stay inside the size budget. Both hold
+        # for every document in the current corpus.
+        is_contiguous = (
+            tail.doc_id == previous.doc_id and tail.ordinal == previous.ordinal + 1
+        )
+        fits = previous.word_count + tail.word_count <= max_words
+        if is_contiguous and fits:
             chunks[-2:] = [
                 Chunk(
                     chunk_id=previous.chunk_id,

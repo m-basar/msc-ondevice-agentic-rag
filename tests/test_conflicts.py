@@ -127,7 +127,7 @@ def test_registry_matches_corpus(registry, kb):
 
 def test_every_superseded_document_is_registered(registry, kb):
     """The check that stops an accidental contradiction becoming a test case."""
-    registered = {d for f in registry.families for d in f.documents}
+    registered = {d for f in registry.all_families for d in f.documents}
     for doc in kb.superseded():
         assert doc.doc_id in registered, (
             f"{doc.doc_id} is superseded but no conflict family accounts for it"

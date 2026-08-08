@@ -47,6 +47,7 @@ def conflict_question(qid: str, family: str, split: str, **overrides) -> Questio
         risk_level="medium",
         family_id=family,
         gold_answer="Both documents are live and they disagree.",
+        required_claims=("the two documents disagree",),
     )
     defaults.update(overrides)
     return Question(**defaults)
@@ -173,9 +174,11 @@ def test_folds_are_held_out_by_family_not_by_question():
 
 def test_expected_behaviour_must_match_the_conflict_type(registry):
     """A supersession family is resolvable; a current_current family is not."""
+    supersession = next(f for f in registry.families if f.is_filter_resolvable)
     question_set = QuestionSet((
         conflict_question(
-            "Q1", "CONF-01", "test", expected_behaviour="surface_both_and_qualify"
+            "Q1", supersession.family_id, "test",
+            expected_behaviour="surface_both_and_qualify",
         ),
     ))
     with pytest.raises(QuestionSetError, match="cite_current_only"):
@@ -190,7 +193,16 @@ def test_an_unregistered_family_is_rejected(registry):
 
 def test_every_registered_family_must_be_exercised(registry):
     """A family with no question inflates the apparent scope of the evaluation."""
-    question_set = QuestionSet((conflict_question("Q1", "CONF-05", "test"),))
+    one = registry.families[0]
+    question_set = QuestionSet((
+        conflict_question(
+            "Q1", one.family_id, "test",
+            expected_behaviour=(
+                "cite_current_only" if one.is_filter_resolvable
+                else "surface_both_and_qualify"
+            ),
+        ),
+    ))
     with pytest.raises(QuestionSetError, match="No question exercises"):
         validate_question_set(question_set, registry=registry)
 
@@ -295,7 +307,8 @@ def test_round_trip_preserves_grouping(tmp_path):
 
 def test_a_reported_family_cannot_appear_in_the_development_split(registry):
     """Tuning against a family that is later scored contaminates the result."""
-    question_set = QuestionSet((conflict_question("Q1", "CONF-05", "dev"),))
+    reported = next(f for f in registry.families if not f.is_filter_resolvable)
+    question_set = QuestionSet((conflict_question("Q1", reported.family_id, "dev"),))
     with pytest.raises(QuestionSetError, match="reported family"):
         validate_question_set(question_set, registry=registry)
 
@@ -314,17 +327,21 @@ def test_a_tuning_family_cannot_appear_in_the_test_split(registry):
 
 
 def test_a_tuning_family_in_the_development_split_is_accepted(registry):
+    def behaviour(family):
+        return (
+            "cite_current_only"
+            if family.is_filter_resolvable
+            else "surface_both_and_qualify"
+        )
+
     question_set = QuestionSet(
-        tuple(conflict_question(f"Q{i}", f, "dev") for i, f in enumerate(("TUNE-01", "TUNE-02")))
+        tuple(
+            conflict_question(f"D{i}", f.family_id, "dev", expected_behaviour=behaviour(f))
+            for i, f in enumerate(registry.tuning_families)
+        )
         + tuple(
-            conflict_question(
-                f"T{i}", f, "test",
-                expected_behaviour="cite_current_only" if f in ("CONF-01", "CONF-02", "CONF-03", "CONF-04") else "surface_both_and_qualify",
-            )
-            for i, f in enumerate(
-                ("CONF-01", "CONF-02", "CONF-03", "CONF-04",
-                 "CONF-05", "CONF-06", "CONF-07", "CONF-08", "CONF-09")
-            )
+            conflict_question(f"T{i}", f.family_id, "test", expected_behaviour=behaviour(f))
+            for i, f in enumerate(registry.families)
         )
     )
     validate_question_set(question_set, registry=registry)
@@ -333,9 +350,11 @@ def test_a_tuning_family_in_the_development_split_is_accepted(registry):
 def test_tuning_families_are_not_counted_as_reported(registry):
     """A reader must not be able to mistake eleven families for the sample size."""
     assert len(registry.families) == 9
-    assert len(registry.tuning_families) == 2
-    assert len(registry.all_families) == 11
-    assert all(f.family_id.startswith("CONF-") for f in registry.families)
+    assert len(registry.tuning_families) == 4
+    assert len(registry.all_families) == 13
+    assert {f.family_id for f in registry.families}.isdisjoint(
+        {f.family_id for f in registry.tuning_families}
+    )
 
 
 # --- the real question set ---------------------------------------------------
@@ -396,7 +415,7 @@ def test_the_conflict_families_are_the_largest_category(real_question_set):
     change to the study, not a tidy-up."""
     summary = real_question_set.summary()
     assert summary["by_category"]["conflict"] >= summary["by_category"]["factual"]
-    assert summary["family_group_count"] == 11
+    assert summary["family_group_count"] == 13
 
 
 def test_the_test_split_covers_every_reported_family(real_question_set, registry):
@@ -409,4 +428,89 @@ def test_paraphrases_number_three_per_conflict_family(real_question_set):
         assert len(real_question_set.of_group(group)) == 3, (
             f"{group} does not have three paraphrases, so families contribute "
             "unequal weight to the question-level figure"
+        )
+
+
+# --- provenance is checked, not merely recorded ------------------------------
+
+
+def test_a_question_set_from_a_different_chunk_set_is_refused(real_question_set):
+    """Recording a hash and checking it are different things.
+
+    The question set names specific chunk identifiers as evidence. If the
+    chunker changes, those identifiers keep resolving but point at different
+    text, and every scored result is quietly wrong. The corpus hash cannot see
+    that, which is why this one matters most.
+    """
+    from sme_assistant.evaluation.question_set import check_provenance
+
+    with pytest.raises(QuestionSetError, match="chunk_set_sha256 recorded"):
+        check_provenance(real_question_set, chunk_set_sha256="0" * 64)
+
+
+def test_a_question_set_from_a_different_corpus_is_refused(real_question_set):
+    from sme_assistant.evaluation.question_set import check_provenance
+
+    with pytest.raises(QuestionSetError, match="corpus_sha256 recorded"):
+        check_provenance(real_question_set, corpus_sha256="0" * 64)
+
+
+def test_the_current_state_passes_provenance(real_question_set, kb, registry):
+    from sme_assistant.common.config import load_config
+    from sme_assistant.evaluation.question_set import check_provenance
+    from sme_assistant.ingest.chunker import chunk_corpus
+    from sme_assistant.ingest.index import chunk_set_fingerprint
+
+    config = load_config()
+    chunks = chunk_corpus(
+        kb,
+        config.require("chunking.max_words"),
+        config.require("chunking.overlap_sentences"),
+        config.require("chunking.min_words"),
+    )
+    check_provenance(
+        real_question_set,
+        corpus_sha256=kb.fingerprint(),
+        chunk_set_sha256=chunk_set_fingerprint(chunks),
+        registry_sha256=registry.fingerprint(),
+    )
+
+
+def test_a_set_with_no_recorded_hash_is_refused_not_skipped():
+    """A set written before this check existed cannot be trusted to be current."""
+    from sme_assistant.evaluation.question_set import QuestionSet, check_provenance
+
+    with pytest.raises(QuestionSetError, match="not recorded"):
+        check_provenance(QuestionSet((), None, {}), chunk_set_sha256="a" * 64)
+
+
+# --- per-question rubrics ----------------------------------------------------
+
+
+def test_every_answerable_question_carries_its_own_required_claims(real_question_set):
+    """A family-level fact list marks a concise correct answer wrong and passes
+    an incomplete one."""
+    for question in real_question_set:
+        if question.answerability == "unanswerable":
+            assert not question.required_claims
+        else:
+            assert question.required_claims, f"{question.question_id} has no rubric"
+
+
+def test_the_rubric_that_was_in_force_is_written_into_the_artefact(real_question_set):
+    rubrics = real_question_set.metadata["scoring_rubrics"]
+    for behaviour in {q.expected_behaviour for q in real_question_set}:
+        assert behaviour in rubrics
+        assert set(rubrics[behaviour]) == {"0", "1", "2"}
+
+
+def test_paraphrases_of_a_family_share_one_focal_claim(real_question_set):
+    """Three questions asking different things are not paraphrases, however
+    much they share a document pair."""
+    for group in real_question_set.family_groups:
+        questions = real_question_set.of_group(group)
+        claims = {q.required_claims for q in questions}
+        assert len(claims) == 1, (
+            f"{group} has questions with different required claims, so they are "
+            "not paraphrases of one focal claim"
         )

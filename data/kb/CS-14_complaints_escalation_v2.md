@@ -1,15 +1,17 @@
 ---
-id: CS-04
+id: CS-14
 title: Complaints and Escalation
 category: CS
-version: 1.4
-effective_date: 2025-09-01
-status: superseded
-superseded_by: CS-14
+version: 2.0
+effective_date: 2026-03-01
+status: current
+supersedes: CS-04
 owner: Customer Services Manager
 ---
 
 # Complaints and Escalation
+
+These procedures replace CS-04 with effect from 1 March 2026, following the customer experience review.
 
 ## Principles
 
@@ -21,11 +23,11 @@ Staff are empowered to resolve matters at first contact. Do not escalate simply 
 
 | Stage | Handled by | Response deadline |
 |---|---|---|
-| 1 | Customer services advisor | Acknowledge same working day, resolve within 3 working days |
-| 2 | Customer Services Manager | Written response within 10 working days |
+| 1 | Customer services advisor | Acknowledge same working day, resolve within 2 working days |
+| 2 | Customer Services Manager | Written response within 8 working days |
 | 3 | Managing Director | Written response within 20 working days |
 
-A complaint moves to stage 2 if the customer is dissatisfied with the stage 1 outcome, if it involves an allegation of staff misconduct, if the value in dispute exceeds £1,000, or if it alleges injury or damage to property.
+A complaint moves to stage 2 if the customer is dissatisfied with the stage 1 outcome, if it involves an allegation of staff misconduct, if the value in dispute exceeds £500, or if it alleges injury or damage to property.
 
 Anything alleging personal injury goes straight to stage 3 and to the insurer, and no admission of liability is made.
 
@@ -33,8 +35,8 @@ Anything alleging personal injury goes straight to stage 3 and to the insurer, a
 
 | Value | Authorised by |
 |---|---|
-| Up to £50 | Customer services advisor |
-| £51 to £250 | Customer Services Manager |
+| Up to £100 | Customer services advisor |
+| £101 to £250 | Customer Services Manager |
 | Above £250 | Managing Director |
 
 Goodwill is offered as a credit note by default. Cash refunds as goodwill require Finance Manager approval.

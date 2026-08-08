@@ -49,9 +49,19 @@ def chunk_set_fingerprint(chunks: Sequence[Chunk]) -> str:
     Hashing the chunk identifiers and their text subsumes the corpus, the
     chunking parameters and the chunker's behaviour in a single value. If the
     chunks differ for any reason at all, this differs.
+
+    Sections are hashed as well as text. They were not, originally, which left
+    one relabelling invisible: a chunk whose text is unchanged but whose
+    ``sections`` tuple is different is a different chunk for every purpose that
+    matters. Section names are prepended to the evidence block the model sees,
+    so they change the prompt; and the attribution bug that motivated the
+    chunker rewrite was a section-labelling bug with identical text. A
+    fingerprint that could not see it was blind to exactly the failure it was
+    added for.
     """
     canonical = "\n".join(
-        f"{c.chunk_id}\x00{c.text}" for c in sorted(chunks, key=lambda c: c.chunk_id)
+        f"{c.chunk_id}\x00{'; '.join(c.sections)}\x00{c.text}"
+        for c in sorted(chunks, key=lambda c: c.chunk_id)
     )
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 

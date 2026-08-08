@@ -1,6 +1,6 @@
 {
-  "corpus_sha256": "dd51cf741e597459f782bf351f4a789654de53ab072f7853d7faf0368cfa4866",
-  "document_count": 37,
+  "corpus_sha256": "3060ae540015ae7db267ba9edc227b39d162fbf8a25a37fb3e7891fb719c84c8",
+  "document_count": 38,
   "documents": [
     {
       "id": "CS-01",
@@ -26,17 +26,17 @@
       "version": "1.9",
       "status": "current",
       "effective_date": "2026-01-01",
-      "words": 290,
-      "sha256": "d1952b678a3f88fe0b47a27f0f46e5b14aa4119948b3818262fbc0c3771f4e95"
+      "words": 337,
+      "sha256": "fddb1cac9b2e9a4dc409e7bd339cfff26a877164506deb81f3392696e30757a0"
     },
     {
       "id": "CS-04",
       "title": "Complaints and Escalation",
       "version": "1.4",
-      "status": "current",
+      "status": "superseded",
       "effective_date": "2025-09-01",
       "words": 299,
-      "sha256": "50d55949e6f4cb3ef939a94a1a5710d9d9fce7d1fd406a11d356c3917643ade2"
+      "sha256": "eaadf8c287b09404479bfd49fc80034ad3bb90bba74801ef2980d397f7c8c224"
     },
     {
       "id": "CS-11",
@@ -45,7 +45,16 @@
       "status": "current",
       "effective_date": "2026-02-01",
       "words": 314,
-      "sha256": "fbe6971a9724facddd31853efdf6d038f5bc8c89468d894260598ce718526774"
+      "sha256": "73dce6011a5508c193022edd18c0c941ee0821f6c35b16db9fe686d779875bc5"
+    },
+    {
+      "id": "CS-14",
+      "title": "Complaints and Escalation",
+      "version": "2.0",
+      "status": "current",
+      "effective_date": "2026-03-01",
+      "words": 314,
+      "sha256": "d7aec3461494453de6b9dbb180ef019ed0431eb7f7b4642d61059c67cf787d75"
     },
     {
       "id": "FIN-01",
@@ -98,8 +107,8 @@
       "version": "1.2",
       "status": "current",
       "effective_date": "2025-09-01",
-      "words": 251,
-      "sha256": "5e98775676434ceaa21ae14e6249fc3493c44c2a6f98e14928fc54013a38ee32"
+      "words": 259,
+      "sha256": "d034e3ddcb8f81e2b6ce0c437365139490b2182d95389bd67a777d5348402f32"
     },
     {
       "id": "GEN-04",
@@ -197,8 +206,8 @@
       "version": "2.0",
       "status": "current",
       "effective_date": "2025-11-01",
-      "words": 277,
-      "sha256": "a6e880177f98673697bd580bbd1756139b60a6906fe05b90d9e58f36a034471a"
+      "words": 307,
+      "sha256": "2fb18706eff3f226aa0a0fe3a1d5210f45ec1a89fbf449b42b7909caa973f55b"
     },
     {
       "id": "IT-03",
@@ -323,8 +332,8 @@
       "version": "3.2",
       "status": "current",
       "effective_date": "2026-01-01",
-      "words": 318,
-      "sha256": "c5cea30d8d8f97eec01c1399baa55334bac8fed48d30581070807ca163e8c369"
+      "words": 357,
+      "sha256": "719678397f9b523105f43101b8a3a50abedb057d2e2994dd3f61b7ef962c0bd8"
     },
     {
       "id": "REG-02",
@@ -336,50 +345,36 @@
       "sha256": "e8740a533cd3bb68bd86519fdb5cf4abc4541108efcd85fff9f4c3176d8230eb"
     }
   ],
-  "generated_at": "2026-08-07T19:23:24.204728+00:00",
-  "schema_versions": {
-    "conflict_registry": "2.0",
-    "corpus_manifest": "1.0"
+  "chunk_set_sha256": "5fc6a227c0a10b815bbb3fb8a36cfc340406feeea55ae15e1d488b16104e5312",
+  "chunk_count": 138,
+  "chunking": {
+    "max_words": 180,
+    "overlap_sentences": 1,
+    "min_words": 40
   },
-  "config_sha256": "b159968e3078b581eb52db7b485d1c0b3e05273a4212081e5e747979f19f0d23",
-  "conflict_registry_sha256": "e7a74d6e34c67a3a3bf6ed49996c2e9c932d1d0ca45d3a2698bacf048efc4bcd",
-  "git": {
-    "available": true,
-    "commit": "c91dea6b4a7fca21caf50ef551e8229211ea1853",
-    "commit_short": "c91dea6b4a7f",
-    "branch": "main",
-    "dirty": true,
-    "dirty_files": [
-      "docs/BENCHMARKS.md",
-      "results/benchmarks/README.md",
-      "results/corpus_manifest.json"
-    ]
-  },
-  "legal_review_date": "2026-08-07",
-  "conflicts": {
-    "schema_version": "2.0",
-    "family_count": 6,
-    "by_type": {
-      "current_current": 2,
-      "version_supersession": 4
-    },
-    "by_risk": {
-      "high": 2,
-      "medium": 3,
-      "low": 1
-    },
-    "filter_resolvable": 4,
-    "requires_reasoning": 2,
-    "domains": [
-      "customer_service",
-      "data_protection",
-      "finance",
-      "hr",
-      "information_security"
+  "registry_sha256": "8974ff1a88b0304dcd1c7033ee263873321eaeff539089c3b217040914a23890",
+  "conflict_families": {
+    "reported": [
+      "CONF-02",
+      "CONF-03",
+      "CONF-04",
+      "CONF-06",
+      "CONF-07",
+      "CONF-08",
+      "CONF-09",
+      "CONF-10",
+      "CONF-11"
     ],
-    "fact_count": 13,
-    "fully_absent_topics": 8,
-    "partial_topics": 2,
-    "registry_sha256": "e7a74d6e34c67a3a3bf6ed49996c2e9c932d1d0ca45d3a2698bacf048efc4bcd"
-  }
+    "tuning": [
+      "CONF-01",
+      "CONF-05",
+      "TUNE-01",
+      "TUNE-02"
+    ],
+    "by_type_reported": {
+      "version_supersession": 4,
+      "current_current": 5
+    }
+  },
+  "generated_by": "scripts/kb_summary.py, regenerated 8 August 2026 under pre-registration amendment 1.1"
 }

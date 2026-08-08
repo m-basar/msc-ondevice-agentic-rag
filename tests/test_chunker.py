@@ -452,3 +452,74 @@ def test_overlap_still_works_when_a_section_is_long_enough_to_split(kb):
     for chunk in carried:
         assert chunk.text.startswith("(continues from ")
         assert chunk.sections == ("One Long Section",)
+
+
+# --- the short-tail merge guard ---------------------------------------------
+# This guard read `if True` for several commits. The behaviour it produced was
+# correct for the current corpus, but nothing enforced it.
+
+
+def _doc(tmp_path, body: str, doc_id: str = "TST-01"):
+    from sme_assistant.kb.loader import load_document
+
+    text = (
+        f"---\nid: {doc_id}\ntitle: T\ncategory: TST\nversion: 1.0\n"
+        f"effective_date: 2026-01-01\nstatus: current\n---\n\n{body}\n"
+    )
+    path = tmp_path / f"{doc_id}.md"
+    path.write_text(text, encoding="utf-8")
+    return load_document(path)
+
+
+def test_a_short_tail_is_absorbed_into_the_preceding_chunk(tmp_path):
+    """The behaviour the dead guard happened to produce, now enforced."""
+    from sme_assistant.ingest.chunker import chunk_document
+
+    body = "# T\n\n## One\n\n" + ("alpha " * 100) + "\n\n## Two\n\nshort trailing note.\n"
+    chunks = chunk_document(_doc(tmp_path, body), max_words=180, min_words=40)
+
+    assert len(chunks) == 1, "the short tail should not stand as its own chunk"
+    assert "One" in chunks[0].sections and "Two" in chunks[0].sections, (
+        "the merged chunk must name both sections, or its text is attributed "
+        "to a section it did not come from"
+    )
+
+
+def test_a_short_tail_is_not_merged_when_the_result_would_exceed_max_words(tmp_path):
+    """The case the dead guard would have let through.
+
+    No document in the current corpus produces it, which is why the missing
+    guard was invisible. It is here for the corpus that has not been written.
+    """
+    from sme_assistant.ingest.chunker import chunk_document
+
+    body = "# T\n\n## One\n\n" + ("alpha " * 179) + "\n\n## Two\n\nshort trailing note.\n"
+    chunks = chunk_document(_doc(tmp_path, body), max_words=180, min_words=40)
+
+    assert len(chunks) == 2, (
+        "merging would have pushed the chunk past max_words, so the tail must "
+        "stand alone even though it is short"
+    )
+    assert chunks[1].sections == ("Two",)
+
+
+def test_the_chunk_set_fingerprint_notices_a_section_relabelling(tmp_path):
+    """Identical text under a different section name is a different chunk.
+
+    Section names are prepended to the evidence the model sees, so a
+    relabelling changes the prompt. The fingerprint hashed only identifiers and
+    text, so this was invisible to it.
+    """
+    from dataclasses import replace
+
+    from sme_assistant.ingest.chunker import chunk_document
+    from sme_assistant.ingest.index import chunk_set_fingerprint
+
+    body = "# T\n\n## One\n\n" + ("alpha " * 60) + "\n\n## Two\n\n" + ("beta " * 60) + "\n"
+    chunks = chunk_document(_doc(tmp_path, body), max_words=180, min_words=40)
+    relabelled = [replace(chunks[0], sections=("Renamed",))] + list(chunks[1:])
+
+    assert chunk_set_fingerprint(chunks) != chunk_set_fingerprint(relabelled), (
+        "a section relabelling with unchanged text left the fingerprint identical, "
+        "so a stale index would have loaded without complaint"
+    )

@@ -83,7 +83,9 @@
       ],
       "must_not_assert": [
         "40 pence per mile as the current rate"
-      ]
+      ],
+      "split": "tuning",
+      "note": "Stage 4 pilot question. The mileage answer was one of four outputs that set the retrieval threshold and the evidence format. Moved to tuning on 8 August 2026 under pre-registration amendment 1.1."
     },
     {
       "id": "CONF-02",
@@ -272,7 +274,9 @@
         "that the two documents agree"
       ],
       "why_a_filter_cannot_solve_this": "Both documents are status: current, both are in force, both are owned by different departments, and no metadata field ranks one above the other. Resolving it requires reading the claims and noticing they are incompatible.",
-      "risk_note": "The gap is not academic. A device lost at 09:00 reported at 17:00 is compliant under GEN-04 and eight hours late under IT-03, and the difference bears on the 72-hour ICO notification window."
+      "risk_note": "The gap is not academic. A device lost at 09:00 reported at 17:00 is compliant under GEN-04 and eight hours late under IT-03, and the difference bears on the 72-hour ICO notification window.",
+      "split": "tuning",
+      "note": "Stage 4 pilot question. The lost-laptop answer cited IT-03#001 for a figure in IT-03#002 and directly motivated evaluation/answer_scoring.py. Moved to tuning on 8 August 2026 under pre-registration amendment 1.1."
     },
     {
       "id": "CONF-06",
@@ -486,6 +490,112 @@
       "must_not_assert": [
         "that either timescale is the operative one",
         "that the general policy overrides the specific procedure, or the reverse"
+      ]
+    },
+    {
+      "id": "CONF-10",
+      "split": "reported",
+      "name": "Complaint response deadlines and goodwill authority",
+      "type": "version_supersession",
+      "domain": "customer_service",
+      "risk_level": "medium",
+      "documents": [
+        "CS-04",
+        "CS-14"
+      ],
+      "authoritative": "CS-14",
+      "resolution": "prefer_current",
+      "note": "Replaces CONF-01 in the reported set. Planted 8 August 2026 under pre-registration amendment 1.1, after CONF-01 was found to be contaminated by the Stage 4 pilot.",
+      "conflicting_facts": [
+        {
+          "fact": "stage 1 complaint resolution deadline",
+          "values": {
+            "CS-04": "3 working days",
+            "CS-14": "2 working days"
+          },
+          "anchors": {
+            "CS-04": "resolve within 3 working days",
+            "CS-14": "resolve within 2 working days"
+          }
+        },
+        {
+          "fact": "stage 2 written response deadline",
+          "values": {
+            "CS-04": "10 working days",
+            "CS-14": "8 working days"
+          },
+          "anchors": {
+            "CS-04": "Written response within 10 working days",
+            "CS-14": "Written response within 8 working days"
+          }
+        },
+        {
+          "fact": "goodwill an advisor may authorise without escalation",
+          "values": {
+            "CS-04": "up to £50",
+            "CS-14": "up to £100"
+          },
+          "anchors": {
+            "CS-04": "| Up to £50 | Customer services advisor |",
+            "CS-14": "| Up to £100 | Customer services advisor |"
+          }
+        },
+        {
+          "fact": "disputed value that forces escalation to stage 2",
+          "values": {
+            "CS-04": "exceeds £1,000",
+            "CS-14": "exceeds £500"
+          },
+          "anchors": {
+            "CS-04": "the value in dispute exceeds £1,000",
+            "CS-14": "the value in dispute exceeds £500"
+          }
+        }
+      ],
+      "must_cite": [
+        "CS-14"
+      ],
+      "must_not_assert": [
+        "that an advisor may only authorise goodwill up to £50",
+        "that stage 1 allows 3 working days",
+        "that CS-04 is in force"
+      ]
+    },
+    {
+      "id": "CONF-11",
+      "split": "reported",
+      "name": "Safety footwear for visitors in the warehouse",
+      "type": "current_current",
+      "domain": "health_and_safety",
+      "risk_level": "high",
+      "documents": [
+        "GEN-03",
+        "OPS-05"
+      ],
+      "authoritative": null,
+      "resolution": "escalate_unresolved",
+      "note": "Replaces CONF-05 in the reported set. Planted 8 August 2026 under pre-registration amendment 1.1. Chosen as a high-risk family because CONF-05 was the only high-risk current_current family and removing it would have left the class entirely low and medium risk.",
+      "conflicting_facts": [
+        {
+          "fact": "whether a visitor needs safety footwear to enter the warehouse",
+          "values": {
+            "GEN-03": "not required for escorted visits under fifteen minutes on marked walkways",
+            "OPS-05": "mandatory for everyone at all times, including visitors passing through"
+          },
+          "anchors": {
+            "GEN-03": "Safety footwear is not required for escorted visits of less than fifteen minutes",
+            "OPS-05": "mandatory for everyone in the warehouse at all times, including visitors and managers passing through"
+          }
+        }
+      ],
+      "must_cite": [
+        "GEN-03",
+        "OPS-05"
+      ],
+      "must_not_assert": [
+        "that a visitor may enter the warehouse without safety footwear as settled policy",
+        "that either document supersedes the other",
+        "that the fifteen-minute exemption is agreed across the corpus"
       ]
     }
   ],

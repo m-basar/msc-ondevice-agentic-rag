@@ -99,9 +99,13 @@ class RunWriter:
         config: Config | None = None,
         kb: KnowledgeBase | None = None,
         index: Any = None,
+        question_set: Any = None,
+        registry: Any = None,
         root: Path | None = None,
     ) -> None:
         self.config = config or load_config()
+        self.question_set = question_set
+        self.registry = registry
         self.arm = arm
         self.split = split
         self.started = datetime.now(timezone.utc)
@@ -138,6 +142,30 @@ class RunWriter:
                 "index_file_sha256": sha256_of(index_path),
                 "index_metadata": getattr(index, "metadata", None),
                 "git": git_commit(),
+                # What the run was scored against, not only what produced it.
+                # A results directory that records the model and the corpus but
+                # not the question set or the rubric cannot be re-scored, and
+                # cannot be shown to have used the gold data it claims.
+                "question_set_sha256": (
+                    sha256_of_text(
+                        json.dumps(
+                            [q.to_dict() for q in self.question_set], sort_keys=True
+                        )
+                    )
+                    if self.question_set is not None
+                    else None
+                ),
+                "question_set_metadata": (
+                    dict(self.question_set.metadata)
+                    if self.question_set is not None
+                    else None
+                ),
+                "registry_sha256": (
+                    self.registry.fingerprint() if self.registry is not None else None
+                ),
+                "preregistration_sha256": sha256_of(
+                    Path(__file__).resolve().parents[3] / "docs" / "PREREGISTRATION.md"
+                ),
                 "seed": self.config.get("generation.seed"),
                 "generation_options": self.config.require("generation"),
                 "retrieval": {
@@ -183,7 +211,24 @@ class RunWriter:
         evidence = ""
         retrieval = getattr(answer, "retrieval", None)
         if retrieval is not None:
-            evidence = retrieval.evidence_text()
+            # Rendered in the arm's own format. This called evidence_text() with
+            # no argument, which defaults to WITH_STATUS, so an Arm A record
+            # stored evidence carrying supersession markers that the model was
+            # never shown. The saved prompt and the saved evidence disagreed,
+            # and the arm whose whole definition is "no status metadata" was the
+            # one recorded wrongly.
+            from ..retrieve.retriever import EvidenceFormat
+
+            try:
+                fmt = EvidenceFormat(self.arm.evidence_format)
+            except ValueError as exc:
+                raise ValueError(
+                    f"Arm {self.arm.arm} declares evidence_format "
+                    f"{self.arm.evidence_format!r}, which is not a known format. "
+                    "Recording evidence in the wrong format silently misreports "
+                    "what the model saw."
+                ) from exc
+            evidence = retrieval.evidence_text(fmt)
 
         record = {
             "question_id": question_id,
@@ -259,6 +304,18 @@ def write_review_sheet(
     wants one arm to win. That is not a criticism of them; it is the reason
     blinding exists as a method. The key is written to a separate file so that
     scoring can be completed before the mapping is looked at.
+
+    The evidence block is **not** included, though an earlier version included
+    it. Arm A is defined by receiving evidence with no status markers, so the
+    presence or absence of "[SUPERSEDED, replaced by X]" in the evidence
+    identified the arm on sight, and a reviewer who noticed the pattern once had
+    deanonymised the whole sheet. Blinding that a careful reader can defeat is
+    worse than none, because it is reported as a control.
+
+    Conflict handling is scored from the answer against the question's rubric,
+    which is what the reviewer is judging in any case. Citation support is
+    scored automatically from the full record, where the evidence is still
+    stored verbatim.
     """
     pooled: list[dict[str, Any]] = []
     arms: list[str] = []
@@ -289,10 +346,10 @@ def write_review_sheet(
                 "question": record["question"],
                 "system": key[record["arm"]],
                 "answer": record["answer"],
-                "evidence": record["evidence"],
-                # Deliberately omitted: arm, model, prompt, timings, and every
-                # automatic metric. A reviewer who can see the arm, or how fast
-                # it was, is no longer blind.
+                # Deliberately omitted: arm, model, prompt, timings, the
+                # evidence block, and every automatic metric. A reviewer who can
+                # see the arm, how fast it was, or whether the evidence carried
+                # status markers, is no longer blind.
             }) + "\n")
 
     key_path = output_path.with_name(output_path.stem + "_key.json")

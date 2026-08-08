@@ -54,10 +54,11 @@
     "medium_threshold": 0.45
   },
   "experiment": {
-    "conditions": {
-      "A": "laptop_gpu",
-      "B": "laptop_cpu_only",
-      "C": "pi5_cpu_only"
+    "_note": "Hardware conditions are named, not lettered. They were A, B and C, which collided with experimental arms A, B, C and D: a results file saying 'condition B' was ambiguous between laptop CPU and the status-metadata arm.",
+    "hardware_conditions": {
+      "laptop_gpu": "Ryzen 7 7840HS, RTX 4050, GPU offload",
+      "laptop_cpu": "Ryzen 7 7840HS, CPU only",
+      "pi5_cpu": "Raspberry Pi 5, 16GB, CPU only"
     }
   }
 }

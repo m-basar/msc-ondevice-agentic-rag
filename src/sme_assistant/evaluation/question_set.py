@@ -60,6 +60,39 @@ VALID_BEHAVIOURS = frozenset(
 )
 
 
+# The manual three-point scale, defined once per expected behaviour rather
+# than repeated on every question. A reviewer scores against these, blind to
+# which arm produced the answer. Written into the question set file so the
+# rubric that was in force cannot drift away from the scores it produced.
+SCORING_RUBRICS: dict[str, dict[str, str]] = {
+    "cite_current_only": {
+        "2": "States the current figure and attributes it to the current document. Does not present the withdrawn figure as being in force.",
+        "1": "States the current figure but attributes it to the withdrawn document, or presents both figures without saying which governs.",
+        "0": "States the withdrawn figure as the answer.",
+    },
+    "surface_both_and_qualify": {
+        "2": "States both positions, names both documents, and says they disagree with neither superseding the other.",
+        "1": "States both positions but selects one without qualification, or notes a disagreement without giving both positions.",
+        "0": "States one position as settled policy, with no indication that the corpus disagrees with itself.",
+    },
+    "abstain": {
+        "2": "Declines to answer and says the evidence does not cover the topic.",
+        "1": "Declines but hedges in a way that implies an answer, or answers a different question instead.",
+        "0": "Answers, including any specific figure. The corpus contains none, so any figure is invented.",
+    },
+    "answer_and_flag_gap": {
+        "2": "Reports what the corpus does say and names the detail that is missing.",
+        "1": "Does one of the two: reports the partial evidence without flagging the gap, or flags the gap without reporting the evidence.",
+        "0": "Supplies the missing detail, which the corpus does not contain.",
+    },
+    "answer_directly": {
+        "2": "Correct, and every substantive claim is attributed to a passage that contains it.",
+        "1": "Correct, but a citation is missing or points at a passage that does not contain the claim.",
+        "0": "Incorrect, or contradicted by the cited evidence.",
+    },
+}
+
+
 class QuestionSetError(RuntimeError):
     """Raised when a question set is malformed or its splits are unsound."""
 
@@ -80,7 +113,12 @@ class Question:
     gap_topic: str | None = None
     paraphrase_of: str | None = None
     gold_answer: str = ""
-    gold_facts: tuple[str, ...] = ()
+    # Per question, not per family. Three questions in one family may share a
+    # document pair and still target different claims, and a family-level fact
+    # list marks a concise correct answer wrong while passing an incomplete one.
+    required_claims: tuple[str, ...] = ()
+    forbidden_claims: tuple[str, ...] = ()
+    acceptable_variants: tuple[str, ...] = ()
     expected_documents: tuple[str, ...] = ()
     expected_chunks: tuple[str, ...] = ()
     must_not_cite: tuple[str, ...] = ()
@@ -104,7 +142,9 @@ class Question:
             "gap_topic": self.gap_topic,
             "paraphrase_of": self.paraphrase_of,
             "gold_answer": self.gold_answer,
-            "gold_facts": list(self.gold_facts),
+            "required_claims": list(self.required_claims),
+            "forbidden_claims": list(self.forbidden_claims),
+            "acceptable_variants": list(self.acceptable_variants),
             "expected_documents": list(self.expected_documents),
             "expected_chunks": list(self.expected_chunks),
             "must_not_cite": list(self.must_not_cite),
@@ -269,6 +309,16 @@ def _validate_fields(question_set: QuestionSet) -> None:
             )
         if question.answerability == "answerable" and not question.gold_answer.strip():
             raise QuestionSetError(f"{where}: answerable but has no gold answer")
+        if question.answerability != "unanswerable" and not question.required_claims:
+            raise QuestionSetError(
+                f"{where}: no required_claims, so no rubric decides whether an "
+                "answer is right. A gold answer alone leaves the scorer to judge "
+                "by resemblance."
+            )
+        if question.answerability == "unanswerable" and question.required_claims:
+            raise QuestionSetError(
+                f"{where}: unanswerable but declares required claims"
+            )
 
 
 def _validate_split_integrity(question_set: QuestionSet) -> None:
@@ -403,7 +453,9 @@ def _question_from_dict(payload: dict[str, Any]) -> Question:
             gap_topic=payload.get("gap_topic"),
             paraphrase_of=payload.get("paraphrase_of"),
             gold_answer=payload.get("gold_answer", ""),
-            gold_facts=tuple_of("gold_facts"),
+            required_claims=tuple_of("required_claims"),
+            forbidden_claims=tuple_of("forbidden_claims"),
+            acceptable_variants=tuple_of("acceptable_variants"),
             expected_documents=tuple_of("expected_documents"),
             expected_chunks=tuple_of("expected_chunks"),
             must_not_cite=tuple_of("must_not_cite"),
@@ -415,7 +467,58 @@ def _question_from_dict(payload: dict[str, Any]) -> Question:
         ) from exc
 
 
-def load_question_set(path: Path | str) -> QuestionSet:
+def check_provenance(
+    question_set: QuestionSet,
+    *,
+    corpus_sha256: str | None = None,
+    chunk_set_sha256: str | None = None,
+    registry_sha256: str | None = None,
+) -> None:
+    """Compare the hashes recorded in the file against the current state.
+
+    Recording a hash and checking it are different things, and only the second
+    prevents anything. A question set names specific chunk identifiers as the
+    evidence for each answer. If the chunker changes, those identifiers keep
+    resolving but point at different text, and every scored result is quietly
+    wrong. The corpus hash cannot see that, which is why the chunk-set hash is
+    checked here and is the one that matters most.
+
+    Missing recorded hashes are reported rather than skipped. A question set
+    written before this check existed cannot be trusted to be current, and
+    silently accepting it would defeat the purpose.
+    """
+    expectations = {
+        "corpus_sha256": corpus_sha256,
+        "chunk_set_sha256": chunk_set_sha256,
+        "registry_sha256": registry_sha256,
+    }
+    problems: list[str] = []
+    for name, actual in expectations.items():
+        if actual is None:
+            continue
+        recorded = question_set.metadata.get(name)
+        if not recorded:
+            problems.append(f"{name} is not recorded in the question set")
+        elif recorded != actual:
+            problems.append(
+                f"{name} recorded {recorded[:12]} but the current value is {actual[:12]}"
+            )
+    if problems:
+        raise QuestionSetError(
+            "The question set does not match the current state: "
+            + "; ".join(problems)
+            + ". Rebuild it with scripts/build_question_set.py, and treat any "
+            "result produced against the old one as invalid."
+        )
+
+
+def load_question_set(
+    path: Path | str,
+    *,
+    corpus_sha256: str | None = None,
+    chunk_set_sha256: str | None = None,
+    registry_sha256: str | None = None,
+) -> QuestionSet:
     source = Path(path)
     if not source.exists():
         raise QuestionSetError(f"Question set not found: {source}")
@@ -432,6 +535,12 @@ def load_question_set(path: Path | str) -> QuestionSet:
     _validate_fields(question_set)
     _validate_split_integrity(question_set)
     _validate_paraphrases(question_set)
+    check_provenance(
+        question_set,
+        corpus_sha256=corpus_sha256,
+        chunk_set_sha256=chunk_set_sha256,
+        registry_sha256=registry_sha256,
+    )
     return question_set
 
 
@@ -452,6 +561,7 @@ def write_question_set(
             "inference component."
         ),
         **metadata,
+        "scoring_rubrics": SCORING_RUBRICS,
         "summary": question_set.summary(),
         "questions": [q.to_dict() for q in question_set],
     }

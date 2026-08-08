@@ -62,30 +62,61 @@ Without this separation the system would be scoring against its own answer key.
 
 Declared once, in `gold/evaluation.json`, and asserted by a test:
 
-- **Leave-one-family-out cross-validation.** Each conflict family serves as a held-out fold in turn. With a small number of families this is the correct technique; a three-way split would leave too few families per partition to support any estimate.
-- **Macro-averaged by family.** Paraphrased questions drawn from one family test the same document pair and are not independent observations.
+- **Fixed held-out evaluation.** The nine reported families are scored once. This was called leave-one-family-out cross-validation, which was wrong: nothing is trained on the remaining folds, so there is no model being validated. A leave-one-family-out calculation is retained as a sensitivity analysis, showing how far the overall figure moves when any single family is removed.
+- **Macro-averaged by family.** Paraphrased questions drawn from one family test the same document pair and are not independent observations. The reported sample is 26 test groups, not the 42 groups the artefact contains.
+- **Reported and tuning families are separate.** Families carry `split: reported` or `split: tuning`. Tuning families exist so prompt wording, thresholds and verifier output can be developed against real conflicts without inspecting a family that is later scored. A reported family may not appear in the development split, and a tuning family may not appear in the test split.
 
 ## Conflict design
 
-Six families, of two distinct types. The type distinction is the important part.
+Thirteen registered families: **nine reported** and **four tuning**. The type
+distinction is the important part.
 
-| Type | Count | Resolvable by a metadata filter? |
+| Type | Reported | Resolvable by a metadata filter? |
 |---|---|---|
 | `version_supersession` | 4 | **Yes.** Filtering on `status == current` resolves them with no reasoning at all. |
-| `current_current` | 2 | **No.** Both documents are live, both authoritative, no metadata field ranks them. |
+| `current_current` | 5 | **No.** Both documents are live, both authoritative, no metadata field ranks them. |
 
 An earlier version of this corpus contained only supersession conflicts. That was a design flaw: an examiner could reasonably ask why a claim-level verification layer is needed when three lines of filtering achieve the same result. Supersession families alone cannot demonstrate that the contribution adds anything.
 
-The two `current_current` families were originally accidental contradictions found during review. Rather than harmonising them away, they were promoted to registered conflicts, because they are exactly the class a filter cannot touch and exactly what happens in real organisations when two departments draft policy separately.
+Two of these began as accidental contradictions found during review. Rather than harmonising them away, they were promoted to registered conflicts, because they are exactly the class a filter cannot touch and exactly what happens in real organisations when two departments draft policy separately. CONF-07 is one such: GEN-04 and FIN-03 disagree about who approves an £800 purchase, and neither mentions the other.
 
-| Family | Documents | Conflict |
-|---|---|---|
-| CONF-05 | GEN-04 vs IT-03 | Lost equipment must be reported within 24 hours, or within 1 hour. Both current. |
-| CONF-06 | IT-04 vs REG-02 | An annual backup is kept seven years, while records must be deleted at the end of their retention period including from backups. Both current. |
+### Reported `current_current` families
 
-Correct behaviour on these is not to pick one. It is to surface both, refuse to assert either as authoritative, cap confidence at low, and escalate to the named owners.
+| Family | Risk | Documents | Conflict |
+|---|---|---|---|
+| CONF-06 | medium | IT-04 vs REG-02 | An annual backup is kept seven years, while records must be deleted at the end of their retention period including from backups. |
+| CONF-07 | low | GEN-04 vs FIN-03 | An £800 IT purchase needs Finance Manager approval, or department head approval. |
+| CONF-08 | low | GEN-02 vs CS-11 | The trade counter opens 08:00 to 17:00, or 08:30 to 16:30. |
+| CONF-09 | medium | IT-11 vs IT-02 | Access rights are reviewed every six months, or annually. |
+| CONF-11 | high | GEN-03 vs OPS-05 | A visitor needs safety footwear in the warehouse at all times, or is exempt for escorted visits under fifteen minutes. |
 
-`tests/test_conflicts.py::test_registry_contains_conflicts_a_metadata_filter_cannot_solve` fails if the count of `current_current` families drops below two.
+### Reported `version_supersession` families
+
+| Family | Risk | Documents | Conflict |
+|---|---|---|---|
+| CONF-02 | high | HR-02 → HR-12 | Statutory Sick Pay from the fourth qualifying day, or the first. |
+| CONF-03 | medium | IT-01 → IT-11 | Passwords of 8 characters rotated every 90 days, or 14 characters with no rotation. |
+| CONF-04 | low | CS-01 → CS-11 | Free delivery over £50, or over £75. |
+| CONF-10 | medium | CS-04 → CS-14 | A stage 1 complaint resolved in 3 working days, or 2. |
+
+### Tuning families
+
+Never reported. CONF-01 and CONF-05 were moved here on 8 August 2026 under
+pre-registration amendment 1.1, because both were Stage 4 pilot questions and
+the lost-laptop pilot answer directly motivated
+`evaluation/answer_scoring.py`. A question that shaped the system cannot
+afterwards test it.
+
+| Family | Type | Documents | Conflict |
+|---|---|---|---|
+| CONF-01 | version_supersession | HR-03 → HR-13 | Mileage at a flat 40p, or 55p then 25p. |
+| CONF-05 | current_current | GEN-04 vs IT-03 | Lost equipment reported within 24 hours, or within 1 hour. |
+| TUNE-01 | current_current | OPS-02 vs CS-03 | A returns window of 30 days, or 28. |
+| TUNE-02 | current_current | OPS-08 vs REG-01 | An accident book entry reviewed within two working days, or five. |
+
+Correct behaviour on a `current_current` family is not to pick one. It is to surface both, name both documents, state that neither supersedes the other, cap confidence at low, and escalate. The assistant does not recommend an interim safe action; that rule is applied consistently across every family and is recorded in pre-registration amendment 1.1.
+
+`tests/test_conflicts.py::test_registry_contains_conflicts_a_metadata_filter_cannot_solve` fails if the count of reported `current_current` families drops below four.
 
 ### Evaluation implication
 

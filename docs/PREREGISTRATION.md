@@ -28,11 +28,13 @@ State frozen at registration:
 
 | | |
 |---|---|
-| Corpus | `14295c5db36d` (37 documents) |
-| Chunk set | `feccf6cccf2b` (134 chunks) |
-| Registry | `50e697b201fe` |
-| Conflict families | 9 reported, 2 tuning |
-| Tests | 249 passing |
+| Corpus | `3060ae540015` (38 documents) |
+| Chunk set | `5fc6a227c0a1` (138 chunks) |
+| Conflict families | 9 reported, 4 tuning |
+| Question set | version 1.1, 78 questions, 42 groups |
+| Tests | 271 passing |
+
+Superseded by amendment 1.1 of the same date. See section 8. The values above are the amended ones; the originals are recorded in the amendment.
 
 ---
 
@@ -58,8 +60,24 @@ tests a second failure mode, and RQ4 establishes feasibility.
 ## 2. Experimental arms
 
 All four arms share the corpus, the chunk set, the index, the embedding model,
-the generation model, the seed and the retrieval parameters. They differ in one
-respect each, so any difference between adjacent arms is attributable.
+the generation model, the seed and the retrieval parameters.
+
+**The arms are a tree rooted at B, not a ladder.** An earlier version of this
+document claimed that adjacent arms differ in one respect each. They do not:
+C to D changes both the retrieval mode and the verification layer, so a C to D
+difference is not attributable to verification alone. The single-variable
+contrasts are:
+
+| Contrast | Variable | What it answers |
+|---|---|---|
+| **A vs B** | evidence format | Does exposing status metadata help at all? |
+| **B vs C** | retrieval mode | Does filtering out withdrawn documents help beyond showing their status? |
+| **B vs D** | verification | **The clean test of the contribution.** |
+| C vs D | retrieval mode *and* verification | The practical comparison against the cheap filter. Reported, but not treated as isolating verification. |
+
+**B versus D is the confirmatory contrast for H1 and H2.** C versus D is
+reported alongside as the practical question a practitioner would ask, and is
+described as such rather than as an ablation.
 
 | Arm | Retrieval | Evidence shown | Verification | What it isolates |
 |---|---|---|---|---|
@@ -94,7 +112,7 @@ conflict correctly when the marker was present. If that reproduces, the
 verification layer adds nothing here, and saying so in advance is what stops it
 being reported as a success later.
 
-**What would falsify it.** D exceeding B or C by more than the pre-specified
+**What would falsify it.** D exceeding B by more than the pre-specified
 threshold in section 5.
 
 ### H2 - Conflicts between two live documents are not
@@ -111,8 +129,7 @@ marker cannot help, and only reasoning over the claims themselves can detect
 that the evidence disagrees. This is the entire quantitative case for the
 contribution.
 
-**What would falsify it.** D not exceeding the best of A, B and C by the
-threshold in section 5. This is the hypothesis most likely to fail and the
+**What would falsify it.** D not exceeding B by the threshold in section 5. This is the hypothesis most likely to fail and the
 one that decides whether the dissertation reports a positive or a null result.
 
 ### H3 - Citation validity overstates citation quality
@@ -161,6 +178,7 @@ suggests it is not verifying much.
 | **Conflict handling** | Manual, blinded, three-point: 2 correct, 1 partial, 0 wrong. Correct means the answer states the governing position and, where unresolvable, discloses the disagreement. | Conflict families |
 | **Superseded citation rate** | Fraction of answers citing a withdrawn document as authority | Supersession families |
 | **Appropriate abstention** | Fraction of unanswerable questions where the system declines rather than answers | Gaps |
+| **Answer correctness** | Manual, blinded, three-point, scored against the question's `required_claims` and `forbidden_claims`. Added under amendment 1.1: RQ1 asks whether the assistant answers correctly, and no metric measured that. | Factual, partial and synthesis questions |
 
 ### Secondary
 
@@ -195,10 +213,19 @@ one observation, and enforced as such by
 are reported; every claim of difference uses the family level, and the sample
 size cited is the number of families.
 
-### Cross-validation
+### Held-out evaluation, not cross-validation
 
-Leave-one-family-out over the nine reported families. Folds are constructed by
-family, never by question.
+The nine reported families form a **fixed held-out set**, scored once, with
+results macro-averaged by family. This was called "leave-one-family-out
+cross-validation", which was wrong: nothing is trained on the remaining folds,
+so there is no model being validated. The name implied a resampling procedure
+the study does not perform.
+
+A leave-one-family-out calculation is still available in
+`QuestionSet.leave_one_family_out` and is reported as a **sensitivity
+analysis**: it shows how far the overall figure moves when any single family is
+removed, which is the relevant question when the sample is nine. It is not
+presented as validation.
 
 ### Tuning and contamination
 
@@ -291,3 +318,194 @@ Recorded now rather than discovered by an examiner.
 
 None at registration. Any change below this line carries a date and a reason,
 and is reported in the dissertation.
+
+---
+
+# Amendment 1.1 - 8 August 2026
+
+Made **before any arm was run on any question**, in response to an independent
+read-only review of commit `9dae3f9`. No result exists for any arm on any
+family, so nothing below could have been chosen to suit an outcome. Every change
+is recorded here rather than folded into the text above, except where the text
+above has been corrected and the original is reproduced in this amendment.
+
+## 1.1.1 Two reported families were contaminated by the Stage 4 pilot
+
+**Found.** `docs/PILOT_STAGE4.md` states that its four questions "belong
+permanently to the development split". Its section headings name **CONF-01**
+(mileage) and **CONF-05** (lost laptop). Version 1.0 of the question set placed
+both in the test split, and `CONF-01-Q1` was the pilot question verbatim. The
+lost-laptop pilot answer is what motivated `evaluation/answer_scoring.py`, so
+CONF-05 did not merely get looked at, it changed the architecture.
+
+**Done.** Both moved to `split: "tuning"` in the registry, keeping their
+identifiers so the move is visible rather than tidied away. Two replacements
+were planted:
+
+| New family | Type | Risk | Documents | Conflict |
+|---|---|---|---|---|
+| **CONF-10** | version_supersession | medium | CS-04 / CS-14 | Stage 1 complaint resolution, 3 or 2 working days |
+| **CONF-11** | current_current | high | GEN-03 / OPS-05 | Whether a visitor needs safety footwear in the warehouse |
+
+The reported set is again **4 supersession and 5 `current_current`**, so the
+thresholds in section 5 stand unchanged. CONF-11 was made high risk because
+CONF-05 was the only high-risk `current_current` family and its removal would
+otherwise have left that class entirely low and medium.
+
+The tuning split now holds CONF-01, CONF-05, TUNE-01 and TUNE-02.
+
+## 1.1.2 The question set scored paraphrases against a shared fact list
+
+**Found.** Version 1.0 gave each family three questions that asked genuinely
+different things - password length, rotation period and SMS authentication -
+and one family-level `gold_facts` list. A concise correct answer about rotation
+would have been marked wrong for omitting "14 characters", and an answer
+reciting the length while ignoring the question would have passed.
+
+**Done.** Each family now has **one focal claim and three genuine paraphrases
+of it**. `gold_facts` is replaced by per-question `required_claims`,
+`forbidden_claims` and `acceptable_variants`. The manual 0/1/2 criteria are
+defined per expected behaviour in `SCORING_RUBRICS` and written into the
+question set file, so the rubric in force cannot drift from the scores it
+produced. A test asserts that all paraphrases of a family share one claim set.
+
+The remaining disputed facts stay in the registry. They are simply not what
+these questions measure.
+
+## 1.1.3 The sample size was misstated
+
+**Found.** The 42-group figure spans both splits.
+
+**Done.** Section 5 now states the reported sample as **26 test groups**, with
+the per-hypothesis denominator given alongside each claim. The 42-group figure
+describes the artefact and is never used as a sample size.
+
+## 1.1.4 Leave-one-family-out is not cross-validation
+
+**Found.** Nothing is trained on the remaining folds, so there is no model being
+validated. The name implied a resampling procedure the study does not perform.
+
+**Done.** Renamed to fixed held-out evaluation with family-level macro
+averaging. The leave-one-family-out calculation is retained and reported as a
+**sensitivity analysis**, which is the honest use of it at n=9.
+
+## 1.1.5 The arms are a tree, not a ladder
+
+**Found.** Section 2 claimed adjacent arms differ in one respect each. C to D
+changes both retrieval mode and verification.
+
+**Done.** Section 2 now gives the single-variable contrasts explicitly. **B
+versus D is the confirmatory contrast** for H1 and H2. C versus D is reported as
+the practical comparison against the cheap metadata filter and is described as
+such, not as an ablation.
+
+## 1.1.6 RQ1 had no correctness metric
+
+**Found.** RQ1 asks whether the assistant answers correctly. Every metric
+measured citation behaviour, conflict handling or abstention. Nothing measured
+whether an ordinary answer was right.
+
+**Done.** Answer correctness added as a primary metric for factual, partial and
+synthesis questions, scored manually and blind against `required_claims` and
+`forbidden_claims`.
+
+## 1.1.7 Hardware conditions collided with experimental arms
+
+**Found.** `config.json` labelled hardware conditions A, B and C while the
+ablation used arms A, B, C and D. "Condition B" was ambiguous.
+
+**Done.** Hardware conditions renamed to `laptop_gpu`, `laptop_cpu` and
+`pi5_cpu`. No letters.
+
+## 1.1.8 Provenance was recorded but never checked
+
+**Found.** The question set stored a corpus hash and never compared it. It
+stored no chunk-set hash at all, which is the one that matters: expected chunk
+identifiers keep resolving after a chunker change while pointing at different
+text. Tests confirmed the identifiers existed, not that the chunks contained the
+claims. The run writer recorded neither the question set, the registry nor this
+document.
+
+**Done.**
+
+- `check_provenance` compares corpus, chunk-set and registry hashes on load and
+  refuses a mismatch. A missing recorded hash is refused, not skipped.
+- The question set records the chunk-set hash.
+- The builder asserts that every expected chunk contains its family's anchor
+  text, and that figures in required claims appear in the expected evidence.
+- The run manifest records `question_set_sha256`, `registry_sha256` and
+  `preregistration_sha256`.
+
+## 1.1.9 Arm A recorded evidence it was never shown
+
+**Found.** `RunWriter.record` called `evidence_text()` with no argument, which
+defaults to `WITH_STATUS`. Arm A is defined by receiving evidence *without*
+status markers, so its records stored supersession markers the model never saw,
+and the saved prompt and saved evidence contradicted each other.
+
+**Done.** Evidence is rendered in the arm's own format, and an unrecognised
+format now raises rather than silently defaulting.
+
+## 1.1.10 The blinding was defeatable
+
+**Found.** The blinded review sheet included the evidence block. Arm A's
+evidence has no status markers, so its presence or absence identified the arm on
+sight. A reviewer noticing the pattern once had deanonymised the whole sheet.
+
+**Done.** The evidence block is removed from the review sheet. Conflict handling
+and answer correctness are scored from the answer against the question's rubric,
+which is what the reviewer judges in any case. Citation support is scored
+automatically from the full record, where the evidence is still stored verbatim.
+`group_id` is retained in the sheet so manual scores can be macro-averaged; it
+carries no arm signal.
+
+## 1.1.11 The chunker had a dead guard
+
+**Found.** The short-tail merge was guarded by `if True`, so it merged
+unconditionally while the comment above it described a rule that was not
+enforced.
+
+**Assessed.** Measured across all documents, every tail merge joins immediately
+adjacent sibling sections and none reaches `max_words`, and the merged chunk
+already names both sections. The behaviour was correct; the comment was wrong.
+Refusing to merge would leave 20 stub chunks, one of them 11 words, which is a
+worse retrieval unit than a correctly labelled merge.
+
+**Done.** A real guard replaces `if True`: the tail must be contiguous with the
+chunk before it and the result must fit inside `max_words`. Both hold for every
+current document, so the chunk set is unchanged. Two regression tests cover the
+merge and the refusal. Section metadata is now included in the chunk-set
+fingerprint, which a relabelling with unchanged text previously slipped past.
+
+## 1.1.12 Conflict-handling behaviour is now one consistent rule
+
+**Found.** The CONF-05 gold answer recommended the shorter one-hour deadline as
+a safe interim action while other families only surfaced and escalated.
+
+**Done.** One rule across all families: **surface both positions, name both
+documents, state that neither supersedes the other, and escalate.** The
+assistant does not recommend an interim action. This is a design decision, not a
+finding, and it is the item most worth confirming with the supervisor before
+Stage 5, because a decision-support system that never recommends the
+conservative option is arguably less useful than one that does. If the rule
+changes, it changes for every family and this amendment records the change.
+
+## What was not changed
+
+The hypotheses, the thresholds in section 5, the stopping rules and the primary
+metrics are unchanged. The family counts that the thresholds depend on were
+deliberately restored rather than the thresholds relaxed.
+
+## State after this amendment
+
+| | Before | After |
+|---|---|---|
+| Corpus | `14295c5db36d`, 37 documents | `3060ae540015`, 38 documents |
+| Chunk set | `feccf6cccf2b`, 134 chunks | `5fc6a227c0a1`, 138 chunks |
+| Reported families | 9, two contaminated | 9, none contaminated |
+| Tuning families | 2 | 4 |
+| Question set | 72 questions, 40 groups | 78 questions, 42 groups |
+| Reported sample | misstated as 40 groups | 26 test groups |
+| Tests | 249 | 271 |
+
+No arm has been run. Stage 5 has not begun.

@@ -189,7 +189,13 @@ class ConflictRegistry:
         raise ConflictRegistryError(f"No conflict family {family_id!r}")
 
     def for_document(self, doc_id: str) -> list[ConflictFamily]:
-        return [f for f in self.families if doc_id in f.documents]
+        """Every family naming this document, reported or tuning.
+
+        A lookup, not a reporting set. A superseded document whose family
+        moved to the tuning split is still registered, and code asking
+        "is this document accounted for" must see it.
+        """
+        return [f for f in self.all_families if doc_id in f.documents]
 
     def of_type(self, conflict_type: str) -> list[ConflictFamily]:
         return [f for f in self.families if f.conflict_type == conflict_type]

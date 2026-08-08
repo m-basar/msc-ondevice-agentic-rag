@@ -258,3 +258,135 @@ def test_review_order_is_shuffled_but_reproducible(tmp_path, kb, index, config):
     order_a = [json.loads(l)["question_id"] for l in first.read_text().splitlines()]
     order_c = [json.loads(l)["question_id"] for l in third.read_text().splitlines()]
     assert order_a != order_c, "a different seed should give a different order"
+
+
+# --- what the model actually saw --------------------------------------------
+
+
+def test_arm_a_records_the_plain_evidence_it_was_actually_shown(tmp_path, kb, index, config):
+    """The saved evidence must match the arm, not the default.
+
+    record() called evidence_text() with no argument, which defaults to
+    WITH_STATUS. Arm A is defined by receiving evidence with no status markers,
+    so its records carried supersession markers the model never saw, and the
+    saved prompt and the saved evidence disagreed with each other.
+    """
+    directory = make_run(tmp_path, kb, index, config, name="A", evidence=EvidenceFormat.PLAIN)
+    _, answers = read_run(directory)
+
+    for record in answers:
+        assert "SUPERSEDED" not in record["evidence"], (
+            "an Arm A record carries a supersession marker, so it is not the "
+            "evidence the model was shown"
+        )
+        assert record["evidence"] in record["prompt"], (
+            "the saved evidence does not appear in the saved prompt, so one of "
+            "the two is a reconstruction rather than a record"
+        )
+
+
+def test_arm_b_records_the_status_markers_it_was_shown(tmp_path, kb, index, config):
+    """The other half of the same control.
+
+    Retrieval is widened deliberately so a superseded chunk is certainly in the
+    evidence. Without that this test could pass by retrieving nothing withdrawn,
+    and would be asserting nothing.
+    """
+    client = MockClient(config)
+    retrieval = Retriever(index, client, config).retrieve(
+        "expenses mileage pence per mile claim", top_k=40, min_similarity=0.0
+    )
+    assert any(not s.chunk.is_current for s in retrieval), (
+        "no superseded chunk retrieved, so this test cannot exercise the marker"
+    )
+
+    answer = Generator(client, config).answer(
+        "What is the mileage rate?", retrieval, evidence_format=EvidenceFormat.WITH_STATUS
+    )
+    writer = RunWriter(
+        arm("B", "with_status"), split="dev", config=config, kb=kb, index=index,
+        root=tmp_path,
+    )
+    writer.record(question_id="DEV-001", question="q", answer=answer)
+    _, answers = read_run(writer.finish())
+    assert "SUPERSEDED" in answers[0]["evidence"]
+
+
+def test_an_unknown_evidence_format_is_refused(tmp_path, kb, index, config):
+    """Silently recording the wrong format is the failure being prevented."""
+    from sme_assistant.evaluation.run_writer import ArmDefinition, RunWriter
+    from sme_assistant.generate.generator import Generator
+    from sme_assistant.retrieve.retriever import Retriever
+
+    bad = ArmDefinition(
+        arm="X", description="malformed", retrieval_mode="all",
+        evidence_format="not_a_format", verification=False,
+        generation_model=config.require("llm.generation_model"),
+    )
+    client = MockClient(config)
+    writer = RunWriter(bad, split="dev", config=config, kb=kb, index=index, root=tmp_path)
+    retrieval = Retriever(index, client, config).retrieve("annual leave", min_similarity=0.0)
+    answer = Generator(client, config).answer("q", retrieval)
+
+    with pytest.raises(ValueError, match="not a known format"):
+        writer.record(question_id="DEV-001", question="q", answer=answer)
+
+
+# --- blinding ---------------------------------------------------------------
+
+
+def test_the_review_sheet_does_not_leak_the_arm_through_the_evidence(tmp_path, kb, index, config):
+    """Arm A's evidence has no status markers, which identified it on sight.
+
+    A reviewer who noticed the pattern once had deanonymised the whole sheet.
+    Blinding a careful reader can defeat is worse than none, because it is
+    reported as a control.
+    """
+    run_a = make_run(tmp_path, kb, index, config, name="A", evidence=EvidenceFormat.PLAIN)
+    run_b = make_run(tmp_path, kb, index, config, name="B", evidence=EvidenceFormat.WITH_STATUS)
+
+    sheet = tmp_path / "review.jsonl"
+    write_review_sheet([run_a, run_b], sheet)
+    items = [json.loads(line) for line in sheet.read_text(encoding="utf-8").splitlines()]
+
+    assert items, "no items to review"
+    for item in items:
+        assert "evidence" not in item
+        assert "prompt" not in item
+        assert "arm" not in item
+        assert "SUPERSEDED" not in json.dumps(item)
+
+
+def test_the_run_still_stores_the_evidence_verbatim(tmp_path, kb, index, config):
+    """Removing it from the blinded sheet must not remove it from the record."""
+    directory = make_run(tmp_path, kb, index, config)
+    _, answers = read_run(directory)
+    assert all(r["evidence"] for r in answers)
+    assert all(r["evidence_sha256"] for r in answers)
+
+
+# --- what the run was scored against ----------------------------------------
+
+
+def test_the_manifest_records_the_gold_data_it_was_scored_against(tmp_path, kb, index, config):
+    """A run recording the model and the corpus but not the question set or the
+    rubric cannot be re-scored, and cannot be shown to have used the gold data
+    it claims."""
+    from sme_assistant.evaluation.config import load_evaluation_config
+    from sme_assistant.evaluation.conflicts import load_conflicts
+    from sme_assistant.evaluation.question_set import load_question_set
+    from sme_assistant.evaluation.run_writer import RunWriter
+
+    evaluation = load_evaluation_config()
+    question_set = load_question_set(evaluation.path("question_set"))
+    registry = load_conflicts(evaluation.path("conflicts"))
+
+    writer = RunWriter(
+        arm(), split="test", config=config, kb=kb, index=index,
+        question_set=question_set, registry=registry, root=tmp_path,
+    )
+    provenance = writer.manifest["provenance"]
+    assert provenance["question_set_sha256"]
+    assert provenance["registry_sha256"] == registry.fingerprint()
+    assert provenance["preregistration_sha256"], "the pre-registration was not hashed"
+    assert provenance["question_set_metadata"]["chunk_set_sha256"]
