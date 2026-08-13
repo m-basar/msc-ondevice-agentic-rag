@@ -430,3 +430,82 @@ def test_the_prompt_asks_for_a_final_answer():
 
     assert "final_answer" in VERIFIER_SYSTEM
     assert "correct it" in VERIFIER_SYSTEM
+
+
+# --- validation and the served answer must not come apart --------------------
+
+
+def test_a_rejected_finding_cannot_reach_the_user_through_the_prose():
+    """The relationship was downgraded; the answer written from it must go too.
+
+    Otherwise a verifier alleges a conflict on invented evidence, has the
+    finding correctly withdrawn, and still serves prose asserting it.
+    """
+    payload = json.dumps({
+        "claims": [], "relationship": "mutually_exclusive",
+        "conflicting_chunks": ["HR-01#001"],
+        "final_answer": "These two policies contradict each other [HR-01#001].",
+    })
+    result = schema.parse(payload, {"HR-01#001"}, POLICY, draft="Leave is 25 days.")
+    assert result.relationship == "insufficient"
+    assert result.final_answer == "Leave is 25 days."
+    assert result.revision_rejected
+    assert "two sides" in result.revision_rejected_reason
+    assert not result.revised
+
+
+def test_a_revised_answer_citing_unretrieved_evidence_is_rejected():
+    payload = json.dumps({
+        "claims": [], "relationship": "no_relationship",
+        "final_answer": "The rate is 55 pence [ZZ-99#001].",
+    })
+    result = schema.parse(payload, {"HR-01#001"}, POLICY, draft="draft text")
+    assert result.final_answer == "draft text"
+    assert result.revision_rejected
+    assert "ZZ-99#001" in result.invented_ids
+    assert result.confidence == "low"
+
+
+def test_invented_evidence_outranks_a_favourable_relationship():
+    """A supersession whose audit invented evidence is not a confident one."""
+    payload = json.dumps({
+        "claims": [{"claim": "x", "verdict": "SUPPORTED",
+                    "supporting": ["HR-13#001", "ZZ-99#001"]}],
+        "relationship": "supersession",
+        "conflicting_chunks": ["HR-03#001", "HR-13#001"],
+    })
+    result = schema.parse(payload, {"HR-03#001", "HR-13#001"}, POLICY)
+    assert result.is_resolved
+    assert result.confidence == "low", (
+        "an evidence problem must outrank the relationship label"
+    )
+
+
+def test_citation_metrics_describe_the_served_answer_not_the_draft(retriever, config):
+    """These were inherited from a string that had been thrown away.
+
+    A revision that fixed a miscitation would have been recorded as still
+    carrying it, so the citation metrics would have measured Arm B's mistakes
+    while the reader saw Arm D's corrections.
+    """
+    retrieval = retriever.retrieve("annual leave entitlement", min_similarity=0.0)
+    real = retrieval.results[0].chunk_id
+
+    client = MockClient(config, responses={"EVIDENCE": "Leave is 25 days [ZZ-99#001]."})
+    answer = Generator(client, config).answer("How much leave?", retrieval)
+    assert answer.hallucinated_citations, "the draft must start out miscited"
+
+    corrected = f"Leave is 25 days [{real}]."
+    verifier_client = MockClient(config, responses={"policy auditor": json.dumps({
+        "claims": [{"claim": "Leave is 25 days", "verdict": "SUPPORTED",
+                    "supporting": [real]}],
+        "relationship": "no_relationship", "final_answer": corrected,
+    })})
+    payload = Verifier(verifier_client, config).verify(answer).to_dict()
+
+    assert payload["citations"] == [real]
+    assert payload["hallucinated_citations"] == []
+    assert payload["has_valid_citation_ids"] is True
+    # The draft's figures survive for comparison rather than being overwritten.
+    assert payload["draft_hallucinated_citations"] == ["ZZ-99#001"]
+    assert payload["draft_has_valid_citation_ids"] is False

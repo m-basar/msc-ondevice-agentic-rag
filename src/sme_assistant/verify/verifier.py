@@ -44,7 +44,7 @@ from typing import Any
 
 from ..common.config import Config, load_config
 from ..common.llm_client import Generation, LLMClient
-from ..generate.generator import GroundedAnswer
+from ..generate.generator import GroundedAnswer, extract_citations, looks_like_refusal
 from ..retrieve.retriever import RetrievalResult
 from . import schema
 from .schema import Verification
@@ -146,8 +146,55 @@ class VerifiedAnswer:
     def verification_seconds(self) -> float:
         return self.generation.wall_seconds
 
+    def _citation_metrics(self) -> dict[str, Any]:
+        """Citation bookkeeping for the answer actually served.
+
+        These were inherited from the draft. ``to_dict`` began with the
+        generator's dictionary and overrode only the answer text, so
+        ``citations``, ``hallucinated_citations``, ``cited_superseded`` and the
+        rest described a string that had been thrown away. A revision that
+        fixed a miscitation would have been recorded as still carrying it.
+
+        The same extraction the generator uses is re-run here, against the
+        final text, so the numbers describe what the reader receives.
+        """
+        retrieval = self.answer.retrieval
+        chunks, documents = extract_citations(self.final_answer)
+
+        retrieved_chunks = {s.chunk_id for s in retrieval}
+        retrieved_docs = {s.chunk.doc_id for s in retrieval}
+        superseded_chunks = {s.chunk_id for s in retrieval if not s.chunk.is_current}
+        superseded_docs = {s.chunk.doc_id for s in retrieval if not s.chunk.is_current}
+
+        hallucinated = tuple(c for c in chunks if c not in retrieved_chunks) + tuple(
+            d for d in documents if d not in retrieved_docs
+        )
+        return {
+            "citations": list(chunks),
+            "document_citations": list(documents),
+            "hallucinated_citations": list(hallucinated),
+            "uncited_chunks": [c for c in sorted(retrieved_chunks) if c not in chunks],
+            "cited_superseded": (
+                [c for c in chunks if c in superseded_chunks]
+                + [d for d in documents if d in superseded_docs]
+            ),
+            "refusal_heuristic": looks_like_refusal(self.final_answer),
+            "has_valid_citation_ids": bool(chunks) and not hallucinated,
+        }
+
     def to_dict(self) -> dict[str, Any]:
         payload = self.answer.to_dict()
+        # Keep the draft's figures under draft_* so the comparison survives,
+        # then replace the headline ones with the served answer's.
+        draft_metrics = {
+            f"draft_{key}": payload[key]
+            for key in ("citations", "document_citations", "hallucinated_citations",
+                        "uncited_chunks", "cited_superseded", "refusal_heuristic",
+                        "has_valid_citation_ids")
+            if key in payload
+        }
+        payload.update(draft_metrics)
+        payload.update(self._citation_metrics())
         payload.update({
             # The scored answer is the revised one. The draft is kept beside it
             # so a reader can see what verification changed, and so the revision
@@ -155,6 +202,7 @@ class VerifiedAnswer:
             "answer": self.final_answer,
             "draft_answer": self.answer.answer,
             "answer_revised": self.verification.revised,
+            "revision_rejected": self.verification.revision_rejected,
             "verification": self.verification.to_dict(),
             "verification_generation": self.generation.to_dict(),
             "verification_prompt": self.prompt,

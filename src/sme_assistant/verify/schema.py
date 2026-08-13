@@ -134,6 +134,12 @@ class Verification:
     # reach the conflict-handling metric.
     final_answer: str = ""
     revised: bool = False
+    # A revision the verifier offered but which was not served, because the
+    # finding it rested on failed structural validation. Downgrading the
+    # relationship while accepting the prose written from it would let an
+    # unsupported conflict reach the user through the back door.
+    revision_rejected: bool = False
+    revision_rejected_reason: str = ""
     # Identifiers the verifier returned that were never retrieved. Recorded
     # rather than silently dropped: a verifier citing evidence it was not given
     # is the same failure as a generator doing it, and it must be visible.
@@ -179,6 +185,8 @@ class Verification:
             "is_unresolved": self.is_unresolved,
             "final_answer": self.final_answer,
             "revised": self.revised,
+            "revision_rejected": self.revision_rejected,
+            "revision_rejected_reason": self.revision_rejected_reason,
             "invented_ids": list(self.invented_ids),
             "parse_failed": self.parse_failed,
         }
@@ -296,9 +304,14 @@ def parse(
         relationship = INSUFFICIENT
 
     conflicting = split_ids(payload.get("conflicting_chunks"), available, invented)
+    structural_failure = ""
     if relationship in CONFLICTING_RELATIONSHIPS:
         documents = {c.split("#")[0] for c in conflicting}
         if len(documents) < 2:
+            structural_failure = (
+                f"claimed {relationship} but named evidence from "
+                f"{len(documents)} document(s); a disagreement needs two sides"
+            )
             relationship = INSUFFICIENT
             conflicting = ()
 
@@ -308,7 +321,28 @@ def parse(
         safe_action = None
 
     final = str(payload.get("final_answer") or "").strip()
-    revised = bool(final) and final != draft.strip()
+
+    # A revision written from a finding that did not survive validation is not
+    # served. The verifier may have described a conflict in prose that the
+    # structural check has just withdrawn, and accepting the prose while
+    # rejecting the finding would put the unsupported claim in front of the
+    # user anyway.
+    if not structural_failure and final:
+        invented_in_answer = [
+            i for i in CHUNK_ID_RE.findall(final) if i not in available
+        ]
+        if invented_in_answer:
+            invented.update(invented_in_answer)
+            structural_failure = (
+                f"the revised answer cites evidence that was never retrieved: "
+                f"{sorted(set(invented_in_answer))}"
+            )
+
+    if structural_failure:
+        final_answer, revised = draft, False
+    else:
+        final_answer = final or draft
+        revised = bool(final) and final != draft.strip()
 
     result = Verification(
         verdicts=tuple(verdicts),
@@ -318,8 +352,10 @@ def parse(
         escalate=as_bool(payload.get("escalate")),
         rationale=str(payload.get("rationale", "")).strip(),
         invented_ids=tuple(sorted(invented)),
-        final_answer=final or draft,
+        final_answer=final_answer,
         revised=revised,
+        revision_rejected=bool(structural_failure and final),
+        revision_rejected_reason=structural_failure,
         raw=text,
     )
     return replace_confidence(result, policy)
@@ -339,6 +375,14 @@ def replace_confidence(result: Verification, policy: Mapping[str, Any]) -> Verif
     if result.parse_failed:
         return result
 
+    if result.invented_ids:
+        return dataclasses.replace(
+            result, confidence=str(policy.get("on_invented_evidence", "low"))
+        )
+    if result.revision_rejected:
+        return dataclasses.replace(
+            result, confidence=str(policy.get("on_invented_evidence", "low"))
+        )
     if result.is_resolved:
         # A supersession the system detected and resolved from metadata has a
         # right answer. Capping it at low would punish the system for noticing
@@ -350,8 +394,6 @@ def replace_confidence(result: Verification, policy: Mapping[str, Any]) -> Verif
         confidence = str(policy.get("on_insufficient", "low"))
     elif any(v.verdict == CONTRADICTED for v in result.verdicts):
         confidence = str(policy.get("on_contradiction", "low"))
-    elif result.invented_ids:
-        confidence = str(policy.get("on_invented_evidence", "low"))
     else:
         confidence = str(policy.get("on_supported", "medium"))
     return dataclasses.replace(result, confidence=confidence)
