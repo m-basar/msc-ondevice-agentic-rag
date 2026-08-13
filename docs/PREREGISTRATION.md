@@ -1247,3 +1247,165 @@ diagnostic protocol. Pilot 03 re-establishes the served-answer measurements
 only.
 
 No test-split arm has been run. The verifier is not frozen.
+
+---
+
+# Amendment 1.7 - 13 August 2026
+
+Made **before any test-split arm was run** and before the diagnostic protocol
+was executed.
+
+This amendment exists in two layers. The first is a claim I made and had to
+withdraw within the day. The second is what is actually established. Both are
+recorded, because the withdrawal is the more instructive of the two.
+
+## 1.7.1 A claim made and withdrawn: "the verifier is not reproducible"
+
+I ran a check that repeated each of 12 recorded prompts three times **back to
+back**, found 4 of 12 changing their raw output, concluded that the verifier was
+not reproducible at a fixed seed, wrote that every reported figure must be a
+mean over repeats, and expanded the diagnostic protocol from 96 calls to 288.
+
+The same output contained the evidence against that conclusion:
+
+| | |
+|---|---|
+| call 1 matched the recorded pilot 03 run | **12 / 12** |
+| calls 2 and 3 agreed with each other | 12 / 12 |
+| output changed under immediate repetition | 4 / 12 |
+
+**Every first call reproduced the earlier session exactly.** The changes appear
+only when the identical prompt is sent again immediately, which no run of this
+protocol performs. My script printed "matches 8/12" because it required all
+three calls to equal the recording, folding "a fresh prompt reproduces" together
+with "adjacent calls are stable" and reporting neither.
+
+The accurate description of that artefact is **adjacent-repeat raw-output
+variability: 4 of 12**. It is preserved under that name.
+
+The error is worth naming precisely because it does not fit the pattern of the
+earlier ones. The previous overstatements ran towards a tidier positive story.
+This one ran the other way, towards a dramatic negative finding about on-device
+reproducibility, and I wrote a section arguing it belonged in the findings
+chapter. A bias towards the interesting result is the same failure as a bias
+towards the flattering one; it is merely harder to notice because it feels like
+rigour.
+
+## 1.7.2 What is actually established
+
+Nothing about the reproducibility of any reported metric. That has not been
+measured, and a hash of the raw text cannot measure it: a reordered JSON key or
+a reworded rationale changes the hash and changes no result.
+
+What is open:
+
+* Pilots 02 and 03 differed on **24 of 41** raw outputs with byte-identical
+  prompts. Two explanations remain live and neither is excluded. Pilot 02
+  predates option recording, so its effective options cannot be read from the
+  record. Arm D also ran after A, B and C in pilot 02 and alone in pilot 03, so
+  the preceding workload on the server differed.
+* Whether detection, classification, verdicts, parse status or the served
+  answer move between runs is unknown.
+
+## 1.7.3 The corrected instrument
+
+`scripts/check_determinism.py` now:
+
+1. runs **complete passes in protocol order**, never adjacent repeats, so a
+   repeat meets the server in the state a real run does;
+2. replays the **model and options recorded in the run**, not the current
+   configuration, which has changed since;
+3. **parses every response** and compares raw text, relationship, detection,
+   claim verdicts, parse and validation status, invented evidence, whether a
+   revision was served, the served answer and its citations, each separately;
+4. reports pass-1-against-recording and pass-against-pass apart, because they
+   answer different questions.
+
+## 1.7.4 The decision rule, fixed before the measurement
+
+| Finding | Response |
+|---|---|
+| Raw text varies, every reported outcome stable | Protocol stays at **96 calls**. Prose-level variability is documented as a finding in its own right. |
+| Any reported outcome varies | **Three complete 96-call blocks.** R0 to R5 applied independently per block; three outcomes reported with mean and range. |
+
+**Blocks are not observations.** Three blocks are three results. Calls within a
+block are not independent of each other, and pooling 288 calls into one
+denominator would inflate every proportion in the analysis.
+
+The protocol is therefore back to **96 calls, one block**, until the corrected
+check says otherwise.
+
+## 1.7.5 A trap that would read as reproducibility
+
+Holds regardless of the above. The aggregate relationship counts were
+**identical** across pilots 02 and 03, 36 / 4 / 1 both times, while four
+questions moved: two one way, two the other, cancelling exactly.
+
+Read from totals that is perfect stability with a tenth of the questions having
+changed answer. Stability is reported per prompt and never inferred from an
+aggregate.
+
+## 1.7.6 The abstention is now written by the system
+
+The rule in 1.6 rejected an uncited revision that stated a figure. It caught
+pilot 03's "the 14-day validity period" and it would not have caught "the
+authorisation remains valid for two weeks", which asserts the same thing with
+no digit in it.
+
+Detecting assertions inside free prose is unbounded work: the space of ways to
+state a fact has no edge, and each patch closes one and leaves the rest.
+
+So when every claim is `INSUFFICIENT_EVIDENCE` and the revision cites no
+passage, the served answer is a **fixed template written in the source**, not
+the model's prose. The verifier's finding still decides whether to abstain. It
+no longer chooses the words, and there is nothing left to smuggle a claim into.
+
+## 1.7.7 Citation repair requires exact content equality
+
+The 0.90 similarity threshold from 1.6.7 is withdrawn. It was a tolerance for
+content change with no principle behind the number, and "mostly the same claim"
+is not a standard.
+
+When citation repair is the only warrant, the content tokens of the revision
+must equal those of the draft exactly. A model that cannot reproduce the
+sentence has its revision refused and the draft stands, which is what Arm B
+would have served anyway. Nothing is lost against the baseline.
+
+## 1.7.8 The stopping thresholds, stated rather than only coded
+
+`evaluate_gate` had thresholds that appeared in no document. An executable rule
+whose numbers live only in source is not pre-committed, because nobody can
+check it against what was promised. On the development split, 6 genuine
+families and 2 controls:
+
+| Decision | Condition |
+|---|---|
+| `DEFECT` | any invalid revision served. Vetoes everything below. |
+| `STOP` | every control falsely detected (2 of 2), **or** genuine detected <= 1 of 6 |
+| `PROCEED` | genuine detected >= 4 of 6 **and** genuine classified >= 3 of 6 |
+| `REVISE` | anything else. One prompt revision remains and it is the last. |
+
+Expressed as fractions of the families present, so the same rule reads
+correctly on either split without being rewritten to suit the outcome.
+
+## 1.7.9 The protocol precondition is now enforced
+
+Section 7 of the protocol said it runs only after a pilot serves no invalid
+revision. Nothing checked it, which made it a wish. `verifier_protocol.py` now
+evaluates the gate against the latest development Arm D run and refuses.
+
+## State after this amendment
+
+| | Before 1.7 | After 1.7 |
+|---|---|---|
+| Reproducibility of reported metrics | asserted absent | **unmeasured, instrument corrected** |
+| Protocol size | 96, briefly 288 | **96, one block** |
+| Determinism schedule | adjacent repeats | **complete passes** |
+| Abstention wording | model's prose, checked | **system template** |
+| Citation-repair tolerance | 0.90 similarity | **exact content equality** |
+| Stopping thresholds | code only | **documented** |
+| Protocol precondition | documented only | **enforced** |
+| Tests | 404 | **419** |
+
+Pilot 03's served-answer measurements are superseded by 1.7.6 and 1.7.7. Its
+detection result, zero on every genuine family, agrees with pilot 02's.

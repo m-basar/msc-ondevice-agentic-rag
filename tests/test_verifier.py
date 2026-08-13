@@ -687,25 +687,36 @@ def test_an_abstention_may_not_reassert_the_figure_it_withdrew():
     draft = "A Returns Authorisation number is valid for 14 days [OPS-03#002]."
     result = schema.parse(payload, {"OPS-03#002"}, POLICY, draft=draft)
 
-    assert result.final_answer == draft
-    assert result.revision_rejected
-    assert "without citing a passage" in result.revision_rejected_reason
+    # The model's wording is discarded entirely rather than inspected.
+    assert result.final_answer == schema.ABSTENTION_TEXT
+    assert "14-day" not in result.final_answer
+    assert "OPS-03#002" not in result.final_answer
 
 
-def test_a_clean_abstention_states_no_figure_and_is_allowed():
-    for text in [
-        "The evidence does not state a validity period.",
-        "The evidence does not cover pensions.",
-    ]:
-        assert not schema.asserts_uncited_quantity(text)
+def test_an_assertion_with_no_digit_in_it_is_also_discarded():
+    """The case a digit-hunting rule could never have caught.
+
+    "valid for two weeks" asserts exactly what "valid for 14 days" asserts and
+    contains no digit. Detecting assertions inside free prose is unbounded
+    work, so the abstention wording is not the model's to write.
+    """
+    payload = json.dumps({
+        "claims": [{"claim": "valid for 14 days", "verdict": "INSUFFICIENT_EVIDENCE"}],
+        "relationship": "no_relationship",
+        "final_answer": "The authorisation remains valid for two weeks.",
+    })
+    draft = "A Returns Authorisation number is valid for 14 days [OPS-03#002]."
+    result = schema.parse(payload, {"OPS-03#002"}, POLICY, draft=draft)
+
+    assert result.final_answer == schema.ABSTENTION_TEXT
+    assert "two weeks" not in result.final_answer
 
 
-def test_a_cited_figure_is_never_flagged():
-    for text in [
-        "A Returns Authorisation number is valid for 14 days [OPS-03#002].",
-        "The rate is 55 pence per mile [HR-13#001].",
-    ]:
-        assert not schema.asserts_uncited_quantity(text)
+def test_the_abstention_text_asserts_nothing():
+    """It is served verbatim, so what it says is part of the system."""
+    assert not schema.cites_a_passage(schema.ABSTENTION_TEXT)
+    assert not schema.asserts_uncited_quantity(schema.ABSTENTION_TEXT)
+    assert "does not support an answer" in schema.ABSTENTION_TEXT
 
 
 def test_an_abstention_may_legitimately_cite_nothing():
@@ -722,7 +733,8 @@ def test_an_abstention_may_legitimately_cite_nothing():
     draft = "A Returns Authorisation number is valid for 14 days [OPS-03#002]."
     result = schema.parse(payload, {"OPS-03#002"}, POLICY, draft=draft)
 
-    assert result.final_answer == "The evidence does not state a validity period."
+    # The finding is respected and the wording is not the model's to choose.
+    assert result.final_answer == schema.ABSTENTION_TEXT
     assert result.revised
     assert not result.revision_rejected
 
@@ -843,6 +855,29 @@ def test_citation_repair_does_not_license_a_prose_rewrite():
     assert result.revision_rejected
     assert "citation repair" in result.revision_rejected_reason
     assert result.final_answer.endswith("[ZZ-99#001].")
+
+
+def test_citation_repair_must_leave_the_claim_exactly_as_it_was():
+    """Exact content equality, not a similarity tolerance.
+
+    0.90 permitted some content change with no principle behind the number.
+    A model that cannot reproduce the sentence has its revision refused and
+    the draft stands, which is what Arm B would have served anyway.
+    """
+    payload = json.dumps({
+        "claims": [{"claim": "x", "verdict": "SUPPORTED",
+                    "supporting": ["HR-01#001"]}],
+        "relationship": "no_relationship",
+        "final_answer": "Employees receive 25 days of leave each year [HR-01#001].",
+    })
+    result = schema.parse(
+        payload, {"HR-01#001"}, POLICY,
+        draft="Employees receive 25 days of leave [ZZ-99#001].",
+    )
+
+    assert not result.revised, "'each year' is a content change"
+    assert result.revision_rejected
+    assert "change the citations rather than the claim" in result.revision_rejected_reason
 
 
 def test_citation_repair_that_only_moves_the_identifier_is_allowed():

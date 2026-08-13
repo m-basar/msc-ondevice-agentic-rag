@@ -1,0 +1,303 @@
+{
+  "run": "20260813_231710_D_dev_pilot03",
+  "model": "llama3.2:3b",
+  "options": {
+    "seed": 42,
+    "temperature": 0.0,
+    "num_predict": 700,
+    "num_ctx": 4096
+  },
+  "repeats": 3,
+  "environment": {
+    "host": {
+      "hostname": "Basar",
+      "system": "Windows",
+      "release": "11",
+      "machine": "AMD64",
+      "processor": "AMD64 Family 25 Model 116 Stepping 1, AuthenticAMD",
+      "cpu_count": 16,
+      "python": "3.13.5",
+      "memory_total_gb": 15.29,
+      "memory_available_gb": 4.71,
+      "cpu_temperature_c": null,
+      "throttle": null,
+      "power_profile": "Balanced",
+      "gpus": [
+        {
+          "name": "NVIDIA GeForce RTX 4050 Laptop GPU",
+          "memory_total_mb": 6141,
+          "memory_used_mb": 738,
+          "temperature_c": 46
+        }
+      ]
+    },
+    "ollama": {
+      "base_url": "http://localhost:11434",
+      "reachable": true,
+      "version": "0.32.6",
+      "models": [
+        {
+          "name": "gemma:2b",
+          "digest": "b50d6c999e59",
+          "size": 1678456656
+        },
+        {
+          "name": "llama3.2:1b",
+          "digest": "baf6a787fdff",
+          "size": 1321098329
+        },
+        {
+          "name": "llama3.2:3b",
+          "digest": "a80c4f17acd5",
+          "size": 2019393189
+        },
+        {
+          "name": "nomic-embed-text:latest",
+          "digest": "0a109f422b47",
+          "size": 274302450
+        },
+        {
+          "name": "phi3:mini",
+          "digest": "4f2222927938",
+          "size": 2176178913
+        },
+        {
+          "name": "qwen2.5:3b",
+          "digest": "357c53fb659c",
+          "size": 1929912432
+        }
+      ],
+      "model_store_fingerprint": "e39bc25c0edd",
+      "loaded": []
+    },
+    "gpu_offload_fraction": null
+  },
+  "within_session": {
+    "stable": 8,
+    "varies": 4
+  },
+  "against_recorded": {
+    "matches": 8,
+    "differs": 4
+  },
+  "rows": [
+    {
+      "question_id": "CONF-01-Q1",
+      "prompt_sha256": "5da59a82aaa4",
+      "recorded_sha256": "1b83485fdecf",
+      "repeat_sha256": [
+        "1b83485fdecf",
+        "1b83485fdecf",
+        "1b83485fdecf"
+      ],
+      "stable_within_session": true,
+      "matches_recorded_run": true,
+      "outputs": [
+        "{\n  \"relationship\": \"no_relationship\",\n  \"conflicting_chunks\": [],\n  \"rationale\": \"The evidence does not mention mileage rates for business travel.\",\n  \"claims\": [{\"claim\": \"The mileage rate for business travel is 55 pence per mile for the first 10,000 business miles in a tax year, and 25 pence per mile thereafter.\", \"verdict\": \"INSUFFICIENT_EVIDENCE\", \"supporting\": [], \"contradicting\": []}],\n  \"safe_action\": null,\n  \"escalate\": false,\n  \"final_answer\": null\n}",
+        "{\n  \"relationship\": \"no_relationship\",\n  \"conflicting_chunks\": [],\n  \"rationale\": \"The evidence does not mention mileage rates for business travel.\",\n  \"claims\": [{\"claim\": \"The mileage rate for business travel is 55 pence per mile for the first 10,000 business miles in a tax year, and 25 pence per mile thereafter.\", \"verdict\": \"INSUFFICIENT_EVIDENCE\", \"supporting\": [], \"contradicting\": []}],\n  \"safe_action\": null,\n  \"escalate\": false,\n  \"final_answer\": null\n}",
+        "{\n  \"relationship\": \"no_relationship\",\n  \"conflicting_chunks\": [],\n  \"rationale\": \"The evidence does not mention mileage rates for business travel.\",\n  \"claims\": [{\"claim\": \"The mileage rate for business travel is 55 pence per mile for the first 10,000 business miles in a tax year, and 25 pence per mile thereafter.\", \"verdict\": \"INSUFFICIENT_EVIDENCE\", \"supporting\": [], \"contradicting\": []}],\n  \"safe_action\": null,\n  \"escalate\": false,\n  \"final_answer\": null\n}"
+      ],
+      "recorded": "{\n  \"relationship\": \"no_relationship\",\n  \"conflicting_chunks\": [],\n  \"rationale\": \"The evidence does not mention mileage rates for business travel.\",\n  \"claims\": [{\"claim\": \"The mileage rate for business travel is 55 pence per mile for the first 10,000 business miles in a tax year, and 25 pence per mile thereafter.\", \"verdict\": \"INSUFFICIENT_EVIDENCE\", \"supporting\": [], \"contradicting\": []}],\n  \"safe_action\": null,\n  \"escalate\": false,\n  \"final_answer\": null\n}"
+    },
+    {
+      "question_id": "CONF-01-Q2",
+      "prompt_sha256": "fc24756c4761",
+      "recorded_sha256": "9a1c6ab0caf5",
+      "repeat_sha256": [
+        "9a1c6ab0caf5",
+        "5983d30936f1",
+        "5983d30936f1"
+      ],
+      "stable_within_session": false,
+      "matches_recorded_run": false,
+      "outputs": [
+        "{\n  \"relationship\": \"no_relationship\",\n  \"conflicting_chunks\": [],\n  \"rationale\": \"The answer does not address a conflict between two passages.\",\n  \"claims\": [{\"claim\": \"Employees using a private vehicle for business travel may claim 55 pence per mile for the first 10,000 business miles in a tax year, and 25 pence per mile thereafter.\", \"verdict\": \"SUPPORTED\", \"supporting\": [\"HR-13#001\"], \"contradicting\": []}],\n  \"safe_action\": null,\n  \"escalate\": false,\n  \"final_answer\": \"Employees using a private vehicle for business travel may claim 55 pence per mile for the first 10,000 business miles in a tax year, and 25 pence per mile thereafter [HR-13#001].\"\n}",
+        "{\n  \"relationship\": \"no_relationship\",\n  \"conflicting_chunks\": [],\n  \"rationale\": \"The answer does not address a conflict between two passages.\",\n  \"claims\": [{\"claim\": \"Employees using a private vehicle for business travel may claim 55 pence per mile for the first 10,000 business miles in a tax year, and 25 pence per mile thereafter.\", \"verdict\": \"SUPPORTED\", \"supporting\": [\"HR-13#001\"], \"contradicting\": []}],\n  \"safe_action\": null,\n  \"escalate\": false,\n  \"final_answer\": \"Employees using a private vehicle for business travel may claim 55 pence per mile for the first 10,000 business miles in a tax year, and 25 pence per mile thereafter. [HR-13#001]\"\n}",
+        "{\n  \"relationship\": \"no_relationship\",\n  \"conflicting_chunks\": [],\n  \"rationale\": \"The answer does not address a conflict between two passages.\",\n  \"claims\": [{\"claim\": \"Employees using a private vehicle for business travel may claim 55 pence per mile for the first 10,000 business miles in a tax year, and 25 pence per mile thereafter.\", \"verdict\": \"SUPPORTED\", \"supporting\": [\"HR-13#001\"], \"contradicting\": []}],\n  \"safe_action\": null,\n  \"escalate\": false,\n  \"final_answer\": \"Employees using a private vehicle for business travel may claim 55 pence per mile for the first 10,000 business miles in a tax year, and 25 pence per mile thereafter. [HR-13#001]\"\n}"
+      ],
+      "recorded": "{\n  \"relationship\": \"no_relationship\",\n  \"conflicting_chunks\": [],\n  \"rationale\": \"The answer does not address a conflict between two passages.\",\n  \"claims\": [{\"claim\": \"Employees using a private vehicle for business travel may claim 55 pence per mile for the first 10,000 business miles in a tax year, and 25 pence per mile thereafter.\", \"verdict\": \"SUPPORTED\", \"supporting\": [\"HR-13#001\"], \"contradicting\": []}],\n  \"safe_action\": null,\n  \"escalate\": false,\n  \"final_answer\": \"Employees using a private vehicle for business travel may claim 55 pence per mile for the first 10,000 business miles in a tax year, and 25 pence per mile thereafter [HR-13#001].\"\n}"
+    },
+    {
+      "question_id": "CONF-01-Q3",
+      "prompt_sha256": "aa0ac8350b3c",
+      "recorded_sha256": "44415592cb5c",
+      "repeat_sha256": [
+        "44415592cb5c",
+        "44415592cb5c",
+        "44415592cb5c"
+      ],
+      "stable_within_session": true,
+      "matches_recorded_run": true,
+      "outputs": [
+        "{\n  \"relationship\": \"no_relationship\",\n  \"conflicting_chunks\": [],\n  \"rationale\": \"The answer does not address a conflict between passages.\",\n  \"claims\": [\n    {\n      \"claim\": \"According to [HR-13#001], Employees using a private vehicle for business travel may claim 55 pence per mile for the first 10,000 business miles in a tax year, and 25 pence per mile thereafter.\",\n      \"verdict\": \"SUPPORTED\",\n      \"supporting\": [\"HR-13#001\"],\n      \"contradicting\": []\n    }\n  ],\n  \"safe_action\": null,\n  \"escalate\": false,\n  \"final_answer\": \"The answer under review does not address a conflict between passages.\"\n}",
+        "{\n  \"relationship\": \"no_relationship\",\n  \"conflicting_chunks\": [],\n  \"rationale\": \"The answer does not address a conflict between passages.\",\n  \"claims\": [\n    {\n      \"claim\": \"According to [HR-13#001], Employees using a private vehicle for business travel may claim 55 pence per mile for the first 10,000 business miles in a tax year, and 25 pence per mile thereafter.\",\n      \"verdict\": \"SUPPORTED\",\n      \"supporting\": [\"HR-13#001\"],\n      \"contradicting\": []\n    }\n  ],\n  \"safe_action\": null,\n  \"escalate\": false,\n  \"final_answer\": \"The answer under review does not address a conflict between passages.\"\n}",
+        "{\n  \"relationship\": \"no_relationship\",\n  \"conflicting_chunks\": [],\n  \"rationale\": \"The answer does not address a conflict between passages.\",\n  \"claims\": [\n    {\n      \"claim\": \"According to [HR-13#001], Employees using a private vehicle for business travel may claim 55 pence per mile for the first 10,000 business miles in a tax year, and 25 pence per mile thereafter.\",\n      \"verdict\": \"SUPPORTED\",\n      \"supporting\": [\"HR-13#001\"],\n      \"contradicting\": []\n    }\n  ],\n  \"safe_action\": null,\n  \"escalate\": false,\n  \"final_answer\": \"The answer under review does not address a conflict between passages.\"\n}"
+      ],
+      "recorded": "{\n  \"relationship\": \"no_relationship\",\n  \"conflicting_chunks\": [],\n  \"rationale\": \"The answer does not address a conflict between passages.\",\n  \"claims\": [\n    {\n      \"claim\": \"According to [HR-13#001], Employees using a private vehicle for business travel may claim 55 pence per mile for the first 10,000 business miles in a tax year, and 25 pence per mile thereafter.\",\n      \"verdict\": \"SUPPORTED\",\n      \"supporting\": [\"HR-13#001\"],\n      \"contradicting\": []\n    }\n  ],\n  \"safe_action\": null,\n  \"escalate\": false,\n  \"final_answer\": \"The answer under review does not address a conflict between passages.\"\n}"
+    },
+    {
+      "question_id": "CONF-05-Q1",
+      "prompt_sha256": "730bdfc59eca",
+      "recorded_sha256": "5ece51514724",
+      "repeat_sha256": [
+        "5ece51514724",
+        "53594487e341",
+        "53594487e341"
+      ],
+      "stable_within_session": false,
+      "matches_recorded_run": false,
+      "outputs": [
+        "{\n  \"relationship\": \"no_relationship\",\n  \"conflicting_chunks\": [],\n  \"rationale\": \"The answer does not address the specific question about reporting a lost company laptop.\",\n  \"claims\": [\n    {\n      \"claim\": \"You must report a lost company laptop to the IT helpdesk within 1 hour of becoming aware [IT-03#001].\",\n      \"verdict\": \"SUPPORTED\"\n    }\n  ],\n  \"safe_action\": null,\n  \"escalate\": false,\n  \"final_answer\": \"Report a lost company laptop to the IT helpdesk as soon as possible, but there is no specific deadline given in the evidence.\"\n}",
+        "{\n  \"relationship\": \"no_relationship\",\n  \"conflicting_chunks\": [],\n  \"rationale\": \"The answer does not address the specific question about reporting a lost company laptop.\",\n  \"claims\": [\n    {\n      \"claim\": \"You must report a lost company laptop to the IT helpdesk within 1 hour of becoming aware [IT-03#001].\",\n      \"verdict\": \"SUPPORTED\"\n    }\n  ],\n  \"safe_action\": null,\n  \"escalate\": false,\n  \"final_answer\": null\n}",
+        "{\n  \"relationship\": \"no_relationship\",\n  \"conflicting_chunks\": [],\n  \"rationale\": \"The answer does not address the specific question about reporting a lost company laptop.\",\n  \"claims\": [\n    {\n      \"claim\": \"You must report a lost company laptop to the IT helpdesk within 1 hour of becoming aware [IT-03#001].\",\n      \"verdict\": \"SUPPORTED\"\n    }\n  ],\n  \"safe_action\": null,\n  \"escalate\": false,\n  \"final_answer\": null\n}"
+      ],
+      "recorded": "{\n  \"relationship\": \"no_relationship\",\n  \"conflicting_chunks\": [],\n  \"rationale\": \"The answer does not address the specific question about reporting a lost company laptop.\",\n  \"claims\": [\n    {\n      \"claim\": \"You must report a lost company laptop to the IT helpdesk within 1 hour of becoming aware [IT-03#001].\",\n      \"verdict\": \"SUPPORTED\"\n    }\n  ],\n  \"safe_action\": null,\n  \"escalate\": false,\n  \"final_answer\": \"Report a lost company laptop to the IT helpdesk as soon as possible, but there is no specific deadline given in the evidence.\"\n}"
+    },
+    {
+      "question_id": "CONF-05-Q2",
+      "prompt_sha256": "63a51e285446",
+      "recorded_sha256": "f24cda11560a",
+      "repeat_sha256": [
+        "f24cda11560a",
+        "f24cda11560a",
+        "f24cda11560a"
+      ],
+      "stable_within_session": true,
+      "matches_recorded_run": true,
+      "outputs": [
+        "{\n  \"relationship\": \"no_relationship\",\n  \"conflicting_chunks\": [],\n  \"rationale\": \"The passages do not speak to the same point.\",\n  \"claims\": [\n    {\n      \"claim\": \"Staff must report loss or theft of company equipment to the IT helpdesk within 24 hours, and if the device held company data, this also triggers the security incident procedure in [IT-03#002].\",\n      \"verdict\": \"INSUFFICIENT_EVIDENCE\"\n    },\n    {\n      \"claim\": \"The carrier's contract requires damage to be notified within three days.\",\n      \"verdict\": \"INSUFFICIENT_EVIDENCE\"\n    }\n  ],\n  \"safe_action\": null,\n  \"escalate\": false,\n  \"final_answer\": null\n}",
+        "{\n  \"relationship\": \"no_relationship\",\n  \"conflicting_chunks\": [],\n  \"rationale\": \"The passages do not speak to the same point.\",\n  \"claims\": [\n    {\n      \"claim\": \"Staff must report loss or theft of company equipment to the IT helpdesk within 24 hours, and if the device held company data, this also triggers the security incident procedure in [IT-03#002].\",\n      \"verdict\": \"INSUFFICIENT_EVIDENCE\"\n    },\n    {\n      \"claim\": \"The carrier's contract requires damage to be notified within three days.\",\n      \"verdict\": \"INSUFFICIENT_EVIDENCE\"\n    }\n  ],\n  \"safe_action\": null,\n  \"escalate\": false,\n  \"final_answer\": null\n}",
+        "{\n  \"relationship\": \"no_relationship\",\n  \"conflicting_chunks\": [],\n  \"rationale\": \"The passages do not speak to the same point.\",\n  \"claims\": [\n    {\n      \"claim\": \"Staff must report loss or theft of company equipment to the IT helpdesk within 24 hours, and if the device held company data, this also triggers the security incident procedure in [IT-03#002].\",\n      \"verdict\": \"INSUFFICIENT_EVIDENCE\"\n    },\n    {\n      \"claim\": \"The carrier's contract requires damage to be notified within three days.\",\n      \"verdict\": \"INSUFFICIENT_EVIDENCE\"\n    }\n  ],\n  \"safe_action\": null,\n  \"escalate\": false,\n  \"final_answer\": null\n}"
+      ],
+      "recorded": "{\n  \"relationship\": \"no_relationship\",\n  \"conflicting_chunks\": [],\n  \"rationale\": \"The passages do not speak to the same point.\",\n  \"claims\": [\n    {\n      \"claim\": \"Staff must report loss or theft of company equipment to the IT helpdesk within 24 hours, and if the device held company data, this also triggers the security incident procedure in [IT-03#002].\",\n      \"verdict\": \"INSUFFICIENT_EVIDENCE\"\n    },\n    {\n      \"claim\": \"The carrier's contract requires damage to be notified within three days.\",\n      \"verdict\": \"INSUFFICIENT_EVIDENCE\"\n    }\n  ],\n  \"safe_action\": null,\n  \"escalate\": false,\n  \"final_answer\": null\n}"
+    },
+    {
+      "question_id": "CONF-05-Q3",
+      "prompt_sha256": "6b28d40622db",
+      "recorded_sha256": "224114b763a3",
+      "repeat_sha256": [
+        "224114b763a3",
+        "224114b763a3",
+        "224114b763a3"
+      ],
+      "stable_within_session": true,
+      "matches_recorded_run": true,
+      "outputs": [
+        "{\n  \"relationship\": \"no_relationship\",\n  \"conflicting_chunks\": [],\n  \"rationale\": \"The answer only mentions IT-03#001, but the evidence includes multiple passages with different reporting deadlines.\",\n  \"claims\": [{\"claim\": \"You must report the theft of your work phone to the IT helpdesk within 1 hour of becoming aware [IT-03#001].\", \"verdict\": \"INSUFFICIENT_EVIDENCE\", \"supporting\": [\"IT-03#001\"], \"contradicting\": []}],\n  \"safe_action\": null,\n  \"escalate\": false,\n  \"final_answer\": null\n}",
+        "{\n  \"relationship\": \"no_relationship\",\n  \"conflicting_chunks\": [],\n  \"rationale\": \"The answer only mentions IT-03#001, but the evidence includes multiple passages with different reporting deadlines.\",\n  \"claims\": [{\"claim\": \"You must report the theft of your work phone to the IT helpdesk within 1 hour of becoming aware [IT-03#001].\", \"verdict\": \"INSUFFICIENT_EVIDENCE\", \"supporting\": [\"IT-03#001\"], \"contradicting\": []}],\n  \"safe_action\": null,\n  \"escalate\": false,\n  \"final_answer\": null\n}",
+        "{\n  \"relationship\": \"no_relationship\",\n  \"conflicting_chunks\": [],\n  \"rationale\": \"The answer only mentions IT-03#001, but the evidence includes multiple passages with different reporting deadlines.\",\n  \"claims\": [{\"claim\": \"You must report the theft of your work phone to the IT helpdesk within 1 hour of becoming aware [IT-03#001].\", \"verdict\": \"INSUFFICIENT_EVIDENCE\", \"supporting\": [\"IT-03#001\"], \"contradicting\": []}],\n  \"safe_action\": null,\n  \"escalate\": false,\n  \"final_answer\": null\n}"
+      ],
+      "recorded": "{\n  \"relationship\": \"no_relationship\",\n  \"conflicting_chunks\": [],\n  \"rationale\": \"The answer only mentions IT-03#001, but the evidence includes multiple passages with different reporting deadlines.\",\n  \"claims\": [{\"claim\": \"You must report the theft of your work phone to the IT helpdesk within 1 hour of becoming aware [IT-03#001].\", \"verdict\": \"INSUFFICIENT_EVIDENCE\", \"supporting\": [\"IT-03#001\"], \"contradicting\": []}],\n  \"safe_action\": null,\n  \"escalate\": false,\n  \"final_answer\": null\n}"
+    },
+    {
+      "question_id": "TUNE-01-Q1",
+      "prompt_sha256": "0e4c07144da7",
+      "recorded_sha256": "6caf8ebec699",
+      "repeat_sha256": [
+        "6caf8ebec699",
+        "6caf8ebec699",
+        "6caf8ebec699"
+      ],
+      "stable_within_session": true,
+      "matches_recorded_run": true,
+      "outputs": [
+        "{\n  \"relationship\": \"no_relationship\",\n  \"conflicting_chunks\": [],\n  \"rationale\": \"The answer does not address the question about returning an unwanted item.\",\n  \"claims\": [\n    {\n      \"claim\": \"You can return an unwanted item within 28 days of delivery, provided it is unused and in its original packaging.\",\n      \"verdict\": \"SUPPORTED\",\n      \"supporting\": [\"CS-03#001\"],\n      \"contradicting\": []\n    }\n  ],\n  \"safe_action\": null,\n  \"escalate\": false,\n  \"final_answer\": null\n}",
+        "{\n  \"relationship\": \"no_relationship\",\n  \"conflicting_chunks\": [],\n  \"rationale\": \"The answer does not address the question about returning an unwanted item.\",\n  \"claims\": [\n    {\n      \"claim\": \"You can return an unwanted item within 28 days of delivery, provided it is unused and in its original packaging.\",\n      \"verdict\": \"SUPPORTED\",\n      \"supporting\": [\"CS-03#001\"],\n      \"contradicting\": []\n    }\n  ],\n  \"safe_action\": null,\n  \"escalate\": false,\n  \"final_answer\": null\n}",
+        "{\n  \"relationship\": \"no_relationship\",\n  \"conflicting_chunks\": [],\n  \"rationale\": \"The answer does not address the question about returning an unwanted item.\",\n  \"claims\": [\n    {\n      \"claim\": \"You can return an unwanted item within 28 days of delivery, provided it is unused and in its original packaging.\",\n      \"verdict\": \"SUPPORTED\",\n      \"supporting\": [\"CS-03#001\"],\n      \"contradicting\": []\n    }\n  ],\n  \"safe_action\": null,\n  \"escalate\": false,\n  \"final_answer\": null\n}"
+      ],
+      "recorded": "{\n  \"relationship\": \"no_relationship\",\n  \"conflicting_chunks\": [],\n  \"rationale\": \"The answer does not address the question about returning an unwanted item.\",\n  \"claims\": [\n    {\n      \"claim\": \"You can return an unwanted item within 28 days of delivery, provided it is unused and in its original packaging.\",\n      \"verdict\": \"SUPPORTED\",\n      \"supporting\": [\"CS-03#001\"],\n      \"contradicting\": []\n    }\n  ],\n  \"safe_action\": null,\n  \"escalate\": false,\n  \"final_answer\": null\n}"
+    },
+    {
+      "question_id": "TUNE-01-Q2",
+      "prompt_sha256": "823839bdacdc",
+      "recorded_sha256": "b71c91a2a184",
+      "repeat_sha256": [
+        "b71c91a2a184",
+        "b71c91a2a184",
+        "b71c91a2a184"
+      ],
+      "stable_within_session": true,
+      "matches_recorded_run": true,
+      "outputs": [
+        "{\n  \"relationship\": \"no_relationship\",\n  \"conflicting_chunks\": [],\n  \"rationale\": \"The returns window for goods I no longer want is not explicitly stated in the provided evidence.\",\n  \"claims\": [\n    {\n      \"claim\": \"For consumer customers, the returns window is 14 days from delivery or evidence of dispatch, whichever is earlier. [OPS-03#001]\",\n      \"verdict\": \"INSUFFICIENT_EVIDENCE\",\n      \"supporting\": [\"OPS-03#001\"],\n      \"contradicting\": []\n    },\n    {\n      \"claim\": \"Goods may be returned within 30 days of delivery if unused and in their original packaging. [CS-03#001]\",\n      \"verdict\": \"INSUFFICIENT_EVIDENCE\",\n      \"supporting\": [\"CS-03#001\"],\n      \"contradicting\": []\n    }\n  ],\n  \"safe_action\": null,\n  \"escalate\": false,\n  \"final_answer\": null\n}",
+        "{\n  \"relationship\": \"no_relationship\",\n  \"conflicting_chunks\": [],\n  \"rationale\": \"The returns window for goods I no longer want is not explicitly stated in the provided evidence.\",\n  \"claims\": [\n    {\n      \"claim\": \"For consumer customers, the returns window is 14 days from delivery or evidence of dispatch, whichever is earlier. [OPS-03#001]\",\n      \"verdict\": \"INSUFFICIENT_EVIDENCE\",\n      \"supporting\": [\"OPS-03#001\"],\n      \"contradicting\": []\n    },\n    {\n      \"claim\": \"Goods may be returned within 30 days of delivery if unused and in their original packaging. [CS-03#001]\",\n      \"verdict\": \"INSUFFICIENT_EVIDENCE\",\n      \"supporting\": [\"CS-03#001\"],\n      \"contradicting\": []\n    }\n  ],\n  \"safe_action\": null,\n  \"escalate\": false,\n  \"final_answer\": null\n}",
+        "{\n  \"relationship\": \"no_relationship\",\n  \"conflicting_chunks\": [],\n  \"rationale\": \"The returns window for goods I no longer want is not explicitly stated in the provided evidence.\",\n  \"claims\": [\n    {\n      \"claim\": \"For consumer customers, the returns window is 14 days from delivery or evidence of dispatch, whichever is earlier. [OPS-03#001]\",\n      \"verdict\": \"INSUFFICIENT_EVIDENCE\",\n      \"supporting\": [\"OPS-03#001\"],\n      \"contradicting\": []\n    },\n    {\n      \"claim\": \"Goods may be returned within 30 days of delivery if unused and in their original packaging. [CS-03#001]\",\n      \"verdict\": \"INSUFFICIENT_EVIDENCE\",\n      \"supporting\": [\"CS-03#001\"],\n      \"contradicting\": []\n    }\n  ],\n  \"safe_action\": null,\n  \"escalate\": false,\n  \"final_answer\": null\n}"
+      ],
+      "recorded": "{\n  \"relationship\": \"no_relationship\",\n  \"conflicting_chunks\": [],\n  \"rationale\": \"The returns window for goods I no longer want is not explicitly stated in the provided evidence.\",\n  \"claims\": [\n    {\n      \"claim\": \"For consumer customers, the returns window is 14 days from delivery or evidence of dispatch, whichever is earlier. [OPS-03#001]\",\n      \"verdict\": \"INSUFFICIENT_EVIDENCE\",\n      \"supporting\": [\"OPS-03#001\"],\n      \"contradicting\": []\n    },\n    {\n      \"claim\": \"Goods may be returned within 30 days of delivery if unused and in their original packaging. [CS-03#001]\",\n      \"verdict\": \"INSUFFICIENT_EVIDENCE\",\n      \"supporting\": [\"CS-03#001\"],\n      \"contradicting\": []\n    }\n  ],\n  \"safe_action\": null,\n  \"escalate\": false,\n  \"final_answer\": null\n}"
+    },
+    {
+      "question_id": "TUNE-01-Q3",
+      "prompt_sha256": "90c4ce325428",
+      "recorded_sha256": "71f14ad8b1cc",
+      "repeat_sha256": [
+        "71f14ad8b1cc",
+        "b6800cc7892d",
+        "b6800cc7892d"
+      ],
+      "stable_within_session": false,
+      "matches_recorded_run": false,
+      "outputs": [
+        "{\n  \"relationship\": \"no_relationship\",\n  \"conflicting_chunks\": [],\n  \"rationale\": \"The passages do not speak to the same point.\",\n  \"claims\": [\n    {\n      \"claim\": \"According to [CS-03#001], Unwanted items may be returned within 28 days of delivery provided they are unused and in their original packaging. Since your order arrived 29 days ago, you are outside the allowed return period.\",\n      \"verdict\": \"INSUFFICIENT_EVIDENCE\",\n      \"supporting\": [\"CS-03#001\"],\n      \"contradicting\": []\n    },\n    {\n      \"claim\": \"According to [CS-01#004], The carrier attempts delivery once, then leaves a card and takes the parcel to a local collection point where it is held for seven days. Parcels not collected are returned to us and the order refunded less outbound carriage.\",\n      \"verdict\": \"INSUFFICIENT_EVIDENCE\",\n      \"supporting\": [\"CS-01#004\"],\n      \"contradicting\": []\n    },\n    {\n      \"claim\": \"According to [CS-11#004], The carrier attempts delivery once, then leaves a card and takes the parcel to a local collection point where it is held for seven days. Parcels not collected are returned to us and the order refunded less outbound carriage.\",\n      \"verdict\": \"INSUFFICIENT_EVIDENCE\",\n      \"supporting\": [\"CS-11#004\"],\n      \"contradicting\": []\n    }\n  ],\n  \"safe_action\": null,\n  \"escalate\": false,\n  \"final_answer\": null\n}",
+        "{\n  \"relationship\": \"no_relationship\",\n  \"conflicting_chunks\": [],\n  \"rationale\": \"The passages do not speak to the same point.\",\n  \"claims\": [\n    {\n      \"claim\": \"According to [CS-03#001], Unwanted items may be returned within 28 days of delivery provided they are unused and in their original packaging. Since your order arrived 29 days ago, you are outside the allowed return period.\",\n      \"verdict\": \"INSUFFICIENT_EVIDENCE\",\n      \"supporting\": [\"CS-03#001\"],\n      \"contradicting\": []\n    },\n    {\n      \"claim\": \"Check the tracking link in your despatch email first. If tracking shows no movement for two working days, contact customer services on 01632 960 300 with your order number.\",\n      \"verdict\": \"INSUFFICIENT_EVIDENCE\",\n      \"supporting\": [\"CS-01#004\", \"CS-11#004\"],\n      \"contradicting\": []\n    }\n  ],\n  \"safe_action\": null,\n  \"escalate\": false,\n  \"final_answer\": null\n}",
+        "{\n  \"relationship\": \"no_relationship\",\n  \"conflicting_chunks\": [],\n  \"rationale\": \"The passages do not speak to the same point.\",\n  \"claims\": [\n    {\n      \"claim\": \"According to [CS-03#001], Unwanted items may be returned within 28 days of delivery provided they are unused and in their original packaging. Since your order arrived 29 days ago, you are outside the allowed return period.\",\n      \"verdict\": \"INSUFFICIENT_EVIDENCE\",\n      \"supporting\": [\"CS-03#001\"],\n      \"contradicting\": []\n    },\n    {\n      \"claim\": \"Check the tracking link in your despatch email first. If tracking shows no movement for two working days, contact customer services on 01632 960 300 with your order number.\",\n      \"verdict\": \"INSUFFICIENT_EVIDENCE\",\n      \"supporting\": [\"CS-01#004\", \"CS-11#004\"],\n      \"contradicting\": []\n    }\n  ],\n  \"safe_action\": null,\n  \"escalate\": false,\n  \"final_answer\": null\n}"
+      ],
+      "recorded": "{\n  \"relationship\": \"no_relationship\",\n  \"conflicting_chunks\": [],\n  \"rationale\": \"The passages do not speak to the same point.\",\n  \"claims\": [\n    {\n      \"claim\": \"According to [CS-03#001], Unwanted items may be returned within 28 days of delivery provided they are unused and in their original packaging. Since your order arrived 29 days ago, you are outside the allowed return period.\",\n      \"verdict\": \"INSUFFICIENT_EVIDENCE\",\n      \"supporting\": [\"CS-03#001\"],\n      \"contradicting\": []\n    },\n    {\n      \"claim\": \"According to [CS-01#004], The carrier attempts delivery once, then leaves a card and takes the parcel to a local collection point where it is held for seven days. Parcels not collected are returned to us and the order refunded less outbound carriage.\",\n      \"verdict\": \"INSUFFICIENT_EVIDENCE\",\n      \"supporting\": [\"CS-01#004\"],\n      \"contradicting\": []\n    },\n    {\n      \"claim\": \"According to [CS-11#004], The carrier attempts delivery once, then leaves a card and takes the parcel to a local collection point where it is held for seven days. Parcels not collected are returned to us and the order refunded less outbound carriage.\",\n      \"verdict\": \"INSUFFICIENT_EVIDENCE\",\n      \"supporting\": [\"CS-11#004\"],\n      \"contradicting\": []\n    }\n  ],\n  \"safe_action\": null,\n  \"escalate\": false,\n  \"final_answer\": null\n}"
+    },
+    {
+      "question_id": "TUNE-02-Q1",
+      "prompt_sha256": "320122fd8774",
+      "recorded_sha256": "3a778a568650",
+      "repeat_sha256": [
+        "3a778a568650",
+        "3a778a568650",
+        "3a778a568650"
+      ],
+      "stable_within_session": true,
+      "matches_recorded_run": true,
+      "outputs": [
+        "{\n  \"relationship\": \"no_relationship\",\n  \"conflicting_chunks\": [],\n  \"rationale\": \"The answer does not address a disagreement between passages.\",\n  \"claims\": [\n    {\n      \"claim\": \"The Health and Safety Coordinator reviews each entry within five working days [REG-01#005].\",\n      \"verdict\": \"SUPPORTED\"\n    }\n  ],\n  \"safe_action\": null,\n  \"escalate\": false,\n  \"final_answer\": \"The Health and Safety Coordinator reviews each entry within five working days [REG-01#005].\"\n}",
+        "{\n  \"relationship\": \"no_relationship\",\n  \"conflicting_chunks\": [],\n  \"rationale\": \"The answer does not address a disagreement between passages.\",\n  \"claims\": [\n    {\n      \"claim\": \"The Health and Safety Coordinator reviews each entry within five working days [REG-01#005].\",\n      \"verdict\": \"SUPPORTED\"\n    }\n  ],\n  \"safe_action\": null,\n  \"escalate\": false,\n  \"final_answer\": \"The Health and Safety Coordinator reviews each entry within five working days [REG-01#005].\"\n}",
+        "{\n  \"relationship\": \"no_relationship\",\n  \"conflicting_chunks\": [],\n  \"rationale\": \"The answer does not address a disagreement between passages.\",\n  \"claims\": [\n    {\n      \"claim\": \"The Health and Safety Coordinator reviews each entry within five working days [REG-01#005].\",\n      \"verdict\": \"SUPPORTED\"\n    }\n  ],\n  \"safe_action\": null,\n  \"escalate\": false,\n  \"final_answer\": \"The Health and Safety Coordinator reviews each entry within five working days [REG-01#005].\"\n}"
+      ],
+      "recorded": "{\n  \"relationship\": \"no_relationship\",\n  \"conflicting_chunks\": [],\n  \"rationale\": \"The answer does not address a disagreement between passages.\",\n  \"claims\": [\n    {\n      \"claim\": \"The Health and Safety Coordinator reviews each entry within five working days [REG-01#005].\",\n      \"verdict\": \"SUPPORTED\"\n    }\n  ],\n  \"safe_action\": null,\n  \"escalate\": false,\n  \"final_answer\": \"The Health and Safety Coordinator reviews each entry within five working days [REG-01#005].\"\n}"
+    },
+    {
+      "question_id": "TUNE-02-Q2",
+      "prompt_sha256": "70c2725e3d6e",
+      "recorded_sha256": "618db65a31d1",
+      "repeat_sha256": [
+        "618db65a31d1",
+        "618db65a31d1",
+        "618db65a31d1"
+      ],
+      "stable_within_session": true,
+      "matches_recorded_run": true,
+      "outputs": [
+        "{\n  \"relationship\": \"no_relationship\",\n  \"conflicting_chunks\": [],\n  \"rationale\": \"The passages do not speak to the same point.\",\n  \"claims\": [\n    {\n      \"claim\": \"The Health and Safety Coordinator reviews each entry within five working days [REG-01#005].\",\n      \"verdict\": \"INSUFFICIENT_EVIDENCE\"\n    }\n  ],\n  \"safe_action\": null,\n  \"escalate\": false,\n  \"final_answer\": null\n}",
+        "{\n  \"relationship\": \"no_relationship\",\n  \"conflicting_chunks\": [],\n  \"rationale\": \"The passages do not speak to the same point.\",\n  \"claims\": [\n    {\n      \"claim\": \"The Health and Safety Coordinator reviews each entry within five working days [REG-01#005].\",\n      \"verdict\": \"INSUFFICIENT_EVIDENCE\"\n    }\n  ],\n  \"safe_action\": null,\n  \"escalate\": false,\n  \"final_answer\": null\n}",
+        "{\n  \"relationship\": \"no_relationship\",\n  \"conflicting_chunks\": [],\n  \"rationale\": \"The passages do not speak to the same point.\",\n  \"claims\": [\n    {\n      \"claim\": \"The Health and Safety Coordinator reviews each entry within five working days [REG-01#005].\",\n      \"verdict\": \"INSUFFICIENT_EVIDENCE\"\n    }\n  ],\n  \"safe_action\": null,\n  \"escalate\": false,\n  \"final_answer\": null\n}"
+      ],
+      "recorded": "{\n  \"relationship\": \"no_relationship\",\n  \"conflicting_chunks\": [],\n  \"rationale\": \"The passages do not speak to the same point.\",\n  \"claims\": [\n    {\n      \"claim\": \"The Health and Safety Coordinator reviews each entry within five working days [REG-01#005].\",\n      \"verdict\": \"INSUFFICIENT_EVIDENCE\"\n    }\n  ],\n  \"safe_action\": null,\n  \"escalate\": false,\n  \"final_answer\": null\n}"
+    },
+    {
+      "question_id": "TUNE-02-Q3",
+      "prompt_sha256": "b2a64d095dde",
+      "recorded_sha256": "618db65a31d1",
+      "repeat_sha256": [
+        "618db65a31d1",
+        "0784e5472dfc",
+        "0784e5472dfc"
+      ],
+      "stable_within_session": false,
+      "matches_recorded_run": false,
+      "outputs": [
+        "{\n  \"relationship\": \"no_relationship\",\n  \"conflicting_chunks\": [],\n  \"rationale\": \"The passages do not speak to the same point.\",\n  \"claims\": [\n    {\n      \"claim\": \"The Health and Safety Coordinator reviews each entry within five working days [REG-01#005].\",\n      \"verdict\": \"INSUFFICIENT_EVIDENCE\"\n    }\n  ],\n  \"safe_action\": null,\n  \"escalate\": false,\n  \"final_answer\": null\n}",
+        "{\n  \"relationship\": \"no_relationship\",\n  \"conflicting_chunks\": [],\n  \"rationale\": \"The passages do not speak to the same point.\",\n  \"claims\": [\n    {\n      \"claim\": \"The Health and Safety Coordinator reviews each entry within five working days [REG-01#005].\",\n      \"verdict\": \"INSUFFICIENT_EVIDENCE\"\n    },\n    {\n      \"claim\": \"The Health and Safety Coordinator reviews every entry within two working days and decides whether it is reportable under RIDDOR 2013. [OPS-08#004]\",\n      \"verdict\": \"INSUFFICIENT_EVIDENCE\"\n    }\n  ],\n  \"safe_action\": null,\n  \"escalate\": false,\n  \"final_answer\": null\n}",
+        "{\n  \"relationship\": \"no_relationship\",\n  \"conflicting_chunks\": [],\n  \"rationale\": \"The passages do not speak to the same point.\",\n  \"claims\": [\n    {\n      \"claim\": \"The Health and Safety Coordinator reviews each entry within five working days [REG-01#005].\",\n      \"verdict\": \"INSUFFICIENT_EVIDENCE\"\n    },\n    {\n      \"claim\": \"The Health and Safety Coordinator reviews every entry within two working days and decides whether it is reportable under RIDDOR 2013. [OPS-08#004]\",\n      \"verdict\": \"INSUFFICIENT_EVIDENCE\"\n    }\n  ],\n  \"safe_action\": null,\n  \"escalate\": false,\n  \"final_answer\": null\n}"
+      ],
+      "recorded": "{\n  \"relationship\": \"no_relationship\",\n  \"conflicting_chunks\": [],\n  \"rationale\": \"The passages do not speak to the same point.\",\n  \"claims\": [\n    {\n      \"claim\": \"The Health and Safety Coordinator reviews each entry within five working days [REG-01#005].\",\n      \"verdict\": \"INSUFFICIENT_EVIDENCE\"\n    }\n  ],\n  \"safe_action\": null,\n  \"escalate\": false,\n  \"final_answer\": null\n}"
+    }
+  ],
+  "what_this_measures": "adjacent-repeat raw-output variability: each prompt called 3 times back to back, sha256 of raw text compared. 4 of 12 changed. All 12 first calls matched the recorded pilot 03 run. This says nothing about whether any parsed or reported outcome moves.",
+  "superseded_by": "complete-pass schedule in scripts/check_determinism.py"
+}

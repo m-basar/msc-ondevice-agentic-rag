@@ -21,6 +21,8 @@ from verifier_protocol import (  # noqa: E402
     CONDITIONS,
     MODELS,
     PROTOCOL,
+    REPEATS,
+    stability,
     pair_is_present,
     require_committed_protocol,
 )
@@ -79,7 +81,7 @@ def test_the_guard_refuses_an_uncommitted_protocol(monkeypatch):
 def test_the_guard_refuses_uncommitted_verifier_code(monkeypatch):
     """The protocol being committed proves nothing about what will run.
 
-    An edited prompt or parsing rule would influence all 96 calls while the
+    An edited prompt or parsing rule would influence every call while the
     document sat frozen in git looking authoritative. This is the case that
     checking only docs/ would have missed.
     """
@@ -123,7 +125,7 @@ def test_the_guard_passes_on_a_clean_runtime_state(monkeypatch):
 
 
 def test_the_design_matches_the_committed_document():
-    """96 calls, two models, two conditions, phi3 excluded.
+    """288 calls, two models, two conditions, three repeats, phi3 excluded.
 
     If the script and the document disagree about the design, the document is
     not a pre-registration of anything.
@@ -133,12 +135,14 @@ def test_the_design_matches_the_committed_document():
     assert MODELS == ("llama3.2:3b", "qwen2.5:3b")
     assert "phi3" not in " ".join(MODELS)
     assert CONDITIONS == ("full", "oracle_pair")
+    assert REPEATS == 1, "raise only if a reported outcome is shown to move"
     assert "96 verifier calls" in text
+    assert "complete passes in protocol order" in text
     for model in MODELS:
         assert model in text
 
 
-def test_the_dry_run_reports_ninety_six_calls():
+def test_the_dry_run_reports_the_committed_call_count():
     out = subprocess.run(
         [sys.executable, str(ROOT / "scripts" / "verifier_protocol.py"), "--dry-run"],
         capture_output=True, text=True, cwd=ROOT,
@@ -146,3 +150,49 @@ def test_the_dry_run_reports_ninety_six_calls():
     assert out.returncode == 0, out.stderr
     assert "Calls       96" in out.stdout
     assert "Questions   24" in out.stdout
+
+
+# --- stability is measured per prompt, never from the totals ------------------
+
+
+def row(qid, repeat, **kw):
+    base = dict(model="m", condition="full", question_id=qid, repeat=repeat,
+                detected=False, classified=False, parse_failed=False,
+                inferred_relationship="no_relationship", raw="{}")
+    base.update(kw)
+    return base
+
+
+def test_agreement_is_one_when_every_repeat_agrees():
+    rows = [row("Q1", r) for r in (1, 2, 3)]
+    measures = stability(rows)
+    assert measures["detected"] == 1.0
+    assert measures["raw_text"] == 1.0
+
+
+def test_a_prompt_that_changes_between_sweeps_is_counted():
+    rows = [row("Q1", 1, raw='{"a":1}'), row("Q1", 2, raw='{"a":2}'),
+            row("Q1", 3, raw='{"a":2}')]
+    measures = stability(rows)
+    assert measures["raw_text"] == 0.0
+    assert measures["detected"] == 1.0, "the wording moved, the finding did not"
+
+
+def test_cancelling_changes_do_not_look_stable():
+    """The trap from pilots 02 and 03.
+
+    Two questions moved one way and two the other, so the aggregate counts were
+    identical while a tenth of the questions churned. Measuring per prompt is
+    what stops that reading as reproducibility.
+    """
+    rows = [
+        row("Q1", 1, inferred_relationship="insufficient"),
+        row("Q1", 2, inferred_relationship="no_relationship"),
+        row("Q2", 1, inferred_relationship="no_relationship"),
+        row("Q2", 2, inferred_relationship="insufficient"),
+    ]
+    from collections import Counter
+    totals = [Counter(r["inferred_relationship"] for r in rows if r["repeat"] == n)
+              for n in (1, 2)]
+    assert totals[0] == totals[1], "the totals are identical, which is the trap"
+    assert stability(rows)["inferred_relationship"] == 0.0

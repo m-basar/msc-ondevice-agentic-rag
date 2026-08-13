@@ -52,7 +52,6 @@ from sme_assistant.evaluation.conflicts import load_conflicts  # noqa: E402
 from sme_assistant.evaluation.question_set import load_question_set  # noqa: E402
 from sme_assistant.evaluation.stopping_gate import (  # noqa: E402
     DECLARED_TO_INFERRED,
-    MAJORITY,
 )
 from sme_assistant.generate.generator import Generator  # noqa: E402
 from sme_assistant.ingest.index import Index, index_path_for  # noqa: E402
@@ -67,6 +66,26 @@ from sme_assistant.verify.verifier import (  # noqa: E402
 PROTOCOL = ROOT / "docs" / "VERIFIER_PROTOCOL.md"
 MODELS = ("llama3.2:3b", "qwen2.5:3b")
 CONDITIONS = ("full", "oracle_pair")
+
+# Blocks, not repeats, and one until the evidence says otherwise.
+#
+# A block is a complete 96-call pass in protocol order. The decision rules are
+# applied **independently to each block** and the block outcomes reported with
+# their mean and range. Three blocks are three results, not 288 independent
+# observations: the calls within a block are not independent of each other, and
+# pooling them would inflate every denominator.
+#
+# This is 1 because the evidence for raising it does not yet exist. The first
+# determinism check repeated each prompt back to back and found 4 of 12 raw
+# outputs changing, and I read that as the verifier being unreproducible. It
+# was not: every first call matched the recorded run, and the changes appeared
+# only on immediate repetition, which no real run performs. Whether any
+# reported outcome moves is what matters and was not measured.
+#
+# scripts/check_determinism.py now measures it in protocol order and parses
+# every response. Raise this to 3 only if that check shows a reported outcome
+# moving, and record the reason in the pre-registration.
+REPEATS = 1
 
 # Everything that determines what the 96 calls do. All of it must be committed
 # before the run, not merely the document describing the run.
@@ -122,6 +141,39 @@ def require_committed_protocol() -> dict[str, str]:
     }
 
 
+def require_clean_pilot(config, *, allow_override: bool = False) -> None:
+    """The protocol runs only after a pilot serves no invalid revision.
+
+    This was written into the protocol document and enforced nowhere, which
+    makes it a wish. Diagnosing a verifier while a known defect sits in the
+    path that serves its output attributes the defect's effects to the model,
+    and both defects found so far were in that path.
+    """
+    from sme_assistant.evaluation.run_writer import read_run
+    from sme_assistant.evaluation.stopping_gate import evaluate_gate
+
+    runs = sorted(p for p in Path(config.path("paths.results")).glob("*_D_dev_*")
+                  if p.is_dir())
+    if not runs:
+        raise SystemExit(
+            "No development Arm D run to check the precondition against.\n"
+            "Run scripts/run_arms.py --split dev first."
+        )
+    latest = runs[-1]
+    _, records = read_run(latest)
+    invalid = evaluate_gate(records, None).invalid_revisions_served
+    if invalid and not allow_override:
+        raise SystemExit(
+            f"{latest.name} served {invalid} invalid revision(s).\n\n"
+            "The precondition in docs/VERIFIER_PROTOCOL.md section 7 is that a "
+            "pilot serves none. Running the diagnostic over a pipeline with a "
+            "known defect in the serving path would attribute its effects to "
+            "the model.\n\nFix it, re-run the pilot, then run this."
+        )
+    print(f"Precondition  {latest.name}: {invalid} invalid revisions served"
+          + ("   (OVERRIDDEN)" if invalid and allow_override else ""))
+
+
 def pair_is_present(anchors, given) -> bool:
     """Were both sides of the disputed fact actually in the evidence?
 
@@ -156,6 +208,10 @@ def main() -> int:
     parser.add_argument("--dry-run", action="store_true",
                         help="print the design and the call count, run nothing")
     parser.add_argument("--models", nargs="+", default=list(MODELS))
+    parser.add_argument("--repeats", type=int, default=REPEATS, metavar="BLOCKS",
+                        help="complete passes; the rules are applied per block")
+    parser.add_argument("--i-accept-a-defective-pipeline", action="store_true",
+                        help=argparse.SUPPRESS)
     args = parser.parse_args()
 
     config = load_config()
@@ -166,12 +222,13 @@ def main() -> int:
 
     questions = [q for q in question_set.split("dev") if q.family_id]
     families = {q.family_id for q in questions}
-    calls = len(questions) * len(args.models) * len(CONDITIONS)
+    calls = len(questions) * len(args.models) * len(CONDITIONS) * args.repeats
 
     print(f"Families    {len(families)}  ({', '.join(sorted(families))})")
     print(f"Questions   {len(questions)}   all paraphrases, no selection")
     print(f"Models      {', '.join(args.models)}")
     print(f"Conditions  {', '.join(CONDITIONS)}")
+    print(f"Blocks      {args.repeats}  (complete passes; rules applied per block)")
     print(f"Calls       {calls}\n")
 
     if args.dry_run:
@@ -179,6 +236,7 @@ def main() -> int:
         return 0
 
     provenance = require_committed_protocol()
+    require_clean_pilot(config, allow_override=args.i_accept_a_defective_pipeline)
     print(f"Protocol committed at {provenance['protocol_committed_at']}")
     print(f"Running at commit     {provenance['commit'][:12]}\n")
 
@@ -188,15 +246,15 @@ def main() -> int:
     generator = Generator(client, config)
     chunk_texts = {e.chunk_id: e.chunk.text for e in index}
 
-    rows: list[dict] = []
-    print(f"{'question':<14}{'declared':<22}{'cond':<12}{'model':<14}"
-          f"{'pair':<6}inferred")
-    print("-" * 96)
-
+    # --- build every input once ---------------------------------------------
+    # The draft is held fixed across repeats and models. Regenerating it would
+    # add generator variability to verifier variability, and afterwards the two
+    # could not be told apart. Same reason B and D share a draft.
+    options = {k: v for k, v in config.require("verification").items()
+               if k != "confidence" and not k.startswith("_")}
+    sweep = []
     for question in questions:
         family = registry.by_id(question.family_id)
-        expected = DECLARED_TO_INFERRED.get(family.conflict_type)
-
         for condition in CONDITIONS:
             if condition == "full":
                 retrieval = retriever.retrieve(question.text)
@@ -207,44 +265,58 @@ def main() -> int:
                 retrieval, wanted = oracle_retrieval(
                     retriever, question, family, chunk_texts, len(index)
                 )
-
             present = {s.chunk_id for s in retrieval.results}
-            pair_present = pair_is_present(wanted, present)
-
-            # One draft per question and condition. Both models audit it.
             draft = generator.answer(question.text, retrieval)
-            prompt = build_verification_prompt(
-                question.text, draft.answer, retrieval.evidence_text()
-            )
-            options = {k: v for k, v in config.require("verification").items()
-                       if k != "confidence" and not k.startswith("_")}
+            sweep.append({
+                "question": question,
+                "family": family,
+                "expected": DECLARED_TO_INFERRED.get(family.conflict_type),
+                "condition": condition,
+                "present": present,
+                "anchors": wanted,
+                "pair_present": pair_is_present(wanted, present),
+                "draft": draft.answer,
+                "prompt": build_verification_prompt(
+                    question.text, draft.answer, retrieval.evidence_text()
+                ),
+            })
+    print(f"{len(sweep)} prompts built, drafts fixed across repeats\n")
 
+    # --- sweep, then sweep again ---------------------------------------------
+    rows: list[dict] = []
+    print(f"{'rep':<5}{'question':<14}{'declared':<22}{'cond':<12}{'model':<14}"
+          f"{'pair':<6}inferred")
+    print("-" * 101)
+    for repeat in range(1, args.repeats + 1):
+        for item in sweep:
             for model in args.models:
-                generation = client.generate(prompt, model=model, options=options)
+                generation = client.generate(
+                    item["prompt"], model=model, options=options
+                )
                 result = schema.parse(
-                    generation.text, present, {}, draft.answer
+                    generation.text, item["present"], {}, item["draft"]
                 )
                 detected = result.conflict_detected
-                classified = result.relationship == expected
-                print(f"{question.question_id:<14}{family.conflict_type:<22}"
-                      f"{condition:<12}{model:<14}"
-                      f"{'yes' if pair_present else 'NO':<6}{result.relationship}"
+                print(f"{repeat:<5}{item['question'].question_id:<14}"
+                      f"{item['family'].conflict_type:<22}{item['condition']:<12}"
+                      f"{model:<14}{'yes' if item['pair_present'] else 'NO':<6}"
+                      f"{result.relationship}"
                       + ("  <-- detected" if detected else ""))
-
                 rows.append({
-                    "question_id": question.question_id,
-                    "family_id": question.family_id,
-                    "declared": family.conflict_type,
-                    "is_conflict": bool(family.is_conflict),
-                    "condition": condition,
+                    "repeat": repeat,
+                    "question_id": item["question"].question_id,
+                    "family_id": item["question"].family_id,
+                    "declared": item["family"].conflict_type,
+                    "is_conflict": bool(item["family"].is_conflict),
+                    "condition": item["condition"],
                     "model": model,
-                    "chunks_given": sorted(present),
-                    "anchor_chunks": wanted,
-                    "pair_present": pair_present,
-                    # The seven pre-committed outputs, recorded separately.
+                    "chunks_given": sorted(item["present"]),
+                    "anchor_chunks": item["anchors"],
+                    "pair_present": item["pair_present"],
+                    # The pre-committed outputs, recorded separately.
                     "detected": detected,
-                    "classified": classified,
-                    "expected_relationship": expected,
+                    "classified": result.relationship == item["expected"],
+                    "expected_relationship": item["expected"],
                     "inferred_relationship": result.relationship,
                     "parse_failed": result.parse_failed,
                     "invented_ids": list(result.invented_ids),
@@ -256,6 +328,7 @@ def main() -> int:
                     "seconds": generation.wall_seconds,
                     "options": generation.options,
                 })
+        print(f"  --- sweep {repeat} of {args.repeats} complete ---\n")
 
     stamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
     out = Path(config.path("paths.results")).parent / "diagnostics"
@@ -286,42 +359,100 @@ def main() -> int:
     return 0
 
 
-def summarise(rows: list[dict], models) -> None:
-    """Family-level majorities, per model and condition, controls separate."""
+def stability(rows: list[dict]) -> dict[str, float]:
+    """How often the blocks of one prompt agreed with each other.
+
+    Reported per outcome, because they are not equally stable, and per prompt,
+    never from totals. Between pilots 02 and 03 the aggregate relationship
+    counts were identical, 36/4/1 both times, while four questions moved: two
+    one way, two the other, cancelling. Read from totals that is perfect
+    stability with a tenth of the questions having changed answer.
+    """
+    cells = defaultdict(list)
+    for row in rows:
+        cells[(row["model"], row["condition"], row["question_id"])].append(row)
+
+    measures = {}
+    for field in ("detected", "classified", "parse_failed",
+                  "inferred_relationship", "raw"):
+        agreed = sum(len({r[field] for r in group}) == 1 for group in cells.values())
+        measures["raw_text" if field == "raw" else field] = (
+            agreed / len(cells) if cells else 1.0
+        )
+    return measures
+
+
+def block_result(rows: list[dict], model: str, condition: str) -> dict:
+    """Family-level majorities for one block of one model and condition.
+
+    The majority is of the family's three paraphrases, within the block. Across
+    blocks the results are reported side by side rather than pooled, because a
+    block is one run of the protocol and three runs are three results.
+    """
     by_family = defaultdict(list)
     for row in rows:
-        by_family[(row["model"], row["condition"], row["family_id"])].append(row)
+        if row["model"] == model and row["condition"] == condition:
+            by_family[row["family_id"]].append(row)
 
-    print("Family-level majority, detection / classification "
-          f"({MAJORITY} of 3 paraphrases):")
-    print(f"  {'model':<14}{'condition':<12}{'genuine det':>12}"
-          f"{'genuine cls':>12}{'CONTROL fp':>12}{'pair absent':>12}")
+    counts = dict(genuine_detected=0, genuine_classified=0, genuine=0,
+                  controls_false=0, controls=0, pair_absent=0)
+    for group in by_family.values():
+        needed = len(group) / 2
+        detected = sum(r["detected"] for r in group) > needed
+        classified = sum(r["classified"] for r in group) > needed
+        if not any(r["pair_present"] for r in group):
+            counts["pair_absent"] += 1
+        if group[0]["is_conflict"]:
+            counts["genuine"] += 1
+            counts["genuine_detected"] += detected
+            counts["genuine_classified"] += classified
+        else:
+            counts["controls"] += 1
+            counts["controls_false"] += detected
+    return counts
+
+
+def summarise(rows: list[dict], models) -> None:
+    blocks = sorted({r["repeat"] for r in rows})
+
+    if len(blocks) > 1:
+        measures = stability(rows)
+        print(f"Block agreement over {len(blocks)} blocks "
+              "(1.00 means every block of a prompt agreed):")
+        for field in ("raw_text", "inferred_relationship", "parse_failed",
+                      "classified", "detected"):
+            flag = "" if measures[field] == 1.0 else "   <-- varies between blocks"
+            print(f"  {field:<24}{measures[field]:>6.2f}{flag}")
+        print("  Below 1.00 is a distribution, not a value.\n")
+
+    print("Family-level majority per block, detection / classification "
+          "(majority of 3 paraphrases):")
+    print(f"  {'model':<14}{'condition':<12}{'block':>6}{'genuine det':>13}"
+          f"{'genuine cls':>13}{'CONTROL fp':>12}{'pair absent':>12}")
     for model in models:
         for condition in CONDITIONS:
-            genuine_d = genuine_c = controls_fp = genuine_n = controls_n = 0
-            absent = 0
-            for (m, c, _fid), group in by_family.items():
-                if (m, c) != (model, condition):
-                    continue
-                detected = sum(r["detected"] for r in group) >= MAJORITY
-                classified = sum(r["classified"] for r in group) >= MAJORITY
-                if not any(r["pair_present"] for r in group):
-                    absent += 1
-                if group[0]["is_conflict"]:
-                    genuine_n += 1
-                    genuine_d += detected
-                    genuine_c += classified
-                else:
-                    controls_n += 1
-                    controls_fp += detected
-            print(f"  {model:<14}{condition:<12}"
-                  f"{f'{genuine_d}/{genuine_n}':>12}{f'{genuine_c}/{genuine_n}':>12}"
-                  f"{f'{controls_fp}/{controls_n}':>12}{absent:>12}")
+            seen = []
+            for block in blocks:
+                c = block_result([r for r in rows if r["repeat"] == block],
+                                 model, condition)
+                seen.append(c)
+                det = f"{c['genuine_detected']}/{c['genuine']}"
+                cls = f"{c['genuine_classified']}/{c['genuine']}"
+                fp = f"{c['controls_false']}/{c['controls']}"
+                print(f"  {model:<14}{condition:<12}{block:>6}"
+                      f"{det:>13}{cls:>13}{fp:>12}{c['pair_absent']:>12}")
+            if len(seen) > 1:
+                detected = [c["genuine_detected"] for c in seen]
+                print(f"  {'':<26}{'mean':>6}{sum(detected) / len(detected):>13.1f}"
+                      f"{'':>13}{'':>12}   range {min(detected)}-{max(detected)}")
 
     failures = sum(r["parse_failed"] for r in rows)
     invented = sum(not r["evidence_ids_valid"] for r in rows)
     print(f"\n  parse failures {failures}/{len(rows)}   "
           f"invalid evidence ids {invented}/{len(rows)}")
+    if len(blocks) > 1:
+        print(f"  {len(blocks)} blocks are {len(blocks)} results, not "
+              f"{len(rows)} independent observations.")
 
 
 if __name__ == "__main__":

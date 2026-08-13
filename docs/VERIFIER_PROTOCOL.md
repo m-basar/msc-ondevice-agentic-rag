@@ -33,7 +33,13 @@ throughout.
 ## 2. Design
 
 **96 verifier calls.** 8 development families x 3 paraphrases x 2 models x 2
-evidence conditions.
+evidence conditions, in **one block**.
+
+A block is one complete pass. Whether the protocol runs one block or three is
+decided by the reproducibility check in section 2a, and is currently one. If it
+becomes three, the decision rules are applied **independently to each block**
+and the three outcomes reported with their mean and range. Three blocks are
+three results, not 288 independent observations.
 
 ### Families
 
@@ -58,6 +64,64 @@ risk that one unrepresentative wording decides the outcome.
 The two compatible controls are included in **every** condition. Detection
 figures on the genuine families are uninterpretable without them: a verifier
 that flags everything scores perfectly on conflicts.
+
+### 2a. Reproducibility, and what is actually known
+
+Not settled, and the first attempt to settle it was misread.
+
+`seed: 42`, `temperature: 0.0`, one host, one Ollama build, one model store.
+A check repeated each of 12 recorded prompts three times **back to back** and
+found 4 of 12 changing their raw output. I reported that as the verifier being
+unreproducible and expanded the protocol to 288 calls on the strength of it.
+
+That was wrong, and the same output contained the evidence against it:
+
+| | |
+|---|---|
+| call 1 matched the recorded run | **12 / 12** |
+| calls 2 and 3 agreed with each other | 12 / 12 |
+| output changed under immediate repetition | 4 / 12 |
+
+Every first call reproduced the earlier session exactly. The changes appear
+only when the same prompt is sent again immediately, which no run of this
+protocol ever does. The script reported "matches 8/12" because it required all
+three calls to equal the recording, which folded "a fresh prompt reproduces"
+together with "adjacent calls are stable" and reported neither.
+
+The accurate statement of that artefact is **adjacent-repeat raw-output
+variability: 4 / 12**. It says nothing about whether a reported outcome moves,
+because a reordered JSON key or a reworded rationale changes the hash and
+changes no result.
+
+**Still open.** Pilots 02 and 03 differed on 24 of 41 raw outputs with
+byte-identical prompts. Pilot 02 predates option recording, so an options
+difference cannot be excluded from the record, and Arm D ran after A, B and C
+in pilot 02 and alone in pilot 03, so the preceding workload differed too.
+Neither is ruled out.
+
+`scripts/check_determinism.py` now runs **complete passes in protocol order**,
+replays the options and model recorded in the run rather than the current
+config, and **parses every response**, comparing raw text, relationship,
+detection, claim verdicts, parse and validation status, invented evidence,
+whether a revision was served, the served answer and its citations, each
+separately.
+
+Its two comparisons answer different questions and are reported apart: pass 1
+against the recorded run asks whether a fresh prompt reproduces across
+sessions; pass against pass asks whether it reproduces within one.
+
+**The decision this feeds, fixed in advance:**
+
+| Finding | Response |
+|---|---|
+| Raw text varies, every reported outcome stable | Keep 96 calls. Document prose-level variability as a finding in its own right. |
+| Any reported outcome varies | Three complete 96-call blocks. R0 to R5 applied independently per block, three outcomes reported with mean and range. |
+
+**A trap worth naming either way.** The aggregate relationship counts were
+identical across pilots 02 and 03, 36 / 4 / 1 both times, while four questions
+moved: two one way, two the other, cancelling. Read from totals that is perfect
+stability with a tenth of the questions having changed answer. Stability is
+reported per prompt and never inferred from an aggregate.
 
 ### Models
 
@@ -100,9 +164,10 @@ Pre-committed, recorded separately, never combined into a single score.
 | **Exact relationship classification** | inferred `relationship` equals the registry's declared type under the fixed mapping in `stopping_gate.DECLARED_TO_INFERRED` |
 | **Parse success** | the response was valid JSON conforming to the schema and survived fail-closed validation |
 | **Evidence-ID validity** | every chunk identifier the verifier cites was present in the evidence it was given |
-| **Family-level majority** | at least 2 of the 3 paraphrases, applied to detection and to classification separately |
+| **Family-level majority** | a majority of the family's 3 paraphrases, computed **within a block**, applied to detection and classification separately |
 | **Compatible-control false positives** | control families detected by majority |
 | **`pair_present`** | in the `full` condition, whether both anchor chunks were actually retrieved |
+| **Repeat agreement** | per prompt, whether the repeats agreed, reported separately for raw text, relationship, parse status, classification and detection |
 
 `pair_present` is the confound check. If the disputed pair is absent from the
 full retrieval, the verifier was never given the chance to detect anything, and
@@ -118,6 +183,12 @@ in this protocol.
 
 Written before the run. Evaluated in order; the first that matches decides.
 Read only against families where `pair_present` holds in the `full` condition.
+
+**R00 - stability first.** If the protocol runs more than one block, R0 to R5
+are applied to each block separately and the block outcomes reported with their
+mean and range. Any outcome whose block agreement is below 1.00 is a
+distribution and is reported as a proportion with its spread, never as a count.
+Blocks are never pooled into one denominator.
 
 **R0 - controls first.** If a model detects both control families by majority
 in a condition, its detection figures in that condition are uninterpretable and

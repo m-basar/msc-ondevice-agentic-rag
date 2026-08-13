@@ -119,6 +119,26 @@ CITATION_REPAIR_MIN_SIMILARITY = 0.90
 QUANTITY_RE = re.compile(r"\d")
 
 
+# What is served when the verifier abstains: fixed text, written here, never
+# by the model.
+#
+# The previous rule tried to detect assertions inside model-written prose and
+# rejected an uncited revision that stated a figure. It caught pilot 03's
+# "the 14-day validity period" and it does not catch "the authorisation
+# remains valid for two weeks", which asserts exactly the same thing with no
+# digit in it. Detecting assertions in free text is not a fight worth picking:
+# the space of ways to state a fact is unbounded, and each patch would close
+# one and leave the rest.
+#
+# An abstention has one thing to say, so the system says it. The model's
+# finding still governs whether to abstain; it no longer gets to write the
+# words, and there is nothing left to smuggle a claim into.
+ABSTENTION_TEXT = (
+    "The retrieved evidence does not support an answer to this question. "
+    "No claim is made here; please check the source documents directly."
+)
+
+
 def cites_a_passage(text: str) -> bool:
     """A citation in the form the rest of the pipeline counts.
 
@@ -519,30 +539,23 @@ def parse(
                 "the revised answer cites no passages while the draft it "
                 "replaces cited evidence"
             )
-        # The abstention exception above was too wide. An abstention withdraws
-        # a claim; it does not restate the figure it has just called
-        # unsupported. Pilot 03 served exactly that, and the exception is what
-        # let it through, so the exception is narrowed rather than the finding
-        # explained away.
-        if asserts_uncited_quantity(final):
-            failures.append(
-                "the revised answer states a figure without citing a passage "
-                "for it; an abstention withdraws a claim rather than "
-                "reasserting it without evidence"
-            )
         # A narrow warrant must not license a wide change. If the only reason
         # to revise is that the draft cited the wrong passage, the licence is
         # to fix the citation, not to rewrite the prose under cover of it.
-        # Otherwise any content change could be laundered through a
-        # misplaced identifier.
+        #
+        # Exact equality of content tokens, not a similarity threshold. 0.90
+        # was a tolerance for content change with no principle behind the
+        # number, and "mostly the same claim" is not a standard. Under exact
+        # equality a model that cannot reproduce the sentence simply has its
+        # revision refused and the draft stands, which is what Arm B would
+        # have served anyway. Nothing is lost against the baseline.
         if set(warrants) == {CITATION_REPAIR}:
-            similarity = prose_similarity(draft, final)
-            if similarity < CITATION_REPAIR_MIN_SIMILARITY:
+            if content_tokens(draft) != content_tokens(final):
                 failures.append(
-                    f"the only warrant was citation repair, but the prose "
-                    f"changed substantively (similarity {similarity:.2f} < "
-                    f"{CITATION_REPAIR_MIN_SIMILARITY}); a content change "
-                    f"needs a claim or conflict warrant of its own"
+                    "the only warrant was citation repair, and a citation "
+                    "repair may change the citations rather than the claim; "
+                    "a content change needs a claim or conflict warrant of "
+                    "its own"
                 )
 
     # Kept out of ``failures`` because it is a policy about what may be served,
@@ -558,6 +571,14 @@ def parse(
 
     if failures or unwarranted:
         final_answer, revised = draft, False
+    elif is_abstention and not cites_a_passage(final or ""):
+        # The verifier found every claim unsupported and wrote a replacement
+        # citing nothing. The finding is respected; the wording is not. Serving
+        # the template rather than the model's prose removes the only route by
+        # which an abstention can carry an uncited assertion, and it does so
+        # without needing to detect one.
+        final_answer = ABSTENTION_TEXT
+        revised = final_answer != draft.strip()
     else:
         final_answer = final or draft
         revised = bool(final) and final != draft.strip()
