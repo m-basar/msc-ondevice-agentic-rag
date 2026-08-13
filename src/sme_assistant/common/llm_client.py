@@ -63,6 +63,10 @@ class Generation:
     cpu_temp_c: float | None = None
     arm_frequency_hz: int | None = None
     throttled: bool | None = None
+    # The merged options as sent, so a record shows what ran rather than what
+    # a config file said afterwards. Claiming "effective options are recorded"
+    # while this was absent made verification_options serialise as null.
+    options: dict[str, Any] = field(default_factory=dict)
 
     @property
     def prompt_tokens_per_second(self) -> float | None:
@@ -141,6 +145,10 @@ class OllamaClient:
         merged = dict(self.config.require("generation"))
         if options:
             merged.update(options)
+        # Underscore-prefixed keys are documentation for a human reader. They
+        # were being posted to Ollama as model options, which is silently
+        # tolerated and silently meaningless.
+        merged = {k: v for k, v in merged.items() if not k.startswith("_")}
         # Ollama only makes a generation reproducible when `seed` is passed in
         # options. It was previously recorded in the provenance block and never
         # sent, which made every result look controlled while being subject to

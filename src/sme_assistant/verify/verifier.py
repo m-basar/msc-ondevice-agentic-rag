@@ -257,8 +257,7 @@ class VerifiedAnswer:
             # nor Verification.to_dict() carried it, so a failing run could be
             # counted but not diagnosed.
             "verification_raw": self.verification.raw,
-            "verification_options": self.generation.options
-            if hasattr(self.generation, "options") else None,
+            "verification_options": dict(self.generation.options),
             "verification_seconds": round(self.verification_seconds, 3),
             "wall_seconds": round(self.wall_seconds, 3),
             "arm_has_verification": True,
@@ -294,6 +293,9 @@ class Verifier:
         chosen = model or self.config.get("llm.verification_model")
         merged = dict(self.config.require("verification"))
         merged.pop("confidence", None)
+        # Drop human-facing metadata. popping only "confidence" left a _note
+        # key being sent to the model as an option.
+        merged = {k: v for k, v in merged.items() if not k.startswith("_")}
         if options:
             merged.update(options)
 

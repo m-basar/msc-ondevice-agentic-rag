@@ -34,7 +34,7 @@
     "temperature": 0.0,
     "num_predict": 700,
     "num_ctx": 4096,
-    "_note": "num_ctx was absent until 13 August 2026, so verification calls inherited Ollama's default rather than the 4096 the generation call uses. Pilot 02 prompts ran 1502 to 1978 tokens and nothing was clipped, so the pilot result stands, but that was luck: one more chunk or a longer draft would have crossed the default silently, with no error and no flag. Set explicitly and recorded per call.",
+    "_note": "num_ctx is stated explicitly from 13 August 2026. It was previously absent here but never missing at the call: OllamaClient.generate starts from the generation block and merges verification options over it, so 4096 was always in force. Stating it removes the dependence on that inheritance.",
     "confidence": {
       "_note": "Runtime confidence policy. A separate scoring-side policy describes what should happen and is applied only when results are marked. Reading that one here would let the system consult the answer key about its own certainty.",
       "on_supported": "medium",
