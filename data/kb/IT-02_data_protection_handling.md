@@ -33,6 +33,10 @@ Emails containing confidential or sensitive data sent outside the company must b
 
 Paper records containing personal data are locked away when unattended and shredded when no longer needed, never placed in general waste.
 
+## Reporting a suspected breach
+
+A suspected personal data breach is reported to the Data Protection Lead within 24 hours of discovery, whether or not it is later confirmed.
+
 ## Access review
 
 Access to systems holding personal data is reviewed annually by the Data Protection Lead. Managers confirm in writing that every account in their area is still required.

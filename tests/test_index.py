@@ -248,13 +248,21 @@ def test_chunk_set_change_is_detected_when_the_corpus_is_unchanged(index, kb, co
     path = index.save(tmp_path / "index.json")
     payload = json.loads(path.read_text(encoding="utf-8"))
     assert payload["metadata"]["chunk_set_sha256"], "chunk set hash was not recorded"
-    payload["metadata"]["chunk_set_sha256"] = "0" * 64
-    path.write_text(json.dumps(payload), encoding="utf-8")
 
+    # Staleness is simulated by changing the chunking settings, which is how it
+    # actually arises. Faking the declared hash instead would now trip the
+    # self-consistency check first, and would be testing a different failure:
+    # a tampered file rather than a stale one.
+    from sme_assistant.common.config import Config
+
+    changed = Config(
+        {**config._data, "chunking": {**config.require("chunking"), "max_words": 60}},
+        config.source,
+    )
     with pytest.raises(IndexError_, match="chunker or the chunking configuration"):
-        Index.load(path, kb=kb, config=config)
+        Index.load(path, kb=kb, config=changed)
 
-    assert len(Index.load(path, kb=kb, config=config, allow_stale=True)) == len(index)
+    assert len(Index.load(path, kb=kb, config=changed, allow_stale=True)) == len(index)
 
 
 def test_chunk_set_fingerprint_tracks_chunking_settings(kb, config):
@@ -327,3 +335,39 @@ def test_cosine_rejects_mismatched_dimensions():
 
     with pytest.raises(ValueError, match="different embedding models"):
         cosine_similarity([1.0, 0.0, 0.0], [1.0, 0.0])
+
+
+# --- the declared hash against the stored chunks -----------------------------
+
+
+def test_a_tampered_index_file_is_refused(tmp_path, kb, config):
+    """Every other guard read the declared hash and trusted it.
+
+    A file whose metadata says one thing and whose stored chunks say another
+    would have passed all of them: the index would be treated as fresh while
+    serving different text under the same identifiers, which is the precise
+    failure the chunk-set hash was added to prevent.
+    """
+    import json
+
+    from sme_assistant.common.llm_client import MockClient
+    from sme_assistant.ingest.index import Index, IndexError_, build_index
+
+    path = tmp_path / "index.json"
+    build_index(kb, MockClient(config), config).save(path)
+
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload["chunks"][0]["text"] = payload["chunks"][0]["text"] + " tampered"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(IndexError_, match="declares chunk set"):
+        Index.load(path)
+
+
+def test_an_untampered_index_loads(tmp_path, kb, config):
+    from sme_assistant.common.llm_client import MockClient
+    from sme_assistant.ingest.index import Index, build_index
+
+    path = tmp_path / "index.json"
+    build_index(kb, MockClient(config), config).save(path)
+    assert len(Index.load(path)) > 0

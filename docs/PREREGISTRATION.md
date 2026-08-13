@@ -28,13 +28,16 @@ State frozen at registration:
 
 | | |
 |---|---|
-| Corpus | `3060ae540015` (38 documents) |
-| Chunk set | `5fc6a227c0a1` (138 chunks) |
-| Conflict families | 9 reported, 4 tuning |
-| Question set | version 1.1, 78 questions, 42 groups |
-| Tests | 271 passing |
+| Corpus | `3f761d41b44b` (38 documents) |
+| Chunk set | `03e5d42bfdfb` (140 chunks) |
+| Registry | `6985aedd8bf3` |
+| Conflict families | 15 reported, 6 tuning, in four types |
+| Question set | version 1.2, 103 questions, 51 groups |
+| Reported sample | 68 questions, **32 test groups** |
+| Tests | 276 passing |
 
-Superseded by amendment 1.1 of the same date. See section 8. The values above are the amended ones; the originals are recorded in the amendment.
+Superseded by amendments 1.1 and 1.2, both of the same date. The values above
+are the amended ones; the originals are recorded in each amendment.
 
 ---
 
@@ -115,22 +118,60 @@ being reported as a success later.
 **What would falsify it.** D exceeding B by more than the pre-specified
 threshold in section 5.
 
-### H2 - Conflicts between two live documents are not
+### H2a - Mutually exclusive conflicts need reasoning
 
-On the five `current_current` families:
+On the five `mutually_exclusive` families, where no action satisfies both
+documents:
 
 > **A ≈ B ≈ C < D**
 
-Arms A, B and C perform similarly and poorly. Arm D is better.
-
-**Rationale.** No metadata distinguishes the documents. Both are current, both
-are in force, neither supersedes the other. A filter cannot help, a status
-marker cannot help, and only reasoning over the claims themselves can detect
-that the evidence disagrees. This is the entire quantitative case for the
+**Rationale.** Both documents are current, both are in force, neither
+supersedes the other. A status filter cannot help and a status marker cannot
+help. Only reasoning over the claims themselves detects that the trade counter
+cannot open at both 08:00 and 08:30. This is the core quantitative case for the
 contribution.
 
-**What would falsify it.** D not exceeding B by the threshold in section 5. This is the hypothesis most likely to fail and the
-one that decides whether the dissertation reports a positive or a null result.
+**What would falsify it.** D not exceeding B by the threshold in section 5.
+This is the hypothesis most likely to fail and the one that decides whether the
+dissertation reports a positive or a null result.
+
+### H2b - Stricter/looser conflicts are the dangerous ones
+
+On the three `stricter_looser` families, where an action satisfies both
+documents but a naive answer does not:
+
+> **A ≈ B ≈ C < D**, and the gap is larger than for H2a
+
+**Rationale.** These are more dangerous than mutual exclusions and easier to
+miss. Nothing looks wrong: an answer of "72 hours" for a breach report is
+fluent, plausible and drawn from a live document, and following it breaches
+IT-02's 24 hours. A baseline has no reason to prefer one figure, so it will
+often quote whichever chunk ranked first. A verifier that notices two figures
+for one obligation can name the stricter as the safe course, which is a
+behaviour the baseline cannot express.
+
+**What would falsify it.** D not exceeding B, or D preferring the looser figure
+as often as the baseline does.
+
+### H2c - Verification over-detects
+
+On the three `compatible` families, which are negative controls:
+
+> **false-conflict rate(D) > false-conflict rate(B)**
+
+The verification layer flags a conflict where none exists more often than the
+baseline does.
+
+**Rationale.** This is stated as a directional prediction *against* the
+contribution, on purpose. A component built to find conflicts will find them
+where they are not, and a system that reports a conflict between the petty cash
+procedure and the procurement policy is worse than one that answers plainly.
+Nothing in the earlier design measured this, so a verifier that shouted
+"conflict" at every document pair would have scored perfectly on every other
+hypothesis.
+
+**What would falsify it.** D's false-conflict rate being no worse than B's,
+which would be a genuinely strong result and should be reported as such.
 
 ### H3 - Citation validity overstates citation quality
 
@@ -178,6 +219,7 @@ suggests it is not verifying much.
 | **Conflict handling** | Manual, blinded, three-point: 2 correct, 1 partial, 0 wrong. Correct means the answer states the governing position and, where unresolvable, discloses the disagreement. | Conflict families |
 | **Superseded citation rate** | Fraction of answers citing a withdrawn document as authority | Supersession families |
 | **Appropriate abstention** | Fraction of unanswerable questions where the system declines rather than answers | Gaps |
+| **False-conflict rate** | Fraction of `compatible` families where the answer asserts that the documents contradict each other, or declines on those grounds. Added under amendment 1.2. Without it, over-detection is invisible and a verifier that flagged every document pair would score perfectly. | Compatible negative controls |
 | **Answer correctness** | Manual, blinded, three-point, scored against the question's `required_claims` and `forbidden_claims`. Added under amendment 1.1: RQ1 asks whether the assistant answers correctly, and no metric measured that. | Factual, partial and synthesis questions |
 
 ### Secondary
@@ -540,5 +582,167 @@ deliberately restored rather than the thresholds relaxed.
 | Question set | 72 questions, 40 groups | 78 questions, 42 groups |
 | Reported sample | misstated as 40 groups | 26 test groups |
 | Tests | 249 | 271 |
+
+No arm has been run. Stage 5 has not begun.
+
+---
+
+# Amendment 1.2 - 8 August 2026
+
+Made **before any arm was run on any question**, in response to a second
+independent read-only review. No result exists for any arm on any family.
+
+Amendment 1.1 corrected how the study was measured. This one corrects what it
+was measuring, which is the more serious of the two.
+
+## 1.2.1 Two reported families were not contradictions
+
+**Found.** CONF-07 and CONF-09 were registered as `current_current` conflicts.
+Neither is a conflict.
+
+**CONF-07.** GEN-04 reads "written approval from the department head **and**,
+where the cost exceeds £750, from the Finance Manager". That is cumulative.
+FIN-03 places £501 to £2,500 with the department head. Obtaining both approvals
+satisfies both documents; GEN-04 is simply stricter for IT equipment.
+
+Worse, the registry recorded GEN-04's position as *"the Finance Manager, because
+the cost exceeds £750"*, dropping the conjunction that makes the requirement
+cumulative and turning a stricter rule into a competing one. **The gold data
+misrepresented the document.** The anchor check passed because the shortened
+phrase is a literal substring: a substring can be truthful and still mislead
+once the words in front of it are cut away. That is a limitation of anchor
+validation, now recorded in the family's note.
+
+**CONF-09.** IT-11 requires a six-monthly review by each department head across
+all systems. IT-02 requires an annual review by the Data Protection Lead of
+systems holding personal data. Different reviewer, different scope, different
+cadence. Both happen.
+
+**Why this mattered more than a miscount.** A verifier scored on that set would
+have been rewarded for flagging policies that agree. Over-detection is the
+failure a conflict detector most needs to avoid, and the study was set up to
+reward it.
+
+## 1.2.2 One type became four
+
+`current_current` was one label over three different situations. The
+distinguishing question is whether one action can satisfy both documents, and
+whether an answer can still be wrong.
+
+| Type | One action satisfies both? | Can an answer be wrong? | Behaviour | Reported |
+|---|---|---|---|---|
+| `version_supersession` | n/a | Yes | `cite_current_only` | 4 |
+| `mutually_exclusive` | **No** | Yes | `surface_both_and_escalate` | 5 |
+| `stricter_looser` | Yes | **Yes** | `prefer_stricter_and_escalate` | 3 |
+| `compatible` | Yes | **No** | `answer_without_flagging_conflict` | 3 |
+
+The second review treated `stricter_looser` as "not a conflict". That is too
+harsh. A user told "you have 24 hours" who reports at hour 20 has breached
+IT-02's stricter rule. The action is compatible; the **answer** is unsafe. Only
+`compatible` is genuinely benign.
+
+Expected behaviour is now **derived** from the type in
+`ConflictFamily.expected_behaviour`, not declared per question. When CONF-07 and
+CONF-09 were reclassified, their questions could not keep asserting the old
+rule.
+
+## 1.2.3 Eight families planted
+
+Reported: CONF-12 and CONF-13 (`mutually_exclusive`), CONF-14, CONF-15 and
+CONF-16 (`stricter_looser`), CONF-17 (`compatible`). Tuning: TUNE-03
+(`mutually_exclusive`) and TUNE-04 (`compatible`), so development covers every
+type.
+
+CONF-13 is high risk by design: two fire assembly points, which means a roll
+call cannot account for everyone. CONF-11 and CONF-13 keep the high-risk band
+populated after CONF-05 moved to tuning.
+
+CONF-17 and TUNE-04 required **no corpus edit**. FIN-02 already states that
+petty cash "is not an alternative to the procurement process in FIN-03", and
+PRD-01 and PRD-02 already give different washing advice for different products.
+A negative control found rather than planted is the better kind.
+
+## 1.2.4 Negative controls must be discoverable
+
+A `compatible` family now must carry both a `reconciliation` and
+`reconciliation_anchors`: the literal corpus text showing why the apparent
+disagreement is not one. A control whose reconciliation is only asserted in the
+registry is a trick question; one a reader could discover is a fair test.
+
+## 1.2.5 H2 split into H2a, H2b and H2c
+
+H2c predicts that the verification layer **over-detects**, which is a
+directional prediction against the contribution, stated on purpose. Its
+falsification would be a strong result.
+
+Per-type thresholds are in section 5. H2b requires unanimity across its three
+families, because a majority rule over three is decided by one family's noise. A
+smaller class earns a stricter rule, not a looser one.
+
+## 1.2.6 Amendment 1.1.12 reopened and replaced
+
+1.1.12 ruled out recommending a conservative reading, on the ground that only
+one of five families had one. That count was taken over a set containing two
+non-conflicts, and it collapsed a distinction the taxonomy now makes.
+
+**Replaced with a type-dependent rule:**
+
+| Type | Rule |
+|---|---|
+| `mutually_exclusive` | Surface both, pick neither, escalate. There is no safe reading; the trade counter cannot open at two times. |
+| `stricter_looser` | Name the stricter figure as the safe course, state the other and its document, escalate. |
+| `compatible` | Answer plainly. Do not flag a conflict. |
+
+The stricter document is recorded in the registry as `stricter`, so the
+conservative reading is a **property of the family**, not a judgement made at
+answer time. That is what makes it scoreable on one rubric per type, which is
+the objection that sank the earlier attempt.
+
+## 1.2.7 The tuning boundary ran only one way
+
+**Found.** The check refused a test question expecting a chunk carrying a
+tuning family's disputed fact, but nothing refused a development question
+expecting a chunk carrying a **reported** family's. Tuning against the passage
+that decides a reported result is the same contamination in the other
+direction.
+
+**Done.** `check_no_reported_fact_reaches_the_development_split` added. It
+immediately found four questions written minutes earlier under this amendment:
+`FACT-order-picking-cutoff` on OPS-01#003 (CONF-15), `FACT-fire-assembly` on
+OPS-07#003 (CONF-13), `SYN-visitor-evacuation` on GEN-03#002 and OPS-07#003
+(CONF-11, CONF-13), and `FACT-development-conversation` on HR-06#002 (TUNE-03).
+All four replaced, each carrying a note saying why.
+
+## 1.2.8 Scoring and provenance gaps
+
+| Found | Done |
+|---|---|
+| `answer_scoring` stripped only bracketed identifiers, so a bare `IT-04` in prose still yielded the quantity "04" | General identifier regex, with regression tests for all four forms |
+| Full-mark conflict criterion did not require escalation, contradicting 1.1.12 | Escalation is in the criterion for both escalating types |
+| `answer_directly` mixed content correctness with citation quality, so the metric named answer correctness could not report correctness | Content only. Citation validity, support and completeness are reported alongside |
+| A test-split run could be written with no corpus, index, question set or registry | `RunWriter` refuses a test-split run with missing provenance |
+| `question_set_sha256` hashed only the records, leaving metadata and rubrics outside it | Hashes the complete file |
+| `Index.load` trusted the declared chunk-set hash | Recomputes from the stored chunks first, so a tampered file is refused before anything else is checked |
+| The blinded sheet gave no rubric to score against | Required claims, forbidden claims, acceptable variants and the scoring criteria are included. They come from the question set, are identical across arms, and carry no signal about which system produced the answer |
+
+## What was not changed
+
+The 0.25 effect threshold, the stopping rules, the blinding procedure and the
+commitment to report a null result are unchanged. The family counts the
+thresholds depend on were restored by planting rather than by relaxing the
+thresholds.
+
+## State after this amendment
+
+| | Before 1.2 | After 1.2 |
+|---|---|---|
+| Corpus | `3060ae540015`, 38 documents | `3f761d41b44b`, 38 documents |
+| Chunk set | `5fc6a227c0a1`, 138 chunks | `03e5d42bfdfb`, 140 chunks |
+| Conflict types | 2 | 4 |
+| Reported families | 9, two of them not conflicts | 15, all correctly typed |
+| Negative controls | none | 3 reported, 1 tuning |
+| Question set | 78 questions, 42 groups | 103 questions, 51 groups |
+| Reported sample | 26 test groups | **32 test groups** |
+| Tests | 271 | 276 |
 
 No arm has been run. Stage 5 has not begun.

@@ -51,11 +51,13 @@ VALID_RISK = frozenset({"low", "medium", "high"})
 # while failing to disclose that another document says otherwise.
 VALID_BEHAVIOURS = frozenset(
     {
-        "cite_current_only",      # supersession: answer from the live document
-        "surface_both_and_qualify",  # current_current: no basis to choose
-        "abstain",                # nothing in the corpus supports an answer
-        "answer_and_flag_gap",    # partial: say what is known, name what is not
-        "answer_directly",        # ordinary factual question
+        "cite_current_only",              # supersession: answer from the live document
+        "surface_both_and_escalate",      # mutually_exclusive: no basis to choose
+        "prefer_stricter_and_escalate",   # stricter_looser: name the safe reading
+        "answer_without_flagging_conflict",  # compatible: negative control
+        "abstain",                        # nothing in the corpus supports an answer
+        "answer_and_flag_gap",            # partial: say what is known, name what is not
+        "answer_directly",                # ordinary factual question
     }
 )
 
@@ -70,10 +72,20 @@ SCORING_RUBRICS: dict[str, dict[str, str]] = {
         "1": "States the current figure but attributes it to the withdrawn document, or presents both figures without saying which governs.",
         "0": "States the withdrawn figure as the answer.",
     },
-    "surface_both_and_qualify": {
-        "2": "States both positions, names both documents, and says they disagree with neither superseding the other.",
-        "1": "States both positions but selects one without qualification, or notes a disagreement without giving both positions.",
+    "surface_both_and_escalate": {
+        "2": "States both positions, names both documents, says neither supersedes the other, AND escalates, by directing the reader to have the discrepancy resolved. All four.",
+        "1": "States both positions and names both documents, but selects one without qualification, or does not escalate.",
         "0": "States one position as settled policy, with no indication that the corpus disagrees with itself.",
+    },
+    "prefer_stricter_and_escalate": {
+        "2": "Names the stricter figure as the safe course, states the other figure and its document, and escalates the discrepancy.",
+        "1": "Gives the stricter figure without mentioning the other document, or gives both without identifying which is safe to follow.",
+        "0": "Gives the looser figure as the answer. Following it would breach the stricter document, which is why this is scored as a failure rather than a partial success.",
+    },
+    "answer_without_flagging_conflict": {
+        "2": "Answers correctly, covering both requirements where both apply, and does NOT assert that the documents contradict each other.",
+        "1": "Answers correctly but describes the documents as conflicting or inconsistent, or covers only one of two requirements that both apply.",
+        "0": "Declines to answer on the grounds of a conflict, or escalates. The documents agree; treating them as contradictory is a false positive, which is the failure this family exists to detect.",
     },
     "abstain": {
         "2": "Declines to answer and says the evidence does not cover the topic.",
@@ -86,11 +98,27 @@ SCORING_RUBRICS: dict[str, dict[str, str]] = {
         "0": "Supplies the missing detail, which the corpus does not contain.",
     },
     "answer_directly": {
-        "2": "Correct, and every substantive claim is attributed to a passage that contains it.",
-        "1": "Correct, but a citation is missing or points at a passage that does not contain the claim.",
-        "0": "Incorrect, or contradicted by the cited evidence.",
+        "2": "Every required claim is present and no forbidden claim is made.",
+        "1": "Some required claims are present, none forbidden. Incomplete rather than wrong.",
+        "0": "A required claim is contradicted, or a forbidden claim is made.",
     },
 }
+
+# Content correctness is scored above. Citation validity, support and
+# completeness are scored separately and automatically in
+# ``sme_assistant.evaluation.answer_scoring``.
+#
+# They were entangled: the ``answer_directly`` criterion previously awarded 1
+# to "correct, but a citation is missing or points at the wrong passage", which
+# meant a metric named answer correctness could not report correctness. A right
+# answer with a bad citation and a half-right answer with a good one scored the
+# same, and neither number meant what it said.
+SCORING_SEPARATION_NOTE = (
+    "These criteria score content only. Citation validity, support and "
+    "completeness are measured separately and automatically, and are reported "
+    "alongside rather than folded into this scale."
+)
+
 
 
 class QuestionSetError(RuntimeError):
@@ -394,11 +422,12 @@ def _validate_against_registry(question_set: QuestionSet, registry: Any) -> None
             )
         if question.family_id:
             family = registry.by_id(question.family_id)
-            expected = (
-                "cite_current_only"
-                if family.is_filter_resolvable
-                else "surface_both_and_qualify"
-            )
+            # Derived from the conflict type, so a question cannot declare a
+            # behaviour the classification does not justify. CONF-07 and CONF-09
+            # were classified as conflicts and carried conflict behaviour for
+            # three days; deriving it means a reclassification propagates rather
+            # than leaving the questions asserting the old rule.
+            expected = family.expected_behaviour
             if question.expected_behaviour != expected:
                 raise QuestionSetError(
                     f"{question.question_id}: {family.family_id} is "
@@ -562,6 +591,7 @@ def write_question_set(
         ),
         **metadata,
         "scoring_rubrics": SCORING_RUBRICS,
+        "scoring_separation": SCORING_SEPARATION_NOTE,
         "summary": question_set.summary(),
         "questions": [q.to_dict() for q in question_set],
     }

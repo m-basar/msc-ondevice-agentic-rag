@@ -17,32 +17,87 @@ topics. It lives under ``config.evaluation``, deliberately not under
 ``sme_assistant.kb`` so that the boundary is visible in the import graph.
 ``tests/test_no_oracle_leakage.py`` enforces it.
 
-Two family types
-----------------
-``version_supersession``
-    One document explicitly supersedes another. Resolvable by filtering on the
-    ``status`` metadata field, with no reasoning about claims. These families
-    alone cannot demonstrate that verification adds anything.
+Four family types
+-----------------
+``current_current`` was one label covering three different situations, and two
+of the families filed under it were not contradictions at all. A verifier
+scored on that set would have been rewarded for flagging policies that agree,
+which is the failure a conflict detector most needs to avoid. Found in review
+and corrected under pre-registration amendment 1.2.
 
-``current_current``
-    Two live documents disagree and no metadata field ranks one above the
-    other. A filter cannot help. The correct behaviour is to surface both,
-    refuse to pick, and escalate. These are the families that justify the
-    contribution.
+The distinguishing question is whether one action can satisfy both documents,
+and whether an answer can still be wrong.
+
+``version_supersession``
+    One document explicitly supersedes another. A status filter resolves it
+    with no reasoning at all, so these families alone cannot demonstrate that
+    verification adds anything.
+
+``mutually_exclusive``
+    No action satisfies both. The trade counter cannot open at 08:00 and at
+    08:30. Surface both, pick neither, escalate.
+
+``stricter_looser``
+    An action satisfies both, but an answer can still be unsafe. Told "24
+    hours" when another document says 1 hour, a user who reports at hour 20 has
+    breached the stricter document. State the stricter figure as the safe
+    course, name both, escalate. Which document is stricter is recorded in the
+    registry, so the conservative reading is a property of the family rather
+    than a judgement made at answer time.
+
+``compatible``
+    Both hold independently and no answer is wrong, only incomplete. A
+    six-monthly departmental access review and an annual Data Protection Lead
+    review of personal-data systems are two layers, not two answers. These are
+    **negative controls**: a verifier that flags one is producing a false
+    positive. Without them nothing measures over-detection, and a system that
+    shouted "conflict" at every pair of documents would score perfectly.
 """
 
 from __future__ import annotations
 
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 from ..kb.loader import KnowledgeBase
 
-VALID_TYPES = {"version_supersession", "current_current"}
-VALID_RESOLUTIONS = {"prefer_current", "escalate_unresolved"}
+# Four types, not two. ``current_current`` lumped together three situations
+# that need different behaviour from a verifier, and two of the families filed
+# under it were not contradictions at all. Found in review, 8 August 2026,
+# corrected under pre-registration amendment 1.2.
+#
+# The distinguishing question is: **can one action satisfy both documents, and
+# can an answer still be wrong?**
+VALID_TYPES = {
+    # One document explicitly supersedes another. A status filter resolves it.
+    "version_supersession",
+    # No action satisfies both. The trade counter cannot open at 08:00 and
+    # 08:30. Surface both, pick neither, escalate.
+    "mutually_exclusive",
+    # An action satisfies both, but an answer can still be unsafe: told "24
+    # hours" when another document says 1 hour, a user who reports at hour 20
+    # has breached the stricter document. State the stricter figure as the safe
+    # course, name both, escalate.
+    "stricter_looser",
+    # Both hold independently and no answer is wrong, only incomplete. A
+    # six-monthly departmental review and an annual Data Protection Lead review
+    # are two layers, not two answers. **Negative control:** a verifier that
+    # flags one of these is producing a false positive, and the false-conflict
+    # rate is a reported metric.
+    "compatible",
+}
+
+CONFLICTING_TYPES = VALID_TYPES - {"compatible"}
+
+VALID_RESOLUTIONS = {
+    "prefer_current",
+    "escalate_unresolved",
+    "prefer_stricter_and_escalate",
+    "no_conflict",
+}
 
 # "reported" families appear in results. "tuning" families exist only so the
 # pipeline can be developed against real conflicts without inspecting a family
@@ -83,6 +138,16 @@ class ConflictFamily:
     # meaning without the file being rewritten: absence means reported, which
     # is the conservative reading.
     split: str = "reported"
+    # For stricter_looser: which document states the safe reading. The
+    # conservative answer is a property of the family recorded here, not a
+    # judgement made at answer time, so it stays scoreable on one rubric.
+    stricter: str | None = None
+    # For compatible: why the apparent disagreement is not one, and the
+    # literal text in the corpus that shows it. A negative control whose
+    # reconciliation is only asserted in the registry is a trick question;
+    # one a reader could discover is a fair test.
+    reconciliation: str | None = None
+    reconciliation_anchors: dict[str, str] = field(default_factory=dict)
 
     @property
     def is_filter_resolvable(self) -> bool:
@@ -92,6 +157,30 @@ class ConflictFamily:
         achieved from what three lines of filtering would have achieved anyway.
         """
         return self.conflict_type == "version_supersession"
+
+    @property
+    def is_conflict(self) -> bool:
+        """Whether the documents actually disagree.
+
+        False for ``compatible`` families, which exist to be *not* flagged.
+        Without them nothing measures over-detection, and a verifier that
+        shouted "conflict" at every pair of documents would score perfectly.
+        """
+        return self.conflict_type in CONFLICTING_TYPES
+
+    @property
+    def expected_behaviour(self) -> str:
+        """What a correct system does, derived from the type.
+
+        Derived rather than declared per question, so the behaviour cannot
+        drift away from the classification that justifies it.
+        """
+        return {
+            "version_supersession": "cite_current_only",
+            "mutually_exclusive": "surface_both_and_escalate",
+            "stricter_looser": "prefer_stricter_and_escalate",
+            "compatible": "answer_without_flagging_conflict",
+        }[self.conflict_type]
 
 
 @dataclass(frozen=True)
@@ -129,6 +218,9 @@ class ConflictRegistry:
                 risk_level=entry["risk_level"],
                 documents=tuple(entry["documents"]),
                 authoritative=entry.get("authoritative"),
+                stricter=entry.get("stricter"),
+                reconciliation=entry.get("reconciliation"),
+                reconciliation_anchors=dict(entry.get("reconciliation_anchors", {})),
                 resolution=entry["resolution"],
                 conflicting_facts=tuple(
                     ConflictFact(
@@ -266,26 +358,65 @@ def _validate_family_shape(family: ConflictFamily) -> None:
             f"{family.family_id}: declares no conflicting facts, so nothing can be tested"
         )
 
+    expected_resolution = {
+        "version_supersession": "prefer_current",
+        "mutually_exclusive": "escalate_unresolved",
+        "stricter_looser": "prefer_stricter_and_escalate",
+        "compatible": "no_conflict",
+    }[family.conflict_type]
+    if family.resolution != expected_resolution:
+        raise ConflictRegistryError(
+            f"{family.family_id}: a {family.conflict_type} family resolves by "
+            f"{expected_resolution!r}, not {family.resolution!r}"
+        )
+
     if family.conflict_type == "version_supersession":
         if family.authoritative is None:
             raise ConflictRegistryError(
                 f"{family.family_id}: a supersession family must name the authoritative document"
             )
-        if family.resolution != "prefer_current":
+    elif family.authoritative is not None:
+        raise ConflictRegistryError(
+            f"{family.family_id}: only a supersession family names an authoritative "
+            "document; if one document really does take precedence, the conflict is "
+            "resolvable and should be modelled as a supersession"
+        )
+
+    if family.conflict_type == "stricter_looser":
+        # The whole point of this type is that the conservative reading is a
+        # property of the family rather than a judgement made at answer time.
+        # Without ``stricter`` there is no rule to score against.
+        if not family.stricter:
             raise ConflictRegistryError(
-                f"{family.family_id}: a supersession family resolves by prefer_current"
+                f"{family.family_id}: a stricter_looser family must name which document "
+                "states the safe reading, or the expected behaviour is undefined"
             )
-    else:
-        if family.authoritative is not None:
+        if family.stricter not in family.documents:
             raise ConflictRegistryError(
-                f"{family.family_id}: a current_current family must not name an authoritative "
-                "document; if one document really does take precedence, the conflict is resolvable "
-                "and should be modelled as a supersession"
+                f"{family.family_id}: stricter document {family.stricter!r} is not one "
+                f"of {list(family.documents)}"
             )
-        if family.resolution != "escalate_unresolved":
+    elif family.stricter:
+        raise ConflictRegistryError(
+            f"{family.family_id}: only a stricter_looser family names a stricter "
+            "document"
+        )
+
+    if family.conflict_type == "compatible":
+        # A negative control with no explanation is indistinguishable from a
+        # conflict someone gave up on. The reconciliation is what makes it
+        # reviewable, and it must be discoverable in the corpus rather than
+        # asserted here.
+        if not family.reconciliation:
             raise ConflictRegistryError(
-                f"{family.family_id}: a current_current family resolves by escalate_unresolved"
+                f"{family.family_id}: a compatible family must explain why the apparent "
+                "disagreement is not one, or it cannot be distinguished from an "
+                "unresolved conflict"
             )
+    elif family.reconciliation:
+        raise ConflictRegistryError(
+            f"{family.family_id}: only a compatible family carries a reconciliation"
+        )
 
 
 def _validate_family_against_corpus(family: ConflictFamily, kb: KnowledgeBase) -> None:

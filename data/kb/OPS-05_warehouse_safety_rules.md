@@ -43,3 +43,7 @@ The site speed limit is 8 km/h in the yard and 4 km/h inside the building. Rever
 ## Stopping work
 
 Any employee may stop a task they believe to be unsafe without fear of consequence. Report the concern to the supervisor immediately.
+
+## Evacuation
+
+On hearing the alarm, warehouse staff leave by the nearest fire exit and assemble at the main gate, where the warehouse supervisor takes the roll call.

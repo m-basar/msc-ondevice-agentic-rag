@@ -78,9 +78,9 @@ def test_registry_contains_conflicts_a_metadata_filter_cannot_solve(registry):
     verification layer exists. At least two current_current families must be
     present, where both documents are live and no metadata distinguishes them.
     """
-    unresolvable = registry.of_type("current_current")
-    assert len(unresolvable) >= 4, (
-        "Fewer than four current_current families. Every conflict would be "
+    unresolvable = registry.of_type("mutually_exclusive")
+    assert len(unresolvable) >= 5, (
+        "Fewer than five mutually_exclusive families. Every conflict would be "
         "solvable by a three-line metadata filter, and the verification layer "
         "would have nothing to demonstrate."
     )
@@ -89,9 +89,33 @@ def test_registry_contains_conflicts_a_metadata_filter_cannot_solve(registry):
         assert family.resolution == "escalate_unresolved"
         assert not family.is_filter_resolvable
 
+    # Negative controls. Without them nothing measures over-detection, and a
+    # verifier that shouted "conflict" at every document pair would score
+    # perfectly on every other family.
+    controls = registry.of_type("compatible")
+    assert len(controls) >= 3, (
+        "Fewer than three compatible families. Nothing would measure the "
+        "false-conflict rate, which is the failure a conflict detector most "
+        "needs to avoid."
+    )
+    for family in controls:
+        assert not family.is_conflict
+        assert family.reconciliation, f"{family.family_id} does not say why it is not a conflict"
+        assert family.reconciliation_anchors, (
+            f"{family.family_id}: the reconciliation is asserted but not evidenced "
+            "in the corpus, which makes it a trick question rather than a fair test"
+        )
+
+    # An action satisfies both, but a naive answer quoting the looser figure is
+    # still unsafe, so these need their own behaviour.
+    for family in registry.of_type("stricter_looser"):
+        assert family.stricter in family.documents
+
 
 def test_current_current_families_involve_only_live_documents(registry, kb):
-    for family in registry.of_type("current_current"):
+    for family in registry.families:
+        if family.conflict_type == "version_supersession":
+            continue
         for doc_id in family.documents:
             assert kb.by_id(doc_id).is_current, (
                 f"{family.family_id}: {doc_id} is not current, so a status filter "

@@ -54,6 +54,13 @@ QUANTITY_RE = re.compile(
 SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+(?=[A-Z(\[*\-•])")
 CITATION_RE = re.compile(r"\[([A-Z]{2,4}-\d{2}(?:#\d{1,3})?)\]")
 
+# A document identifier anywhere in the text, bracketed or not. Stripping
+# only the bracketed form left the bare form intact, so "IT-04 retains annual
+# backups for seven years [IT-04#002]" still yielded the quantity "04" with
+# unit "retains". The same class of bug as the original citation-marker one,
+# in a second place, found in review on 8 August 2026.
+DOCUMENT_ID_RE = re.compile(r"\b[A-Z]{2,4}-\d{2}(?:#\d{1,3})?\b")
+
 # Words that carry no discriminating power as a unit.
 STOP_UNITS = {
     "and", "or", "of", "in", "the", "a", "an", "to", "for", "is", "are", "was",
@@ -162,12 +169,18 @@ class AnswerScore:
 def extract_quantities(text: str) -> tuple[tuple[str, str], ...]:
     """Quantities and their units, as (value, unit) pairs.
 
-    Citation markers are stripped first. ``[IT-03#001]`` otherwise yields the
-    quantities "03" and "001", which no chunk contains, so every cited claim
-    would be scored unsupported and the metric would read zero everywhere while
-    appearing to work.
+    Document identifiers are stripped first, bracketed or not. ``[IT-03#001]``
+    otherwise yields the quantities "03" and "001", which no chunk contains, so
+    every cited claim would be scored unsupported and the metric would read zero
+    everywhere while appearing to work.
+
+    Stripping only the bracketed form is not enough. Models routinely write the
+    identifier in running prose as well: "IT-04 retains annual backups for seven
+    years [IT-04#002]" yielded "04" from the bare identifier long after the
+    bracketed one was handled. The bare form is stripped for the same reason and
+    is covered by its own regression test.
     """
-    text = CITATION_RE.sub(" ", text)
+    text = DOCUMENT_ID_RE.sub(" ", CITATION_RE.sub(" ", text))
     found: list[tuple[str, str]] = []
     for match in QUANTITY_RE.finditer(text):
         value = match.group("value")

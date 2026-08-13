@@ -249,6 +249,24 @@ class Index:
         index = cls(entries, metadata)
         index.validate_structure()
 
+        # The declared hash is checked against the chunks the file actually
+        # holds, before anything is compared to the corpus. Every other check
+        # here read ``metadata["chunk_set_sha256"]`` and trusted it, so a file
+        # whose metadata said one thing and whose stored chunks said another
+        # would pass every guard: the index would be treated as fresh while
+        # serving different text under the same identifiers. Recomputing costs
+        # a hash over data already in memory.
+        stored = chunk_set_fingerprint([e.chunk for e in entries])
+        declared = metadata.get("chunk_set_sha256")
+        if declared and declared != stored:
+            raise IndexError_(
+                f"The index file declares chunk set {declared[:12]}... but the chunks "
+                f"it contains hash to {stored[:12]}.... The file has been edited or "
+                "written by a mismatched build, and its identifiers no longer refer "
+                "to the text stored beside them. Rebuild it:\n"
+                "  python scripts/build_index.py"
+            )
+
         if kb is not None and not allow_stale:
             expected = kb.fingerprint()
             if index.corpus_sha256 != expected:

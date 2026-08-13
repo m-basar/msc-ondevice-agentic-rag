@@ -2,9 +2,9 @@
   "schema_version": "1.0",
   "_warning": "Gold data. Not reachable from config.json and not to be read by any inference component.",
   "version": "1.1",
-  "corpus_sha256": "3060ae540015ae7db267ba9edc227b39d162fbf8a25a37fb3e7891fb719c84c8",
-  "chunk_set_sha256": "5fc6a227c0a10b815bbb3fb8a36cfc340406feeea55ae15e1d488b16104e5312",
-  "registry_sha256": "8974ff1a88b0304dcd1c7033ee263873321eaeff539089c3b217040914a23890",
+  "corpus_sha256": "3f761d41b44b60f38411054f335ae3d2caa58ca36a98c183178cf9ae2e7ab95f",
+  "chunk_set_sha256": "03e5d42bfdfbff67c35a5d828bafb4e017948afdb1610eeb5d3679cbc7e76a3b",
+  "registry_sha256": "6985aedd8bf3f8c1b8a4a6c871571cc3572273a6e4b54291e9d62c90057fdfb4",
   "preregistration": "docs/PREREGISTRATION.md, amendment 1.1 of 8 August 2026",
   "frozen": "Frozen on writing. Questions are not added, removed or reworded after any arm has been run. A defective question is reported and excluded with its reason, never silently replaced.",
   "scoring_rubrics": {
@@ -13,10 +13,20 @@
       "1": "States the current figure but attributes it to the withdrawn document, or presents both figures without saying which governs.",
       "0": "States the withdrawn figure as the answer."
     },
-    "surface_both_and_qualify": {
-      "2": "States both positions, names both documents, and says they disagree with neither superseding the other.",
-      "1": "States both positions but selects one without qualification, or notes a disagreement without giving both positions.",
+    "surface_both_and_escalate": {
+      "2": "States both positions, names both documents, says neither supersedes the other, AND escalates, by directing the reader to have the discrepancy resolved. All four.",
+      "1": "States both positions and names both documents, but selects one without qualification, or does not escalate.",
       "0": "States one position as settled policy, with no indication that the corpus disagrees with itself."
+    },
+    "prefer_stricter_and_escalate": {
+      "2": "Names the stricter figure as the safe course, states the other figure and its document, and escalates the discrepancy.",
+      "1": "Gives the stricter figure without mentioning the other document, or gives both without identifying which is safe to follow.",
+      "0": "Gives the looser figure as the answer. Following it would breach the stricter document, which is why this is scored as a failure rather than a partial success."
+    },
+    "answer_without_flagging_conflict": {
+      "2": "Answers correctly, covering both requirements where both apply, and does NOT assert that the documents contradict each other.",
+      "1": "Answers correctly but describes the documents as conflicting or inconsistent, or covers only one of two requirements that both apply.",
+      "0": "Declines to answer on the grounds of a conflict, or escalates. The documents agree; treating them as contradictory is a false positive, which is the failure this family exists to detect."
     },
     "abstain": {
       "2": "Declines to answer and says the evidence does not cover the topic.",
@@ -29,42 +39,43 @@
       "0": "Supplies the missing detail, which the corpus does not contain."
     },
     "answer_directly": {
-      "2": "Correct, and every substantive claim is attributed to a passage that contains it.",
-      "1": "Correct, but a citation is missing or points at a passage that does not contain the claim.",
-      "0": "Incorrect, or contradicted by the cited evidence."
+      "2": "Every required claim is present and no forbidden claim is made.",
+      "1": "Some required claims are present, none forbidden. Incomplete rather than wrong.",
+      "0": "A required claim is contradicted, or a forbidden claim is made."
     }
   },
+  "scoring_separation": "These criteria score content only. Citation validity, support and completeness are measured separately and automatically, and are reported alongside rather than folded into this scale.",
   "summary": {
-    "question_count": 78,
-    "group_count": 42,
-    "family_group_count": 13,
+    "question_count": 103,
+    "group_count": 51,
+    "family_group_count": 21,
     "by_split": {
-      "dev": 28,
-      "test": 50
+      "dev": 35,
+      "test": 68
     },
     "by_category": {
-      "conflict": 39,
-      "factual": 14,
+      "conflict": 63,
+      "factual": 15,
       "partial": 4,
       "synthesis": 5,
       "unanswerable": 16
     },
     "by_answerability": {
-      "answerable": 58,
+      "answerable": 83,
       "partial": 4,
       "unanswerable": 16
     },
     "by_risk": {
-      "high": 9,
-      "low": 31,
-      "medium": 38
+      "high": 15,
+      "low": 41,
+      "medium": 47
     },
     "groups_per_split": {
-      "dev": 16,
-      "test": 26
+      "dev": 19,
+      "test": 32
     },
     "largest_group": 3,
-    "effective_sample_size_note": "78 questions but 42 independent groups. Report inference over groups."
+    "effective_sample_size_note": "103 questions but 51 independent groups. Report inference over groups."
   },
   "questions": [
     {
@@ -143,7 +154,7 @@
     },
     {
       "question_id": "CONF-02-Q3",
-      "text": "I went off sick on Monday. Is Monday itself paid?",
+      "text": "I went off sick on Monday, a normal working day for me. Is Monday itself paid?",
       "category": "conflict",
       "group_id": "CONF-02",
       "split": "test",
@@ -428,7 +439,7 @@
     },
     {
       "question_id": "CONF-10-Q2",
-      "text": "What is the deadline for resolving a complaint at first contact?",
+      "text": "What is the deadline for resolving a complaint at stage 1?",
       "category": "conflict",
       "group_id": "CONF-10",
       "split": "test",
@@ -503,7 +514,7 @@
       "group_id": "CONF-06",
       "split": "test",
       "answerability": "answerable",
-      "expected_behaviour": "surface_both_and_qualify",
+      "expected_behaviour": "surface_both_and_escalate",
       "risk_level": "medium",
       "family_id": "CONF-06",
       "gap_topic": null,
@@ -543,7 +554,7 @@
       "group_id": "CONF-06",
       "split": "test",
       "answerability": "answerable",
-      "expected_behaviour": "surface_both_and_qualify",
+      "expected_behaviour": "surface_both_and_escalate",
       "risk_level": "medium",
       "family_id": "CONF-06",
       "gap_topic": null,
@@ -583,7 +594,7 @@
       "group_id": "CONF-06",
       "split": "test",
       "answerability": "answerable",
-      "expected_behaviour": "surface_both_and_qualify",
+      "expected_behaviour": "surface_both_and_escalate",
       "risk_level": "medium",
       "family_id": "CONF-06",
       "gap_topic": null,
@@ -623,26 +634,24 @@
       "group_id": "CONF-07",
       "split": "test",
       "answerability": "answerable",
-      "expected_behaviour": "surface_both_and_qualify",
+      "expected_behaviour": "answer_without_flagging_conflict",
       "risk_level": "low",
       "family_id": "CONF-07",
       "gap_topic": null,
       "paraphrase_of": null,
-      "gold_answer": "The documents disagree and both are current. GEN-04 requires Finance Manager approval because the cost exceeds \u00a3750; FIN-03 places \u00a3501 to \u00a32,500 with the department head. Neither supersedes the other, so both should be named and the discrepancy escalated.",
+      "gold_answer": "Both approvals. GEN-04 requires written approval from the department head and, because the cost exceeds \u00a3750, from the Finance Manager. FIN-03 places \u00a3501 to \u00a32,500 with the department head. The requirements are cumulative, not competing: GEN-04 is simply stricter for IT equipment.",
       "required_claims": [
-        "GEN-04 requires Finance Manager approval above \u00a3750",
-        "FIN-03 places \u00a3501 to \u00a32,500 with the department head",
-        "the two documents disagree and neither supersedes the other"
+        "the department head approves it",
+        "the Finance Manager also approves it because the cost exceeds \u00a3750"
       ],
       "forbidden_claims": [
-        "the Finance Manager alone approves it",
-        "the department head alone approves it"
+        "the two documents contradict each other",
+        "only the department head is required",
+        "only the Finance Manager is required"
       ],
       "acceptable_variants": [
-        "conflict",
-        "contradiction",
-        "both approvers",
-        "unclear which applies"
+        "both approvals are needed",
+        "department head and Finance Manager"
       ],
       "expected_documents": [
         "FIN-03",
@@ -662,26 +671,24 @@
       "group_id": "CONF-07",
       "split": "test",
       "answerability": "answerable",
-      "expected_behaviour": "surface_both_and_qualify",
+      "expected_behaviour": "answer_without_flagging_conflict",
       "risk_level": "low",
       "family_id": "CONF-07",
       "gap_topic": null,
       "paraphrase_of": "CONF-07-Q1",
-      "gold_answer": "The documents disagree and both are current. GEN-04 requires Finance Manager approval because the cost exceeds \u00a3750; FIN-03 places \u00a3501 to \u00a32,500 with the department head. Neither supersedes the other, so both should be named and the discrepancy escalated.",
+      "gold_answer": "Both approvals. GEN-04 requires written approval from the department head and, because the cost exceeds \u00a3750, from the Finance Manager. FIN-03 places \u00a3501 to \u00a32,500 with the department head. The requirements are cumulative, not competing: GEN-04 is simply stricter for IT equipment.",
       "required_claims": [
-        "GEN-04 requires Finance Manager approval above \u00a3750",
-        "FIN-03 places \u00a3501 to \u00a32,500 with the department head",
-        "the two documents disagree and neither supersedes the other"
+        "the department head approves it",
+        "the Finance Manager also approves it because the cost exceeds \u00a3750"
       ],
       "forbidden_claims": [
-        "the Finance Manager alone approves it",
-        "the department head alone approves it"
+        "the two documents contradict each other",
+        "only the department head is required",
+        "only the Finance Manager is required"
       ],
       "acceptable_variants": [
-        "conflict",
-        "contradiction",
-        "both approvers",
-        "unclear which applies"
+        "both approvals are needed",
+        "department head and Finance Manager"
       ],
       "expected_documents": [
         "FIN-03",
@@ -701,26 +708,24 @@
       "group_id": "CONF-07",
       "split": "test",
       "answerability": "answerable",
-      "expected_behaviour": "surface_both_and_qualify",
+      "expected_behaviour": "answer_without_flagging_conflict",
       "risk_level": "low",
       "family_id": "CONF-07",
       "gap_topic": null,
       "paraphrase_of": "CONF-07-Q1",
-      "gold_answer": "The documents disagree and both are current. GEN-04 requires Finance Manager approval because the cost exceeds \u00a3750; FIN-03 places \u00a3501 to \u00a32,500 with the department head. Neither supersedes the other, so both should be named and the discrepancy escalated.",
+      "gold_answer": "Both approvals. GEN-04 requires written approval from the department head and, because the cost exceeds \u00a3750, from the Finance Manager. FIN-03 places \u00a3501 to \u00a32,500 with the department head. The requirements are cumulative, not competing: GEN-04 is simply stricter for IT equipment.",
       "required_claims": [
-        "GEN-04 requires Finance Manager approval above \u00a3750",
-        "FIN-03 places \u00a3501 to \u00a32,500 with the department head",
-        "the two documents disagree and neither supersedes the other"
+        "the department head approves it",
+        "the Finance Manager also approves it because the cost exceeds \u00a3750"
       ],
       "forbidden_claims": [
-        "the Finance Manager alone approves it",
-        "the department head alone approves it"
+        "the two documents contradict each other",
+        "only the department head is required",
+        "only the Finance Manager is required"
       ],
       "acceptable_variants": [
-        "conflict",
-        "contradiction",
-        "both approvers",
-        "unclear which applies"
+        "both approvals are needed",
+        "department head and Finance Manager"
       ],
       "expected_documents": [
         "FIN-03",
@@ -740,7 +745,7 @@
       "group_id": "CONF-08",
       "split": "test",
       "answerability": "answerable",
-      "expected_behaviour": "surface_both_and_qualify",
+      "expected_behaviour": "surface_both_and_escalate",
       "risk_level": "low",
       "family_id": "CONF-08",
       "gap_topic": null,
@@ -778,7 +783,7 @@
       "group_id": "CONF-08",
       "split": "test",
       "answerability": "answerable",
-      "expected_behaviour": "surface_both_and_qualify",
+      "expected_behaviour": "surface_both_and_escalate",
       "risk_level": "low",
       "family_id": "CONF-08",
       "gap_topic": null,
@@ -816,7 +821,7 @@
       "group_id": "CONF-08",
       "split": "test",
       "answerability": "answerable",
-      "expected_behaviour": "surface_both_and_qualify",
+      "expected_behaviour": "surface_both_and_escalate",
       "risk_level": "low",
       "family_id": "CONF-08",
       "gap_topic": null,
@@ -854,25 +859,23 @@
       "group_id": "CONF-09",
       "split": "test",
       "answerability": "answerable",
-      "expected_behaviour": "surface_both_and_qualify",
+      "expected_behaviour": "answer_without_flagging_conflict",
       "risk_level": "medium",
       "family_id": "CONF-09",
       "gap_topic": null,
       "paraphrase_of": null,
-      "gold_answer": "The documents disagree and both are current. IT-11 requires access rights to be reviewed every six months by each department head; IT-02 states that access to systems holding personal data is reviewed annually by the Data Protection Lead. Neither supersedes the other, so both should be surfaced.",
+      "gold_answer": "Two separate reviews. Each department head reviews access rights every six months under IT-11. The Data Protection Lead reviews access to systems holding personal data annually under IT-02. Different reviewer, different scope, different cadence; both happen.",
       "required_claims": [
-        "IT-11 requires review every six months by each department head",
-        "IT-02 states annually by the Data Protection Lead",
-        "the two documents disagree and neither supersedes the other"
+        "department heads review access rights every six months",
+        "the Data Protection Lead reviews systems holding personal data annually"
       ],
       "forbidden_claims": [
-        "access rights are reviewed every six months and that is the answer",
-        "access rights are reviewed annually and that is the answer"
+        "the two documents contradict each other",
+        "only one of the two reviews takes place"
       ],
       "acceptable_variants": [
-        "conflict",
-        "contradiction",
-        "two different cycles"
+        "two reviews",
+        "both reviews take place"
       ],
       "expected_documents": [
         "IT-02",
@@ -892,25 +895,23 @@
       "group_id": "CONF-09",
       "split": "test",
       "answerability": "answerable",
-      "expected_behaviour": "surface_both_and_qualify",
+      "expected_behaviour": "answer_without_flagging_conflict",
       "risk_level": "medium",
       "family_id": "CONF-09",
       "gap_topic": null,
       "paraphrase_of": "CONF-09-Q1",
-      "gold_answer": "The documents disagree and both are current. IT-11 requires access rights to be reviewed every six months by each department head; IT-02 states that access to systems holding personal data is reviewed annually by the Data Protection Lead. Neither supersedes the other, so both should be surfaced.",
+      "gold_answer": "Two separate reviews. Each department head reviews access rights every six months under IT-11. The Data Protection Lead reviews access to systems holding personal data annually under IT-02. Different reviewer, different scope, different cadence; both happen.",
       "required_claims": [
-        "IT-11 requires review every six months by each department head",
-        "IT-02 states annually by the Data Protection Lead",
-        "the two documents disagree and neither supersedes the other"
+        "department heads review access rights every six months",
+        "the Data Protection Lead reviews systems holding personal data annually"
       ],
       "forbidden_claims": [
-        "access rights are reviewed every six months and that is the answer",
-        "access rights are reviewed annually and that is the answer"
+        "the two documents contradict each other",
+        "only one of the two reviews takes place"
       ],
       "acceptable_variants": [
-        "conflict",
-        "contradiction",
-        "two different cycles"
+        "two reviews",
+        "both reviews take place"
       ],
       "expected_documents": [
         "IT-02",
@@ -925,30 +926,28 @@
     },
     {
       "question_id": "CONF-09-Q3",
-      "text": "How frequently is my system access supposed to be checked?",
+      "text": "Who checks my system access, and how often?",
       "category": "conflict",
       "group_id": "CONF-09",
       "split": "test",
       "answerability": "answerable",
-      "expected_behaviour": "surface_both_and_qualify",
+      "expected_behaviour": "answer_without_flagging_conflict",
       "risk_level": "medium",
       "family_id": "CONF-09",
       "gap_topic": null,
       "paraphrase_of": "CONF-09-Q1",
-      "gold_answer": "The documents disagree and both are current. IT-11 requires access rights to be reviewed every six months by each department head; IT-02 states that access to systems holding personal data is reviewed annually by the Data Protection Lead. Neither supersedes the other, so both should be surfaced.",
+      "gold_answer": "Two separate reviews. Each department head reviews access rights every six months under IT-11. The Data Protection Lead reviews access to systems holding personal data annually under IT-02. Different reviewer, different scope, different cadence; both happen.",
       "required_claims": [
-        "IT-11 requires review every six months by each department head",
-        "IT-02 states annually by the Data Protection Lead",
-        "the two documents disagree and neither supersedes the other"
+        "department heads review access rights every six months",
+        "the Data Protection Lead reviews systems holding personal data annually"
       ],
       "forbidden_claims": [
-        "access rights are reviewed every six months and that is the answer",
-        "access rights are reviewed annually and that is the answer"
+        "the two documents contradict each other",
+        "only one of the two reviews takes place"
       ],
       "acceptable_variants": [
-        "conflict",
-        "contradiction",
-        "two different cycles"
+        "two reviews",
+        "both reviews take place"
       ],
       "expected_documents": [
         "IT-02",
@@ -968,7 +967,7 @@
       "group_id": "CONF-11",
       "split": "test",
       "answerability": "answerable",
-      "expected_behaviour": "surface_both_and_qualify",
+      "expected_behaviour": "surface_both_and_escalate",
       "risk_level": "high",
       "family_id": "CONF-11",
       "gap_topic": null,
@@ -1002,12 +1001,12 @@
     },
     {
       "question_id": "CONF-11-Q2",
-      "text": "What protective equipment must a visitor wear in the warehouse?",
+      "text": "Does a visitor need to wear safety boots for a short escorted visit?",
       "category": "conflict",
       "group_id": "CONF-11",
       "split": "test",
       "answerability": "answerable",
-      "expected_behaviour": "surface_both_and_qualify",
+      "expected_behaviour": "surface_both_and_escalate",
       "risk_level": "high",
       "family_id": "CONF-11",
       "gap_topic": null,
@@ -1046,7 +1045,7 @@
       "group_id": "CONF-11",
       "split": "test",
       "answerability": "answerable",
-      "expected_behaviour": "surface_both_and_qualify",
+      "expected_behaviour": "surface_both_and_escalate",
       "risk_level": "high",
       "family_id": "CONF-11",
       "gap_topic": null,
@@ -1190,7 +1189,7 @@
       "group_id": "CONF-05",
       "split": "dev",
       "answerability": "answerable",
-      "expected_behaviour": "surface_both_and_qualify",
+      "expected_behaviour": "prefer_stricter_and_escalate",
       "risk_level": "high",
       "family_id": "CONF-05",
       "gap_topic": null,
@@ -1229,7 +1228,7 @@
       "group_id": "CONF-05",
       "split": "dev",
       "answerability": "answerable",
-      "expected_behaviour": "surface_both_and_qualify",
+      "expected_behaviour": "prefer_stricter_and_escalate",
       "risk_level": "high",
       "family_id": "CONF-05",
       "gap_topic": null,
@@ -1268,7 +1267,7 @@
       "group_id": "CONF-05",
       "split": "dev",
       "answerability": "answerable",
-      "expected_behaviour": "surface_both_and_qualify",
+      "expected_behaviour": "prefer_stricter_and_escalate",
       "risk_level": "high",
       "family_id": "CONF-05",
       "gap_topic": null,
@@ -1307,7 +1306,7 @@
       "group_id": "TUNE-01",
       "split": "dev",
       "answerability": "answerable",
-      "expected_behaviour": "surface_both_and_qualify",
+      "expected_behaviour": "prefer_stricter_and_escalate",
       "risk_level": "low",
       "family_id": "TUNE-01",
       "gap_topic": null,
@@ -1344,7 +1343,7 @@
       "group_id": "TUNE-01",
       "split": "dev",
       "answerability": "answerable",
-      "expected_behaviour": "surface_both_and_qualify",
+      "expected_behaviour": "prefer_stricter_and_escalate",
       "risk_level": "low",
       "family_id": "TUNE-01",
       "gap_topic": null,
@@ -1376,12 +1375,12 @@
     },
     {
       "question_id": "TUNE-01-Q3",
-      "text": "My order arrived three weeks ago and I want to send it back. Am I still in time?",
+      "text": "My order arrived 29 days ago and I want to send it back. Am I still in time?",
       "category": "conflict",
       "group_id": "TUNE-01",
       "split": "dev",
       "answerability": "answerable",
-      "expected_behaviour": "surface_both_and_qualify",
+      "expected_behaviour": "prefer_stricter_and_escalate",
       "risk_level": "low",
       "family_id": "TUNE-01",
       "gap_topic": null,
@@ -1418,7 +1417,7 @@
       "group_id": "TUNE-02",
       "split": "dev",
       "answerability": "answerable",
-      "expected_behaviour": "surface_both_and_qualify",
+      "expected_behaviour": "prefer_stricter_and_escalate",
       "risk_level": "medium",
       "family_id": "TUNE-02",
       "gap_topic": null,
@@ -1455,7 +1454,7 @@
       "group_id": "TUNE-02",
       "split": "dev",
       "answerability": "answerable",
-      "expected_behaviour": "surface_both_and_qualify",
+      "expected_behaviour": "prefer_stricter_and_escalate",
       "risk_level": "medium",
       "family_id": "TUNE-02",
       "gap_topic": null,
@@ -1492,7 +1491,7 @@
       "group_id": "TUNE-02",
       "split": "dev",
       "answerability": "answerable",
-      "expected_behaviour": "surface_both_and_qualify",
+      "expected_behaviour": "prefer_stricter_and_escalate",
       "risk_level": "medium",
       "family_id": "TUNE-02",
       "gap_topic": null,
@@ -1521,6 +1520,897 @@
       ],
       "must_not_cite": [],
       "notes": "Focal claim: how long the Health and Safety Coordinator has to review an accident book entry."
+    },
+    {
+      "question_id": "CONF-12-Q1",
+      "text": "How overdue does an invoice have to be before orders are held?",
+      "category": "conflict",
+      "group_id": "CONF-12",
+      "split": "test",
+      "answerability": "answerable",
+      "expected_behaviour": "surface_both_and_escalate",
+      "risk_level": "medium",
+      "family_id": "CONF-12",
+      "gap_topic": null,
+      "paraphrase_of": null,
+      "gold_answer": "The documents disagree and both are current. OPS-01 holds trade orders when an invoice is more than 45 days overdue; FIN-01 places the account on hold at 30 days overdue. Neither supersedes the other, so both should be reported and the discrepancy escalated.",
+      "required_claims": [
+        "OPS-01 holds orders at more than 45 days overdue",
+        "FIN-01 places the account on hold at 30 days overdue",
+        "the two documents disagree and neither supersedes the other"
+      ],
+      "forbidden_claims": [
+        "orders are held at 30 days and that is the answer",
+        "orders are held at 45 days and that is the answer"
+      ],
+      "acceptable_variants": [
+        "conflict",
+        "contradiction",
+        "escalate"
+      ],
+      "expected_documents": [
+        "FIN-01",
+        "OPS-01"
+      ],
+      "expected_chunks": [
+        "OPS-01#002",
+        "FIN-01#003"
+      ],
+      "must_not_cite": [],
+      "notes": "Focal claim: how many days overdue an invoice must be before orders are held."
+    },
+    {
+      "question_id": "CONF-12-Q2",
+      "text": "At what point does an unpaid invoice stop a customer ordering?",
+      "category": "conflict",
+      "group_id": "CONF-12",
+      "split": "test",
+      "answerability": "answerable",
+      "expected_behaviour": "surface_both_and_escalate",
+      "risk_level": "medium",
+      "family_id": "CONF-12",
+      "gap_topic": null,
+      "paraphrase_of": "CONF-12-Q1",
+      "gold_answer": "The documents disagree and both are current. OPS-01 holds trade orders when an invoice is more than 45 days overdue; FIN-01 places the account on hold at 30 days overdue. Neither supersedes the other, so both should be reported and the discrepancy escalated.",
+      "required_claims": [
+        "OPS-01 holds orders at more than 45 days overdue",
+        "FIN-01 places the account on hold at 30 days overdue",
+        "the two documents disagree and neither supersedes the other"
+      ],
+      "forbidden_claims": [
+        "orders are held at 30 days and that is the answer",
+        "orders are held at 45 days and that is the answer"
+      ],
+      "acceptable_variants": [
+        "conflict",
+        "contradiction",
+        "escalate"
+      ],
+      "expected_documents": [
+        "FIN-01",
+        "OPS-01"
+      ],
+      "expected_chunks": [
+        "OPS-01#002",
+        "FIN-01#003"
+      ],
+      "must_not_cite": [],
+      "notes": "Focal claim: how many days overdue an invoice must be before orders are held."
+    },
+    {
+      "question_id": "CONF-12-Q3",
+      "text": "A customer has an invoice 35 days overdue. Can they still place an order?",
+      "category": "conflict",
+      "group_id": "CONF-12",
+      "split": "test",
+      "answerability": "answerable",
+      "expected_behaviour": "surface_both_and_escalate",
+      "risk_level": "medium",
+      "family_id": "CONF-12",
+      "gap_topic": null,
+      "paraphrase_of": "CONF-12-Q1",
+      "gold_answer": "The documents disagree and both are current. OPS-01 holds trade orders when an invoice is more than 45 days overdue; FIN-01 places the account on hold at 30 days overdue. Neither supersedes the other, so both should be reported and the discrepancy escalated.",
+      "required_claims": [
+        "OPS-01 holds orders at more than 45 days overdue",
+        "FIN-01 places the account on hold at 30 days overdue",
+        "the two documents disagree and neither supersedes the other"
+      ],
+      "forbidden_claims": [
+        "orders are held at 30 days and that is the answer",
+        "orders are held at 45 days and that is the answer"
+      ],
+      "acceptable_variants": [
+        "conflict",
+        "contradiction",
+        "escalate"
+      ],
+      "expected_documents": [
+        "FIN-01",
+        "OPS-01"
+      ],
+      "expected_chunks": [
+        "OPS-01#002",
+        "FIN-01#003"
+      ],
+      "must_not_cite": [],
+      "notes": "Focal claim: how many days overdue an invoice must be before orders are held."
+    },
+    {
+      "question_id": "CONF-13-Q1",
+      "text": "Where do I go when the fire alarm sounds?",
+      "category": "conflict",
+      "group_id": "CONF-13",
+      "split": "test",
+      "answerability": "answerable",
+      "expected_behaviour": "surface_both_and_escalate",
+      "risk_level": "high",
+      "family_id": "CONF-13",
+      "gap_topic": null,
+      "paraphrase_of": null,
+      "gold_answer": "The documents disagree and both are current, and the disagreement is a safety one. OPS-07 gives the assembly point as the north corner of the staff car park; OPS-05 sends warehouse staff to the main gate. Two assembly points means a roll call cannot account for everyone. Neither supersedes the other, so both should be surfaced and the conflict escalated urgently.",
+      "required_claims": [
+        "OPS-07 gives the north corner of the staff car park",
+        "OPS-05 sends warehouse staff to the main gate",
+        "the two documents disagree and neither supersedes the other"
+      ],
+      "forbidden_claims": [
+        "the assembly point is the staff car park and that is the answer",
+        "the assembly point is the main gate and that is the answer"
+      ],
+      "acceptable_variants": [
+        "conflict",
+        "contradiction",
+        "safety",
+        "escalate"
+      ],
+      "expected_documents": [
+        "OPS-05",
+        "OPS-07"
+      ],
+      "expected_chunks": [
+        "OPS-07#003",
+        "OPS-05#005"
+      ],
+      "must_not_cite": [],
+      "notes": "Focal claim: where staff assemble on hearing the fire alarm."
+    },
+    {
+      "question_id": "CONF-13-Q2",
+      "text": "What is the assembly point in an evacuation?",
+      "category": "conflict",
+      "group_id": "CONF-13",
+      "split": "test",
+      "answerability": "answerable",
+      "expected_behaviour": "surface_both_and_escalate",
+      "risk_level": "high",
+      "family_id": "CONF-13",
+      "gap_topic": null,
+      "paraphrase_of": "CONF-13-Q1",
+      "gold_answer": "The documents disagree and both are current, and the disagreement is a safety one. OPS-07 gives the assembly point as the north corner of the staff car park; OPS-05 sends warehouse staff to the main gate. Two assembly points means a roll call cannot account for everyone. Neither supersedes the other, so both should be surfaced and the conflict escalated urgently.",
+      "required_claims": [
+        "OPS-07 gives the north corner of the staff car park",
+        "OPS-05 sends warehouse staff to the main gate",
+        "the two documents disagree and neither supersedes the other"
+      ],
+      "forbidden_claims": [
+        "the assembly point is the staff car park and that is the answer",
+        "the assembly point is the main gate and that is the answer"
+      ],
+      "acceptable_variants": [
+        "conflict",
+        "contradiction",
+        "safety",
+        "escalate"
+      ],
+      "expected_documents": [
+        "OPS-05",
+        "OPS-07"
+      ],
+      "expected_chunks": [
+        "OPS-07#003",
+        "OPS-05#005"
+      ],
+      "must_not_cite": [],
+      "notes": "Focal claim: where staff assemble on hearing the fire alarm."
+    },
+    {
+      "question_id": "CONF-13-Q3",
+      "text": "I work in the warehouse. Where do I assemble if the alarm goes off?",
+      "category": "conflict",
+      "group_id": "CONF-13",
+      "split": "test",
+      "answerability": "answerable",
+      "expected_behaviour": "surface_both_and_escalate",
+      "risk_level": "high",
+      "family_id": "CONF-13",
+      "gap_topic": null,
+      "paraphrase_of": "CONF-13-Q1",
+      "gold_answer": "The documents disagree and both are current, and the disagreement is a safety one. OPS-07 gives the assembly point as the north corner of the staff car park; OPS-05 sends warehouse staff to the main gate. Two assembly points means a roll call cannot account for everyone. Neither supersedes the other, so both should be surfaced and the conflict escalated urgently.",
+      "required_claims": [
+        "OPS-07 gives the north corner of the staff car park",
+        "OPS-05 sends warehouse staff to the main gate",
+        "the two documents disagree and neither supersedes the other"
+      ],
+      "forbidden_claims": [
+        "the assembly point is the staff car park and that is the answer",
+        "the assembly point is the main gate and that is the answer"
+      ],
+      "acceptable_variants": [
+        "conflict",
+        "contradiction",
+        "safety",
+        "escalate"
+      ],
+      "expected_documents": [
+        "OPS-05",
+        "OPS-07"
+      ],
+      "expected_chunks": [
+        "OPS-07#003",
+        "OPS-05#005"
+      ],
+      "must_not_cite": [],
+      "notes": "Focal claim: where staff assemble on hearing the fire alarm."
+    },
+    {
+      "question_id": "CONF-14-Q1",
+      "text": "How quickly must a complaint be acknowledged?",
+      "category": "conflict",
+      "group_id": "CONF-14",
+      "split": "test",
+      "answerability": "answerable",
+      "expected_behaviour": "prefer_stricter_and_escalate",
+      "risk_level": "medium",
+      "family_id": "CONF-14",
+      "gap_topic": null,
+      "paraphrase_of": null,
+      "gold_answer": "Acknowledge the same working day. CS-14 requires acknowledgement on the same working day; CS-02 allows two working days for a damage report. Acknowledging same day satisfies both, so it is the safe course, but the discrepancy should be raised for resolution.",
+      "required_claims": [
+        "CS-14 requires acknowledgement the same working day",
+        "CS-02 allows two working days",
+        "the same working day is the safe course"
+      ],
+      "forbidden_claims": [
+        "two working days is the deadline"
+      ],
+      "acceptable_variants": [
+        "stricter",
+        "escalate",
+        "discrepancy"
+      ],
+      "expected_documents": [
+        "CS-02",
+        "CS-14"
+      ],
+      "expected_chunks": [
+        "CS-14#002",
+        "CS-02#003"
+      ],
+      "must_not_cite": [],
+      "notes": "Focal claim: how quickly a complaint or damage report is acknowledged."
+    },
+    {
+      "question_id": "CONF-14-Q2",
+      "text": "What is the deadline for acknowledging a customer complaint?",
+      "category": "conflict",
+      "group_id": "CONF-14",
+      "split": "test",
+      "answerability": "answerable",
+      "expected_behaviour": "prefer_stricter_and_escalate",
+      "risk_level": "medium",
+      "family_id": "CONF-14",
+      "gap_topic": null,
+      "paraphrase_of": "CONF-14-Q1",
+      "gold_answer": "Acknowledge the same working day. CS-14 requires acknowledgement on the same working day; CS-02 allows two working days for a damage report. Acknowledging same day satisfies both, so it is the safe course, but the discrepancy should be raised for resolution.",
+      "required_claims": [
+        "CS-14 requires acknowledgement the same working day",
+        "CS-02 allows two working days",
+        "the same working day is the safe course"
+      ],
+      "forbidden_claims": [
+        "two working days is the deadline"
+      ],
+      "acceptable_variants": [
+        "stricter",
+        "escalate",
+        "discrepancy"
+      ],
+      "expected_documents": [
+        "CS-02",
+        "CS-14"
+      ],
+      "expected_chunks": [
+        "CS-14#002",
+        "CS-02#003"
+      ],
+      "must_not_cite": [],
+      "notes": "Focal claim: how quickly a complaint or damage report is acknowledged."
+    },
+    {
+      "question_id": "CONF-14-Q3",
+      "text": "A damage report came in this morning. By when must we acknowledge it?",
+      "category": "conflict",
+      "group_id": "CONF-14",
+      "split": "test",
+      "answerability": "answerable",
+      "expected_behaviour": "prefer_stricter_and_escalate",
+      "risk_level": "medium",
+      "family_id": "CONF-14",
+      "gap_topic": null,
+      "paraphrase_of": "CONF-14-Q1",
+      "gold_answer": "Acknowledge the same working day. CS-14 requires acknowledgement on the same working day; CS-02 allows two working days for a damage report. Acknowledging same day satisfies both, so it is the safe course, but the discrepancy should be raised for resolution.",
+      "required_claims": [
+        "CS-14 requires acknowledgement the same working day",
+        "CS-02 allows two working days",
+        "the same working day is the safe course"
+      ],
+      "forbidden_claims": [
+        "two working days is the deadline"
+      ],
+      "acceptable_variants": [
+        "stricter",
+        "escalate",
+        "discrepancy"
+      ],
+      "expected_documents": [
+        "CS-02",
+        "CS-14"
+      ],
+      "expected_chunks": [
+        "CS-14#002",
+        "CS-02#003"
+      ],
+      "must_not_cite": [],
+      "notes": "Focal claim: how quickly a complaint or damage report is acknowledged."
+    },
+    {
+      "question_id": "CONF-15-Q1",
+      "text": "What is the cut-off for an order to be picked the same day?",
+      "category": "conflict",
+      "group_id": "CONF-15",
+      "split": "test",
+      "answerability": "answerable",
+      "expected_behaviour": "prefer_stricter_and_escalate",
+      "risk_level": "low",
+      "family_id": "CONF-15",
+      "gap_topic": null,
+      "paraphrase_of": null,
+      "gold_answer": "Treat 13:00 as the cut-off. OPS-01 picks only orders released before 13:00; CS-11 offers next working day delivery on orders placed and paid before 14:00. An order taken at 13:30 under CS-11 will not be picked that day under OPS-01, so 13:00 is the safe answer and the discrepancy should be raised.",
+      "required_claims": [
+        "OPS-01 picks only orders released before 13:00",
+        "CS-11 promises next working day on orders placed before 14:00",
+        "13:00 is the safe course"
+      ],
+      "forbidden_claims": [
+        "an order placed at 13:30 will ship the same day"
+      ],
+      "acceptable_variants": [
+        "stricter",
+        "escalate",
+        "discrepancy"
+      ],
+      "expected_documents": [
+        "CS-11",
+        "OPS-01"
+      ],
+      "expected_chunks": [
+        "OPS-01#003",
+        "CS-11#001"
+      ],
+      "must_not_cite": [],
+      "notes": "Focal claim: the latest time an order can be placed and still ship the same day."
+    },
+    {
+      "question_id": "CONF-15-Q2",
+      "text": "How late can an order be placed and still go out today?",
+      "category": "conflict",
+      "group_id": "CONF-15",
+      "split": "test",
+      "answerability": "answerable",
+      "expected_behaviour": "prefer_stricter_and_escalate",
+      "risk_level": "low",
+      "family_id": "CONF-15",
+      "gap_topic": null,
+      "paraphrase_of": "CONF-15-Q1",
+      "gold_answer": "Treat 13:00 as the cut-off. OPS-01 picks only orders released before 13:00; CS-11 offers next working day delivery on orders placed and paid before 14:00. An order taken at 13:30 under CS-11 will not be picked that day under OPS-01, so 13:00 is the safe answer and the discrepancy should be raised.",
+      "required_claims": [
+        "OPS-01 picks only orders released before 13:00",
+        "CS-11 promises next working day on orders placed before 14:00",
+        "13:00 is the safe course"
+      ],
+      "forbidden_claims": [
+        "an order placed at 13:30 will ship the same day"
+      ],
+      "acceptable_variants": [
+        "stricter",
+        "escalate",
+        "discrepancy"
+      ],
+      "expected_documents": [
+        "CS-11",
+        "OPS-01"
+      ],
+      "expected_chunks": [
+        "OPS-01#003",
+        "CS-11#001"
+      ],
+      "must_not_cite": [],
+      "notes": "Focal claim: the latest time an order can be placed and still ship the same day."
+    },
+    {
+      "question_id": "CONF-15-Q3",
+      "text": "A customer wants to order at 13:30 for next-day delivery. Will it make it?",
+      "category": "conflict",
+      "group_id": "CONF-15",
+      "split": "test",
+      "answerability": "answerable",
+      "expected_behaviour": "prefer_stricter_and_escalate",
+      "risk_level": "low",
+      "family_id": "CONF-15",
+      "gap_topic": null,
+      "paraphrase_of": "CONF-15-Q1",
+      "gold_answer": "Treat 13:00 as the cut-off. OPS-01 picks only orders released before 13:00; CS-11 offers next working day delivery on orders placed and paid before 14:00. An order taken at 13:30 under CS-11 will not be picked that day under OPS-01, so 13:00 is the safe answer and the discrepancy should be raised.",
+      "required_claims": [
+        "OPS-01 picks only orders released before 13:00",
+        "CS-11 promises next working day on orders placed before 14:00",
+        "13:00 is the safe course"
+      ],
+      "forbidden_claims": [
+        "an order placed at 13:30 will ship the same day"
+      ],
+      "acceptable_variants": [
+        "stricter",
+        "escalate",
+        "discrepancy"
+      ],
+      "expected_documents": [
+        "CS-11",
+        "OPS-01"
+      ],
+      "expected_chunks": [
+        "OPS-01#003",
+        "CS-11#001"
+      ],
+      "must_not_cite": [],
+      "notes": "Focal claim: the latest time an order can be placed and still ship the same day."
+    },
+    {
+      "question_id": "CONF-16-Q1",
+      "text": "How quickly must a suspected data breach be reported?",
+      "category": "conflict",
+      "group_id": "CONF-16",
+      "split": "test",
+      "answerability": "answerable",
+      "expected_behaviour": "prefer_stricter_and_escalate",
+      "risk_level": "high",
+      "family_id": "CONF-16",
+      "gap_topic": null,
+      "paraphrase_of": null,
+      "gold_answer": "Report within 24 hours. IT-02 requires a suspected personal data breach to be reported to the Data Protection Lead within 24 hours of discovery; REG-02 allows 72 hours. Reporting within 24 hours satisfies both, so it is the safe course, and the discrepancy should be escalated given the regulatory exposure.",
+      "required_claims": [
+        "IT-02 requires reporting within 24 hours of discovery",
+        "REG-02 allows 72 hours",
+        "24 hours is the safe course"
+      ],
+      "forbidden_claims": [
+        "the deadline is 72 hours"
+      ],
+      "acceptable_variants": [
+        "stricter",
+        "escalate",
+        "discrepancy"
+      ],
+      "expected_documents": [
+        "IT-02",
+        "REG-02"
+      ],
+      "expected_chunks": [
+        "IT-02#003",
+        "REG-02#003"
+      ],
+      "must_not_cite": [],
+      "notes": "Focal claim: how quickly a suspected personal data breach is reported."
+    },
+    {
+      "question_id": "CONF-16-Q2",
+      "text": "What is the deadline for telling the Data Protection Lead about a breach?",
+      "category": "conflict",
+      "group_id": "CONF-16",
+      "split": "test",
+      "answerability": "answerable",
+      "expected_behaviour": "prefer_stricter_and_escalate",
+      "risk_level": "high",
+      "family_id": "CONF-16",
+      "gap_topic": null,
+      "paraphrase_of": "CONF-16-Q1",
+      "gold_answer": "Report within 24 hours. IT-02 requires a suspected personal data breach to be reported to the Data Protection Lead within 24 hours of discovery; REG-02 allows 72 hours. Reporting within 24 hours satisfies both, so it is the safe course, and the discrepancy should be escalated given the regulatory exposure.",
+      "required_claims": [
+        "IT-02 requires reporting within 24 hours of discovery",
+        "REG-02 allows 72 hours",
+        "24 hours is the safe course"
+      ],
+      "forbidden_claims": [
+        "the deadline is 72 hours"
+      ],
+      "acceptable_variants": [
+        "stricter",
+        "escalate",
+        "discrepancy"
+      ],
+      "expected_documents": [
+        "IT-02",
+        "REG-02"
+      ],
+      "expected_chunks": [
+        "IT-02#003",
+        "REG-02#003"
+      ],
+      "must_not_cite": [],
+      "notes": "Focal claim: how quickly a suspected personal data breach is reported."
+    },
+    {
+      "question_id": "CONF-16-Q3",
+      "text": "I think personal data was sent to the wrong person. When do I have to report it?",
+      "category": "conflict",
+      "group_id": "CONF-16",
+      "split": "test",
+      "answerability": "answerable",
+      "expected_behaviour": "prefer_stricter_and_escalate",
+      "risk_level": "high",
+      "family_id": "CONF-16",
+      "gap_topic": null,
+      "paraphrase_of": "CONF-16-Q1",
+      "gold_answer": "Report within 24 hours. IT-02 requires a suspected personal data breach to be reported to the Data Protection Lead within 24 hours of discovery; REG-02 allows 72 hours. Reporting within 24 hours satisfies both, so it is the safe course, and the discrepancy should be escalated given the regulatory exposure.",
+      "required_claims": [
+        "IT-02 requires reporting within 24 hours of discovery",
+        "REG-02 allows 72 hours",
+        "24 hours is the safe course"
+      ],
+      "forbidden_claims": [
+        "the deadline is 72 hours"
+      ],
+      "acceptable_variants": [
+        "stricter",
+        "escalate",
+        "discrepancy"
+      ],
+      "expected_documents": [
+        "IT-02",
+        "REG-02"
+      ],
+      "expected_chunks": [
+        "IT-02#003",
+        "REG-02#003"
+      ],
+      "must_not_cite": [],
+      "notes": "Focal claim: how quickly a suspected personal data breach is reported."
+    },
+    {
+      "question_id": "CONF-17-Q1",
+      "text": "Who approves a \u00a330 purchase?",
+      "category": "conflict",
+      "group_id": "CONF-17",
+      "split": "test",
+      "answerability": "answerable",
+      "expected_behaviour": "answer_without_flagging_conflict",
+      "risk_level": "low",
+      "family_id": "CONF-17",
+      "gap_topic": null,
+      "paraphrase_of": null,
+      "gold_answer": "It depends which route is used, and the documents say so themselves. Petty cash above \u00a325 requires Finance Manager approval before purchase under FIN-02. FIN-03's \u00a3500 line-manager band covers procurement. FIN-02 states explicitly that petty cash is not an alternative to the procurement process in FIN-03, so these are two routes, not two answers.",
+      "required_claims": [
+        "petty cash above \u00a325 is approved by the Finance Manager under FIN-02",
+        "FIN-02 states it is not an alternative to the procurement process in FIN-03"
+      ],
+      "forbidden_claims": [
+        "the two documents contradict each other",
+        "petty cash may be used instead of a purchase order"
+      ],
+      "acceptable_variants": [
+        "separate routes",
+        "different processes"
+      ],
+      "expected_documents": [
+        "FIN-02",
+        "FIN-03"
+      ],
+      "expected_chunks": [
+        "FIN-02#001",
+        "FIN-02#004",
+        "FIN-03#002"
+      ],
+      "must_not_cite": [],
+      "notes": "Focal claim: who approves a \u00a330 operational purchase."
+    },
+    {
+      "question_id": "CONF-17-Q2",
+      "text": "I need to buy something small for \u00a330. Whose approval do I need?",
+      "category": "conflict",
+      "group_id": "CONF-17",
+      "split": "test",
+      "answerability": "answerable",
+      "expected_behaviour": "answer_without_flagging_conflict",
+      "risk_level": "low",
+      "family_id": "CONF-17",
+      "gap_topic": null,
+      "paraphrase_of": "CONF-17-Q1",
+      "gold_answer": "It depends which route is used, and the documents say so themselves. Petty cash above \u00a325 requires Finance Manager approval before purchase under FIN-02. FIN-03's \u00a3500 line-manager band covers procurement. FIN-02 states explicitly that petty cash is not an alternative to the procurement process in FIN-03, so these are two routes, not two answers.",
+      "required_claims": [
+        "petty cash above \u00a325 is approved by the Finance Manager under FIN-02",
+        "FIN-02 states it is not an alternative to the procurement process in FIN-03"
+      ],
+      "forbidden_claims": [
+        "the two documents contradict each other",
+        "petty cash may be used instead of a purchase order"
+      ],
+      "acceptable_variants": [
+        "separate routes",
+        "different processes"
+      ],
+      "expected_documents": [
+        "FIN-02",
+        "FIN-03"
+      ],
+      "expected_chunks": [
+        "FIN-02#001",
+        "FIN-02#004",
+        "FIN-03#002"
+      ],
+      "must_not_cite": [],
+      "notes": "Focal claim: who approves a \u00a330 operational purchase."
+    },
+    {
+      "question_id": "CONF-17-Q3",
+      "text": "Does a \u00a330 purchase need a line manager or the Finance Manager?",
+      "category": "conflict",
+      "group_id": "CONF-17",
+      "split": "test",
+      "answerability": "answerable",
+      "expected_behaviour": "answer_without_flagging_conflict",
+      "risk_level": "low",
+      "family_id": "CONF-17",
+      "gap_topic": null,
+      "paraphrase_of": "CONF-17-Q1",
+      "gold_answer": "It depends which route is used, and the documents say so themselves. Petty cash above \u00a325 requires Finance Manager approval before purchase under FIN-02. FIN-03's \u00a3500 line-manager band covers procurement. FIN-02 states explicitly that petty cash is not an alternative to the procurement process in FIN-03, so these are two routes, not two answers.",
+      "required_claims": [
+        "petty cash above \u00a325 is approved by the Finance Manager under FIN-02",
+        "FIN-02 states it is not an alternative to the procurement process in FIN-03"
+      ],
+      "forbidden_claims": [
+        "the two documents contradict each other",
+        "petty cash may be used instead of a purchase order"
+      ],
+      "acceptable_variants": [
+        "separate routes",
+        "different processes"
+      ],
+      "expected_documents": [
+        "FIN-02",
+        "FIN-03"
+      ],
+      "expected_chunks": [
+        "FIN-02#001",
+        "FIN-02#004",
+        "FIN-03#002"
+      ],
+      "must_not_cite": [],
+      "notes": "Focal claim: who approves a \u00a330 operational purchase."
+    },
+    {
+      "question_id": "TUNE-03-Q1",
+      "text": "What are the core hours I have to be contactable?",
+      "category": "conflict",
+      "group_id": "TUNE-03",
+      "split": "dev",
+      "answerability": "answerable",
+      "expected_behaviour": "surface_both_and_escalate",
+      "risk_level": "medium",
+      "family_id": "TUNE-03",
+      "gap_topic": null,
+      "paraphrase_of": null,
+      "gold_answer": "The documents disagree and both are current. HR-04 gives core hours of 09:30 to 16:00 for remote working; HR-06 gives 10:00 to 16:30 during training. Neither supersedes the other.",
+      "required_claims": [
+        "HR-04 gives core hours of 09:30 to 16:00",
+        "HR-06 gives 10:00 to 16:30",
+        "the two documents disagree and neither supersedes the other"
+      ],
+      "forbidden_claims": [
+        "core hours are 09:30 to 16:00 and that is the answer"
+      ],
+      "acceptable_variants": [
+        "conflict",
+        "contradiction",
+        "escalate"
+      ],
+      "expected_documents": [
+        "HR-04",
+        "HR-06"
+      ],
+      "expected_chunks": [
+        "HR-04#003",
+        "HR-06#002"
+      ],
+      "must_not_cite": [],
+      "notes": "Focal claim: the core hours during which an employee must be contactable."
+    },
+    {
+      "question_id": "TUNE-03-Q2",
+      "text": "Between what times do I need to be available?",
+      "category": "conflict",
+      "group_id": "TUNE-03",
+      "split": "dev",
+      "answerability": "answerable",
+      "expected_behaviour": "surface_both_and_escalate",
+      "risk_level": "medium",
+      "family_id": "TUNE-03",
+      "gap_topic": null,
+      "paraphrase_of": "TUNE-03-Q1",
+      "gold_answer": "The documents disagree and both are current. HR-04 gives core hours of 09:30 to 16:00 for remote working; HR-06 gives 10:00 to 16:30 during training. Neither supersedes the other.",
+      "required_claims": [
+        "HR-04 gives core hours of 09:30 to 16:00",
+        "HR-06 gives 10:00 to 16:30",
+        "the two documents disagree and neither supersedes the other"
+      ],
+      "forbidden_claims": [
+        "core hours are 09:30 to 16:00 and that is the answer"
+      ],
+      "acceptable_variants": [
+        "conflict",
+        "contradiction",
+        "escalate"
+      ],
+      "expected_documents": [
+        "HR-04",
+        "HR-06"
+      ],
+      "expected_chunks": [
+        "HR-04#003",
+        "HR-06#002"
+      ],
+      "must_not_cite": [],
+      "notes": "Focal claim: the core hours during which an employee must be contactable."
+    },
+    {
+      "question_id": "TUNE-03-Q3",
+      "text": "Am I expected to be contactable at 09:45?",
+      "category": "conflict",
+      "group_id": "TUNE-03",
+      "split": "dev",
+      "answerability": "answerable",
+      "expected_behaviour": "surface_both_and_escalate",
+      "risk_level": "medium",
+      "family_id": "TUNE-03",
+      "gap_topic": null,
+      "paraphrase_of": "TUNE-03-Q1",
+      "gold_answer": "The documents disagree and both are current. HR-04 gives core hours of 09:30 to 16:00 for remote working; HR-06 gives 10:00 to 16:30 during training. Neither supersedes the other.",
+      "required_claims": [
+        "HR-04 gives core hours of 09:30 to 16:00",
+        "HR-06 gives 10:00 to 16:30",
+        "the two documents disagree and neither supersedes the other"
+      ],
+      "forbidden_claims": [
+        "core hours are 09:30 to 16:00 and that is the answer"
+      ],
+      "acceptable_variants": [
+        "conflict",
+        "contradiction",
+        "escalate"
+      ],
+      "expected_documents": [
+        "HR-04",
+        "HR-06"
+      ],
+      "expected_chunks": [
+        "HR-04#003",
+        "HR-06#002"
+      ],
+      "must_not_cite": [],
+      "notes": "Focal claim: the core hours during which an employee must be contactable."
+    },
+    {
+      "question_id": "TUNE-04-Q1",
+      "text": "Can I use washing-up liquid when washing by hand?",
+      "category": "conflict",
+      "group_id": "TUNE-04",
+      "split": "dev",
+      "answerability": "answerable",
+      "expected_behaviour": "answer_without_flagging_conflict",
+      "risk_level": "low",
+      "family_id": "TUNE-04",
+      "gap_topic": null,
+      "paraphrase_of": null,
+      "gold_answer": "They are not in conflict: PRD-01 is about knives and PRD-02 about cast iron. Knives are washed by hand in warm soapy water and dried immediately. Cast iron is washed by hand with hot water and a stiff brush, and a little washing-up liquid is fine on a well-seasoned pan.",
+      "required_claims": [
+        "PRD-01 covers knives and PRD-02 covers cast iron",
+        "the advice differs because the products differ"
+      ],
+      "forbidden_claims": [
+        "the two guides contradict each other"
+      ],
+      "acceptable_variants": [
+        "different products",
+        "not the same item"
+      ],
+      "expected_documents": [
+        "PRD-01",
+        "PRD-02"
+      ],
+      "expected_chunks": [
+        "PRD-01#001",
+        "PRD-02#002"
+      ],
+      "must_not_cite": [],
+      "notes": "Focal claim: whether washing-up liquid may be used when washing by hand."
+    },
+    {
+      "question_id": "TUNE-04-Q2",
+      "text": "Is detergent safe on my cookware?",
+      "category": "conflict",
+      "group_id": "TUNE-04",
+      "split": "dev",
+      "answerability": "answerable",
+      "expected_behaviour": "answer_without_flagging_conflict",
+      "risk_level": "low",
+      "family_id": "TUNE-04",
+      "gap_topic": null,
+      "paraphrase_of": "TUNE-04-Q1",
+      "gold_answer": "They are not in conflict: PRD-01 is about knives and PRD-02 about cast iron. Knives are washed by hand in warm soapy water and dried immediately. Cast iron is washed by hand with hot water and a stiff brush, and a little washing-up liquid is fine on a well-seasoned pan.",
+      "required_claims": [
+        "PRD-01 covers knives and PRD-02 covers cast iron",
+        "the advice differs because the products differ"
+      ],
+      "forbidden_claims": [
+        "the two guides contradict each other"
+      ],
+      "acceptable_variants": [
+        "different products",
+        "not the same item"
+      ],
+      "expected_documents": [
+        "PRD-01",
+        "PRD-02"
+      ],
+      "expected_chunks": [
+        "PRD-01#001",
+        "PRD-02#002"
+      ],
+      "must_not_cite": [],
+      "notes": "Focal claim: whether washing-up liquid may be used when washing by hand."
+    },
+    {
+      "question_id": "TUNE-04-Q3",
+      "text": "Should I use soap on a pan or a knife?",
+      "category": "conflict",
+      "group_id": "TUNE-04",
+      "split": "dev",
+      "answerability": "answerable",
+      "expected_behaviour": "answer_without_flagging_conflict",
+      "risk_level": "low",
+      "family_id": "TUNE-04",
+      "gap_topic": null,
+      "paraphrase_of": "TUNE-04-Q1",
+      "gold_answer": "They are not in conflict: PRD-01 is about knives and PRD-02 about cast iron. Knives are washed by hand in warm soapy water and dried immediately. Cast iron is washed by hand with hot water and a stiff brush, and a little washing-up liquid is fine on a well-seasoned pan.",
+      "required_claims": [
+        "PRD-01 covers knives and PRD-02 covers cast iron",
+        "the advice differs because the products differ"
+      ],
+      "forbidden_claims": [
+        "the two guides contradict each other"
+      ],
+      "acceptable_variants": [
+        "different products",
+        "not the same item"
+      ],
+      "expected_documents": [
+        "PRD-01",
+        "PRD-02"
+      ],
+      "expected_chunks": [
+        "PRD-01#001",
+        "PRD-02#002"
+      ],
+      "must_not_cite": [],
+      "notes": "Focal claim: whether washing-up liquid may be used when washing by hand."
     },
     {
       "question_id": "GAP-pensions-Q1",
@@ -2020,10 +2910,10 @@
       "notes": ""
     },
     {
-      "question_id": "FACT-fire-assembly",
-      "text": "Where is the fire assembly point?",
+      "question_id": "FACT-fire-wardens",
+      "text": "How many trained fire wardens does the site have?",
       "category": "factual",
-      "group_id": "FACT-fire-assembly",
+      "group_id": "FACT-fire-wardens",
       "split": "dev",
       "answerability": "answerable",
       "expected_behaviour": "answer_directly",
@@ -2031,19 +2921,20 @@
       "family_id": null,
       "gap_topic": null,
       "paraphrase_of": null,
-      "gold_answer": "The north corner of the staff car park, beside the blue container. Use the marked pedestrian route around the outside of the building, not the goods-in bay.",
+      "gold_answer": "Six, identified by yellow high-visibility tabards kept at each fire point. Warden training is refreshed every two years.",
       "required_claims": [
-        "the north corner of the staff car park"
+        "six trained fire wardens"
       ],
       "forbidden_claims": [],
       "acceptable_variants": [
-        "beside the blue container"
+        "yellow high-visibility tabards",
+        "refreshed every two years"
       ],
       "expected_documents": [
         "OPS-07"
       ],
       "expected_chunks": [
-        "OPS-07#003"
+        "OPS-07#005"
       ],
       "must_not_cite": [],
       "notes": ""
@@ -2078,10 +2969,10 @@
       "notes": ""
     },
     {
-      "question_id": "FACT-order-picking-cutoff",
-      "text": "When is an order picked?",
+      "question_id": "FACT-goods-in-detailed-check",
+      "text": "How soon are item quantities verified after a delivery arrives?",
       "category": "factual",
-      "group_id": "FACT-order-picking-cutoff",
+      "group_id": "FACT-goods-in-detailed-check",
       "split": "dev",
       "answerability": "answerable",
       "expected_behaviour": "answer_directly",
@@ -2089,20 +2980,19 @@
       "family_id": null,
       "gap_topic": null,
       "paraphrase_of": null,
-      "gold_answer": "Orders released before 14:00 are picked the same working day. The picker scans each item against the pick list and records any shortfall immediately.",
+      "gold_answer": "Cartons are opened and item quantities verified within one working day of receipt. Discrepancies are recorded on the system and reported to Procurement the same day.",
       "required_claims": [
-        "orders released before 14:00 are picked the same working day"
+        "within one working day of receipt"
       ],
       "forbidden_claims": [],
       "acceptable_variants": [
-        "2pm",
-        "same day"
+        "one working day"
       ],
       "expected_documents": [
-        "OPS-01"
+        "OPS-04"
       ],
       "expected_chunks": [
-        "OPS-01#003"
+        "OPS-04#003"
       ],
       "must_not_cite": [],
       "notes": ""
@@ -2349,7 +3239,7 @@
       "text": "When does the annual development conversation happen?",
       "category": "factual",
       "group_id": "FACT-development-conversation",
-      "split": "test",
+      "split": "dev",
       "answerability": "answerable",
       "expected_behaviour": "answer_directly",
       "risk_level": "low",
@@ -2369,6 +3259,35 @@
       ],
       "expected_chunks": [
         "HR-06#002"
+      ],
+      "must_not_cite": [],
+      "notes": ""
+    },
+    {
+      "question_id": "FACT-written-warning-duration",
+      "text": "How long does a first written warning stay live?",
+      "category": "factual",
+      "group_id": "FACT-written-warning-duration",
+      "split": "test",
+      "answerability": "answerable",
+      "expected_behaviour": "answer_directly",
+      "risk_level": "low",
+      "family_id": null,
+      "gap_topic": null,
+      "paraphrase_of": null,
+      "gold_answer": "Six months. A final written warning stays live for 12 months.",
+      "required_claims": [
+        "6 months"
+      ],
+      "forbidden_claims": [],
+      "acceptable_variants": [
+        "six months"
+      ],
+      "expected_documents": [
+        "HR-05"
+      ],
+      "expected_chunks": [
+        "HR-05#002"
       ],
       "must_not_cite": [],
       "notes": ""
@@ -2439,10 +3358,10 @@
       "notes": ""
     },
     {
-      "question_id": "SYN-visitor-evacuation",
-      "text": "A visitor is on site when the fire alarm sounds. What happens to them?",
+      "question_id": "SYN-short-delivery-dispute",
+      "text": "A supplier delivery is short and we want to dispute their invoice. What are the steps and the deadline?",
       "category": "synthesis",
-      "group_id": "SYN-visitor-evacuation",
+      "group_id": "SYN-short-delivery-dispute",
       "split": "dev",
       "answerability": "answerable",
       "expected_behaviour": "answer_directly",
@@ -2450,23 +3369,23 @@
       "family_id": null,
       "gap_topic": null,
       "paraphrase_of": null,
-      "gold_answer": "Visitors sign in at reception and are accompanied by a member of staff, who is responsible for ensuring they evacuate. Fire wardens take a roll call at the assembly point using the daily attendance list and the visitor book from reception, so the visitor is accounted for from the book.",
+      "gold_answer": "Item quantities are verified within one working day of receipt, and any discrepancy is recorded on the system and reported to Procurement the same day so a claim can be raised. A disputed invoice must be raised within 14 days; Finance logs the dispute and holds only the disputed amount, with the undisputed balance payable on the original terms.",
       "required_claims": [
-        "the member of staff who arranged the visit is responsible for ensuring they evacuate",
-        "roll call uses the visitor book from reception"
+        "discrepancies are recorded and reported to Procurement the same day",
+        "a disputed invoice must be raised within 14 days"
       ],
       "forbidden_claims": [],
       "acceptable_variants": [
-        "assembly point at the north corner of the staff car park"
+        "one working day",
+        "the undisputed balance remains payable"
       ],
       "expected_documents": [
-        "GEN-03",
-        "OPS-07"
+        "OPS-04",
+        "FIN-01"
       ],
       "expected_chunks": [
-        "GEN-03#002",
-        "OPS-07#003",
-        "OPS-07#004"
+        "OPS-04#003",
+        "FIN-01#004"
       ],
       "must_not_cite": [],
       "notes": ""

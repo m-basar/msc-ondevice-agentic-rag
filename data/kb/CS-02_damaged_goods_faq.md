@@ -22,6 +22,8 @@ The carrier's contract requires damage to be notified within three days. Reporti
 
 ## What happens next?
 
+Damage reports are acknowledged within two working days of being received.
+
 Customer services raise a damage report and offer, at the customer's choice, a replacement despatched within one working day of the report being accepted, or a refund processed under OPS-03.
 
 Damaged items are collected by the carrier or, for low-value items, the customer is asked to dispose of them. Do not return a damaged item without a Returns Authorisation number.

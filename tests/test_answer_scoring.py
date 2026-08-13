@@ -182,3 +182,44 @@ def test_the_result_declares_itself_a_lower_bound(chunk_texts):
     assert payload["is_lower_bound"] is True
     assert payload["method"] == "quantity_overlap"
     assert "manual review" in payload["note"]
+
+
+# --- document identifiers are not quantities, in either form -----------------
+
+
+def test_a_bare_document_identifier_is_not_a_quantity():
+    """Stripping only the bracketed form left the bare form intact.
+
+    "IT-04 retains annual backups for seven years [IT-04#002]" yielded the
+    quantity "04" with unit "retains", which no chunk contains, so the claim
+    scored unsupported. The same class of bug as the original citation-marker
+    one, in a second place, found in review.
+    """
+    quantities = extract_quantities(
+        "IT-04 retains annual backups for seven years [IT-04#002]."
+    )
+    assert "04" not in {value for value, _ in quantities}
+
+
+def test_stripping_identifiers_does_not_remove_real_figures():
+    """The fix must not be a blunt instrument.
+
+    An answer that names two documents and two deadlines must still yield both
+    deadlines, or the metric would read clean by discarding the evidence.
+    """
+    quantities = extract_quantities(
+        "Report within 24 hours under IT-02, not the 72 hours allowed by REG-02."
+    )
+    values = {value for value, _ in quantities}
+    assert {"24", "72"} <= values
+    assert "02" not in values
+
+
+@pytest.mark.parametrize("text", [
+    "See HR-13 for the rate.",
+    "See [HR-13] for the rate.",
+    "See HR-13#001 for the rate.",
+    "See [HR-13#001] for the rate.",
+])
+def test_every_identifier_form_is_stripped(text):
+    assert extract_quantities(text) == ()

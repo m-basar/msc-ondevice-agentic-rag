@@ -82,7 +82,7 @@ CONFLICTS: dict[str, dict] = {
         "questions": [
             "When does Statutory Sick Pay start being paid?",
             "From which day of a sickness absence is sick pay payable?",
-            "I went off sick on Monday. Is Monday itself paid?",
+            "I went off sick on Monday, a normal working day for me. Is Monday itself paid?",
         ],
     },
     "CONF-03": {
@@ -136,7 +136,7 @@ CONFLICTS: dict[str, dict] = {
         ),
         "questions": [
             "How quickly must a stage 1 complaint be resolved?",
-            "What is the deadline for resolving a complaint at first contact?",
+            "What is the deadline for resolving a complaint at stage 1?",
             "A customer complained on Monday morning. By when must the advisor have resolved it?",
         ],
     },
@@ -274,7 +274,7 @@ CONFLICTS: dict[str, dict] = {
         ),
         "questions": [
             "Does a visitor need safety footwear to enter the warehouse?",
-            "What protective equipment must a visitor wear in the warehouse?",
+            "Does a visitor need to wear safety boots for a short escorted visit?",
             "A customer wants a ten-minute look at the racking. What do they need on their feet?",
         ],
     },
@@ -344,7 +344,7 @@ CONFLICTS: dict[str, dict] = {
         "questions": [
             "How long do I have to return an unwanted item?",
             "What is the returns window for goods I no longer want?",
-            "My order arrived three weeks ago and I want to send it back. Am I still in time?",
+            "My order arrived 29 days ago and I want to send it back. Am I still in time?",
         ],
     },
     "TUNE-02": {
@@ -478,20 +478,22 @@ FACTUAL: list[dict] = [
      "required": ["25 days of paid annual leave", "in addition to the 8 English bank holidays"],
      "variants": ["twenty-five days", "eight bank holidays"], "forbidden": [],
      "gold": "25 days of paid annual leave per leave year, in addition to the 8 English bank holidays. Part-time employees receive a pro-rata entitlement."},
-    {"split": "dev", "id": "fire-assembly", "q": "Where is the fire assembly point?",
-     "chunks": ["OPS-07#003"],
-     "required": ["the north corner of the staff car park"],
-     "variants": ["beside the blue container"], "forbidden": [],
-     "gold": "The north corner of the staff car park, beside the blue container. Use the marked pedestrian route around the outside of the building, not the goods-in bay."},
+    {"split": "dev", "id": "fire-wardens", "q": "How many trained fire wardens does the site have?",
+     "chunks": ["OPS-07#005"],
+     "required": ["six trained fire wardens"],
+     "variants": ["yellow high-visibility tabards", "refreshed every two years"], "forbidden": [],
+     "gold": "Six, identified by yellow high-visibility tabards kept at each fire point. Warden training is refreshed every two years.",
+     "note": "Replaced the assembly-point question under amendment 1.2: OPS-07#003 now carries CONF-13's disputed assembly point."},
     {"split": "dev", "id": "petty-cash-limit", "q": "What is the maximum single petty cash transaction?",
      "chunks": ["FIN-02#002"],
      "required": ["£50"], "variants": ["fifty pounds"], "forbidden": [],
      "gold": "£50. The float is £250, held in the locked cash box in the Finance office."},
-    {"split": "dev", "id": "order-picking-cutoff", "q": "When is an order picked?",
-     "chunks": ["OPS-01#003"],
-     "required": ["orders released before 14:00 are picked the same working day"],
-     "variants": ["2pm", "same day"], "forbidden": [],
-     "gold": "Orders released before 14:00 are picked the same working day. The picker scans each item against the pick list and records any shortfall immediately."},
+    {"split": "dev", "id": "goods-in-detailed-check", "q": "How soon are item quantities verified after a delivery arrives?",
+     "chunks": ["OPS-04#003"],
+     "required": ["within one working day of receipt"],
+     "variants": ["one working day"], "forbidden": [],
+     "gold": "Cartons are opened and item quantities verified within one working day of receipt. Discrepancies are recorded on the system and reported to Procurement the same day.",
+     "note": "Replaced the same-day picking question under amendment 1.2: OPS-01#003 now carries CONF-15's disputed cut-off, so a development question expecting it would tune against a chunk that is later scored."},
     {"split": "dev", "id": "knives-dishwasher", "q": "Can I put my knives in the dishwasher?",
      "chunks": ["PRD-01#001"],
      "required": ["knives are washed by hand, not in a dishwasher"],
@@ -532,11 +534,17 @@ FACTUAL: list[dict] = [
      "required": ["to the original payment method"],
      "variants": ["the card used to pay"], "forbidden": [],
      "gold": "To the original payment method. Card refunds are processed by Finance through the payment gateway and typically reach the customer three to five working days later, which is outside the company's control."},
-    {"split": "test", "id": "development-conversation", "q": "When does the annual development conversation happen?",
+    {"split": "dev", "id": "development-conversation", "q": "When does the annual development conversation happen?",
      "chunks": ["HR-06#002"],
      "required": ["in April"],
      "variants": ["April, with the line manager"], "forbidden": [],
-     "gold": "In April, with the employee's line manager, following the performance review cycle."},
+     "gold": "In April, with the employee's line manager, following the performance review cycle.",
+     "note": "Moved from test to development under amendment 1.2: HR-06#002 now also carries TUNE-03's disputed core hours, so a test question expecting that chunk would be scored on evidence the pipeline was tuned against."},
+    {"split": "test", "id": "written-warning-duration", "q": "How long does a first written warning stay live?",
+     "chunks": ["HR-05#002"],
+     "required": ["6 months"],
+     "variants": ["six months"], "forbidden": [],
+     "gold": "Six months. A final written warning stays live for 12 months."},
     {"split": "test", "id": "forklift-preuse", "q": "What has to be checked on a forklift before a shift?",
      "chunks": ["OPS-06#002"],
      "required": ["a documented pre-use check at the start of every shift"],
@@ -552,12 +560,13 @@ SYNTHESIS: list[dict] = [
      "variants": ["induction covers health and safety, fire procedures and data protection"],
      "forbidden": ["the company reimburses home broadband"],
      "gold": "A corporate induction on the first day covering company overview, health and safety, fire procedures and data protection. The company provides a laptop and headset. It does not reimburse home broadband, heating or electricity, and a second monitor for home use goes to department heads only."},
-    {"split": "dev", "id": "visitor-evacuation",
-     "q": "A visitor is on site when the fire alarm sounds. What happens to them?",
-     "chunks": ["GEN-03#002", "OPS-07#003", "OPS-07#004"], "documents": ["GEN-03", "OPS-07"],
-     "required": ["the member of staff who arranged the visit is responsible for ensuring they evacuate", "roll call uses the visitor book from reception"],
-     "variants": ["assembly point at the north corner of the staff car park"], "forbidden": [],
-     "gold": "Visitors sign in at reception and are accompanied by a member of staff, who is responsible for ensuring they evacuate. Fire wardens take a roll call at the assembly point using the daily attendance list and the visitor book from reception, so the visitor is accounted for from the book."},
+    {"split": "dev", "id": "short-delivery-dispute",
+     "q": "A supplier delivery is short and we want to dispute their invoice. What are the steps and the deadline?",
+     "chunks": ["OPS-04#003", "FIN-01#004"], "documents": ["OPS-04", "FIN-01"],
+     "required": ["discrepancies are recorded and reported to Procurement the same day", "a disputed invoice must be raised within 14 days"],
+     "variants": ["one working day", "the undisputed balance remains payable"], "forbidden": [],
+     "gold": "Item quantities are verified within one working day of receipt, and any discrepancy is recorded on the system and reported to Procurement the same day so a claim can be raised. A disputed invoice must be raised within 14 days; Finance logs the dispute and holds only the disputed amount, with the undisputed balance payable on the original terms.",
+     "note": "Replaced the visitor-evacuation question under amendment 1.2: GEN-03#002 and OPS-07#003 now carry CONF-11's and CONF-13's disputed facts."},
     {"split": "test", "id": "damaged-order-end-to-end",
      "q": "A customer's order arrived damaged and they want their money back. What happens from the moment they call?",
      "chunks": ["CS-02#001", "CS-02#003", "OPS-03#001"], "documents": ["CS-02", "OPS-03"],
@@ -587,9 +596,7 @@ def build(registry) -> QuestionSet:
 
     for family, spec in CONFLICTS.items():
         entry = registry.by_id(family)
-        behaviour = (
-            "cite_current_only" if entry.is_filter_resolvable else "surface_both_and_qualify"
-        )
+        behaviour = entry.expected_behaviour
         split = "dev" if family in tuning_ids else "test"
         for position, text in enumerate(spec["questions"], start=1):
             questions.append(Question(
@@ -686,6 +693,37 @@ def _anchored_tuning_chunks(registry, chunk_texts) -> set[str]:
     return anchored
 
 
+def check_no_reported_fact_reaches_the_development_split(question_set, registry, chunk_texts) -> None:
+    """The mirror of the check below, and it caught a real case.
+
+    A development question expecting a chunk that carries a *reported* family's
+    disputed fact means the pipeline is tuned against the very passage that
+    decides a reported result. The original check only guarded tuning leaking
+    into test, which is half the boundary.
+    """
+    anchored: set[str] = set()
+    for family in registry.families:
+        for fact in family.conflicting_facts:
+            for doc_id, anchor in fact.anchors.items():
+                for chunk_id, text in chunk_texts.items():
+                    if chunk_id.startswith(doc_id + "#") and anchor in text:
+                        anchored.add(chunk_id)
+
+    offenders = [
+        (q.question_id, c)
+        for q in question_set
+        if q.split == "dev"
+        for c in q.expected_chunks
+        if c in anchored
+    ]
+    if offenders:
+        raise QuestionSetError(
+            "These development questions expect a chunk carrying a reported family's "
+            f"disputed fact: {offenders}. Tuning against the passage that decides a "
+            "reported result is contamination in the other direction."
+        )
+
+
 def check_no_tuning_fact_reaches_the_test_split(question_set, registry, chunk_texts) -> None:
     """No test question may expect a chunk carrying a tuning family's disputed fact.
 
@@ -750,6 +788,11 @@ def check_required_claims_are_evidenced(question_set, registry, chunk_texts, kb)
             for fact in family.conflicting_facts:
                 for doc_id, anchor in fact.anchors.items():
                     anchors.setdefault(doc_id, []).append(anchor)
+            # A compatible family's reconciliation evidence counts too: showing
+            # why two documents do not conflict is exactly what its questions
+            # must be answered from.
+            for doc_id, anchor in family.reconciliation_anchors.items():
+                anchors.setdefault(doc_id, []).append(anchor)
             for chunk_id in question.expected_chunks:
                 candidates = anchors.get(chunk_id.split("#")[0], [])
                 text = chunk_texts.get(chunk_id, "")
@@ -800,6 +843,7 @@ def main() -> int:
     question_set = build(registry)
     validate_question_set(question_set, registry=registry, kb=kb)
     check_no_tuning_fact_reaches_the_test_split(question_set, registry, chunk_texts)
+    check_no_reported_fact_reaches_the_development_split(question_set, registry, chunk_texts)
     check_required_claims_are_evidenced(question_set, registry, chunk_texts, kb)
 
     missing = [
@@ -839,6 +883,272 @@ def main() -> int:
     )
     print(f"\nWritten to {path}")
     return 0
+
+
+
+# --- amendment 1.2 ----------------------------------------------------------
+# Eight families added and two rewritten. CONF-07 and CONF-09 were not
+# contradictions: GEN-04 requires the department head AND the Finance Manager,
+# which FIN-03 does not contradict, and IT-11 and IT-02 describe two review
+# layers rather than two answers. They are now negative controls, and a
+# verifier that flags them is producing a false positive.
+#
+# Merged over CONFLICTS rather than edited into it, so the diff shows exactly
+# what amendment 1.2 changed.
+
+AMENDMENT_1_2: dict[str, dict] = {
+    "CONF-07": {
+        "risk": "low",
+        "focal": "who approves an IT equipment purchase of £800",
+        "cite": ["GEN-04#002", "FIN-03#002"],
+        "not": [],
+        "required": [
+            "the department head approves it",
+            "the Finance Manager also approves it because the cost exceeds £750",
+        ],
+        "variants": ["both approvals are needed", "department head and Finance Manager"],
+        "forbidden": [
+            "the two documents contradict each other",
+            "only the department head is required",
+            "only the Finance Manager is required",
+        ],
+        "gold": (
+            "Both approvals. GEN-04 requires written approval from the department head "
+            "and, because the cost exceeds £750, from the Finance Manager. FIN-03 places "
+            "£501 to £2,500 with the department head. The requirements are cumulative, "
+            "not competing: GEN-04 is simply stricter for IT equipment."
+        ),
+        "questions": [
+            "Who approves an £800 laptop purchase?",
+            "I need to buy IT equipment costing £800. Whose sign-off do I need?",
+            "What is the approval route for an IT purchase of eight hundred pounds?",
+        ],
+    },
+    "CONF-09": {
+        "risk": "medium",
+        "focal": "how often user access rights are reviewed",
+        "cite": ["IT-11#003", "IT-02#003"],
+        "not": [],
+        "required": [
+            "department heads review access rights every six months",
+            "the Data Protection Lead reviews systems holding personal data annually",
+        ],
+        "variants": ["two reviews", "both reviews take place"],
+        "forbidden": [
+            "the two documents contradict each other",
+            "only one of the two reviews takes place",
+        ],
+        "gold": (
+            "Two separate reviews. Each department head reviews access rights every six "
+            "months under IT-11. The Data Protection Lead reviews access to systems "
+            "holding personal data annually under IT-02. Different reviewer, different "
+            "scope, different cadence; both happen."
+        ),
+        "questions": [
+            "How often are user access rights reviewed?",
+            "What is the review cycle for system access permissions?",
+            "Who checks my system access, and how often?",
+        ],
+    },
+    "CONF-12": {
+        "risk": "medium",
+        "focal": "how many days overdue an invoice must be before orders are held",
+        "cite": ["OPS-01#002", "FIN-01#003"],
+        "not": [],
+        "required": [
+            "OPS-01 holds orders at more than 45 days overdue",
+            "FIN-01 places the account on hold at 30 days overdue",
+            DISAGREE,
+        ],
+        "variants": ["conflict", "contradiction", "escalate"],
+        "forbidden": ["orders are held at 30 days and that is the answer",
+                      "orders are held at 45 days and that is the answer"],
+        "gold": (
+            "The documents disagree and both are current. OPS-01 holds trade orders when "
+            "an invoice is more than 45 days overdue; FIN-01 places the account on hold "
+            "at 30 days overdue. Neither supersedes the other, so both should be reported "
+            "and the discrepancy escalated."
+        ),
+        "questions": [
+            "How overdue does an invoice have to be before orders are held?",
+            "At what point does an unpaid invoice stop a customer ordering?",
+            "A customer has an invoice 35 days overdue. Can they still place an order?",
+        ],
+    },
+    "CONF-13": {
+        "risk": "high",
+        "focal": "where staff assemble on hearing the fire alarm",
+        "cite": ["OPS-07#003", "OPS-05#005"],
+        "not": [],
+        "required": [
+            "OPS-07 gives the north corner of the staff car park",
+            "OPS-05 sends warehouse staff to the main gate",
+            DISAGREE,
+        ],
+        "variants": ["conflict", "contradiction", "safety", "escalate"],
+        "forbidden": ["the assembly point is the staff car park and that is the answer",
+                      "the assembly point is the main gate and that is the answer"],
+        "gold": (
+            "The documents disagree and both are current, and the disagreement is a "
+            "safety one. OPS-07 gives the assembly point as the north corner of the staff "
+            "car park; OPS-05 sends warehouse staff to the main gate. Two assembly points "
+            "means a roll call cannot account for everyone. Neither supersedes the other, "
+            "so both should be surfaced and the conflict escalated urgently."
+        ),
+        "questions": [
+            "Where do I go when the fire alarm sounds?",
+            "What is the assembly point in an evacuation?",
+            "I work in the warehouse. Where do I assemble if the alarm goes off?",
+        ],
+    },
+    "CONF-14": {
+        "risk": "medium",
+        "focal": "how quickly a complaint or damage report is acknowledged",
+        "cite": ["CS-14#002", "CS-02#003"],
+        "not": [],
+        "required": [
+            "CS-14 requires acknowledgement the same working day",
+            "CS-02 allows two working days",
+            "the same working day is the safe course",
+        ],
+        "variants": ["stricter", "escalate", "discrepancy"],
+        "forbidden": ["two working days is the deadline"],
+        "gold": (
+            "Acknowledge the same working day. CS-14 requires acknowledgement on the same "
+            "working day; CS-02 allows two working days for a damage report. Acknowledging "
+            "same day satisfies both, so it is the safe course, but the discrepancy should "
+            "be raised for resolution."
+        ),
+        "questions": [
+            "How quickly must a complaint be acknowledged?",
+            "What is the deadline for acknowledging a customer complaint?",
+            "A damage report came in this morning. By when must we acknowledge it?",
+        ],
+    },
+    "CONF-15": {
+        "risk": "low",
+        "focal": "the latest time an order can be placed and still ship the same day",
+        "cite": ["OPS-01#003", "CS-11#001"],
+        "not": [],
+        "required": [
+            "OPS-01 picks only orders released before 13:00",
+            "CS-11 promises next working day on orders placed before 14:00",
+            "13:00 is the safe course",
+        ],
+        "variants": ["stricter", "escalate", "discrepancy"],
+        "forbidden": ["an order placed at 13:30 will ship the same day"],
+        "gold": (
+            "Treat 13:00 as the cut-off. OPS-01 picks only orders released before 13:00; "
+            "CS-11 offers next working day delivery on orders placed and paid before "
+            "14:00. An order taken at 13:30 under CS-11 will not be picked that day under "
+            "OPS-01, so 13:00 is the safe answer and the discrepancy should be raised."
+        ),
+        "questions": [
+            "What is the cut-off for an order to be picked the same day?",
+            "How late can an order be placed and still go out today?",
+            "A customer wants to order at 13:30 for next-day delivery. Will it make it?",
+        ],
+    },
+    "CONF-16": {
+        "risk": "high",
+        "focal": "how quickly a suspected personal data breach is reported",
+        "cite": ["IT-02#003", "REG-02#003"],
+        "not": [],
+        "required": [
+            "IT-02 requires reporting within 24 hours of discovery",
+            "REG-02 allows 72 hours",
+            "24 hours is the safe course",
+        ],
+        "variants": ["stricter", "escalate", "discrepancy"],
+        "forbidden": ["the deadline is 72 hours"],
+        "gold": (
+            "Report within 24 hours. IT-02 requires a suspected personal data breach to "
+            "be reported to the Data Protection Lead within 24 hours of discovery; REG-02 "
+            "allows 72 hours. Reporting within 24 hours satisfies both, so it is the safe "
+            "course, and the discrepancy should be escalated given the regulatory exposure."
+        ),
+        "questions": [
+            "How quickly must a suspected data breach be reported?",
+            "What is the deadline for telling the Data Protection Lead about a breach?",
+            "I think personal data was sent to the wrong person. When do I have to report it?",
+        ],
+    },
+    "CONF-17": {
+        "risk": "low",
+        "focal": "who approves a £30 operational purchase",
+        "cite": ["FIN-02#001", "FIN-02#004", "FIN-03#002"],
+        "not": [],
+        "required": [
+            "petty cash above £25 is approved by the Finance Manager under FIN-02",
+            "FIN-02 states it is not an alternative to the procurement process in FIN-03",
+        ],
+        "variants": ["separate routes", "different processes"],
+        "forbidden": [
+            "the two documents contradict each other",
+            "petty cash may be used instead of a purchase order",
+        ],
+        "gold": (
+            "It depends which route is used, and the documents say so themselves. Petty "
+            "cash above £25 requires Finance Manager approval before purchase under "
+            "FIN-02. FIN-03's £500 line-manager band covers procurement. FIN-02 states "
+            "explicitly that petty cash is not an alternative to the procurement process "
+            "in FIN-03, so these are two routes, not two answers."
+        ),
+        "questions": [
+            "Who approves a £30 purchase?",
+            "I need to buy something small for £30. Whose approval do I need?",
+            "Does a £30 purchase need a line manager or the Finance Manager?",
+        ],
+    },
+    "TUNE-03": {
+        "risk": "medium",
+        "focal": "the core hours during which an employee must be contactable",
+        "cite": ["HR-04#003", "HR-06#002"],
+        "not": [],
+        "required": [
+            "HR-04 gives core hours of 09:30 to 16:00",
+            "HR-06 gives 10:00 to 16:30",
+            DISAGREE,
+        ],
+        "variants": ["conflict", "contradiction", "escalate"],
+        "forbidden": ["core hours are 09:30 to 16:00 and that is the answer"],
+        "gold": (
+            "The documents disagree and both are current. HR-04 gives core hours of 09:30 "
+            "to 16:00 for remote working; HR-06 gives 10:00 to 16:30 during training. "
+            "Neither supersedes the other."
+        ),
+        "questions": [
+            "What are the core hours I have to be contactable?",
+            "Between what times do I need to be available?",
+            "Am I expected to be contactable at 09:45?",
+        ],
+    },
+    "TUNE-04": {
+        "risk": "low",
+        "focal": "whether washing-up liquid may be used when washing by hand",
+        "cite": ["PRD-01#001", "PRD-02#002"],
+        "not": [],
+        "required": [
+            "PRD-01 covers knives and PRD-02 covers cast iron",
+            "the advice differs because the products differ",
+        ],
+        "variants": ["different products", "not the same item"],
+        "forbidden": ["the two guides contradict each other"],
+        "gold": (
+            "They are not in conflict: PRD-01 is about knives and PRD-02 about cast iron. "
+            "Knives are washed by hand in warm soapy water and dried immediately. Cast "
+            "iron is washed by hand with hot water and a stiff brush, and a little "
+            "washing-up liquid is fine on a well-seasoned pan."
+        ),
+        "questions": [
+            "Can I use washing-up liquid when washing by hand?",
+            "Is detergent safe on my cookware?",
+            "Should I use soap on a pan or a knife?",
+        ],
+    },
+}
+
+CONFLICTS.update(AMENDMENT_1_2)
 
 
 if __name__ == "__main__":

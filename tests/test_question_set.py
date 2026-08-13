@@ -43,7 +43,7 @@ def conflict_question(qid: str, family: str, split: str, **overrides) -> Questio
         group_id=family,
         split=split,
         answerability="answerable",
-        expected_behaviour="surface_both_and_qualify",
+        expected_behaviour="surface_both_and_escalate",
         risk_level="medium",
         family_id=family,
         gold_answer="Both documents are live and they disagree.",
@@ -178,7 +178,7 @@ def test_expected_behaviour_must_match_the_conflict_type(registry):
     question_set = QuestionSet((
         conflict_question(
             "Q1", supersession.family_id, "test",
-            expected_behaviour="surface_both_and_qualify",
+            expected_behaviour="surface_both_and_escalate",
         ),
     ))
     with pytest.raises(QuestionSetError, match="cite_current_only"):
@@ -336,11 +336,11 @@ def test_a_tuning_family_in_the_development_split_is_accepted(registry):
 
     question_set = QuestionSet(
         tuple(
-            conflict_question(f"D{i}", f.family_id, "dev", expected_behaviour=behaviour(f))
+            conflict_question(f"D{i}", f.family_id, "dev", expected_behaviour=f.expected_behaviour)
             for i, f in enumerate(registry.tuning_families)
         )
         + tuple(
-            conflict_question(f"T{i}", f.family_id, "test", expected_behaviour=behaviour(f))
+            conflict_question(f"T{i}", f.family_id, "test", expected_behaviour=f.expected_behaviour)
             for i, f in enumerate(registry.families)
         )
     )
@@ -349,9 +349,9 @@ def test_a_tuning_family_in_the_development_split_is_accepted(registry):
 
 def test_tuning_families_are_not_counted_as_reported(registry):
     """A reader must not be able to mistake eleven families for the sample size."""
-    assert len(registry.families) == 9
-    assert len(registry.tuning_families) == 4
-    assert len(registry.all_families) == 13
+    assert len(registry.families) == 15
+    assert len(registry.tuning_families) == 6
+    assert len(registry.all_families) == 21
     assert {f.family_id for f in registry.families}.isdisjoint(
         {f.family_id for f in registry.tuning_families}
     )
@@ -415,7 +415,7 @@ def test_the_conflict_families_are_the_largest_category(real_question_set):
     change to the study, not a tidy-up."""
     summary = real_question_set.summary()
     assert summary["by_category"]["conflict"] >= summary["by_category"]["factual"]
-    assert summary["family_group_count"] == 13
+    assert summary["family_group_count"] == 21
 
 
 def test_the_test_split_covers_every_reported_family(real_question_set, registry):

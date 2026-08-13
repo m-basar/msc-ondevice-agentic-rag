@@ -38,3 +38,7 @@ Where the company funds a qualification costing more than £1,000, the employee 
 ## Study leave
 
 Up to five days of paid study leave per year may be granted for company-funded qualifications, at the line manager's discretion.
+
+## Availability during training
+
+Employees attending training remain contactable during core hours of 10:00 to 16:30 unless the course makes that impossible.

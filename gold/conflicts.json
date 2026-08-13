@@ -243,7 +243,7 @@
     {
       "id": "CONF-05",
       "name": "Deadline for reporting lost or stolen equipment",
-      "type": "current_current",
+      "type": "stricter_looser",
       "domain": "information_security",
       "risk_level": "high",
       "documents": [
@@ -251,7 +251,7 @@
         "IT-03"
       ],
       "authoritative": null,
-      "resolution": "escalate_unresolved",
+      "resolution": "prefer_stricter_and_escalate",
       "conflicting_facts": [
         {
           "fact": "time limit for reporting a lost or stolen company device",
@@ -276,12 +276,13 @@
       "why_a_filter_cannot_solve_this": "Both documents are status: current, both are in force, both are owned by different departments, and no metadata field ranks one above the other. Resolving it requires reading the claims and noticing they are incompatible.",
       "risk_note": "The gap is not academic. A device lost at 09:00 reported at 17:00 is compliant under GEN-04 and eight hours late under IT-03, and the difference bears on the 72-hour ICO notification window.",
       "split": "tuning",
-      "note": "Stage 4 pilot question. The lost-laptop answer cited IT-03#001 for a figure in IT-03#002 and directly motivated evaluation/answer_scoring.py. Moved to tuning on 8 August 2026 under pre-registration amendment 1.1."
+      "note": "Stage 4 pilot question. The lost-laptop answer cited IT-03#001 for a figure in IT-03#002 and directly motivated evaluation/answer_scoring.py. Moved to tuning on 8 August 2026 under pre-registration amendment 1.1.",
+      "stricter": "IT-03"
     },
     {
       "id": "CONF-06",
       "name": "Backup retention against the data retention schedule",
-      "type": "current_current",
+      "type": "mutually_exclusive",
       "domain": "data_protection",
       "risk_level": "medium",
       "documents": [
@@ -316,8 +317,8 @@
     },
     {
       "id": "CONF-07",
-      "name": "Approval authority for IT equipment purchases",
-      "type": "current_current",
+      "name": "Approval authority for IT equipment purchases (negative control)",
+      "type": "compatible",
       "domain": "finance",
       "risk_level": "low",
       "documents": [
@@ -325,16 +326,16 @@
         "FIN-03"
       ],
       "authoritative": null,
-      "resolution": "escalate_unresolved",
+      "resolution": "no_conflict",
       "conflicting_facts": [
         {
           "fact": "who approves an IT equipment purchase of £800",
           "values": {
-            "GEN-04": "the Finance Manager, because the cost exceeds £750",
-            "FIN-03": "the department head, because £800 falls in the £501 to £2,500 band"
+            "GEN-04": "the department head, and additionally the Finance Manager because the cost exceeds £750",
+            "FIN-03": "the department head, under the £501 to £2,500 band"
           },
           "anchors": {
-            "GEN-04": "where the cost exceeds £750, from the Finance Manager",
+            "GEN-04": "written approval from the department head and, where the cost exceeds £750, from the Finance Manager",
             "FIN-03": "| £501 to £2,500 | Department head |"
           }
         }
@@ -344,15 +345,21 @@
         "FIN-03"
       ],
       "must_not_assert": [
-        "a single approver for an £800 IT purchase"
+        "that the two documents contradict each other",
+        "that only one of the two approvers is required"
       ],
       "why_a_filter_cannot_solve_this": "Both documents are current and neither supersedes the other. The general procurement policy and the IT-specific policy overlap without either stating precedence.",
-      "origin": "Found during review as an accidental contradiction and registered rather than harmonised. Real organisations acquire exactly these overlaps when a specific policy is written without reconciling it against the general one."
+      "origin": "Found during review as an accidental contradiction and registered rather than harmonised. Real organisations acquire exactly these overlaps when a specific policy is written without reconciling it against the general one.",
+      "reconciliation": "GEN-04 requires approval 'from the department head AND, where the cost exceeds £750, from the Finance Manager'. That is cumulative, not alternative. FIN-03 places £501 to £2,500 with the department head. Obtaining both approvals satisfies both documents; GEN-04 is simply stricter for IT equipment. There is no contradiction.",
+      "note": "Registered as a conflict until 8 August 2026. The registry recorded GEN-04's position as 'the Finance Manager, because the cost exceeds £750', dropping the 'department head and' that makes the requirement cumulative, which turned a stricter rule into a competing one. The anchor check passed because the shortened phrase is a literal substring: a substring can be truthful and still mislead once the conjunction in front of it is cut away. Reclassified as a negative control under amendment 1.2. A verifier that flags this is producing a false positive.",
+      "reconciliation_anchors": {
+        "GEN-04": "written approval from the department head and, where the cost exceeds £750, from the Finance Manager"
+      }
     },
     {
       "id": "CONF-08",
       "name": "Trade counter opening hours",
-      "type": "current_current",
+      "type": "mutually_exclusive",
       "domain": "customer_service",
       "risk_level": "low",
       "documents": [
@@ -386,8 +393,8 @@
     },
     {
       "id": "CONF-09",
-      "name": "Frequency of user access reviews",
-      "type": "current_current",
+      "name": "Frequency of user access reviews (negative control)",
+      "type": "compatible",
       "domain": "information_security",
       "risk_level": "medium",
       "documents": [
@@ -395,7 +402,7 @@
         "IT-02"
       ],
       "authoritative": null,
-      "resolution": "escalate_unresolved",
+      "resolution": "no_conflict",
       "conflicting_facts": [
         {
           "fact": "how often user access rights are reviewed",
@@ -414,17 +421,22 @@
         "IT-02"
       ],
       "must_not_assert": [
-        "a single access review frequency",
-        "a single owner of the access review"
+        "that the two documents contradict each other",
+        "that only one of the two reviews takes place"
       ],
       "why_a_filter_cannot_solve_this": "Both are current. The two documents disagree on both the interval and the owner, and the disagreement is only visible by reading the claims.",
-      "origin": "Planted. The access control policy and the data protection policy are owned by different roles, which is how this divergence arises in practice."
+      "origin": "Planted. The access control policy and the data protection policy are owned by different roles, which is how this divergence arises in practice.",
+      "reconciliation": "IT-11 requires a six-monthly review by each department head across all systems. IT-02 requires an annual review by the Data Protection Lead of systems holding personal data. Different reviewer, different scope, different cadence. Both reviews can and should happen; neither excludes the other.",
+      "note": "Registered as a conflict until 8 August 2026. Reclassified as a negative control under amendment 1.2: these are two review layers, not two answers to one question.",
+      "reconciliation_anchors": {
+        "IT-02": "Access to systems holding personal data is reviewed annually by the Data Protection Lead"
+      }
     },
     {
       "id": "TUNE-01",
       "split": "tuning",
       "name": "Returns window",
-      "type": "current_current",
+      "type": "stricter_looser",
       "domain": "customer_service",
       "risk_level": "low",
       "documents": [
@@ -432,7 +444,7 @@
         "CS-03"
       ],
       "authoritative": null,
-      "resolution": "escalate_unresolved",
+      "resolution": "prefer_stricter_and_escalate",
       "note": "Tuning only. Never appears in a reported result. Planted to give the verifier a realistic current_current conflict to be developed against, of the same shape as the reported families without duplicating any of their facts.",
       "conflicting_facts": [
         {
@@ -454,13 +466,14 @@
       "must_not_assert": [
         "that either figure is the single correct returns window",
         "that one document supersedes the other"
-      ]
+      ],
+      "stricter": "CS-03"
     },
     {
       "id": "TUNE-02",
       "split": "tuning",
       "name": "Accident record review timescale",
-      "type": "current_current",
+      "type": "stricter_looser",
       "domain": "health_and_safety",
       "risk_level": "medium",
       "documents": [
@@ -468,7 +481,7 @@
         "REG-01"
       ],
       "authoritative": null,
-      "resolution": "escalate_unresolved",
+      "resolution": "prefer_stricter_and_escalate",
       "note": "Tuning only. A general policy and a specific procedure disagreeing on a timescale, which is the commonest real shape of this failure.",
       "conflicting_facts": [
         {
@@ -490,7 +503,8 @@
       "must_not_assert": [
         "that either timescale is the operative one",
         "that the general policy overrides the specific procedure, or the reverse"
-      ]
+      ],
+      "stricter": "OPS-08"
     },
     {
       "id": "CONF-10",
@@ -565,7 +579,7 @@
       "id": "CONF-11",
       "split": "reported",
       "name": "Safety footwear for visitors in the warehouse",
-      "type": "current_current",
+      "type": "mutually_exclusive",
       "domain": "health_and_safety",
       "risk_level": "high",
       "documents": [
@@ -597,6 +611,300 @@
         "that either document supersedes the other",
         "that the fifteen-minute exemption is agreed across the corpus"
       ]
+    },
+    {
+      "id": "CONF-12",
+      "split": "reported",
+      "name": "Credit hold threshold",
+      "type": "mutually_exclusive",
+      "domain": "finance",
+      "risk_level": "medium",
+      "documents": [
+        "OPS-01",
+        "FIN-01"
+      ],
+      "authoritative": null,
+      "resolution": "escalate_unresolved",
+      "conflicting_facts": [
+        {
+          "fact": "how many days overdue an invoice must be before orders are held",
+          "values": {
+            "OPS-01": "more than 45 days overdue",
+            "FIN-01": "30 days overdue, account placed on hold"
+          },
+          "anchors": {
+            "OPS-01": "more than 45 days overdue",
+            "FIN-01": "| 30 | Formal letter, account placed on hold |"
+          }
+        }
+      ],
+      "must_cite": [
+        "OPS-01",
+        "FIN-01"
+      ],
+      "must_not_assert": [
+        "that orders are held at 30 days as settled policy",
+        "that orders are held at 45 days as settled policy"
+      ],
+      "note": "Planted 8 August 2026 under pre-registration amendment 1.2, to restore each type to a reportable size after CONF-07 and CONF-09 were found not to be contradictions."
+    },
+    {
+      "id": "CONF-13",
+      "split": "reported",
+      "name": "Fire assembly point",
+      "type": "mutually_exclusive",
+      "domain": "health_and_safety",
+      "risk_level": "high",
+      "documents": [
+        "OPS-07",
+        "OPS-05"
+      ],
+      "authoritative": null,
+      "resolution": "escalate_unresolved",
+      "conflicting_facts": [
+        {
+          "fact": "where staff assemble on hearing the fire alarm",
+          "values": {
+            "OPS-07": "the north corner of the staff car park",
+            "OPS-05": "the main gate, for warehouse staff"
+          },
+          "anchors": {
+            "OPS-07": "The assembly point is the north corner of the staff car park",
+            "OPS-05": "assemble at the main gate"
+          }
+        }
+      ],
+      "must_cite": [
+        "OPS-07",
+        "OPS-05"
+      ],
+      "must_not_assert": [
+        "that there is a single agreed assembly point",
+        "that either location is the operative one"
+      ],
+      "note": "Planted 8 August 2026 under pre-registration amendment 1.2, to restore each type to a reportable size after CONF-07 and CONF-09 were found not to be contradictions. OPS-05 also appears in CONF-11, on a different fact in a different chunk; a document may be involved in more than one disagreement, which is realistic."
+    },
+    {
+      "id": "CONF-14",
+      "split": "reported",
+      "name": "Complaint acknowledgement deadline",
+      "type": "stricter_looser",
+      "domain": "customer_service",
+      "risk_level": "medium",
+      "documents": [
+        "CS-14",
+        "CS-02"
+      ],
+      "authoritative": null,
+      "resolution": "prefer_stricter_and_escalate",
+      "conflicting_facts": [
+        {
+          "fact": "how quickly a customer complaint or damage report is acknowledged",
+          "values": {
+            "CS-14": "the same working day",
+            "CS-02": "within two working days"
+          },
+          "anchors": {
+            "CS-14": "Acknowledge same working day",
+            "CS-02": "acknowledged within two working days"
+          }
+        }
+      ],
+      "must_cite": [
+        "CS-14",
+        "CS-02"
+      ],
+      "must_not_assert": [
+        "that two working days is sufficient in every case"
+      ],
+      "stricter": "CS-14",
+      "note": "Planted 8 August 2026 under pre-registration amendment 1.2, to restore each type to a reportable size after CONF-07 and CONF-09 were found not to be contradictions."
+    },
+    {
+      "id": "CONF-15",
+      "split": "reported",
+      "name": "Same-day picking cut-off",
+      "type": "stricter_looser",
+      "domain": "operations",
+      "risk_level": "low",
+      "documents": [
+        "OPS-01",
+        "CS-11"
+      ],
+      "authoritative": null,
+      "resolution": "prefer_stricter_and_escalate",
+      "conflicting_facts": [
+        {
+          "fact": "the latest time an order can be placed and still ship the same day",
+          "values": {
+            "OPS-01": "released before 13:00",
+            "CS-11": "placed and paid before 14:00"
+          },
+          "anchors": {
+            "OPS-01": "Orders released before 13:00 are picked the same working day",
+            "CS-11": "orders placed and paid before 14:00"
+          }
+        }
+      ],
+      "must_cite": [
+        "OPS-01",
+        "CS-11"
+      ],
+      "must_not_assert": [
+        "that an order placed at 13:30 will ship the same day"
+      ],
+      "stricter": "OPS-01",
+      "note": "Planted 8 August 2026 under pre-registration amendment 1.2, to restore each type to a reportable size after CONF-07 and CONF-09 were found not to be contradictions."
+    },
+    {
+      "id": "CONF-16",
+      "split": "reported",
+      "name": "Personal data breach reporting deadline",
+      "type": "stricter_looser",
+      "domain": "data_protection",
+      "risk_level": "high",
+      "documents": [
+        "IT-02",
+        "REG-02"
+      ],
+      "authoritative": null,
+      "resolution": "prefer_stricter_and_escalate",
+      "conflicting_facts": [
+        {
+          "fact": "how quickly a suspected personal data breach is reported to the Data Protection Lead",
+          "values": {
+            "IT-02": "within 24 hours of discovery",
+            "REG-02": "within 72 hours"
+          },
+          "anchors": {
+            "IT-02": "within 24 hours of discovery",
+            "REG-02": "within 72 hours"
+          }
+        }
+      ],
+      "must_cite": [
+        "IT-02",
+        "REG-02"
+      ],
+      "must_not_assert": [
+        "that 72 hours is the operative deadline"
+      ],
+      "stricter": "IT-02",
+      "note": "Planted 8 August 2026 under pre-registration amendment 1.2, to restore each type to a reportable size after CONF-07 and CONF-09 were found not to be contradictions."
+    },
+    {
+      "id": "CONF-17",
+      "split": "reported",
+      "name": "Petty cash against procurement approval (negative control)",
+      "type": "compatible",
+      "domain": "finance",
+      "risk_level": "low",
+      "documents": [
+        "FIN-02",
+        "FIN-03"
+      ],
+      "authoritative": null,
+      "resolution": "no_conflict",
+      "conflicting_facts": [
+        {
+          "fact": "who approves a £30 operational purchase",
+          "values": {
+            "FIN-02": "the Finance Manager, for petty cash above £25",
+            "FIN-03": "the line manager, for procurement up to £500"
+          },
+          "anchors": {
+            "FIN-02": "Obtain approval from the Finance Manager where the amount exceeds £25",
+            "FIN-03": "| Up to £500 | Line manager |"
+          }
+        }
+      ],
+      "must_cite": [
+        "FIN-02",
+        "FIN-03"
+      ],
+      "must_not_assert": [
+        "that the two documents contradict each other",
+        "that petty cash may be used in place of a purchase order"
+      ],
+      "reconciliation": "FIN-02 states in its own scope section that petty cash 'is not an alternative to the procurement process in FIN-03'. They are two separate routes for two separate kinds of purchase, not two answers to one question. The reconciliation is discoverable in the corpus, which is what makes this a fair negative control rather than a trick.",
+      "note": "Planted 8 August 2026 under pre-registration amendment 1.2, to restore each type to a reportable size after CONF-07 and CONF-09 were found not to be contradictions. Requires no corpus edit: the apparent conflict and its reconciliation were already present.",
+      "reconciliation_anchors": {
+        "FIN-02": "It is not an alternative to the procurement process in FIN-03"
+      }
+    },
+    {
+      "id": "TUNE-03",
+      "split": "tuning",
+      "name": "Core contactable hours",
+      "type": "mutually_exclusive",
+      "domain": "hr",
+      "risk_level": "medium",
+      "documents": [
+        "HR-04",
+        "HR-06"
+      ],
+      "authoritative": null,
+      "resolution": "escalate_unresolved",
+      "conflicting_facts": [
+        {
+          "fact": "the core hours during which an employee must be contactable",
+          "values": {
+            "HR-04": "09:30 to 16:00",
+            "HR-06": "10:00 to 16:30"
+          },
+          "anchors": {
+            "HR-04": "core hours of 09:30 to 16:00",
+            "HR-06": "core hours of 10:00 to 16:30"
+          }
+        }
+      ],
+      "must_cite": [
+        "HR-04",
+        "HR-06"
+      ],
+      "must_not_assert": [
+        "that either set of core hours is the operative one"
+      ],
+      "note": "Tuning only. Gives development a mutually_exclusive family, which it previously lacked."
+    },
+    {
+      "id": "TUNE-04",
+      "split": "tuning",
+      "name": "Hand-washing advice across product guides (negative control)",
+      "type": "compatible",
+      "domain": "customer_service",
+      "risk_level": "low",
+      "documents": [
+        "PRD-01",
+        "PRD-02"
+      ],
+      "authoritative": null,
+      "resolution": "no_conflict",
+      "conflicting_facts": [
+        {
+          "fact": "whether detergent may be used when washing by hand",
+          "values": {
+            "PRD-01": "warm soapy water, for knives",
+            "PRD-02": "hot water and a stiff brush, a little washing-up liquid on a well-seasoned pan"
+          },
+          "anchors": {
+            "PRD-01": "Wash knives by hand in warm soapy water",
+            "PRD-02": "Wash by hand with hot water and a stiff brush"
+          }
+        }
+      ],
+      "must_cite": [
+        "PRD-01",
+        "PRD-02"
+      ],
+      "must_not_assert": [
+        "that the two guides contradict each other"
+      ],
+      "reconciliation": "PRD-01 covers knives and PRD-02 covers cast iron. Different products, different care. The surface similarity of the two washing instructions is what makes this a useful negative control: retrieval will return both, and only reading the scope distinguishes them.",
+      "note": "Tuning only. Gives development a compatible negative control, which it previously lacked. Requires no corpus edit.",
+      "reconciliation_anchors": {
+        "PRD-02": "Enamelled pans are not seasoned"
+      }
     }
   ],
   "deliberate_gaps": {

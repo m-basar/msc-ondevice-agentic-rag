@@ -33,6 +33,10 @@ Personal data is kept only as long as necessary for the purpose it was collected
 | Security incident log | 6 years | After closure |
 | Job applicant right to work checks | 2 years | After employment ends |
 
+## Reporting a suspected breach
+
+Suspected breaches of this schedule, including data retained past its period or disposed of early, are reported to the Data Protection Lead within 72 hours.
+
 ## Disposal
 
 At the end of the retention period, electronic records are deleted, including from backups at the next backup cycle rollover, and paper records are cross-cut shredded. Disposal of confidential waste is carried out under a certificate of destruction.

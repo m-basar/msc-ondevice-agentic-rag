@@ -108,6 +108,26 @@ class RunWriter:
         self.registry = registry
         self.arm = arm
         self.split = split
+
+        # A development run may be exploratory. A run on the test split produces
+        # a reported number, and a reported number whose provenance is unknown
+        # cannot be defended. Optional provenance meant the difference was left
+        # to whoever remembered.
+        if split == "test":
+            missing = [
+                name for name, value in (
+                    ("kb", kb), ("index", index),
+                    ("question_set", question_set), ("registry", registry),
+                )
+                if value is None
+            ]
+            if missing:
+                raise ValueError(
+                    f"A run on the test split must record its provenance; missing "
+                    f"{missing}. Without these the manifest cannot show which corpus, "
+                    "chunk set, questions or gold data produced the result, and the "
+                    "run is not reportable."
+                )
         self.started = datetime.now(timezone.utc)
 
         stamp = self.started.strftime("%Y%m%d_%H%M%S")
@@ -147,13 +167,22 @@ class RunWriter:
                 # not the question set or the rubric cannot be re-scored, and
                 # cannot be shown to have used the gold data it claims.
                 "question_set_sha256": (
-                    sha256_of_text(
-                        json.dumps(
-                            [q.to_dict() for q in self.question_set], sort_keys=True
+                    sha256_of(self.question_set.source)
+                    if getattr(self.question_set, "source", None)
+                    else (
+                        sha256_of_text(
+                            json.dumps(
+                                {
+                                    "metadata": self.question_set.metadata,
+                                    "questions": [q.to_dict() for q in self.question_set],
+                                },
+                                sort_keys=True,
+                                default=str,
+                            )
                         )
+                        if self.question_set is not None
+                        else None
                     )
-                    if self.question_set is not None
-                    else None
                 ),
                 "question_set_metadata": (
                     dict(self.question_set.metadata)
@@ -294,6 +323,7 @@ def write_review_sheet(
     output: Path | str,
     *,
     seed: int = 42,
+    question_set: Any = None,
 ) -> dict[str, str]:
     """Write a blinded file for manual scoring, and return the key.
 
@@ -317,6 +347,22 @@ def write_review_sheet(
     scored automatically from the full record, where the evidence is still
     stored verbatim.
     """
+    def rubric_for(question_id: str) -> dict[str, Any]:
+        if question_set is None:
+            return {}
+        try:
+            question = question_set.by_id(question_id)
+        except Exception:
+            return {}
+        from .question_set import SCORING_RUBRICS
+
+        return {
+            "required_claims": list(question.required_claims),
+            "forbidden_claims": list(question.forbidden_claims),
+            "acceptable_variants": list(question.acceptable_variants),
+            "scoring_criteria": SCORING_RUBRICS.get(question.expected_behaviour, {}),
+        }
+
     pooled: list[dict[str, Any]] = []
     arms: list[str] = []
     for directory in runs:
@@ -346,6 +392,11 @@ def write_review_sheet(
                 "question": record["question"],
                 "system": key[record["arm"]],
                 "answer": record["answer"],
+                # The reviewer cannot score an answer without knowing what a
+                # correct one asserts. These come from the question set, not
+                # from the run, so they are identical across arms and carry no
+                # signal about which system produced the answer.
+                **rubric_for(record["question_id"]),
                 # Deliberately omitted: arm, model, prompt, timings, the
                 # evidence block, and every automatic metric. A reviewer who can
                 # see the arm, how fast it was, or whether the evidence carried
