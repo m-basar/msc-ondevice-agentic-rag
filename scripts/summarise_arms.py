@@ -47,7 +47,10 @@ def load_runs(config, split: str, mock: bool) -> dict[str, list[dict]]:
     if not index_path.exists():
         raise SystemExit(f"No run index at {index_path}. Run scripts/run_arms.py first.")
     directories = json.loads(index_path.read_text(encoding="utf-8"))
-    return {arm: read_run(path)[1] for arm, path in sorted(directories.items())}
+    return {
+        arm: read_run(path if Path(path).is_absolute() else ROOT / path)[1]
+        for arm, path in sorted(directories.items())
+    }
 
 
 def subtype_of(record, registry) -> str:
@@ -126,15 +129,20 @@ def main() -> int:
     subtypes = defaultdict(lambda: defaultdict(list))
     for arm, records in runs.items():
         for record in records:
-            if not record.get("family_id"):
+            if not record.get("family_id") or "verification" not in record:
                 continue
-            detected = record.get("verification", {}).get("conflict_detected", False)
-            subtypes[subtype_of(record, registry)][arm].append(detected)
+            subtypes[subtype_of(record, registry)][arm].append(
+                record["verification"]["conflict_detected"]
+            )
     for subtype, per_arm in sorted(subtypes.items()):
         row = f"  {subtype:<24}"
         for arm in runs:
-            values = per_arm.get(arm, [])
-            row += f"{(sum(values) / len(values) if values else 0):>10.2f}"
+            values = per_arm.get(arm)
+            # Arms without a verification layer do not produce a detection at
+            # all. Showing 0.00 read as "detected nothing", which is a claim
+            # about their behaviour rather than the absence of the measurement.
+            # Their conflict handling comes from blinded manual scoring.
+            row += f"{'      N/A' if not values else f'{sum(values) / len(values):>10.2f}'}"
         print(row)
     print()
 
@@ -152,7 +160,11 @@ def main() -> int:
         b = sum(r["wall_seconds"] for r in baseline) / len(baseline)
         d = sum(r["wall_seconds"] for r in runs["D"]) / len(runs["D"])
         if b:
-            print(f"\n  D/B ratio {d / b:.2f}   (H5 predicts 1.5 to 2.5 on the Pi)")
+            import platform
+            on_pi = platform.machine().lower().startswith("aarch")
+            note = ("H5 predicts 1.5 to 2.5" if on_pi else
+                    "H5 is a Pi-only prediction; this is a laptop figure")
+            print(f"\n  D/B ratio {d / b:.2f}   ({note})")
     return 0
 
 

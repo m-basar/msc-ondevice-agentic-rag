@@ -199,6 +199,7 @@ class Verification:
             "validation_failures": list(self.validation_failures),
             "invented_ids": list(self.invented_ids),
             "parse_failed": self.parse_failed,
+            "raw": self.raw,
         }
 
 

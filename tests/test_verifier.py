@@ -334,7 +334,7 @@ def test_verification_runs_and_records_its_own_cost(retriever, config):
     client = MockClient(config, responses={"EVIDENCE": f"Leave is 25 days [{cited}]."})
     answer = Generator(client, config).answer("How much leave?", retrieval)
 
-    verifier_client = MockClient(config, responses={"policy auditor": json.dumps({
+    verifier_client = MockClient(config, responses={"You audit answers": json.dumps({
         "claims": [{"claim": "Leave is 25 days", "verdict": "SUPPORTED",
                     "supporting": [cited]}],
         "relationship": "no_relationship", "escalate": False,
@@ -365,7 +365,7 @@ def test_a_contradiction_is_carried_through_to_the_record(retriever, config):
     client = MockClient(config, responses={"EVIDENCE": "The rate is 40 pence."})
     answer = Generator(client, config).answer("What is the mileage rate?", retrieval)
 
-    verifier_client = MockClient(config, responses={"policy auditor": json.dumps({
+    verifier_client = MockClient(config, responses={"You audit answers": json.dumps({
         "claims": [{"claim": "The rate is 40 pence", "verdict": "CONTRADICTED",
                     "contradicting": [ids[0]]}],
         "relationship": "supersession", "conflicting_chunks": ids[:2],
@@ -398,7 +398,7 @@ def test_arm_d_is_scored_on_the_revised_answer_not_the_draft(retriever, config):
     answer = Generator(client, config).answer("What is the mileage rate?", retrieval)
 
     corrected = f"The current rate is 55 pence per mile [{pair[1]}]."
-    verifier_client = MockClient(config, responses={"policy auditor": json.dumps({
+    verifier_client = MockClient(config, responses={"You audit answers": json.dumps({
         "claims": [{"claim": "The rate is 40 pence", "verdict": "CONTRADICTED",
                     "contradicting": [pair[0]]}],
         "relationship": "supersession", "conflicting_chunks": pair,
@@ -417,7 +417,7 @@ def test_a_parse_failure_degrades_to_the_draft_not_to_silence(retriever, config)
     retrieval = retriever.retrieve("annual leave", min_similarity=0.0)
     client = MockClient(config, responses={"EVIDENCE": "Leave is 25 days."})
     answer = Generator(client, config).answer("How much leave?", retrieval)
-    verifier_client = MockClient(config, responses={"policy auditor": "I cannot do that."})
+    verifier_client = MockClient(config, responses={"You audit answers": "I cannot do that."})
     verified = Verifier(verifier_client, config).verify(answer)
 
     assert verified.verification.parse_failed
@@ -429,7 +429,8 @@ def test_the_prompt_asks_for_a_final_answer():
     from sme_assistant.verify.verifier import VERIFIER_SYSTEM
 
     assert "final_answer" in VERIFIER_SYSTEM
-    assert "correct it" in VERIFIER_SYSTEM
+    assert "rewrite it" in VERIFIER_SYSTEM
+    assert "null when the answer under review is already correct" in VERIFIER_SYSTEM
 
 
 # --- validation and the served answer must not come apart --------------------
@@ -496,7 +497,7 @@ def test_citation_metrics_describe_the_served_answer_not_the_draft(retriever, co
     assert answer.hallucinated_citations, "the draft must start out miscited"
 
     corrected = f"Leave is 25 days [{real}]."
-    verifier_client = MockClient(config, responses={"policy auditor": json.dumps({
+    verifier_client = MockClient(config, responses={"You audit answers": json.dumps({
         "claims": [{"claim": "Leave is 25 days", "verdict": "SUPPORTED",
                     "supporting": [real]}],
         "relationship": "no_relationship", "final_answer": corrected,
@@ -625,3 +626,46 @@ def test_a_correctly_spelled_response_is_untouched():
     assert not result.validation_failures
     assert result.final_answer == "Leave is 25 days [HR-01#001]."
     assert result.confidence == "medium"
+
+
+# --- prompt revision 2, after dev-pilot-01 -----------------------------------
+
+
+def test_the_relationship_is_asked_for_before_the_claims():
+    """Revision 1 put it fifth and got no_relationship 35 times in 41.
+
+    A model that spends its budget on the claim list arrives at the field the
+    whole layer exists for as an afterthought.
+    """
+    from sme_assistant.verify.verifier import VERIFIER_SYSTEM
+
+    assert VERIFIER_SYSTEM.index('"relationship"') < VERIFIER_SYSTEM.index('"claims"')
+    assert VERIFIER_SYSTEM.index("STEP 1") < VERIFIER_SYSTEM.index("STEP 3")
+
+
+def test_the_prompt_does_not_contradict_itself_about_answering():
+    """Revision 1 said "your job is NOT to answer" and then asked for an answer.
+
+    The model resolved that by rewriting answers and skipping the audit.
+    """
+    from sme_assistant.verify.verifier import VERIFIER_SYSTEM
+
+    assert "NOT to answer" not in VERIFIER_SYSTEM
+
+
+def test_the_examples_use_invented_documents_only():
+    """Examples teach the shape without leaking corpus content.
+
+    A worked example drawn from the real corpus would hand the verifier an
+    answer it is supposed to derive.
+    """
+    import re
+
+    from sme_assistant.verify.verifier import VERIFIER_SYSTEM
+    from sme_assistant.common.config import load_config
+    from sme_assistant.kb.loader import load_knowledge_base
+
+    real = {d.doc_id for d in load_knowledge_base(load_config().path("paths.kb_docs"))}
+    cited = set(re.findall(r"\b([A-Z]{2,4}-\d{2})#", VERIFIER_SYSTEM))
+    assert cited, "the examples cite no identifiers, so they teach no shape"
+    assert not (cited & real), f"the prompt cites real documents: {sorted(cited & real)}"

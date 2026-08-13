@@ -49,55 +49,85 @@ from ..retrieve.retriever import RetrievalResult
 from . import schema
 from .schema import Verification
 
-VERIFIER_SYSTEM = """You are a policy auditor. You are given a question, an \
-answer that was produced from the evidence below, and that evidence.
+# Revision 2, after dev-pilot-01. Revision 1 detected one conflict in
+# twenty-four genuine ones, and that one was a false positive on a control. Four
+# things were wrong with it:
+#
+#   * ``relationship`` came fifth, after the claim list, so a model that spent
+#     its budget on claims arrived at the field it existed for as an
+#     afterthought. It now comes first.
+#   * "Your job is NOT to answer the question" was followed by "write
+#     final_answer for the user". The model resolved the contradiction by
+#     rewriting answers and skipping the audit.
+#   * ``final_answer`` was mandatory, so correct answers were rewritten. 26 of
+#     41 were revised and citation completeness fell from 0.61 to 0.35. It is
+#     now null when the draft is right.
+#   * There were no examples. Three short ones are given, on invented documents
+#     so no corpus content leaks into the prompt.
+VERIFIER_SYSTEM = """You audit answers against evidence. Work in this order.
 
-Your job is NOT to answer the question. It is to check the answer against the \
-evidence, and to check the evidence against itself.
+STEP 1. Compare the passages with each other, before you look at the answer.
+Two passages disagree when they give different values for the same thing: a
+different deadline, threshold, time, or authority for the same obligation.
 
-Return a single JSON object and nothing else:
+STEP 2. If they disagree, decide which kind:
+  supersession            - one passage is marked as replacing the other. The
+                            replacement governs. There is a right answer.
+  mutually_exclusive      - both are in force and no single action satisfies
+                            both. Escalate. There is no safe action.
+  stricter_looser         - both are in force and one is stricter. Acting on
+                            the stricter satisfies both. Name that action.
+  contextually_compatible - they apply in different circumstances, so both
+                            hold. This is not a conflict.
+  no_relationship         - they do not speak to the same point.
+  insufficient            - you cannot tell.
+
+STEP 3. Check each claim in the answer against a named passage.
+
+STEP 4. Only if the answer is wrong or omits a disagreement, rewrite it.
+Otherwise set final_answer to null.
+
+Return one JSON object, nothing else:
 
 {
-  "claims": [
-    {"claim": "<one factual assertion from the answer>",
-     "verdict": "SUPPORTED" | "CONTRADICTED" | "INSUFFICIENT_EVIDENCE",
-     "supporting": ["<chunk id>"],
-     "contradicting": ["<chunk id>"]}
-  ],
-  "relationship": "supersession" | "mutually_exclusive" | "stricter_looser" \
-| "contextually_compatible" | "no_relationship" | "insufficient",
-  "conflicting_chunks": ["<chunk id>"],
-  "safe_action": "<what to do that satisfies every passage, or null>",
+  "relationship": "<one of the six above>",
+  "conflicting_chunks": ["<id>", "<id>"],
+  "rationale": "<why, in one sentence>",
+  "claims": [{"claim": "<assertion from the answer>",
+              "verdict": "SUPPORTED" | "CONTRADICTED" | "INSUFFICIENT_EVIDENCE",
+              "supporting": ["<id>"], "contradicting": ["<id>"]}],
+  "safe_action": "<action satisfying every passage, or null>",
   "escalate": true | false,
-  "rationale": "<one or two sentences>",
-  "final_answer": "<the corrected answer for the user, with citations>"
+  "final_answer": "<rewritten answer with [ID] citations, or null>"
 }
 
-Rules:
-1. Use only the chunk identifiers shown in the evidence. Never invent one.
-2. A claim is SUPPORTED only if a named passage states it. Sounding plausible \
-is not support.
-3. A claim is CONTRADICTED if a named passage says otherwise.
-4. Decide the relationship between the passages that bear on the question:
-   - "supersession": one passage is marked as replacing the other. The \
-replacement governs, so answer from it, do not present the withdrawn figure as \
-current, and set escalate to false. This one has a right answer.
-   - "mutually_exclusive": both are in force and no single action satisfies \
-both. Set escalate to true and safe_action to null.
-   - "stricter_looser": both are in force and one is stricter, so acting on \
-the stricter one satisfies both. Put that action in safe_action and set \
-escalate to true.
-   - "contextually_compatible": they appear to disagree but apply in different \
-circumstances, so both hold. Set escalate to false.
-   - "no_relationship": the passages do not bear on the same point.
-   - "insufficient": you cannot tell from what you were given.
-5. Do not report a conflict you cannot point at. Every conflict must name the \
-chunks in conflicting_chunks, from at least two different documents.
-6. Write final_answer for the user. If the answer under review is correct, \
-repeat it. If it is wrong, incomplete, or cites the wrong passage, correct it. \
-Where the passages disagree and cannot be reconciled, state both positions, \
-name both documents, say neither supersedes the other, and say the discrepancy \
-should be raised. Cite chunk identifiers in square brackets."""
+EXAMPLES, on made-up documents:
+
+Evidence: [AA-01#001] (SUPERSEDED, replaced by AA-11) Fee is £10.
+          [AA-11#001] Fee is £15.
+-> {"relationship": "supersession", "conflicting_chunks": ["AA-01#001",
+   "AA-11#001"], "rationale": "AA-11 replaces AA-01.", "escalate": false,
+   "safe_action": null, "final_answer": "The fee is £15 [AA-11#001]."}
+
+Evidence: [BB-01#002] Report faults within 4 hours.
+          [BB-02#003] Report faults within 24 hours.
+-> {"relationship": "stricter_looser", "conflicting_chunks": ["BB-01#002",
+   "BB-02#003"], "rationale": "Both live; 4 hours is stricter.",
+   "escalate": true, "safe_action": "Report within 4 hours, which meets both."}
+
+Evidence: [CC-01#001] Drivers wear a hard hat in the yard.
+          [CC-02#001] Office staff need no hard hat at their desk.
+-> {"relationship": "contextually_compatible", "conflicting_chunks": [],
+   "rationale": "Different places and people.", "escalate": false,
+   "final_answer": null}
+
+RULES
+1. Use only identifiers shown in the evidence. Never invent one.
+2. Every conflict needs conflicting_chunks from two different documents.
+3. Cite passages, not documents: [AA-11#001], never [AA-11].
+4. Set final_answer to null when the answer under review is already correct.
+5. For mutually_exclusive, state both positions, name both documents, say
+   neither supersedes the other, and say it should be raised."""
 
 
 def build_verification_prompt(question: str, answer: str, evidence: str) -> str:
@@ -122,6 +152,18 @@ class VerifiedAnswer:
     verification: Verification
     generation: Generation
     prompt: str
+
+    @property
+    def retrieval(self):
+        """The retrieval behind the draft.
+
+        ``RunWriter`` reaches for ``answer.retrieval`` to snapshot the evidence.
+        A ``VerifiedAnswer`` did not expose it, so every Arm D record was
+        written with an empty evidence field: the run could not be read back
+        without re-executing it, which is the failure the run writer exists to
+        prevent.
+        """
+        return self.answer.retrieval
 
     @property
     def final_answer(self) -> str:
@@ -205,7 +247,18 @@ class VerifiedAnswer:
             "revision_rejected": self.verification.revision_rejected,
             "verification": self.verification.to_dict(),
             "verification_generation": self.generation.to_dict(),
+            # The draft prompt and the verification prompt are different
+            # artefacts and both are needed. RunWriter takes ``prompt`` from the
+            # object it is given, which for Arm D was the verification prompt,
+            # so the generation prompt was overwritten and lost.
+            "draft_prompt": self.answer.prompt,
             "verification_prompt": self.prompt,
+            # What the verifier actually emitted. Neither Generation.to_dict()
+            # nor Verification.to_dict() carried it, so a failing run could be
+            # counted but not diagnosed.
+            "verification_raw": self.verification.raw,
+            "verification_options": self.generation.options
+            if hasattr(self.generation, "options") else None,
             "verification_seconds": round(self.verification_seconds, 3),
             "wall_seconds": round(self.wall_seconds, 3),
             "arm_has_verification": True,

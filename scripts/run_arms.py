@@ -82,18 +82,34 @@ def arm_definition(name: str, config) -> ArmDefinition:
 
 
 def run_arm(name, questions, *, retriever, generator, verifier, config, kb, index,
-            question_set, registry, split, tag, root=None) -> Path:
+            question_set, registry, split, tag, root=None, drafts=None) -> Path:
+    """Run one arm. ``drafts`` lets D reuse B's exact answers.
+
+    B versus D is the confirmatory contrast, and it only isolates verification
+    if the two share a draft. Regenerating independently would let sampling
+    noise in the first pass masquerade as a verification effect: D could look
+    better or worse than B for reasons that have nothing to do with the layer
+    being evaluated.
+    """
     spec = ARMS[name]
+    produced: dict[str, object] = {}
     writer = RunWriter(
         arm_definition(name, config), split=split, tag=tag, config=config,
         kb=kb, index=index, question_set=question_set, registry=registry, root=root,
     )
 
     for position, question in enumerate(questions, start=1):
-        retrieval = retriever.retrieve(question.text, mode=spec["retrieval_mode"])
-        answer = generator.answer(
-            question.text, retrieval, evidence_format=spec["evidence_format"]
-        )
+        reused = (drafts or {}).get(question.question_id)
+        if reused is not None:
+            answer = reused
+            retrieval = answer.retrieval
+        else:
+            retrieval = retriever.retrieve(question.text, mode=spec["retrieval_mode"])
+            answer = generator.answer(
+                question.text, retrieval, evidence_format=spec["evidence_format"]
+            )
+        produced[question.question_id] = answer
+
         record = answer
         if spec["verification"]:
             record = verifier.verify(answer)
@@ -113,7 +129,11 @@ def run_arm(name, questions, *, retriever, generator, verifier, config, kb, inde
         if position % 10 == 0 or position == len(questions):
             print(f"    {position}/{len(questions)}")
 
-    return writer.finish({"questions": len(questions)})
+    directory = writer.finish({
+        "questions": len(questions),
+        "drafts_reused_from": "B" if drafts else None,
+    })
+    return directory, produced
 
 
 def main() -> int:
@@ -156,22 +176,34 @@ def main() -> int:
     print(f"Retrieval  top_k={config.require('retrieval.top_k')} "
           f"min_similarity={config.require('retrieval.min_similarity')}\n")
 
-    directories = {}
-    for name in args.arms:
+    # B before D, so D can reuse B's drafts and the contrast isolates
+    # verification rather than two independent first passes.
+    ordered = sorted(args.arms, key=lambda a: (a == "D", a))
+    directories, drafts = {}, {}
+    for name in ordered:
         print(f"  Arm {name}: {ARMS[name]['description']}")
-        directories[name] = run_arm(
+        reuse = drafts.get("B") if name == "D" else None
+        if name == "D" and reuse:
+            print("    reusing Arm B drafts, so B vs D isolates verification")
+        elif name == "D":
+            print("    WARNING: Arm B was not run, so D generated its own draft "
+                  "and the B vs D contrast is not isolated")
+        directories[name], drafts[name] = run_arm(
             name, questions, retriever=retriever, generator=generator,
             verifier=verifier, config=config, kb=kb, index=index,
             question_set=question_set, registry=registry, split=args.split,
-            tag=args.tag or ("mock" if args.mock else ""),
+            tag=args.tag or ("mock" if args.mock else ""), drafts=reuse,
         )
         print(f"    -> {directories[name].name}\n")
 
     manifest = Path(config.path("paths.results")) / (
         f"latest_{args.split}{'_mock' if args.mock else ''}.json"
     )
+    # Repository-relative, so a run index written on Windows can be read on the
+    # Pi. Absolute paths made the two machines unable to share a run index.
     manifest.write_text(json.dumps(
-        {name: str(path) for name, path in directories.items()}, indent=2
+        {name: str(Path(path).relative_to(ROOT).as_posix())
+         for name, path in directories.items()}, indent=2
     ), encoding="utf-8")
     print(f"Run index written to {manifest}")
     print("\nNext: python scripts/summarise_arms.py --split " + args.split)
