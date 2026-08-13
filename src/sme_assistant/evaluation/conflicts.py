@@ -148,6 +148,17 @@ class ConflictFamily:
     # one a reader could discover is a fair test.
     reconciliation: str | None = None
     reconciliation_anchors: dict[str, str] = field(default_factory=dict)
+    # The fact that decides the type, stated rather than assumed.
+    #
+    # Four families were typed by intuition and typed wrongly, because the type
+    # was asserted at planting time and nothing forced it to be justified.
+    # ``compatible`` families were already safe: they had to carry a
+    # reconciliation the reader could check. These two fields give the other
+    # types the same discipline. Writing "wear safety footwear on every visit,
+    # which satisfies both" makes it obvious that CONF-11 was never mutually
+    # exclusive; being unable to write it is what proves one is.
+    satisfying_action: str | None = None
+    no_satisfying_action_because: str | None = None
 
     @property
     def is_filter_resolvable(self) -> bool:
@@ -221,6 +232,8 @@ class ConflictRegistry:
                 stricter=entry.get("stricter"),
                 reconciliation=entry.get("reconciliation"),
                 reconciliation_anchors=dict(entry.get("reconciliation_anchors", {})),
+                satisfying_action=entry.get("satisfying_action"),
+                no_satisfying_action_because=entry.get("no_satisfying_action_because"),
                 resolution=entry["resolution"],
                 conflicting_facts=tuple(
                     ConflictFact(
@@ -401,6 +414,28 @@ def _validate_family_shape(family: ConflictFamily) -> None:
             f"{family.family_id}: only a stricter_looser family names a stricter "
             "document"
         )
+
+    # The test that four misclassifications would have failed.
+    if family.conflict_type == "stricter_looser":
+        if not family.satisfying_action:
+            raise ConflictRegistryError(
+                f"{family.family_id}: a stricter_looser family must name the action "
+                "that satisfies both documents. If no such action can be written, "
+                "the family is mutually_exclusive."
+            )
+    elif family.conflict_type == "mutually_exclusive":
+        if not family.no_satisfying_action_because:
+            raise ConflictRegistryError(
+                f"{family.family_id}: a mutually_exclusive family must say why no "
+                "action satisfies both documents. Four families were typed this way "
+                "on intuition and were wrong; being unable to write this sentence is "
+                "the check that catches it."
+            )
+        if family.satisfying_action:
+            raise ConflictRegistryError(
+                f"{family.family_id}: mutually_exclusive but names an action that "
+                "satisfies both, which is a contradiction in terms"
+            )
 
     if family.conflict_type == "compatible":
         # A negative control with no explanation is indistinguishable from a

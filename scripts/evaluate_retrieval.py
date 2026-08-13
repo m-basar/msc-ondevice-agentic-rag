@@ -24,7 +24,8 @@ What is reported
 ``recall@k``            questions whose expected chunks appear in the top k,
                         strict (all of them) and lenient (at least one)
 ``MRR``                 mean reciprocal rank of the first expected chunk
-``conflict-pair recall`` both sides of a conflict present in the top k. A
+``conflict-pair recall`` the chunks carrying **both disputed claims** present in
+                        the top k, not merely a chunk from each document. A
                         conflict the retriever never assembles cannot be
                         detected by any verifier
 ``threshold sweep``     for each candidate ``min_similarity``, how many
@@ -57,7 +58,18 @@ K_VALUES = (1, 2, 3, 4, 6, 8, 10)
 THRESHOLDS = (0.0, 0.20, 0.25, 0.30, 0.32, 0.35, 0.40, 0.45, 0.50, 0.60)
 
 
-def evaluate(retriever, questions, registry, k_values=K_VALUES) -> dict:
+def anchor_chunks(family, chunk_texts) -> set[str]:
+    """The chunks carrying this family's disputed claims, one per document."""
+    found: set[str] = set()
+    for fact in family.conflicting_facts:
+        for doc_id, anchor in fact.anchors.items():
+            for chunk_id, text in chunk_texts.items():
+                if chunk_id.startswith(doc_id + "#") and anchor in text:
+                    found.add(chunk_id)
+    return found
+
+
+def evaluate(retriever, questions, registry, chunk_texts, k_values=K_VALUES) -> dict:
     max_k = max(k_values)
     ranked: dict[str, list] = {}
     best: dict[str, float] = {}
@@ -103,9 +115,13 @@ def evaluate(retriever, questions, registry, k_values=K_VALUES) -> dict:
             continue
         family = registry.by_id(question.family_id)
         order = ranked[question.question_id]
+        # The chunks that actually carry the disputed claims, not merely any
+        # chunk from the right documents. Checking documents let a family score
+        # 1.00 while the passages stating the disagreement never reached the
+        # model, which is the only thing a verifier could reason over.
+        wanted = anchor_chunks(family, chunk_texts)
         for k in k_values:
-            documents = {c.split("#")[0] for c in order[:k]}
-            both = set(family.documents) <= documents
+            both = wanted <= set(order[:k]) if wanted else False
             by_type[family.conflict_type][k].append(both)
             by_family[family.family_id][k].append(both)
 
@@ -193,7 +209,20 @@ def main() -> int:
     else:
         index = Index.load(index_path_for(config), kb=kb, config=config)
 
-    report = evaluate(Retriever(index, client, config), questions, registry)
+    from sme_assistant.ingest.chunker import chunk_corpus
+
+    chunk_texts = {
+        c.chunk_id: c.text
+        for c in chunk_corpus(
+            kb,
+            config.require("chunking.max_words"),
+            config.require("chunking.overlap_sentences"),
+            config.require("chunking.min_words"),
+        )
+    }
+    report = evaluate(
+        Retriever(index, client, config), questions, registry, chunk_texts
+    )
     report["split"] = args.split
     report["mock"] = args.mock
     report["generated_at"] = datetime.now(timezone.utc).isoformat()

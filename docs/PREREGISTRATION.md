@@ -794,13 +794,18 @@ retrieves the HR documents with respectable similarity because it is
 recognisably an HR question; nothing in the geometry knows that the answer is
 absent.
 
-It is direct empirical support for **H4**, obtained before the verification
-layer exists rather than afterwards as an explanation. The threshold is set to
+It is evidence that *one particular* refusal mechanism does not work. It is
+**not** support for H4, which compares a structured verdict against the
+baseline's free-text refusal, and neither has been measured. An earlier version
+claimed the stronger thing. Corrected under 1.4. The threshold is set to
 0.30, below every observed score, so it refuses nothing and stops pretending to.
 Abstention becomes the verifier's job, which is what H4 predicts it must be.
 
-**Consequence for Arm A, B and C.** Those arms now have no refusal mechanism at
-all. That is the honest baseline: a retrieval-augmented pipeline without
+**Consequence for Arm A, B and C.** Those arms lose the *similarity* refusal
+path. They retain the instruction in `BASELINE_SYSTEM`: "If the evidence does
+not contain the answer, say so plainly and cite nothing." An earlier version of
+this amendment said they had no refusal mechanism at all, which my own prompt
+contradicts. Corrected under 1.4. That is the honest baseline: a retrieval-augmented pipeline without
 verification cannot abstain, and reporting a refusal rate produced by a
 threshold that fires at random would have overstated it.
 
@@ -843,16 +848,14 @@ representative ones separates "this type is hard" from "this planting was hard".
 | TUNE-04 | `compatible` | 0.67 | **1.00** | 1.00 |
 
 The type-level 0.67 was two families at 1.00 and one at zero, not three
-middling ones. **The separation is a property of the planting, not of the
-type.** Retrieval is not the binding constraint on H2a, and Stage 5 proceeds.
+middling ones. **Superseded by amendment 1.4.** TUNE-03 and TUNE-06 were both misclassified,
+so this table compares one genuine mutual exclusion against two families that
+were not. It supports no conclusion about the type, and the sentence "Stage 5
+proceeds" is withdrawn.
 
-TUNE-03 is retained and reported as a **finding in its own right**: when a
-policy statement is buried inside a document about something else, no amount of
-verification helps, because the retriever never assembles the pair. That is a
-limit on the whole approach rather than on this implementation, and it belongs
-in the limitations chapter. It is also the honest reading of why cross-document
-contradictions survive in real organisations: the two halves rarely surface
-together, for a retriever or for a person.
+TUNE-03's 0.00 was read as evidence that a buried policy cannot be retrieved.
+Amendment 1.4 withdraws that reading: TUNE-03 was never a conflict, so retrieval
+was behaving correctly.
 
 TUNE-01 plateaus at 0.67 and does not reach 1.00 by k=10. One of its three
 paraphrases never assembles OPS-02 with CS-03. Recorded, not fixed: a family
@@ -877,5 +880,97 @@ corrected by retuning.
 | Tuning families | 6 | 8 |
 | Question set | 103 questions, 51 groups | 109 questions, 53 groups |
 | Tests | 276 | 288 |
+
+No arm has been run. Stage 5 has not begun.
+
+---
+
+# Amendment 1.4 - 13 August 2026
+
+Third independent review. Amendment 1.2 built a four-type taxonomy to stop
+families being misclassified. Within a day I misclassified four families using
+it. This amendment corrects them and, more importantly, removes the conditions
+that let it happen.
+
+**"Stage 5 proceeds" in amendment 1.3 is withdrawn.**
+
+## 1.4.1 Four families were typed by intuition and typed wrongly
+
+| Family | Was | Is | The fact that decides it |
+|---|---|---|---|
+| **CONF-11** | mutually_exclusive | `stricter_looser` | Wear safety footwear on every visit. GEN-03 grants a permission, not an obligation, so this satisfies both. |
+| **TUNE-06** | mutually_exclusive | `stricter_looser` | Use the RA number within 14 days. Inside OPS-03's 14 and OPS-02's 21. |
+| **TUNE-03** | mutually_exclusive | `compatible` | 09:30-16:00 applies while working remotely, 10:00-16:30 while in training. Different circumstances, not different answers. |
+| **CONF-12** | mutually_exclusive | unchanged, now justified | At 35 days overdue the order is taken or refused. No action does both. |
+
+Reported counts move from 4 / 5 / 3 / 3 to **4 / 4 / 4 / 3**, which is a better
+balance than the one it replaces. H2a's denominator falls to 4 and H2b's rises
+to 4.
+
+## 1.4.2 The condition that allowed it
+
+`compatible` families were already safe: they had to carry a `reconciliation`
+the reader could check against the corpus. The other types carried nothing, so
+the classification rested on my judgement and nothing tested it.
+
+Two fields now close that gap:
+
+- `satisfying_action` - **required** on every `stricter_looser` family. Name the
+  action that satisfies both documents.
+- `no_satisfying_action_because` - **required** on every `mutually_exclusive`
+  family, and forbidden alongside `satisfying_action`.
+
+Writing "wear safety footwear on every visit, which satisfies both" makes it
+obvious that CONF-11 was never mutually exclusive. Being unable to write such a
+sentence is what establishes that a family is. `_validate_family_shape` enforces
+both, so a misclassification is now a validation failure rather than something a
+reviewer finds three days later.
+
+## 1.4.3 Conflict-pair recall measured the wrong thing
+
+It compared **document identifiers**: any chunk from each document counted. A
+family could score 1.00 while the passages stating the disagreement never
+reached the model, which is the only text a verifier could reason over.
+
+It now requires the chunks carrying **both disputed claims**, located by the
+registry anchors. Every figure reported in amendment 1.3 was measured the old
+way and is superseded.
+
+## 1.4.4 Overclaims withdrawn
+
+| Claimed in 1.3 | Correction |
+|---|---|
+| "Retrieval is not the binding constraint on H2a, Stage 5 proceeds" | Withdrawn. The table compared one genuine mutual exclusion against two misclassified families. |
+| "TUNE-03 demonstrates a limitation of the whole approach" | Withdrawn. TUNE-03 was not a conflict; retrieval was behaving correctly. |
+| "Arms A, B and C now have no refusal mechanism at all" | Wrong, and contradicted by `BASELINE_SYSTEM`, which instructs exactly that. They lose the *similarity* path only. |
+| "Direct empirical support for H4" | Withdrawn. It shows one refusal mechanism fails. H4 compares a structured verdict against free-text refusal and neither has been measured. |
+
+## 1.4.5 Also corrected
+
+`TUNE-05-Q3` asked whether leave is lost in March, which is carry-over, not the
+leave-year dates it belongs to. `gold/evaluation.json` still said nine reported
+families and 53 groups as 51.
+
+## What remains defensible from 1.3
+
+`top_k: 6` stands: the k=8 gain is small and the misses are reported rather than
+tuned away. `min_similarity: 0.30` stands **as a conservative floor**, described
+as such and not as an answerability classifier.
+
+## Not addressed here
+
+`/api/embeddings` is still the sequential legacy endpoint. Index builds take 5.8
+seconds on the laptop and 36 on the Pi, so it is not a bottleneck, and it is
+recorded as known rather than fixed.
+
+## State after this amendment
+
+| | Before 1.4 | After 1.4 |
+|---|---|---|
+| Reported `mutually_exclusive` | 5, two misclassified | **4, each justified** |
+| Reported `stricter_looser` | 3 | **4** |
+| Type justification | asserted | **required and tested** |
+| Pair recall | document presence | **disputed chunks** |
+| Tests | 288 | 289 |
 
 No arm has been run. Stage 5 has not begun.

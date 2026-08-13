@@ -1179,7 +1179,7 @@ AMENDMENT_1_3: dict[str, dict] = {
         "questions": [
             "When does the leave year start and end?",
             "What are the dates of the company leave year?",
-            "If I have leave left in March, do I lose it?",
+            "Does the leave year start in January or in April?",
         ],
     },
     "TUNE-06": {

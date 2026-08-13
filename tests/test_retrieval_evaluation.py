@@ -35,7 +35,21 @@ def report():
     client = MockClient(config)
     retriever = Retriever(build_index(kb, client, config), client, config)
     questions = list(load_question_set(evaluation.path("question_set")).split("dev"))
-    return evaluate(retriever, questions, load_conflicts(evaluation.path("conflicts")))
+
+    from sme_assistant.ingest.chunker import chunk_corpus
+
+    chunk_texts = {
+        c.chunk_id: c.text
+        for c in chunk_corpus(
+            kb,
+            config.require("chunking.max_words"),
+            config.require("chunking.overlap_sentences"),
+            config.require("chunking.min_words"),
+        )
+    }
+    return evaluate(
+        retriever, questions, load_conflicts(evaluation.path("conflicts")), chunk_texts
+    )
 
 
 def test_conflict_pair_recall_is_reported_per_type(report):
@@ -84,3 +98,18 @@ def test_the_evaluation_refuses_the_test_split_from_the_command_line():
     )
     assert result.returncode != 0
     assert "development split" in result.stderr
+
+
+def test_pair_recall_counts_the_disputed_chunks_not_the_documents():
+    """A family scored 1.00 while the passages stating the disagreement never
+    reached the model, because the check looked at document identifiers."""
+    import inspect
+
+    from evaluate_retrieval import anchor_chunks, evaluate
+
+    source = inspect.getsource(evaluate)
+    assert "anchor_chunks(family" in source
+    assert 'c.split("#")[0] for c in order' not in source, (
+        "pair recall is still counting documents rather than the chunks carrying "
+        "the disputed claims"
+    )

@@ -277,7 +277,8 @@
       "risk_note": "The gap is not academic. A device lost at 09:00 reported at 17:00 is compliant under GEN-04 and eight hours late under IT-03, and the difference bears on the 72-hour ICO notification window.",
       "split": "tuning",
       "note": "Stage 4 pilot question. The lost-laptop answer cited IT-03#001 for a figure in IT-03#002 and directly motivated evaluation/answer_scoring.py. Moved to tuning on 8 August 2026 under pre-registration amendment 1.1.",
-      "stricter": "IT-03"
+      "stricter": "IT-03",
+      "satisfying_action": "Report the lost device within 1 hour. That meets IT-03 and is inside GEN-04's 24 hours."
     },
     {
       "id": "CONF-06",
@@ -313,7 +314,8 @@
         "that a seven-year backup is compatible with a 31-day CCTV retention period"
       ],
       "why_a_filter_cannot_solve_this": "Both documents are current and neither is a version of the other. The conflict is between an operational practice and a compliance requirement, which is precisely the kind of contradiction that survives in real organisations because each document is correct within its own department's frame.",
-      "risk_note": "CCTV is scheduled for deletion after 31 days, yet an annual backup would preserve it for seven years. That is a live UK GDPR storage limitation exposure."
+      "risk_note": "CCTV is scheduled for deletion after 31 days, yet an annual backup would preserve it for seven years. That is a live UK GDPR storage limitation exposure.",
+      "no_satisfying_action_because": "A record whose retention period is shorter than seven years cannot both be deleted from backups at the next rollover and be held in a seven-year annual backup. Keeping and deleting are the action."
     },
     {
       "id": "CONF-07",
@@ -389,7 +391,8 @@
         "a single set of trade counter opening hours"
       ],
       "why_a_filter_cannot_solve_this": "The internal timetable and the customer-facing FAQ are both in force and both current. Nothing in the metadata says which is authoritative for opening hours.",
-      "origin": "Planted. A purely operational disagreement with no legal or safety dimension, included so the current_current class is not composed only of higher-risk cases."
+      "origin": "Planted. A purely operational disagreement with no legal or safety dimension, included so the current_current class is not composed only of higher-risk cases.",
+      "no_satisfying_action_because": "The trade counter cannot open at 08:00 and at 08:30 on the same morning. Opening is a single event with one time."
     },
     {
       "id": "CONF-09",
@@ -467,7 +470,8 @@
         "that either figure is the single correct returns window",
         "that one document supersedes the other"
       ],
-      "stricter": "CS-03"
+      "stricter": "CS-03",
+      "satisfying_action": "Return the item within 28 days. That meets CS-03 and is inside OPS-02's 30 days."
     },
     {
       "id": "TUNE-02",
@@ -504,7 +508,8 @@
         "that either timescale is the operative one",
         "that the general policy overrides the specific procedure, or the reverse"
       ],
-      "stricter": "OPS-08"
+      "stricter": "OPS-08",
+      "satisfying_action": "Review the accident book entry within two working days. That meets OPS-08 and is inside REG-01's five."
     },
     {
       "id": "CONF-10",
@@ -579,7 +584,7 @@
       "id": "CONF-11",
       "split": "reported",
       "name": "Safety footwear for visitors in the warehouse",
-      "type": "mutually_exclusive",
+      "type": "stricter_looser",
       "domain": "health_and_safety",
       "risk_level": "high",
       "documents": [
@@ -587,8 +592,8 @@
         "OPS-05"
       ],
       "authoritative": null,
-      "resolution": "escalate_unresolved",
-      "note": "Replaces CONF-05 in the reported set. Planted 8 August 2026 under pre-registration amendment 1.1. Chosen as a high-risk family because CONF-05 was the only high-risk current_current family and removing it would have left the class entirely low and medium risk.",
+      "resolution": "prefer_stricter_and_escalate",
+      "note": "Reclassified 13 August 2026 under amendment 1.4. The type was asserted at planting time and nothing forced it to be justified, so four families were typed by intuition and typed wrongly. Every family now states the fact that decides its type and a test enforces it. CONF-11 was mutually_exclusive. GEN-03 grants a permission, not an obligation, so always wearing footwear satisfies both documents.",
       "conflicting_facts": [
         {
           "fact": "whether a visitor needs safety footwear to enter the warehouse",
@@ -610,7 +615,9 @@
         "that a visitor may enter the warehouse without safety footwear as settled policy",
         "that either document supersedes the other",
         "that the fifteen-minute exemption is agreed across the corpus"
-      ]
+      ],
+      "stricter": "OPS-05",
+      "satisfying_action": "Wear safety footwear on every warehouse visit. That satisfies OPS-05, which requires it at all times, and does not violate GEN-03, which permits going without on a short escorted visit but does not require it."
     },
     {
       "id": "CONF-12",
@@ -646,7 +653,8 @@
         "that orders are held at 30 days as settled policy",
         "that orders are held at 45 days as settled policy"
       ],
-      "note": "Planted 8 August 2026 under pre-registration amendment 1.2, to restore each type to a reportable size after CONF-07 and CONF-09 were found not to be contradictions."
+      "note": "Planted 8 August 2026 under pre-registration amendment 1.2, to restore each type to a reportable size after CONF-07 and CONF-09 were found not to be contradictions.",
+      "no_satisfying_action_because": "At 35 days overdue, FIN-01 has the account on hold and OPS-01 has not yet held orders. The order is either taken or refused; there is no action that does both."
     },
     {
       "id": "CONF-13",
@@ -682,7 +690,8 @@
         "that there is a single agreed assembly point",
         "that either location is the operative one"
       ],
-      "note": "Planted 8 August 2026 under pre-registration amendment 1.2, to restore each type to a reportable size after CONF-07 and CONF-09 were found not to be contradictions. OPS-05 also appears in CONF-11, on a different fact in a different chunk; a document may be involved in more than one disagreement, which is realistic."
+      "note": "Planted 8 August 2026 under pre-registration amendment 1.2, to restore each type to a reportable size after CONF-07 and CONF-09 were found not to be contradictions. OPS-05 also appears in CONF-11, on a different fact in a different chunk; a document may be involved in more than one disagreement, which is realistic.",
+      "no_satisfying_action_because": "A person evacuating goes to one place. Assembling at the car park means not assembling at the main gate, and a roll call taken at either cannot account for those at the other."
     },
     {
       "id": "CONF-14",
@@ -718,7 +727,8 @@
         "that two working days is sufficient in every case"
       ],
       "stricter": "CS-14",
-      "note": "Planted 8 August 2026 under pre-registration amendment 1.2, to restore each type to a reportable size after CONF-07 and CONF-09 were found not to be contradictions."
+      "note": "Planted 8 August 2026 under pre-registration amendment 1.2, to restore each type to a reportable size after CONF-07 and CONF-09 were found not to be contradictions.",
+      "satisfying_action": "Acknowledge the same working day. That is inside CS-14's same-day rule and inside CS-02's two working days."
     },
     {
       "id": "CONF-15",
@@ -754,7 +764,8 @@
         "that an order placed at 13:30 will ship the same day"
       ],
       "stricter": "OPS-01",
-      "note": "Planted 8 August 2026 under pre-registration amendment 1.2, to restore each type to a reportable size after CONF-07 and CONF-09 were found not to be contradictions."
+      "note": "Planted 8 August 2026 under pre-registration amendment 1.2, to restore each type to a reportable size after CONF-07 and CONF-09 were found not to be contradictions.",
+      "satisfying_action": "Place the order before 13:00. That meets OPS-01's picking cut-off and is inside CS-11's 14:00."
     },
     {
       "id": "CONF-16",
@@ -790,7 +801,8 @@
         "that 72 hours is the operative deadline"
       ],
       "stricter": "IT-02",
-      "note": "Planted 8 August 2026 under pre-registration amendment 1.2, to restore each type to a reportable size after CONF-07 and CONF-09 were found not to be contradictions."
+      "note": "Planted 8 August 2026 under pre-registration amendment 1.2, to restore each type to a reportable size after CONF-07 and CONF-09 were found not to be contradictions.",
+      "satisfying_action": "Report the suspected breach within 24 hours. That meets IT-02 and is inside REG-02's 72 hours."
     },
     {
       "id": "CONF-17",
@@ -836,7 +848,7 @@
       "id": "TUNE-03",
       "split": "tuning",
       "name": "Core contactable hours",
-      "type": "mutually_exclusive",
+      "type": "compatible",
       "domain": "hr",
       "risk_level": "medium",
       "documents": [
@@ -844,7 +856,7 @@
         "HR-06"
       ],
       "authoritative": null,
-      "resolution": "escalate_unresolved",
+      "resolution": "no_conflict",
       "conflicting_facts": [
         {
           "fact": "the core hours during which an employee must be contactable",
@@ -865,7 +877,12 @@
       "must_not_assert": [
         "that either set of core hours is the operative one"
       ],
-      "note": "Tuning only. Gives development a mutually_exclusive family, which it previously lacked."
+      "note": "Reclassified 13 August 2026 under amendment 1.4. The type was asserted at planting time and nothing forced it to be justified, so four families were typed by intuition and typed wrongly. Every family now states the fact that decides its type and a test enforces it. TUNE-03 was mutually_exclusive. Its 0.00 conflict-pair recall was read as evidence that a buried policy cannot be retrieved; the truer reading is that the two chunks describe different situations, so retrieval was behaving correctly and the family was never a conflict.",
+      "reconciliation": "HR-04 sets core hours of 09:30 to 16:00 for employees working remotely. HR-06 sets 10:00 to 16:30 for employees attending training. Different circumstances, not different answers to one question. An employee is in one situation or the other.",
+      "reconciliation_anchors": {
+        "HR-04": "Remote working is available to office-based roles",
+        "HR-06": "Employees attending training remain contactable"
+      }
     },
     {
       "id": "TUNE-04",
@@ -939,13 +956,14 @@
       ],
       "must_not_assert": [
         "that either set of dates is the operative one"
-      ]
+      ],
+      "no_satisfying_action_because": "The leave year has one start date. A year beginning in April is not also a year beginning in January, and an entitlement cannot be pro-rated against both."
     },
     {
       "id": "TUNE-06",
       "split": "tuning",
       "name": "Returns authorisation validity",
-      "type": "mutually_exclusive",
+      "type": "stricter_looser",
       "domain": "operations",
       "risk_level": "low",
       "documents": [
@@ -953,8 +971,8 @@
         "OPS-03"
       ],
       "authoritative": null,
-      "resolution": "escalate_unresolved",
-      "note": "Tuning only. Planted 8 August 2026 under amendment 1.3. Development had one mutually_exclusive family, TUNE-03, whose disputed fact sits buried in a 122-word chunk about study leave, so its conflict-pair recall of 0.00 could not be distinguished from a property of the type. These two put the disputed fact in topically matched chunks on both sides, matching how every reported mutually_exclusive family looks.",
+      "resolution": "prefer_stricter_and_escalate",
+      "note": "Reclassified 13 August 2026 under amendment 1.4. The type was asserted at planting time and nothing forced it to be justified, so four families were typed by intuition and typed wrongly. Every family now states the fact that decides its type and a test enforces it. TUNE-06 was mutually_exclusive, which was wrong for exactly the reason the stricter_looser type exists.",
       "conflicting_facts": [
         {
           "fact": "how long a Returns Authorisation number stays valid",
@@ -974,7 +992,9 @@
       ],
       "must_not_assert": [
         "that either validity period is the operative one"
-      ]
+      ],
+      "stricter": "OPS-03",
+      "satisfying_action": "Use the Returns Authorisation number within 14 days of issue. That is inside OPS-03's 14 days and inside OPS-02's 21, so both documents are satisfied."
     }
   ],
   "deliberate_gaps": {

@@ -79,8 +79,8 @@ def test_registry_contains_conflicts_a_metadata_filter_cannot_solve(registry):
     present, where both documents are live and no metadata distinguishes them.
     """
     unresolvable = registry.of_type("mutually_exclusive")
-    assert len(unresolvable) >= 5, (
-        "Fewer than five mutually_exclusive families. Every conflict would be "
+    assert len(unresolvable) >= 4, (
+        "Fewer than four mutually_exclusive families. Every conflict would be "
         "solvable by a three-line metadata filter, and the verification layer "
         "would have nothing to demonstrate."
     )
@@ -110,6 +110,12 @@ def test_registry_contains_conflicts_a_metadata_filter_cannot_solve(registry):
     # still unsafe, so these need their own behaviour.
     for family in registry.of_type("stricter_looser"):
         assert family.stricter in family.documents
+        # The check four misclassifications would have failed. If the action can
+        # be written, the family is not mutually exclusive.
+        assert family.satisfying_action, family.family_id
+    for family in unresolvable:
+        assert family.no_satisfying_action_because, family.family_id
+        assert not family.satisfying_action, family.family_id
 
 
 def test_current_current_families_involve_only_live_documents(registry, kb):
