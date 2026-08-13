@@ -669,3 +669,42 @@ def test_the_examples_use_invented_documents_only():
     cited = set(re.findall(r"\b([A-Z]{2,4}-\d{2})#", VERIFIER_SYSTEM))
     assert cited, "the examples cite no identifiers, so they teach no shape"
     assert not (cited & real), f"the prompt cites real documents: {sorted(cited & real)}"
+
+
+# --- effective options are recorded, not merely declared ---------------------
+
+
+def test_generation_records_the_options_it_posted(config):
+    """The field existed and nothing wrote to it.
+
+    Every record carried an empty dictionary while the code claimed effective
+    options were captured, which is worse than not claiming it.
+    """
+    client = MockClient(config)
+    generation = client.generate("hello", options={"num_predict": 700})
+
+    assert generation.options == client.last_options
+    assert generation.to_dict()["options"] == client.last_options
+    assert generation.options["num_predict"] == 700
+    assert generation.options["num_ctx"] == 4096, (
+        "num_ctx reaches the model by inheritance from the generation block"
+    )
+
+
+def test_underscore_metadata_never_reaches_the_model(config):
+    """A _note key was being posted to Ollama as a model option."""
+    client = MockClient(config)
+    generation = client.generate("hello", options={"_note": "documentation"})
+    assert not any(k.startswith("_") for k in generation.options)
+    assert not any(k.startswith("_") for k in client.last_options)
+
+
+def test_the_verified_record_carries_the_verifier_options(retriever, config):
+    retrieval = retriever.retrieve("annual leave", min_similarity=0.0)
+    client = MockClient(config)
+    answer = Generator(client, config).answer("How much leave?", retrieval)
+    payload = Verifier(client, config).verify(answer).to_dict()
+
+    assert payload["verification_options"]["num_ctx"] == 4096
+    assert payload["verification_options"]["num_predict"] == 700
+    assert not any(k.startswith("_") for k in payload["verification_options"])

@@ -90,6 +90,10 @@ class Generation:
             "cpu_temp_c": self.cpu_temp_c,
             "arm_frequency_hz": self.arm_frequency_hz,
             "throttled": self.throttled,
+            # The options as posted. Declaring the field without writing it
+            # here left every record carrying an empty dictionary while the
+            # code claimed effective options were captured.
+            "options": dict(self.options),
         }
 
 
@@ -172,6 +176,7 @@ class OllamaClient:
 
         throttle = throttle_state()
         return Generation(
+            options=dict(merged),
             text=response["response"].strip(),
             model=chosen,
             prompt_tokens=response.get("prompt_eval_count") or 0,
@@ -255,11 +260,19 @@ class MockClient:
         self.responses = responses or {}
         self.prompts: list[str] = []
         self.call_count = 0
+        self.last_options: dict[str, Any] = {}
 
     def generate(self, prompt: str, *, model: str | None = None,
                  options: dict[str, Any] | None = None) -> Generation:
         self.prompts.append(prompt)
         self.call_count += 1
+        # The same merge and filter the real client performs, so option
+        # recording is testable without a running backend.
+        merged = dict(self.config.require("generation"))
+        if options:
+            merged.update(options)
+        merged = {k: v for k, v in merged.items() if not k.startswith("_")}
+        self.last_options = dict(merged)
         for trigger, canned in self.responses.items():
             if trigger in prompt:
                 text = canned
@@ -275,6 +288,7 @@ class MockClient:
             prompt_seconds=0.0,
             eval_seconds=0.0,
             wall_seconds=0.0,
+            options=dict(merged),
         )
 
     def embed(self, text: str, *, model: str | None = None) -> list[float]:

@@ -14,9 +14,10 @@
   "hit_output_cap": 0,
   "prompt_over_2048": 0,
   "num_ctx_in_force": "4096, supplied by inheritance: OllamaClient.generate merges the verification options over the generation block, which sets num_ctx. An earlier version of this file said the call inherited Ollama's default, which was wrong.",
-  "conclusion": "Truncation is excluded as an explanation for pilot 02. Every prompt fitted inside the default context and every generation stopped voluntarily well below the output cap. CONF-01-Q1 read 1636 tokens containing both HR-13#001 and HR-03#001 with the SUPERSEDED marker, emitted 125 tokens, and reported that the evidence does not mention mileage rates. That is a reasoning failure with nothing mechanical behind it.",
-  "incidental_finding": "The verification block set no num_ctx, so these calls inherited the default rather than the 4096 used for generation. Nothing was clipped here because the longest prompt was 1978 tokens, but the margin was accidental. Fixed on 13 August 2026 by setting num_ctx explicitly.",
+  "conclusion": "Truncation is excluded as an explanation for pilot 02. Every call used the inherited 4096-token context, worst case 1978 prompt plus 375 output = 2353, and every generation stopped voluntarily below the 700-token output cap. CONF-01-Q1 read 1636 tokens containing both HR-13#001 and HR-03#001 with the SUPERSEDED marker, emitted 125 tokens, and reported that the evidence does not mention mileage rates. That is a reasoning failure with nothing mechanical behind it.",
+  "incidental_finding": "The verification block stated no num_ctx and depended on hidden inheritance from the generation block. The value in force was always 4096; making it explicit on 13 August 2026 removes the coupling, not a defect.",
   "headroom": "worst case 1978 prompt + 375 output = 2353 of 4096",
   "not_ruled_out": "Parse failure is excluded as the *complete* explanation for zero detection, because 37 of 41 responses parsed and still reported no relationship. It remains a live reliability failure at 4 of 41, against a gate of 2.",
-  "correction": "Issued 13 August 2026 without rerunning the pilot. The conclusion is unchanged; its stated provenance was wrong."
+  "correction": "Issued 13 August 2026 without rerunning the pilot. The conclusion is unchanged; its stated provenance was wrong.",
+  "historical_records": "Pilot 02 predates option recording, so its verification_options fields are null. Its effective options are reconstructed from the frozen config, the commit and the call path, and are not backfilled into the stored records."
 }
