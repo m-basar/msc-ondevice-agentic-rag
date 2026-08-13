@@ -97,6 +97,7 @@ def evaluate(retriever, questions, registry, k_values=K_VALUES) -> dict:
     # resolve a disagreement it was never shown both sides of.
     pair: dict[str, dict] = {}
     by_type: dict[str, dict[int, list[bool]]] = defaultdict(lambda: defaultdict(list))
+    by_family: dict[str, dict[int, list[bool]]] = defaultdict(lambda: defaultdict(list))
     for question in questions:
         if not question.family_id:
             continue
@@ -106,11 +107,24 @@ def evaluate(retriever, questions, registry, k_values=K_VALUES) -> dict:
             documents = {c.split("#")[0] for c in order[:k]}
             both = set(family.documents) <= documents
             by_type[family.conflict_type][k].append(both)
+            by_family[family.family_id][k].append(both)
 
     for conflict_type, per_k in sorted(by_type.items()):
         pair[conflict_type] = {
             f"@{k}": round(sum(v) / len(v), 4) for k, v in sorted(per_k.items())
         }
+
+    # Per family as well as per type. A type-level 0.67 over three families can
+    # mean "all three are middling" or "two are perfect and one is broken", and
+    # those call for entirely different responses. The type-level figure alone
+    # cannot tell them apart.
+    per_family = {
+        family_id: {
+            "type": registry.by_id(family_id).conflict_type,
+            **{f"@{k}": round(sum(v) / len(v), 4) for k, v in sorted(per_k.items())},
+        }
+        for family_id, per_k in sorted(by_family.items())
+    }
 
     # --- threshold sweep -----------------------------------------------------
     answerable = [q for q in questions if q.answerability == "answerable"]
@@ -143,6 +157,7 @@ def evaluate(retriever, questions, registry, k_values=K_VALUES) -> dict:
         "recall": recall,
         "mrr": mrr,
         "conflict_pair_recall": pair,
+        "conflict_pair_recall_by_family": per_family,
         "threshold_sweep": sweep,
         "top_score_distribution": scores,
     }
@@ -209,6 +224,11 @@ def main() -> int:
     for conflict_type, per_k in report["conflict_pair_recall"].items():
         row = "  ".join(f"{k} {v:.2f}" for k, v in per_k.items())
         print(f"  {conflict_type:22} {row}")
+    print()
+    print("Conflict-pair recall by family, which the type average can hide:")
+    for family_id, row in report["conflict_pair_recall_by_family"].items():
+        marks = "  ".join(f"{k} {v:.2f}" for k, v in row.items() if k.startswith("@"))
+        print(f"  {family_id:9} {row['type']:22} {marks}")
     print()
     print("Threshold sweep (a question is refused when its best score is below):")
     print("  min_sim   answerable wrongly refused   unanswerable correctly refused   J")

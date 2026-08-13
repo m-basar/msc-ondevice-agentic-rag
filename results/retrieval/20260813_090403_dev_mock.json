@@ -1,0 +1,294 @@
+{
+  "questions": 41,
+  "questions_with_expected_chunks": 33,
+  "recall": {
+    "@1": {
+      "strict": 0.1212,
+      "lenient": 0.2727
+    },
+    "@2": {
+      "strict": 0.2424,
+      "lenient": 0.4848
+    },
+    "@3": {
+      "strict": 0.2727,
+      "lenient": 0.5152
+    },
+    "@4": {
+      "strict": 0.2727,
+      "lenient": 0.5455
+    },
+    "@6": {
+      "strict": 0.3636,
+      "lenient": 0.5455
+    },
+    "@8": {
+      "strict": 0.3939,
+      "lenient": 0.6364
+    },
+    "@10": {
+      "strict": 0.3939,
+      "lenient": 0.6667
+    }
+  },
+  "mrr": 0.4123,
+  "conflict_pair_recall": {
+    "compatible": {
+      "@1": 0.0,
+      "@2": 0.0,
+      "@3": 0.3333,
+      "@4": 0.3333,
+      "@6": 0.3333,
+      "@8": 0.3333,
+      "@10": 0.3333
+    },
+    "mutually_exclusive": {
+      "@1": 0.0,
+      "@2": 0.0,
+      "@3": 0.1111,
+      "@4": 0.1111,
+      "@6": 0.3333,
+      "@8": 0.3333,
+      "@10": 0.3333
+    },
+    "stricter_looser": {
+      "@1": 0.0,
+      "@2": 0.1111,
+      "@3": 0.1111,
+      "@4": 0.1111,
+      "@6": 0.3333,
+      "@8": 0.4444,
+      "@10": 0.4444
+    },
+    "version_supersession": {
+      "@1": 0.0,
+      "@2": 0.3333,
+      "@3": 0.3333,
+      "@4": 0.3333,
+      "@6": 0.6667,
+      "@8": 0.6667,
+      "@10": 0.6667
+    }
+  },
+  "conflict_pair_recall_by_family": {
+    "CONF-01": {
+      "type": "version_supersession",
+      "@1": 0.0,
+      "@2": 0.3333,
+      "@3": 0.3333,
+      "@4": 0.3333,
+      "@6": 0.6667,
+      "@8": 0.6667,
+      "@10": 0.6667
+    },
+    "CONF-05": {
+      "type": "stricter_looser",
+      "@1": 0.0,
+      "@2": 0.0,
+      "@3": 0.0,
+      "@4": 0.0,
+      "@6": 0.3333,
+      "@8": 0.6667,
+      "@10": 0.6667
+    },
+    "TUNE-01": {
+      "type": "stricter_looser",
+      "@1": 0.0,
+      "@2": 0.3333,
+      "@3": 0.3333,
+      "@4": 0.3333,
+      "@6": 0.3333,
+      "@8": 0.3333,
+      "@10": 0.3333
+    },
+    "TUNE-02": {
+      "type": "stricter_looser",
+      "@1": 0.0,
+      "@2": 0.0,
+      "@3": 0.0,
+      "@4": 0.0,
+      "@6": 0.3333,
+      "@8": 0.3333,
+      "@10": 0.3333
+    },
+    "TUNE-03": {
+      "type": "mutually_exclusive",
+      "@1": 0.0,
+      "@2": 0.0,
+      "@3": 0.0,
+      "@4": 0.0,
+      "@6": 0.0,
+      "@8": 0.0,
+      "@10": 0.0
+    },
+    "TUNE-04": {
+      "type": "compatible",
+      "@1": 0.0,
+      "@2": 0.0,
+      "@3": 0.3333,
+      "@4": 0.3333,
+      "@6": 0.3333,
+      "@8": 0.3333,
+      "@10": 0.3333
+    },
+    "TUNE-05": {
+      "type": "mutually_exclusive",
+      "@1": 0.0,
+      "@2": 0.0,
+      "@3": 0.0,
+      "@4": 0.0,
+      "@6": 0.6667,
+      "@8": 0.6667,
+      "@10": 0.6667
+    },
+    "TUNE-06": {
+      "type": "mutually_exclusive",
+      "@1": 0.0,
+      "@2": 0.0,
+      "@3": 0.3333,
+      "@4": 0.3333,
+      "@6": 0.3333,
+      "@8": 0.3333,
+      "@10": 0.3333
+    }
+  },
+  "threshold_sweep": [
+    {
+      "min_similarity": 0.0,
+      "answerable_wrongly_refused": 0,
+      "answerable_total": 33,
+      "unanswerable_correctly_refused": 0,
+      "unanswerable_total": 6,
+      "youden_j": 0.0
+    },
+    {
+      "min_similarity": 0.2,
+      "answerable_wrongly_refused": 2,
+      "answerable_total": 33,
+      "unanswerable_correctly_refused": 0,
+      "unanswerable_total": 6,
+      "youden_j": -0.0606
+    },
+    {
+      "min_similarity": 0.25,
+      "answerable_wrongly_refused": 5,
+      "answerable_total": 33,
+      "unanswerable_correctly_refused": 2,
+      "unanswerable_total": 6,
+      "youden_j": 0.1818
+    },
+    {
+      "min_similarity": 0.3,
+      "answerable_wrongly_refused": 13,
+      "answerable_total": 33,
+      "unanswerable_correctly_refused": 3,
+      "unanswerable_total": 6,
+      "youden_j": 0.1061
+    },
+    {
+      "min_similarity": 0.32,
+      "answerable_wrongly_refused": 15,
+      "answerable_total": 33,
+      "unanswerable_correctly_refused": 3,
+      "unanswerable_total": 6,
+      "youden_j": 0.0455
+    },
+    {
+      "min_similarity": 0.35,
+      "answerable_wrongly_refused": 17,
+      "answerable_total": 33,
+      "unanswerable_correctly_refused": 3,
+      "unanswerable_total": 6,
+      "youden_j": -0.0152
+    },
+    {
+      "min_similarity": 0.4,
+      "answerable_wrongly_refused": 19,
+      "answerable_total": 33,
+      "unanswerable_correctly_refused": 3,
+      "unanswerable_total": 6,
+      "youden_j": -0.0758
+    },
+    {
+      "min_similarity": 0.45,
+      "answerable_wrongly_refused": 22,
+      "answerable_total": 33,
+      "unanswerable_correctly_refused": 5,
+      "unanswerable_total": 6,
+      "youden_j": 0.1667
+    },
+    {
+      "min_similarity": 0.5,
+      "answerable_wrongly_refused": 29,
+      "answerable_total": 33,
+      "unanswerable_correctly_refused": 6,
+      "unanswerable_total": 6,
+      "youden_j": 0.1212
+    },
+    {
+      "min_similarity": 0.6,
+      "answerable_wrongly_refused": 33,
+      "answerable_total": 33,
+      "unanswerable_correctly_refused": 6,
+      "unanswerable_total": 6,
+      "youden_j": 0.0
+    }
+  ],
+  "top_score_distribution": {
+    "answerable": [
+      0.1491,
+      0.1954,
+      0.2041,
+      0.213,
+      0.2152,
+      0.2732,
+      0.2864,
+      0.2872,
+      0.2905,
+      0.2961,
+      0.2969,
+      0.297,
+      0.2981,
+      0.3049,
+      0.3187,
+      0.3257,
+      0.3363,
+      0.3735,
+      0.3847,
+      0.4269,
+      0.4322,
+      0.4417,
+      0.4502,
+      0.4546,
+      0.4619,
+      0.4678,
+      0.4845,
+      0.4898,
+      0.4987,
+      0.5115,
+      0.5636,
+      0.5958,
+      0.597
+    ],
+    "unanswerable": [
+      0.2046,
+      0.2182,
+      0.2657,
+      0.4229,
+      0.4398,
+      0.4801
+    ]
+  },
+  "split": "dev",
+  "mock": true,
+  "generated_at": "2026-08-13T09:04:03.059559+00:00",
+  "provenance": {
+    "corpus_sha256": "63a92324d734beb689a06c0344fc62fd4e1fe118f407ea5df132f2b4095d1c2d",
+    "chunk_set_sha256": "2c92533c2f868c286a1f43ed92ac619da9436909da2339215321195d5c1402f2",
+    "registry_sha256": "aeadf55b2d03752e58961e2ecdfc6a0822d64bfa13f7cdf7f95e322d506ed5da",
+    "current_settings": {
+      "top_k": 6,
+      "min_similarity": 0.3
+    }
+  }
+}
