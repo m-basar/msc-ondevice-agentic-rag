@@ -292,8 +292,17 @@ def parse(
     for entry in payload.get("claims") or []:
         if not isinstance(entry, dict):
             continue
-        verdict = str(entry.get("verdict", "")).strip().upper()
+        raw_verdict = str(entry.get("verdict", "")).strip()
+        verdict = raw_verdict.upper()
         if verdict not in VALID_VERDICTS:
+            # Normalising an unrecognised enum is a repair, and a repair is a
+            # failure. A model that misspells the verdict has not told us what
+            # it concluded, so a revision written alongside it rests on nothing
+            # we can read.
+            failures.append(
+                f"verdict {raw_verdict[:40]!r} is not one of "
+                f"{sorted(VALID_VERDICTS)}"
+            )
             verdict = INSUFFICIENT_EVIDENCE
         supporting = split_ids(entry.get("supporting"), available, invented)
         contradicting = split_ids(entry.get("contradicting"), available, invented)
@@ -318,8 +327,14 @@ def parse(
             verdict=verdict, supporting=supporting, contradicting=contradicting,
         ))
 
-    relationship = str(payload.get("relationship", "")).strip().lower()
+    raw_relationship = str(payload.get("relationship", "")).strip()
+    relationship = raw_relationship.lower()
     if relationship not in VALID_RELATIONSHIPS:
+        failures.append(
+            "relationship "
+            + (f"{raw_relationship[:40]!r}" if raw_relationship else "was missing and")
+            + f" is not one of {sorted(VALID_RELATIONSHIPS)}"
+        )
         relationship = INSUFFICIENT
 
     conflicting = split_ids(payload.get("conflicting_chunks"), available, invented)

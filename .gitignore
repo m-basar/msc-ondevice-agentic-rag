@@ -35,3 +35,7 @@ ROADMAP.md
 # Keep results - they are dissertation evidence
 !results/
 !results/runs/
+
+# Mock runs are structural smoke tests, not evidence. Real runs are committed.
+results/runs/*_mock/
+results/runs/latest_*_mock.json

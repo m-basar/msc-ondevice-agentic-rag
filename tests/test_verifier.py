@@ -562,3 +562,66 @@ def test_a_clean_revision_is_still_served():
     assert result.revised
     assert result.final_answer == "The rate is 55 pence per mile [HR-13#001]."
     assert result.confidence == "medium"
+
+
+# --- a silent normalisation is still a repair --------------------------------
+
+
+def test_a_misspelled_verdict_blocks_the_revision():
+    """Normalising an unrecognised enum is a repair, and a repair is a failure.
+
+    A 3B model can misspell the verdict, cite a real passage, write a plausible
+    revision, and have the revision served on the strength of a conclusion
+    nobody could read.
+    """
+    payload = json.dumps({
+        "claims": [{"claim": "x", "verdict": "SUPPORTTED",
+                    "supporting": ["HR-01#001"]}],
+        "relationship": "no_relationship",
+        "final_answer": "Leave is 25 days [HR-01#001].",
+    })
+    result = schema.parse(payload, {"HR-01#001"}, POLICY, draft="draft text")
+
+    assert result.verdicts[0].verdict == INSUFFICIENT_EVIDENCE
+    assert result.validation_failures
+    assert result.revision_rejected
+    assert result.final_answer == "draft text"
+    assert result.confidence == "low"
+
+
+def test_a_misspelled_relationship_blocks_the_revision():
+    payload = json.dumps({
+        "claims": [], "relationship": "mutualy_exclusive",
+        "conflicting_chunks": sorted(TWO),
+        "final_answer": "These conflict [HR-01#001] [IT-03#002].",
+    })
+    result = schema.parse(payload, TWO, POLICY, draft="draft text")
+
+    assert result.relationship == "insufficient"
+    assert result.validation_failures
+    assert result.final_answer == "draft text"
+
+
+def test_a_missing_relationship_blocks_the_revision():
+    """Silence is not a conclusion."""
+    payload = json.dumps({
+        "claims": [], "final_answer": "Leave is 25 days [HR-01#001].",
+    })
+    result = schema.parse(payload, {"HR-01#001"}, POLICY, draft="draft text")
+
+    assert result.relationship == "insufficient"
+    assert any("missing" in f for f in result.validation_failures)
+    assert result.final_answer == "draft text"
+
+
+def test_a_correctly_spelled_response_is_untouched():
+    """The gate must not fire on well-formed output."""
+    payload = json.dumps({
+        "claims": [{"claim": "x", "verdict": "SUPPORTED", "supporting": ["HR-01#001"]}],
+        "relationship": "no_relationship",
+        "final_answer": "Leave is 25 days [HR-01#001].",
+    })
+    result = schema.parse(payload, {"HR-01#001"}, POLICY, draft="draft text")
+    assert not result.validation_failures
+    assert result.final_answer == "Leave is 25 days [HR-01#001]."
+    assert result.confidence == "medium"
