@@ -43,6 +43,7 @@ from sme_assistant.evaluation.answer_scoring import chunk_text_map, score_answer
 from sme_assistant.evaluation.config import load_evaluation_config  # noqa: E402
 from sme_assistant.evaluation.conflicts import load_conflicts  # noqa: E402
 from sme_assistant.evaluation.question_set import load_question_set  # noqa: E402
+from sme_assistant.evaluation.replay import load_drafts  # noqa: E402
 from sme_assistant.evaluation.run_writer import ArmDefinition, RunWriter  # noqa: E402
 from sme_assistant.generate.generator import Generator  # noqa: E402
 from sme_assistant.ingest.index import Index, build_index, index_path_for  # noqa: E402
@@ -82,7 +83,8 @@ def arm_definition(name: str, config) -> ArmDefinition:
 
 
 def run_arm(name, questions, *, retriever, generator, verifier, config, kb, index,
-            question_set, registry, split, tag, root=None, drafts=None) -> Path:
+            question_set, registry, split, tag, root=None, drafts=None,
+            drafts_source=None) -> Path:
     """Run one arm. ``drafts`` lets D reuse B's exact answers.
 
     B versus D is the confirmatory contrast, and it only isolates verification
@@ -132,6 +134,10 @@ def run_arm(name, questions, *, retriever, generator, verifier, config, kb, inde
     directory = writer.finish({
         "questions": len(questions),
         "drafts_reused_from": "B" if drafts else None,
+        # Which run the drafts came from, when they were replayed rather than
+        # generated in this process. Without it a controlled re-run and an
+        # ordinary one leave identical-looking directories.
+        "drafts_replayed_from": drafts_source,
         # Stated in the run rather than inferred from it later. A D run that
         # did not reuse B's drafts is exploratory, and six months on nobody
         # will remember which of two identical-looking directories that was.
@@ -150,6 +156,9 @@ def main() -> int:
                         help="required to run the test split")
     parser.add_argument("--d-without-b", action="store_true",
                         help="allow an exploratory Arm D that cannot support H2")
+    parser.add_argument("--reuse-drafts-from", metavar="RUN_DIR",
+                        help="replay a recorded Arm B run's drafts instead of "
+                             "regenerating them, for a controlled re-run")
     args = parser.parse_args()
 
     if args.split == "test" and args.d_without_b:
@@ -192,6 +201,22 @@ def main() -> int:
     # verification rather than two independent first passes.
     ordered = sorted(args.arms, key=lambda a: (a == "D", a))
     directories, drafts = {}, {}
+
+    if args.reuse_drafts_from:
+        # A controlled re-run: hold the drafts fixed and change only what is
+        # under test. Regenerating B would mix the change with a second
+        # sample from the generator, and the two could not be told apart.
+        source = Path(args.reuse_drafts_from)
+        if not source.is_absolute():
+            source = ROOT / source
+        drafts["B"] = load_drafts(source, index, expect_arm="B")
+        print(f"  Replaying {len(drafts['B'])} Arm B drafts from {source.name}")
+        print("    evidence hashes verified against the recorded run\n")
+        if "B" in ordered:
+            raise SystemExit(
+                "--reuse-drafts-from replays Arm B, so Arm B must not also be "
+                "run. Use '--arms D' for a verification-only re-run."
+            )
     for name in ordered:
         print(f"  Arm {name}: {ARMS[name]['description']}")
         reuse = drafts.get("B") if name == "D" else None
@@ -220,6 +245,8 @@ def main() -> int:
             verifier=verifier, config=config, kb=kb, index=index,
             question_set=question_set, registry=registry, split=args.split,
             tag=args.tag or ("mock" if args.mock else ""), drafts=reuse,
+            drafts_source=(args.reuse_drafts_from if name == "D" and reuse
+                           and args.reuse_drafts_from else None),
         )
         print(f"    -> {directories[name].name}\n")
 

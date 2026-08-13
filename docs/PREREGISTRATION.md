@@ -1152,6 +1152,57 @@ The rule was committed before the run that tests it, and it fired `DEFECT` on
 pilot 02 the first time it ran. That is what surfaced 1.6.1. The pilot 02
 decision stands as recorded; the rule was not relaxed to clear it.
 
+## 1.6.6 Every served revision names its warrant
+
+`revision_warrant` records **which** of the four conditions applied, on the
+record, for any revision actually served. It is empty when the draft stood.
+
+"It must have had a reason" is not an audit trail. A rewrite whose
+justification has to be reconstructed afterwards cannot be checked, and the
+whole of 1.6.1 is a case of exactly that going unnoticed.
+
+## 1.6.7 A narrow warrant does not license a wide change
+
+Condition 3 above creates a hole on its own: if a misplaced identifier grants a
+warrant, an unrelated prose rewrite could be laundered through it.
+
+So when citation repair is the **only** warrant, the content must survive.
+Similarity is measured over content tokens, with citations and function words
+removed, and must reach **0.90**.
+
+The measure is deliberately not character-level. A character measure is
+length-sensitive: deleting "According to" scores 0.71 on a one-line answer and
+0.96 on a paragraph, so one threshold would permit or refuse the identical edit
+depending on how long the answer happened to be.
+
+The threshold is calibrated on the six revisions pilot 02 produced, which score
+1.000, 1.000, 1.000, 0.696, 0.211 and 0.000. The gap between the pure citation
+moves and the genuine rephrase is 0.30 wide, so the threshold is not fitted to
+a boundary case: any value from 0.75 to 0.99 separates the same groups. Stated
+here because a threshold chosen on development data and then reported as if it
+were principled is a small dishonesty that compounds.
+
+## 1.6.8 What "frozen" has to cover
+
+The protocol runner originally refused only when `docs/VERIFIER_PROTOCOL.md`
+had uncommitted changes. That was theatre. The 96 calls are produced by the
+verifier prompt, the parsing rules, the retrieval settings and the gold data,
+none of which live in `docs/`. It now refuses unless `src/`, `gold/`,
+`config.json`, the harness and the protocol are all committed, and it records
+the config, corpus, chunk-set and registry fingerprints alongside the commit.
+
+## 1.6.9 Pilot 03 is a controlled re-run, not a fresh one
+
+Arm B is **not** regenerated. Its pilot 02 drafts and retrieval are replayed
+from the recorded run, and the reconstruction is checked against the
+`evidence_sha256` each answer carries. A rebuild that quietly differed would
+leave every downstream number looking plausible while comparing two different
+experiments.
+
+Regenerating B would draw a second sample from the generator, and any pilot 02
+to pilot 03 difference would then mix the revision fix with generator variation
+with no way to separate them.
+
 ## What was not changed
 
 The verifier prompt. This amendment fixes what is done with the verifier's
@@ -1167,7 +1218,32 @@ diagnostic protocol indicating that a prompt can fix the detection failure.
 | Development stopping rule | read off a table | **computed and committed** |
 | H5 hardware label | machine that summarised | **machine recorded in the run** |
 | Arm D without Arm B | warning, run proceeded | **refused unless marked exploratory** |
-| Tests | 357 | **377** |
+| Tests | 357 | **404** |
 
-Pilot 02 is superseded and must be re-run before its numbers mean anything. No
-test-split arm has been run. The verifier is not frozen.
+## What pilot 02 still supports
+
+An earlier draft of this amendment said pilot 02 was superseded and that its
+numbers meant nothing until re-run. That was an overstatement in the careless
+direction rather than the flattering one, but it is still wrong, and discarding
+valid evidence is not a form of rigour.
+
+**Pilot 02 failed, and its served-answer outcomes were invalidated by a
+revision-control defect.** That is the accurate statement. The defect sits in
+what was done with the verifier's output, so everything decided before that
+point is unaffected:
+
+| Pilot 02 evidence | Status |
+|---|---|
+| Served answers, revision rate, final-answer citation metrics | **Invalid** for the amended Arm D |
+| Zero conflict detections across 18 genuine-conflict questions | Still valid |
+| Four parse failures | Still valid |
+| Raw verification outputs and inferred relationships | Still valid |
+| Prompt and evidence contents | Still valid |
+| Token counts, latency, and the truncation result | Still valid |
+| The gate result that exposed the revision defect | Still valid |
+
+The null detection result therefore stands as evidence going into the
+diagnostic protocol. Pilot 03 re-establishes the served-answer measurements
+only.
+
+No test-split arm has been run. The verifier is not frozen.

@@ -703,6 +703,169 @@ def test_a_detected_conflict_warrants_a_revision():
     assert not result.revision_rejected
 
 
+# --- every served revision names its warrant ---------------------------------
+
+
+@pytest.mark.parametrize("payload_extra,expected_warrant,draft", [
+    ({"relationship": "supersession",
+      "conflicting_chunks": ["HR-13#001", "HR-03#001"]},
+     "conflict_detected", "The rate is 40 pence [HR-03#001]."),
+    ({"claims": [{"claim": "x", "verdict": "CONTRADICTED",
+                  "contradicting": ["HR-13#001"]}]},
+     "claim_contradicted", "The rate is 40 pence [HR-03#001]."),
+    ({"claims": [{"claim": "x", "verdict": "INSUFFICIENT_EVIDENCE"}]},
+     "claim_insufficient", "The rate is 40 pence [HR-03#001]."),
+    ({}, "citation_repair", "The rate is 55 pence per mile [ZZ-99#001]."),
+])
+def test_a_served_revision_always_names_its_warrant(
+    payload_extra, expected_warrant, draft
+):
+    """An unaudited rewrite is the thing the warrant rule exists to prevent.
+
+    "It must have had a reason" is not an audit trail. If the revision was
+    served, the record says why.
+    """
+    payload = {
+        "claims": [{"claim": "x", "verdict": "SUPPORTED",
+                    "supporting": ["HR-13#001"]}],
+        "relationship": "no_relationship",
+        "final_answer": "The rate is 55 pence per mile [HR-13#001].",
+    }
+    payload.update(payload_extra)
+    result = schema.parse(
+        json.dumps(payload), {"HR-13#001", "HR-03#001"}, POLICY, draft=draft
+    )
+
+    assert result.revised, "this case is meant to produce a served revision"
+    assert expected_warrant in result.revision_warrant
+    assert result.to_dict()["revision_warrant"] == list(result.revision_warrant)
+
+
+def test_an_unserved_revision_records_no_warrant():
+    """Recording one would imply a licence had been exercised."""
+    payload = json.dumps({
+        "claims": [{"claim": "x", "verdict": "SUPPORTED",
+                    "supporting": ["HR-01#001"]}],
+        "relationship": "no_relationship",
+        "final_answer": "Reworded but unchallenged [HR-01#001].",
+    })
+    result = schema.parse(payload, {"HR-01#001"}, POLICY,
+                          draft="Unchallenged [HR-01#001].")
+
+    assert not result.revised
+    assert result.revision_warrant == ()
+
+
+# --- a narrow warrant does not license a wide change --------------------------
+
+
+def test_citation_repair_does_not_license_a_prose_rewrite():
+    """Otherwise any content change launders through a misplaced identifier.
+
+    The draft cites a chunk that was never retrieved, which warrants repair.
+    That licence is to fix the citation, not to replace what the answer says.
+    """
+    payload = json.dumps({
+        "claims": [{"claim": "x", "verdict": "SUPPORTED",
+                    "supporting": ["HR-01#001"]}],
+        "relationship": "no_relationship",
+        "final_answer": "Leave must be booked six weeks ahead and cannot be "
+                        "carried over [HR-01#001].",
+    })
+    result = schema.parse(
+        payload, {"HR-01#001"}, POLICY,
+        draft="Full-time employees receive 25 days of leave [ZZ-99#001].",
+    )
+
+    assert not result.revised
+    assert result.revision_rejected
+    assert "citation repair" in result.revision_rejected_reason
+    assert result.final_answer.endswith("[ZZ-99#001].")
+
+
+def test_citation_repair_that_only_moves_the_identifier_is_allowed():
+    payload = json.dumps({
+        "claims": [{"claim": "x", "verdict": "SUPPORTED",
+                    "supporting": ["HR-01#001"]}],
+        "relationship": "no_relationship",
+        "final_answer": "Full-time employees receive 25 days of leave [HR-01#001].",
+    })
+    result = schema.parse(
+        payload, {"HR-01#001"}, POLICY,
+        draft="According to [ZZ-99#001], full-time employees receive 25 days of leave.",
+    )
+
+    assert result.revised
+    assert result.revision_warrant == ("citation_repair",)
+
+
+def test_a_wide_change_is_allowed_when_a_claim_warrant_supports_it():
+    """The containment rule binds only when citation repair is the sole reason."""
+    payload = json.dumps({
+        "claims": [{"claim": "25 days", "verdict": "CONTRADICTED",
+                    "contradicting": ["HR-01#001"]}],
+        "relationship": "no_relationship",
+        "final_answer": "The entitlement is 28 days, not 25 [HR-01#001].",
+    })
+    result = schema.parse(
+        payload, {"HR-01#001"}, POLICY,
+        draft="Employees receive 25 days of paid annual leave [ZZ-99#001].",
+    )
+
+    assert result.revised
+    assert set(result.revision_warrant) == {"claim_contradicted", "citation_repair"}
+
+
+def test_prose_similarity_ignores_citations_and_wording():
+    same = schema.prose_similarity(
+        "According to [HR-01#001], leave is 25 days.",
+        "Leave is 25 days [HR-01#001].",
+    )
+    different = schema.prose_similarity(
+        "You may claim 55 pence per mile [HR-13#001].",
+        "The answer under review does not address a conflict between passages.",
+    )
+    assert same == 1.0
+    assert different < 0.5
+    assert different < schema.CITATION_REPAIR_MIN_SIMILARITY < same
+
+
+def test_the_measure_is_not_sensitive_to_answer_length():
+    """A character measure made the same edit pass or fail on length alone.
+
+    Deleting "According to" scored 0.71 on a one-line answer and 0.96 on a
+    paragraph, so a rule with one threshold would have refused the short one
+    and allowed the long one for no reason connected to what changed.
+    """
+    short = schema.prose_similarity(
+        "According to [HR-01#001], leave is 25 days.",
+        "Leave is 25 days [HR-01#001].",
+    )
+    long = schema.prose_similarity(
+        "According to [HR-01#001], full-time employees receive 25 days of paid "
+        "annual leave per leave year, in addition to the 8 English bank holidays.",
+        "Full-time employees receive 25 days of paid annual leave per leave "
+        "year, in addition to the 8 English bank holidays [HR-01#001].",
+    )
+    assert short == long == 1.0
+
+
+def test_the_threshold_separates_the_pilot_02_revisions():
+    """The calibration is stated in the source, so it is checked here.
+
+    A threshold fitted to a boundary case would be a different claim from one
+    sitting in a gap, so the gap is asserted rather than described.
+    """
+    observed = [1.000, 1.000, 1.000, 0.696, 0.211, 0.000]
+    threshold = schema.CITATION_REPAIR_MIN_SIMILARITY
+    above = [v for v in observed if v >= threshold]
+    below = [v for v in observed if v < threshold]
+
+    assert above == [1.000, 1.000, 1.000]
+    assert below == [0.696, 0.211, 0.000]
+    assert min(above) - max(below) > 0.25, "the threshold sits in a wide gap"
+
+
 # --- a silent normalisation is still a repair --------------------------------
 
 

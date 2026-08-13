@@ -35,6 +35,7 @@ what to look for and then asked to look.
 
 from __future__ import annotations
 
+import difflib
 import json
 import re
 from dataclasses import dataclass, field
@@ -81,6 +82,55 @@ BRACKET_CITE_RE = re.compile(r"\[([A-Z]{2,4}-\d{2})(#\d{1,3})?\]")
 # superseded version and used the current one" as a failure state.
 RESOLVED_RELATIONSHIPS = frozenset({SUPERSESSION})
 UNRESOLVED_RELATIONSHIPS = CONFLICTING_RELATIONSHIPS - RESOLVED_RELATIONSHIPS
+
+# Why a revision was permitted. Recorded on every served revision, because a
+# rewrite whose justification has to be reconstructed later cannot be audited.
+CONFLICT_DETECTED = "conflict_detected"
+CLAIM_CONTRADICTED = "claim_contradicted"
+CLAIM_INSUFFICIENT = "claim_insufficient"
+CITATION_REPAIR = "citation_repair"
+VALID_WARRANTS = frozenset({
+    CONFLICT_DETECTED, CLAIM_CONTRADICTED, CLAIM_INSUFFICIENT, CITATION_REPAIR,
+})
+
+# Function words, removed before comparison. Small and closed on purpose: the
+# comparison is meant to ask whether the claims survived, and an "According to"
+# at the front of a sentence is not a claim.
+FUNCTION_WORDS = frozenset({
+    "a", "an", "the", "is", "are", "was", "were", "be", "been", "being",
+    "of", "to", "for", "in", "on", "at", "by", "and", "or", "that", "this",
+    "it", "its", "as", "with", "from", "according", "there", "which",
+})
+
+# How similar the content must remain when citation repair is the only warrant.
+#
+# Calibrated on the six revisions development pilot 02 produced, which score
+# 1.000, 1.000, 1.000, 0.696, 0.211 and 0.000 under this measure. The three at
+# 1.000 are pure citation and punctuation moves; 0.696 is a genuine rephrase
+# that drops content; the lowest two are the rewrites that destroyed a correct
+# answer. The threshold sits in a gap of 0.30, so it is not fitted to a
+# boundary case: any value from 0.75 to 0.99 separates the same groups.
+CITATION_REPAIR_MIN_SIMILARITY = 0.90
+
+
+def content_tokens(text: str) -> list[str]:
+    """The words that carry the claim, with citations and function words gone."""
+    stripped = BRACKET_CITE_RE.sub(" ", CHUNK_ID_RE.sub(" ", text))
+    return [w for w in re.findall(r"[a-z0-9]+", stripped.lower())
+            if w not in FUNCTION_WORDS]
+
+
+def prose_similarity(before: str, after: str) -> float:
+    """Do the two answers say the same thing, however they are worded?
+
+    Compared over content tokens rather than characters. A character measure
+    is length-sensitive: deleting "According to" from a one-line answer scores
+    0.71 and from a paragraph scores 0.96, so the same edit would be permitted
+    or refused depending on how long the answer happened to be.
+    """
+    return difflib.SequenceMatcher(
+        None, content_tokens(before), content_tokens(after)
+    ).ratio()
 
 
 def as_bool(value: Any) -> bool:
@@ -144,6 +194,9 @@ class Verification:
     # unsupported conflict reach the user through the back door.
     revision_rejected: bool = False
     revision_rejected_reason: str = ""
+    # Why the revision was permitted. Non-empty whenever ``revised`` is true,
+    # which is asserted in the tests rather than assumed.
+    revision_warrant: tuple[str, ...] = ()
     # Every check the response failed, accumulated rather than short-circuited.
     # The first version recorded only relationship failures, so a claim verdict
     # could be downgraded for want of evidence while the revision written from
@@ -196,6 +249,7 @@ class Verification:
             "revised": self.revised,
             "revision_rejected": self.revision_rejected,
             "revision_rejected_reason": self.revision_rejected_reason,
+            "revision_warrant": list(self.revision_warrant),
             "validation_failures": list(self.validation_failures),
             "invented_ids": list(self.invented_ids),
             "parse_failed": self.parse_failed,
@@ -376,11 +430,19 @@ def parse(
         {i for i in CHUNK_ID_RE.findall(draft) if i not in available}
         or {doc for doc, ordinal in BRACKET_CITE_RE.findall(draft) if not ordinal}
     )
-    warrants_revision = (
-        relationship in CONFLICTING_RELATIONSHIPS
-        or any(v.verdict in {CONTRADICTED, INSUFFICIENT_EVIDENCE} for v in verdicts)
-        or draft_miscites
-    )
+    # Recorded rather than inferred. A revision that was served without a named
+    # warrant cannot be audited afterwards, and "it must have had one" is not
+    # an audit trail.
+    warrants: list[str] = []
+    if relationship in CONFLICTING_RELATIONSHIPS:
+        warrants.append(CONFLICT_DETECTED)
+    if any(v.verdict == CONTRADICTED for v in verdicts):
+        warrants.append(CLAIM_CONTRADICTED)
+    if any(v.verdict == INSUFFICIENT_EVIDENCE for v in verdicts):
+        warrants.append(CLAIM_INSUFFICIENT)
+    if draft_miscites:
+        warrants.append(CITATION_REPAIR)
+    warrants_revision = bool(warrants)
     # Withdrawing a claim the evidence does not support legitimately produces an
     # answer with nothing left to cite. Rewriting a supported answer into an
     # uncited one does not.
@@ -423,6 +485,20 @@ def parse(
                 "the revised answer cites no passages while the draft it "
                 "replaces cited evidence"
             )
+        # A narrow warrant must not license a wide change. If the only reason
+        # to revise is that the draft cited the wrong passage, the licence is
+        # to fix the citation, not to rewrite the prose under cover of it.
+        # Otherwise any content change could be laundered through a
+        # misplaced identifier.
+        if set(warrants) == {CITATION_REPAIR}:
+            similarity = prose_similarity(draft, final)
+            if similarity < CITATION_REPAIR_MIN_SIMILARITY:
+                failures.append(
+                    f"the only warrant was citation repair, but the prose "
+                    f"changed substantively (similarity {similarity:.2f} < "
+                    f"{CITATION_REPAIR_MIN_SIMILARITY}); a content change "
+                    f"needs a claim or conflict warrant of its own"
+                )
 
     # Kept out of ``failures`` because it is a policy about what may be served,
     # not a defect in what the model produced. Conflating the two would make
@@ -453,6 +529,9 @@ def parse(
         revised=revised,
         revision_rejected=bool(rejected_reasons and final),
         revision_rejected_reason="; ".join(rejected_reasons),
+        # Only on a revision that was actually served. Recording a warrant
+        # against a rejected revision would suggest one had been exercised.
+        revision_warrant=tuple(warrants) if revised else (),
         validation_failures=tuple(failures),
         raw=text,
     )
