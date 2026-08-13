@@ -58,15 +58,36 @@ K_VALUES = (1, 2, 3, 4, 6, 8, 10)
 THRESHOLDS = (0.0, 0.20, 0.25, 0.30, 0.32, 0.35, 0.40, 0.45, 0.50, 0.60)
 
 
-def anchor_chunks(family, chunk_texts) -> set[str]:
-    """The chunks carrying this family's disputed claims, one per document."""
-    found: set[str] = set()
+def anchor_chunks(family, chunk_texts, focal: tuple[str, ...] = ()) -> set[str]:
+    """The chunks carrying both sides of the claim the question actually asks about.
+
+    A family declares several disputed facts. CONF-01 disputes the mileage rate,
+    the claim window and the reimbursement method, with anchors in four chunks.
+    Demanding all four made the family score 0.00 when the question asks about
+    the rate alone and needs two of them, which is a defect in the measurement
+    rather than a retrieval failure: the first version of this function
+    over-corrected from counting documents to counting everything.
+
+    ``focal`` is the question's expected chunks. The fact whose anchors overlap
+    them is the one being asked about, and both its sides are what must be
+    retrieved. Falling back to every anchor when nothing overlaps keeps the
+    measurement conservative rather than silently permissive.
+    """
+    per_fact: list[set[str]] = []
     for fact in family.conflicting_facts:
+        found: set[str] = set()
         for doc_id, anchor in fact.anchors.items():
             for chunk_id, text in chunk_texts.items():
                 if chunk_id.startswith(doc_id + "#") and anchor in text:
                     found.add(chunk_id)
-    return found
+        per_fact.append(found)
+
+    if focal:
+        wanted = set(focal)
+        matching = [f for f in per_fact if f & wanted]
+        if matching:
+            return set().union(*matching)
+    return set().union(*per_fact) if per_fact else set()
 
 
 def evaluate(retriever, questions, registry, chunk_texts, k_values=K_VALUES) -> dict:
@@ -119,7 +140,7 @@ def evaluate(retriever, questions, registry, chunk_texts, k_values=K_VALUES) -> 
         # chunk from the right documents. Checking documents let a family score
         # 1.00 while the passages stating the disagreement never reached the
         # model, which is the only thing a verifier could reason over.
-        wanted = anchor_chunks(family, chunk_texts)
+        wanted = anchor_chunks(family, chunk_texts, question.expected_chunks)
         for k in k_values:
             both = wanted <= set(order[:k]) if wanted else False
             by_type[family.conflict_type][k].append(both)
