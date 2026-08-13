@@ -623,7 +623,7 @@
       "id": "CONF-12",
       "split": "reported",
       "name": "Credit hold threshold",
-      "type": "mutually_exclusive",
+      "type": "stricter_looser",
       "domain": "finance",
       "risk_level": "medium",
       "documents": [
@@ -631,7 +631,7 @@
         "FIN-01"
       ],
       "authoritative": null,
-      "resolution": "escalate_unresolved",
+      "resolution": "prefer_stricter_and_escalate",
       "conflicting_facts": [
         {
           "fact": "how many days overdue an invoice must be before orders are held",
@@ -653,8 +653,9 @@
         "that orders are held at 30 days as settled policy",
         "that orders are held at 45 days as settled policy"
       ],
-      "note": "Planted 8 August 2026 under pre-registration amendment 1.2, to restore each type to a reportable size after CONF-07 and CONF-09 were found not to be contradictions.",
-      "no_satisfying_action_because": "At 35 days overdue, FIN-01 has the account on hold and OPS-01 has not yet held orders. The order is either taken or refused; there is no action that does both."
+      "note": "Reclassified 13 August 2026 under amendment 1.5. It was mutually_exclusive, justified by the claim that at 35 days overdue OPS-01 has not yet held orders. That inference denies the antecedent: OPS-01's 45-day rule is a sufficient condition for holding, not a licence to trade below it. The justification field records that a reason was given, not that the reason is sound, and this is the case that shows the difference.",
+      "stricter": "FIN-01",
+      "satisfying_action": "Hold the account from day 30 under FIN-01. OPS-01 states a sufficient condition for holding an order at 45 days; it does not require that orders be left unheld before then, so holding earlier satisfies both documents."
     },
     {
       "id": "CONF-13",

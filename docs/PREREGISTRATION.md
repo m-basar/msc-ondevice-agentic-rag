@@ -30,13 +30,13 @@ State frozen at registration:
 |---|---|
 | Corpus | `63a92324d734` (38 documents) |
 | Chunk set | `2c92533c2f86` (141 chunks) |
-| Conflict families | 15 reported, 8 tuning, in four types |
-| Question set | version 1.3, 109 questions, 53 groups |
+| Conflict families | 15 reported (4 supersession / 3 mutually exclusive / 5 stricter-looser / 3 compatible), 8 tuning |
+| Question set | version 1.5, 109 questions, 53 groups |
 | Reported sample | 68 questions, **32 test groups** |
 | Retrieval | `top_k: 6`, `min_similarity: 0.30`, calibrated on development |
-| Tests | 288 passing |
+| Tests | 291 passing |
 
-Superseded by amendments 1.1, 1.2 and 1.3, all of the same date. The values
+Superseded by amendments 1.1 to 1.5. The values
 above are the amended ones; the originals are recorded in each amendment.
 
 ---
@@ -118,40 +118,36 @@ being reported as a success later.
 **What would falsify it.** D exceeding B by more than the pre-specified
 threshold in section 5.
 
-### H2a - Mutually exclusive conflicts need reasoning
+### H2 - Live policy disagreements need reasoning
 
-On the five `mutually_exclusive` families, where no action satisfies both
-documents:
+**Confirmatory.** On the eight families where two current documents disagree -
+three `mutually_exclusive` and five `stricter_looser` pooled:
 
 > **A ≈ B ≈ C < D**
 
 **Rationale.** Both documents are current, both are in force, neither
 supersedes the other. A status filter cannot help and a status marker cannot
 help. Only reasoning over the claims themselves detects that the trade counter
-cannot open at both 08:00 and 08:30. This is the core quantitative case for the
-contribution.
+cannot open at both 08:00 and 08:30, or that quoting 72 hours for a breach
+report breaches another live document's 24. This is the quantitative case for
+the contribution.
+
+**Why pooled.** H2a and H2b were separate until amendment 1.5. Repeated
+classification failures showed that sorting a family into one subtype or the
+other is unreliable on this corpus: a threshold conditioned on the split would
+be conditioned on a judgement that has not held up. Pooling makes the
+confirmatory claim rest on the distinction that *is* robust - whether two live
+documents disagree - and leaves the finer sort to description.
+
+**The subtypes remain, and keep separate rubrics.** They demand different
+behaviour: `mutually_exclusive` surfaces both and picks neither;
+`stricter_looser` names the safe course. Merging the hypothesis does not merge
+the scoring, and per-subtype figures are reported as descriptive breakdowns
+alongside the pooled result.
 
 **What would falsify it.** D not exceeding B by the threshold in section 5.
 This is the hypothesis most likely to fail and the one that decides whether the
 dissertation reports a positive or a null result.
-
-### H2b - Stricter/looser conflicts are the dangerous ones
-
-On the three `stricter_looser` families, where an action satisfies both
-documents but a naive answer does not:
-
-> **A ≈ B ≈ C < D**, and the gap is larger than for H2a
-
-**Rationale.** These are more dangerous than mutual exclusions and easier to
-miss. Nothing looks wrong: an answer of "72 hours" for a breach report is
-fluent, plausible and drawn from a live document, and following it breaches
-IT-02's 24 hours. A baseline has no reason to prefer one figure, so it will
-often quote whichever chunk ranked first. A verifier that notices two figures
-for one obligation can name the stricter as the safe course, which is a
-behaviour the baseline cannot express.
-
-**What would falsify it.** D not exceeding B, or D preferring the looser figure
-as often as the baseline does.
 
 ### H2c - Verification over-detects
 
@@ -922,9 +918,16 @@ Two fields now close that gap:
 
 Writing "wear safety footwear on every visit, which satisfies both" makes it
 obvious that CONF-11 was never mutually exclusive. Being unable to write such a
-sentence is what establishes that a family is. `_validate_family_shape` enforces
-both, so a misclassification is now a validation failure rather than something a
-reviewer finds three days later.
+sentence is what establishes that a family is. `_validate_family_shape` enforces both, so a family
+cannot be typed without a stated reason.
+
+**What this does and does not achieve.** The schema validates that a
+justification *exists*, not that it is *sound*. CONF-12 passed with a sentence
+that denied the antecedent - reading OPS-01's "hold if over 45 days" as licence
+to trade below 45 - and amendment 1.5 corrects it. The field makes the
+reasoning visible and reviewable, which is worth having; it does not make
+misclassification impossible, and an earlier version of this amendment said it
+did.
 
 ## 1.4.3 Conflict-pair recall measured the wrong thing
 
@@ -974,3 +977,88 @@ recorded as known rather than fixed.
 | Tests | 288 | 289 |
 
 No arm has been run. Stage 5 has not begun.
+
+---
+
+# Amendment 1.5 - 13 August 2026
+
+Final amendment before the gold data is frozen. Made **before any arm was run**.
+After this: no new families, no taxonomy changes, no retrieval tuning.
+
+## 1.5.1 CONF-12 reclassified, and the logical error named
+
+CONF-12 was `mutually_exclusive`, justified by the claim that at 35 days overdue
+FIN-01 has the account on hold while OPS-01 has not yet held orders, so the
+order is either taken or refused.
+
+That **denies the antecedent**. OPS-01 reads "trade orders are automatically
+held if any invoice is more than 45 days overdue". That is a *sufficient*
+condition for holding, not a requirement to leave orders unheld below it. My
+inference treated it as necessary. Holding the account from day 30 under FIN-01
+satisfies both documents.
+
+CONF-12 is `stricter_looser`, stricter = FIN-01.
+
+**Reported counts: 4 supersession / 3 mutually exclusive / 5 stricter-looser /
+3 compatible.**
+
+## 1.5.2 What the justification field actually does
+
+Amendment 1.4 said a misclassification is "now a validation failure". It is not.
+The schema validates that a justification **exists**, not that it is **sound**.
+CONF-12 passed the check with an invalid inference.
+
+The field is still worth having: it puts the reasoning in the file where a
+reader can test it, which is how this error was found. But the claim has been
+corrected in 1.4 and is stated accurately here.
+
+## 1.5.3 H2a and H2b merged for the confirmatory analysis
+
+A trigger was written down before this review: if another misclassification
+survived the justification field, the taxonomy was too fine for this corpus and
+the subtypes should be pooled. It survived, so the trigger fires.
+
+**H2 is now one hypothesis over the eight families where two live documents
+disagree**, threshold Δ > 0.25 with the direction holding in **6 of 8**.
+
+Two decisions were being conflated and are now separated:
+
+| Decision | Outcome |
+|---|---|
+| How answers are **scored** | Subtypes keep separate rubrics. `mutually_exclusive` surfaces both and picks neither; `stricter_looser` names the safe course. These are different behaviours and one rubric cannot score both. |
+| What is **claimed** | Pooled. The confirmatory threshold rests on "two live documents disagree", which has held up, rather than on the sort between subtypes, which has not. |
+
+Per-subtype figures are reported as descriptive breakdowns with no threshold of
+their own.
+
+## 1.5.4 Rubric drift repaired
+
+| | Was | Now |
+|---|---|---|
+| CONF-11 | `stricter_looser` since 1.4 but the rubric never required the safe course | Requires "wear safety footwear on every warehouse visit" and escalation |
+| TUNE-06 | Same, and its gold answer did not escalate | Requires "use the RA within 14 days" and escalation |
+| CONF-12 | Rubric written for a mutual exclusion | Rewritten for stricter/looser, naming 30 days as the operative point |
+| CONF-06-Q3 | Asked about a deletion request while the gold concerned expiry of a retention period | Reworded to expiry |
+
+## 1.5.5 Platform-sensitive ranking
+
+Laptop and Pi rankings differ at k=3 on near-tied similarity scores, while
+agreeing at every configured k. Recorded as platform-sensitive ranking rather
+than as a defect or as identical execution.
+
+## Freeze
+
+Retrieval stands: `top_k: 6`, `min_similarity: 0.30` as a conservative floor,
+not an answerability classifier. No index rebuild.
+
+**The gold data is frozen at this commit.** No arm has been run on any question.
+Stage 5 begins next.
+
+| | |
+|---|---|
+| Corpus | `63a92324d734`, 38 documents |
+| Chunk set | `2c92533c2f86`, 141 chunks |
+| Reported families | 15: **4 / 3 / 5 / 3** |
+| Confirmatory H2 denominator | **8 pooled** |
+| Question set | 109 questions, 53 groups; reported sample 68 questions in 32 test groups |
+| Tests | 291 passing |

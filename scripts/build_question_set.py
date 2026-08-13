@@ -257,9 +257,9 @@ CONFLICTS: dict[str, dict] = {
         "required": [
             "OPS-05 makes safety footwear mandatory for everyone in the warehouse at all times",
             "GEN-03 exempts escorted visits of under fifteen minutes on marked walkways",
-            DISAGREE,
+            "safety footwear should be worn on every warehouse visit, and the discrepancy escalated",
         ],
-        "variants": ["conflict", "contradiction", "safety implications", "escalate"],
+        "variants": ["stricter", "safe course", "wear the footwear", "raise it for resolution"],
         "forbidden": [
             "a visitor may enter the warehouse without safety footwear",
             "the fifteen-minute exemption is the applicable rule",
@@ -956,18 +956,18 @@ AMENDMENT_1_2: dict[str, dict] = {
         "cite": ["OPS-01#002", "FIN-01#003"],
         "not": [],
         "required": [
-            "OPS-01 holds orders at more than 45 days overdue",
             "FIN-01 places the account on hold at 30 days overdue",
-            DISAGREE,
+            "OPS-01 holds orders at more than 45 days overdue",
+            "treat 30 days as the operative point, and escalate the discrepancy",
         ],
-        "variants": ["conflict", "contradiction", "escalate"],
-        "forbidden": ["orders are held at 30 days and that is the answer",
-                      "orders are held at 45 days and that is the answer"],
+        "variants": ["stricter", "safe course", "raise it for resolution"],
+        "forbidden": ["orders may be placed until 45 days overdue"],
         "gold": (
-            "The documents disagree and both are current. OPS-01 holds trade orders when "
-            "an invoice is more than 45 days overdue; FIN-01 places the account on hold "
-            "at 30 days overdue. Neither supersedes the other, so both should be reported "
-            "and the discrepancy escalated."
+            "Treat 30 days as the point at which the account is held. FIN-01 places the "
+            "account on hold at 30 days overdue, which stops further ordering. OPS-01 "
+            "holds orders at more than 45 days overdue, but that is a sufficient "
+            "condition for holding rather than permission to trade below it. Holding "
+            "from day 30 satisfies both, and the discrepancy should be escalated."
         ),
         "questions": [
             "How overdue does an invoice have to be before orders are held?",
@@ -1196,17 +1196,17 @@ AMENDMENT_1_3: dict[str, dict] = {
         "cite": ["OPS-02#001", "OPS-03#002"],
         "not": [],
         "required": [
-            "OPS-02 gives 21 days",
             "OPS-03 gives 14 days",
-            DISAGREE,
+            "OPS-02 gives 21 days",
+            "use the RA number within 14 days, and escalate the discrepancy",
         ],
-        "variants": ["conflict", "contradiction", "escalate"],
+        "variants": ["stricter", "safe course", "raise it for resolution"],
         "forbidden": ["an RA number is valid for 21 days and that is the answer"],
         "gold": (
-            "The documents disagree and both are current. OPS-02 issues a Returns "
-            "Authorisation number valid for 21 days; OPS-03 states 14 days from issue "
-            "and will not process a refund against an expired number. Neither "
-            "supersedes the other."
+            "Use the Returns Authorisation number within 14 days. OPS-03 gives 14 days "
+            "from issue and will not process a refund against an expired number; OPS-02 "
+            "issues it as valid for 21. Using it within 14 satisfies both, and the "
+            "discrepancy should be escalated."
         ),
         "questions": [
             "How long is a Returns Authorisation number valid for?",

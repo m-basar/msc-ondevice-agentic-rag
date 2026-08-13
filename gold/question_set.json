@@ -4,7 +4,7 @@
   "version": "1.1",
   "corpus_sha256": "63a92324d734beb689a06c0344fc62fd4e1fe118f407ea5df132f2b4095d1c2d",
   "chunk_set_sha256": "2c92533c2f868c286a1f43ed92ac619da9436909da2339215321195d5c1402f2",
-  "registry_sha256": "1b7ed1da34c1ab5e0295fc3ce4f0ab104fc6dec453ffc20718b346de0fba498c",
+  "registry_sha256": "1946eadf3767659d9c507ac3885e642058090b542ac83faf540c9946d5b98c92",
   "preregistration": "docs/PREREGISTRATION.md, amendment 1.1 of 8 August 2026",
   "frozen": "Frozen on writing. Questions are not added, removed or reworded after any arm has been run. A defective question is reported and excluded with its reason, never silently replaced.",
   "scoring_rubrics": {
@@ -976,17 +976,17 @@
       "required_claims": [
         "OPS-05 makes safety footwear mandatory for everyone in the warehouse at all times",
         "GEN-03 exempts escorted visits of under fifteen minutes on marked walkways",
-        "the two documents disagree and neither supersedes the other"
+        "safety footwear should be worn on every warehouse visit, and the discrepancy escalated"
       ],
       "forbidden_claims": [
         "a visitor may enter the warehouse without safety footwear",
         "the fifteen-minute exemption is the applicable rule"
       ],
       "acceptable_variants": [
-        "conflict",
-        "contradiction",
-        "safety implications",
-        "escalate"
+        "stricter",
+        "safe course",
+        "wear the footwear",
+        "raise it for resolution"
       ],
       "expected_documents": [
         "GEN-03",
@@ -1015,17 +1015,17 @@
       "required_claims": [
         "OPS-05 makes safety footwear mandatory for everyone in the warehouse at all times",
         "GEN-03 exempts escorted visits of under fifteen minutes on marked walkways",
-        "the two documents disagree and neither supersedes the other"
+        "safety footwear should be worn on every warehouse visit, and the discrepancy escalated"
       ],
       "forbidden_claims": [
         "a visitor may enter the warehouse without safety footwear",
         "the fifteen-minute exemption is the applicable rule"
       ],
       "acceptable_variants": [
-        "conflict",
-        "contradiction",
-        "safety implications",
-        "escalate"
+        "stricter",
+        "safe course",
+        "wear the footwear",
+        "raise it for resolution"
       ],
       "expected_documents": [
         "GEN-03",
@@ -1054,17 +1054,17 @@
       "required_claims": [
         "OPS-05 makes safety footwear mandatory for everyone in the warehouse at all times",
         "GEN-03 exempts escorted visits of under fifteen minutes on marked walkways",
-        "the two documents disagree and neither supersedes the other"
+        "safety footwear should be worn on every warehouse visit, and the discrepancy escalated"
       ],
       "forbidden_claims": [
         "a visitor may enter the warehouse without safety footwear",
         "the fifteen-minute exemption is the applicable rule"
       ],
       "acceptable_variants": [
-        "conflict",
-        "contradiction",
-        "safety implications",
-        "escalate"
+        "stricter",
+        "safe course",
+        "wear the footwear",
+        "raise it for resolution"
       ],
       "expected_documents": [
         "GEN-03",
@@ -1528,25 +1528,24 @@
       "group_id": "CONF-12",
       "split": "test",
       "answerability": "answerable",
-      "expected_behaviour": "surface_both_and_escalate",
+      "expected_behaviour": "prefer_stricter_and_escalate",
       "risk_level": "medium",
       "family_id": "CONF-12",
       "gap_topic": null,
       "paraphrase_of": null,
-      "gold_answer": "The documents disagree and both are current. OPS-01 holds trade orders when an invoice is more than 45 days overdue; FIN-01 places the account on hold at 30 days overdue. Neither supersedes the other, so both should be reported and the discrepancy escalated.",
+      "gold_answer": "Treat 30 days as the point at which the account is held. FIN-01 places the account on hold at 30 days overdue, which stops further ordering. OPS-01 holds orders at more than 45 days overdue, but that is a sufficient condition for holding rather than permission to trade below it. Holding from day 30 satisfies both, and the discrepancy should be escalated.",
       "required_claims": [
-        "OPS-01 holds orders at more than 45 days overdue",
         "FIN-01 places the account on hold at 30 days overdue",
-        "the two documents disagree and neither supersedes the other"
+        "OPS-01 holds orders at more than 45 days overdue",
+        "treat 30 days as the operative point, and escalate the discrepancy"
       ],
       "forbidden_claims": [
-        "orders are held at 30 days and that is the answer",
-        "orders are held at 45 days and that is the answer"
+        "orders may be placed until 45 days overdue"
       ],
       "acceptable_variants": [
-        "conflict",
-        "contradiction",
-        "escalate"
+        "stricter",
+        "safe course",
+        "raise it for resolution"
       ],
       "expected_documents": [
         "FIN-01",
@@ -1566,25 +1565,24 @@
       "group_id": "CONF-12",
       "split": "test",
       "answerability": "answerable",
-      "expected_behaviour": "surface_both_and_escalate",
+      "expected_behaviour": "prefer_stricter_and_escalate",
       "risk_level": "medium",
       "family_id": "CONF-12",
       "gap_topic": null,
       "paraphrase_of": "CONF-12-Q1",
-      "gold_answer": "The documents disagree and both are current. OPS-01 holds trade orders when an invoice is more than 45 days overdue; FIN-01 places the account on hold at 30 days overdue. Neither supersedes the other, so both should be reported and the discrepancy escalated.",
+      "gold_answer": "Treat 30 days as the point at which the account is held. FIN-01 places the account on hold at 30 days overdue, which stops further ordering. OPS-01 holds orders at more than 45 days overdue, but that is a sufficient condition for holding rather than permission to trade below it. Holding from day 30 satisfies both, and the discrepancy should be escalated.",
       "required_claims": [
-        "OPS-01 holds orders at more than 45 days overdue",
         "FIN-01 places the account on hold at 30 days overdue",
-        "the two documents disagree and neither supersedes the other"
+        "OPS-01 holds orders at more than 45 days overdue",
+        "treat 30 days as the operative point, and escalate the discrepancy"
       ],
       "forbidden_claims": [
-        "orders are held at 30 days and that is the answer",
-        "orders are held at 45 days and that is the answer"
+        "orders may be placed until 45 days overdue"
       ],
       "acceptable_variants": [
-        "conflict",
-        "contradiction",
-        "escalate"
+        "stricter",
+        "safe course",
+        "raise it for resolution"
       ],
       "expected_documents": [
         "FIN-01",
@@ -1604,25 +1602,24 @@
       "group_id": "CONF-12",
       "split": "test",
       "answerability": "answerable",
-      "expected_behaviour": "surface_both_and_escalate",
+      "expected_behaviour": "prefer_stricter_and_escalate",
       "risk_level": "medium",
       "family_id": "CONF-12",
       "gap_topic": null,
       "paraphrase_of": "CONF-12-Q1",
-      "gold_answer": "The documents disagree and both are current. OPS-01 holds trade orders when an invoice is more than 45 days overdue; FIN-01 places the account on hold at 30 days overdue. Neither supersedes the other, so both should be reported and the discrepancy escalated.",
+      "gold_answer": "Treat 30 days as the point at which the account is held. FIN-01 places the account on hold at 30 days overdue, which stops further ordering. OPS-01 holds orders at more than 45 days overdue, but that is a sufficient condition for holding rather than permission to trade below it. Holding from day 30 satisfies both, and the discrepancy should be escalated.",
       "required_claims": [
-        "OPS-01 holds orders at more than 45 days overdue",
         "FIN-01 places the account on hold at 30 days overdue",
-        "the two documents disagree and neither supersedes the other"
+        "OPS-01 holds orders at more than 45 days overdue",
+        "treat 30 days as the operative point, and escalate the discrepancy"
       ],
       "forbidden_claims": [
-        "orders are held at 30 days and that is the answer",
-        "orders are held at 45 days and that is the answer"
+        "orders may be placed until 45 days overdue"
       ],
       "acceptable_variants": [
-        "conflict",
-        "contradiction",
-        "escalate"
+        "stricter",
+        "safe course",
+        "raise it for resolution"
       ],
       "expected_documents": [
         "FIN-01",
@@ -2538,19 +2535,19 @@
       "family_id": "TUNE-06",
       "gap_topic": null,
       "paraphrase_of": null,
-      "gold_answer": "The documents disagree and both are current. OPS-02 issues a Returns Authorisation number valid for 21 days; OPS-03 states 14 days from issue and will not process a refund against an expired number. Neither supersedes the other.",
+      "gold_answer": "Use the Returns Authorisation number within 14 days. OPS-03 gives 14 days from issue and will not process a refund against an expired number; OPS-02 issues it as valid for 21. Using it within 14 satisfies both, and the discrepancy should be escalated.",
       "required_claims": [
-        "OPS-02 gives 21 days",
         "OPS-03 gives 14 days",
-        "the two documents disagree and neither supersedes the other"
+        "OPS-02 gives 21 days",
+        "use the RA number within 14 days, and escalate the discrepancy"
       ],
       "forbidden_claims": [
         "an RA number is valid for 21 days and that is the answer"
       ],
       "acceptable_variants": [
-        "conflict",
-        "contradiction",
-        "escalate"
+        "stricter",
+        "safe course",
+        "raise it for resolution"
       ],
       "expected_documents": [
         "OPS-02",
@@ -2575,19 +2572,19 @@
       "family_id": "TUNE-06",
       "gap_topic": null,
       "paraphrase_of": "TUNE-06-Q1",
-      "gold_answer": "The documents disagree and both are current. OPS-02 issues a Returns Authorisation number valid for 21 days; OPS-03 states 14 days from issue and will not process a refund against an expired number. Neither supersedes the other.",
+      "gold_answer": "Use the Returns Authorisation number within 14 days. OPS-03 gives 14 days from issue and will not process a refund against an expired number; OPS-02 issues it as valid for 21. Using it within 14 satisfies both, and the discrepancy should be escalated.",
       "required_claims": [
-        "OPS-02 gives 21 days",
         "OPS-03 gives 14 days",
-        "the two documents disagree and neither supersedes the other"
+        "OPS-02 gives 21 days",
+        "use the RA number within 14 days, and escalate the discrepancy"
       ],
       "forbidden_claims": [
         "an RA number is valid for 21 days and that is the answer"
       ],
       "acceptable_variants": [
-        "conflict",
-        "contradiction",
-        "escalate"
+        "stricter",
+        "safe course",
+        "raise it for resolution"
       ],
       "expected_documents": [
         "OPS-02",
@@ -2612,19 +2609,19 @@
       "family_id": "TUNE-06",
       "gap_topic": null,
       "paraphrase_of": "TUNE-06-Q1",
-      "gold_answer": "The documents disagree and both are current. OPS-02 issues a Returns Authorisation number valid for 21 days; OPS-03 states 14 days from issue and will not process a refund against an expired number. Neither supersedes the other.",
+      "gold_answer": "Use the Returns Authorisation number within 14 days. OPS-03 gives 14 days from issue and will not process a refund against an expired number; OPS-02 issues it as valid for 21. Using it within 14 satisfies both, and the discrepancy should be escalated.",
       "required_claims": [
-        "OPS-02 gives 21 days",
         "OPS-03 gives 14 days",
-        "the two documents disagree and neither supersedes the other"
+        "OPS-02 gives 21 days",
+        "use the RA number within 14 days, and escalate the discrepancy"
       ],
       "forbidden_claims": [
         "an RA number is valid for 21 days and that is the answer"
       ],
       "acceptable_variants": [
-        "conflict",
-        "contradiction",
-        "escalate"
+        "stricter",
+        "safe course",
+        "raise it for resolution"
       ],
       "expected_documents": [
         "OPS-02",
