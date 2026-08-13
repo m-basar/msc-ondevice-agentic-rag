@@ -1062,3 +1062,112 @@ Stage 5 begins next.
 | Confirmatory H2 denominator | **8 pooled** |
 | Question set | 109 questions, 53 groups; reported sample 68 questions in 32 test groups |
 | Tests | 291 passing |
+
+---
+
+# Amendment 1.6 - 13 August 2026
+
+Made **before any test-split arm was run**, and before the diagnostic protocol
+in `docs/VERIFIER_PROTOCOL.md` was executed. This amendment changes what Arm D
+does, so it is recorded rather than treated as a bug fix.
+
+The gold data, the corpus, the chunk set, the question set and the retrieval
+settings are untouched. The freeze at Amendment 1.5 stands.
+
+## 1.6.1 Arm D was rewriting answers it had no complaint about
+
+Development pilot 02 revised six answers. In five of the six the verifier had
+reported `relationship: no_relationship` with every claim `SUPPORTED`: it found
+nothing wrong and rewrote the answer anyway. Two of those rewrites were served
+and were worse than the drafts they replaced.
+
+| Question | Draft | Served instead |
+|---|---|---|
+| CONF-01-Q3 | "You may claim 55 pence per mile [HR-13#001]" | "The answer under review does not address a conflict between passages." |
+| TUNE-06-Q1 | "A Returns Authorisation number is valid for 14 days [OPS-03#002]" | "The validity period ... is not explicitly stated in the provided evidence. However, it can be inferred that ..." |
+
+The first is commentary on the review served to the user as the answer. The
+second withdraws a correct cited fact and replaces it with an inference, which
+is the specific behaviour grounded generation exists to prevent.
+
+The revision guard did not stop either. It checked that cited identifiers
+resolve and that citations name passages rather than documents. Both checks
+pass **vacuously** on an answer that cites nothing, which is what both of these
+were. The guard was written against the failure mode I imagined - invented
+citations - and was silent on the degenerate case.
+
+## 1.6.2 Why this matters more than the two bad answers
+
+Arms B and D share a draft so that any difference between them is attributable
+to the verification layer. That is the whole basis of the confirmatory contrast
+for H2. Three of the six revisions were cosmetic: a citation moved to the other
+side of a full stop, an "According to" removed. Serving those puts differences
+into the B-versus-D comparison that verification did not cause, and the
+comparison then partly measures rewording.
+
+## 1.6.3 The rule, as now implemented
+
+A revision is served only when the verification records a reason for one:
+
+1. a conflict was detected, or
+2. a claim verdict is `CONTRADICTED` or `INSUFFICIENT_EVIDENCE`, or
+3. the draft cites evidence that was never retrieved, or cites a document
+   rather than a passage.
+
+Otherwise the draft stands unchanged and `revision_rejected` records why.
+
+Condition 3 was added after the first version of the rule blocked a revision
+that repaired a miscitation - the one correction the layer is best placed to
+make. A rule that prevented it would have been worse than no rule.
+
+Separately, a revision that cites **no** passages while replacing a draft that
+cited evidence is rejected, unless every claim verdict is
+`INSUFFICIENT_EVIDENCE`. Withdrawing an unsupported claim legitimately leaves
+nothing to cite; quietly stripping citations from a supported answer does not.
+
+Under this rule all five unwarranted pilot 02 revisions are withheld and the
+sixth, an abstention, is served.
+
+## 1.6.4 A verification layer that finds nothing is now a no-op
+
+Stated as a design commitment rather than left implicit. It is testable, and it
+is the property that makes B versus D interpretable.
+
+## 1.6.5 The stopping rule is executable and committed in advance
+
+`src/sme_assistant/evaluation/stopping_gate.py` computes the development
+decision instead of leaving it to be read off a table. It reports five
+quantities and returns one of `PROCEED`, `REVISE`, `STOP` or `DEFECT`.
+
+Detection and classification are scored separately and deliberately. The pilot
+diagnostic found `qwen2.5:3b` flagging three of four families while correctly
+classifying one; a single accuracy figure would have concealed that, and the
+two findings call for different responses.
+
+A family counts as detected only when a **majority of its three paraphrases**
+is detected. The paraphrases exist to test robustness to wording, so accepting
+one in three would defeat the reason they are there.
+
+The rule was committed before the run that tests it, and it fired `DEFECT` on
+pilot 02 the first time it ran. That is what surfaced 1.6.1. The pilot 02
+decision stands as recorded; the rule was not relaxed to clear it.
+
+## What was not changed
+
+The verifier prompt. This amendment fixes what is done with the verifier's
+output, not what it is asked. Prompt revision 3 remains conditional on the
+diagnostic protocol indicating that a prompt can fix the detection failure.
+
+## State after this amendment
+
+| | Before 1.6 | After 1.6 |
+|---|---|---|
+| Revisions served | any that parsed | **only when warranted** |
+| Uncited revision of a cited answer | served | **rejected unless an abstention** |
+| Development stopping rule | read off a table | **computed and committed** |
+| H5 hardware label | machine that summarised | **machine recorded in the run** |
+| Arm D without Arm B | warning, run proceeded | **refused unless marked exploratory** |
+| Tests | 357 | **377** |
+
+Pilot 02 is superseded and must be re-run before its numbers mean anything. No
+test-split arm has been run. The verifier is not frozen.

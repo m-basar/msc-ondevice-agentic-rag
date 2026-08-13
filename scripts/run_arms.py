@@ -132,6 +132,10 @@ def run_arm(name, questions, *, retriever, generator, verifier, config, kb, inde
     directory = writer.finish({
         "questions": len(questions),
         "drafts_reused_from": "B" if drafts else None,
+        # Stated in the run rather than inferred from it later. A D run that
+        # did not reuse B's drafts is exploratory, and six months on nobody
+        # will remember which of two identical-looking directories that was.
+        "isolates_verification": bool(drafts) if spec["verification"] else None,
     })
     return directory, produced
 
@@ -144,7 +148,15 @@ def main() -> int:
     parser.add_argument("--tag", default="")
     parser.add_argument("--i-have-frozen-everything", action="store_true",
                         help="required to run the test split")
+    parser.add_argument("--d-without-b", action="store_true",
+                        help="allow an exploratory Arm D that cannot support H2")
     args = parser.parse_args()
+
+    if args.split == "test" and args.d_without_b:
+        raise SystemExit(
+            "--d-without-b marks a run exploratory. The test split produces "
+            "the reported numbers, so it cannot be exploratory."
+        )
 
     if args.split == "test" and not args.i_have_frozen_everything:
         raise SystemExit(
@@ -185,9 +197,24 @@ def main() -> int:
         reuse = drafts.get("B") if name == "D" else None
         if name == "D" and reuse:
             print("    reusing Arm B drafts, so B vs D isolates verification")
+        elif name == "D" and not args.d_without_b:
+            # Previously a warning, which meant a run whose confirmatory
+            # contrast was invalid still produced a full results directory
+            # that looked exactly like a valid one. A warning scrolls past;
+            # by the time the numbers are being read, nobody remembers it.
+            raise SystemExit(
+                "Arm D was requested without Arm B. D would generate its own "
+                "draft, so B vs D would compare two independent first passes "
+                "and sampling noise would be indistinguishable from a "
+                "verification effect. That is the confirmatory contrast for "
+                "H2.\n\n"
+                "Run '--arms B D', or pass --d-without-b if you genuinely want "
+                "an exploratory D-only run."
+            )
         elif name == "D":
-            print("    WARNING: Arm B was not run, so D generated its own draft "
-                  "and the B vs D contrast is not isolated")
+            print("    EXPLORATORY: Arm B was not run. D generated its own "
+                  "draft, so B vs D does not isolate verification and this "
+                  "run cannot support H2.")
         directories[name], drafts[name] = run_arm(
             name, questions, retriever=retriever, generator=generator,
             verifier=verifier, config=config, kb=kb, index=index,

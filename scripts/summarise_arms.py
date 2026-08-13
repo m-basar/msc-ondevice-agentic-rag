@@ -19,6 +19,10 @@ blinded, against the rubric written into the question set, and no automatic
 proxy for them is reported here. What it does report is everything that can be
 counted without judgement: detection rates, citation behaviour, abstention,
 latency, and the failure modes the verifier records about itself.
+
+It also prints the stopping gate, which is a computed decision rather than a
+metric. See ``evaluation/stopping_gate.py`` for the rule and ``docs/
+VERIFIER_PROTOCOL.md`` for why it was committed before the run it judges.
 """
 
 from __future__ import annotations
@@ -38,19 +42,40 @@ from sme_assistant.evaluation.config import load_evaluation_config  # noqa: E402
 from sme_assistant.evaluation.conflicts import load_conflicts  # noqa: E402
 from sme_assistant.evaluation.question_set import load_question_set  # noqa: E402
 from sme_assistant.evaluation.run_writer import read_run  # noqa: E402
+from sme_assistant.evaluation.stopping_gate import (  # noqa: E402
+    evaluate_gate,
+    format_gate,
+)
 
 
-def load_runs(config, split: str, mock: bool) -> dict[str, list[dict]]:
+def load_runs(config, split: str, mock: bool) -> tuple[dict[str, list[dict]], dict[str, dict]]:
+    """Return answers and manifests, keyed by arm.
+
+    The manifest used to be discarded here. That is how the H5 latency note
+    came to describe the machine doing the summarising rather than the machine
+    that produced the numbers: a Pi run summarised on a laptop was labelled a
+    laptop figure. What produced a measurement is recorded in the run, so it
+    should be read from the run.
+    """
     index_path = Path(config.path("paths.results")) / (
         f"latest_{split}{'_mock' if mock else ''}.json"
     )
     if not index_path.exists():
         raise SystemExit(f"No run index at {index_path}. Run scripts/run_arms.py first.")
     directories = json.loads(index_path.read_text(encoding="utf-8"))
-    return {
-        arm: read_run(path if Path(path).is_absolute() else ROOT / path)[1]
+    loaded = {
+        arm: read_run(path if Path(path).is_absolute() else ROOT / path)
         for arm, path in sorted(directories.items())
     }
+    return ({arm: answers for arm, (_, answers) in loaded.items()},
+            {arm: manifest for arm, (manifest, _) in loaded.items()})
+
+
+def hardware_of(manifest: dict) -> tuple[str, str]:
+    """``(machine, hostname)`` as recorded when the run was made."""
+    host = ((manifest or {}).get("environment") or {}).get("host") or {}
+    return (str(host.get("machine") or "unknown"),
+            str(host.get("hostname") or manifest.get("host") or "unknown"))
 
 
 def subtype_of(record, registry) -> str:
@@ -73,7 +98,7 @@ def main() -> int:
     evaluation = load_evaluation_config()
     registry = load_conflicts(evaluation.path("conflicts"))
     question_set = load_question_set(evaluation.path("question_set"))
-    runs = load_runs(config, args.split, args.mock)
+    runs, manifests = load_runs(config, args.split, args.mock)
 
     print(f"Split {args.split}{'  (MOCK)' if args.mock else ''}   "
           f"arms {', '.join(runs)}   "
@@ -160,11 +185,33 @@ def main() -> int:
         b = sum(r["wall_seconds"] for r in baseline) / len(baseline)
         d = sum(r["wall_seconds"] for r in runs["D"]) / len(runs["D"])
         if b:
-            import platform
-            on_pi = platform.machine().lower().startswith("aarch")
-            note = ("H5 predicts 1.5 to 2.5" if on_pi else
-                    "H5 is a Pi-only prediction; this is a laptop figure")
+            # The hardware that produced the runs, not the hardware reading
+            # them. Summarising a Pi run on the laptop previously printed
+            # "this is a laptop figure" against Pi measurements.
+            b_machine, b_host = hardware_of(manifests.get("B", {}))
+            d_machine, d_host = hardware_of(manifests.get("D", {}))
+            if (b_machine, b_host) != (d_machine, d_host):
+                note = (f"NOT COMPARABLE: B ran on {b_host} ({b_machine}), "
+                        f"D on {d_host} ({d_machine})")
+            elif d_machine.lower().startswith("aarch"):
+                note = f"H5 predicts 1.5 to 2.5; measured on {d_host}"
+            else:
+                note = (f"H5 is a Pi-only prediction; measured on {d_host} "
+                        f"({d_machine})")
             print(f"\n  D/B ratio {d / b:.2f}   ({note})")
+
+    # --- the stopping gate ---------------------------------------------------
+    # Written and committed before the run it judges. The point is that the
+    # decision is computed, not formed by looking at a table.
+    if "D" in runs:
+        print()
+        for line in format_gate(evaluate_gate(
+            runs["D"], registry, arm="D", baseline=runs.get("B"),
+        )):
+            print(line)
+        if "B" not in runs:
+            print("\n  Note: Arm B is absent, so the citation-completeness "
+                  "contrast is unavailable.")
     return 0
 
 

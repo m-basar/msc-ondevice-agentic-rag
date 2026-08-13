@@ -8,6 +8,7 @@ finding, and it would look excellent while measuring nothing.
 from __future__ import annotations
 
 import json
+from typing import Any
 
 import pytest
 
@@ -550,19 +551,156 @@ def test_a_document_only_citation_in_the_revision_is_rejected():
 
 
 def test_a_clean_revision_is_still_served():
-    """The gate must reject bad revisions, not all of them."""
+    """The gate must reject bad revisions, not all of them.
+
+    Written as the case the layer exists for: a superseded rate found
+    alongside the current one, so the revision has something to correct.
+    """
     payload = json.dumps({
-        "claims": [{"claim": "x", "verdict": "SUPPORTED", "supporting": ["HR-13#001"]}],
-        "relationship": "no_relationship",
-        "final_answer": "The rate is 55 pence per mile [HR-13#001].",
+        "claims": [{"claim": "the current rate is 55 pence", "verdict": "SUPPORTED",
+                    "supporting": ["HR-13#001"]}],
+        "relationship": "supersession",
+        "conflicting_chunks": ["HR-13#001", "HR-03#001"],
+        "final_answer": "The current rate is 55 pence per mile [HR-13#001].",
     })
-    result = schema.parse(payload, {"HR-13#001"}, POLICY, draft="The rate is 40 pence.")
+    result = schema.parse(
+        payload, {"HR-13#001", "HR-03#001"}, POLICY,
+        draft="The rate is 40 pence per mile [HR-03#001].",
+    )
 
     assert not result.validation_failures
     assert not result.revision_rejected
     assert result.revised
-    assert result.final_answer == "The rate is 55 pence per mile [HR-13#001]."
+    assert result.final_answer == "The current rate is 55 pence per mile [HR-13#001]."
     assert result.confidence == "medium"
+
+
+# --- a verifier that finds nothing must change nothing ------------------------
+# Pilot 02 rewrote six answers on a verdict of no_relationship with every claim
+# SUPPORTED. Two of those rewrites were served and were worse than the drafts
+# they replaced. The cases below are the actual strings from that run.
+
+
+def test_commentary_on_the_review_is_never_served_as_the_answer():
+    """The exact failure from CONF-01-Q3.
+
+    A correct, cited answer about mileage rates was replaced by a sentence
+    about whether the passages conflict. The user asked what the rate is.
+    """
+    payload = json.dumps({
+        "claims": [{"claim": "55 pence per mile", "verdict": "SUPPORTED",
+                    "supporting": ["HR-13#001"]}],
+        "relationship": "no_relationship",
+        "final_answer": "The answer under review does not address a conflict "
+                        "between passages.",
+    })
+    draft = "You may claim 55 pence per mile [HR-13#001]."
+    result = schema.parse(payload, {"HR-13#001"}, POLICY, draft=draft)
+
+    assert result.final_answer == draft
+    assert not result.revised
+    assert result.revision_rejected
+    assert "nothing for a revision to fix" in result.revision_rejected_reason
+
+
+def test_a_cosmetic_rewrite_of_an_unchallenged_answer_is_not_served():
+    """Moving a citation is not verification, and it contaminates B versus D.
+
+    The two arms share a draft so that any difference between them is caused
+    by the verification layer. A reworded but equivalent answer puts a
+    difference into that contrast which verification did not cause.
+    """
+    payload = json.dumps({
+        "claims": [{"claim": "25 days", "verdict": "SUPPORTED",
+                    "supporting": ["HR-01#001"]}],
+        "relationship": "no_relationship",
+        "final_answer": "Full-time employees receive 25 days [HR-01#001].",
+    })
+    draft = "According to [HR-01#001], full-time employees receive 25 days."
+    result = schema.parse(payload, {"HR-01#001"}, POLICY, draft=draft)
+
+    assert result.final_answer == draft
+    assert result.revision_rejected
+
+
+def test_stripping_every_citation_from_a_supported_answer_is_rejected():
+    """The exact failure from TUNE-06-Q1, minus its abstention.
+
+    Checking that cited identifiers resolve passes vacuously on an answer that
+    cites nothing, so the original guard let this through.
+    """
+    payload = json.dumps({
+        "claims": [{"claim": "valid for 14 days", "verdict": "CONTRADICTED",
+                    "contradicting": ["OPS-03#002"]}],
+        "relationship": "no_relationship",
+        "final_answer": "The validity period is not stated in the evidence.",
+    })
+    draft = "A Returns Authorisation number is valid for 14 days [OPS-03#002]."
+    result = schema.parse(payload, {"OPS-03#002"}, POLICY, draft=draft)
+
+    assert result.final_answer == draft
+    assert result.revision_rejected
+    assert "cites no passages" in result.revision_rejected_reason
+    # A policy refusal and a validation failure are different things and are
+    # recorded separately, or validation_failures stops measuring bad output.
+    assert result.validation_failures
+
+
+def test_an_abstention_may_legitimately_cite_nothing():
+    """Withdrawing an unsupported claim leaves nothing to cite.
+
+    This is the case the decitation rule must not block, and it is why the
+    rule keys on the verdicts rather than on the citation count alone.
+    """
+    payload = json.dumps({
+        "claims": [{"claim": "valid for 14 days", "verdict": "INSUFFICIENT_EVIDENCE"}],
+        "relationship": "no_relationship",
+        "final_answer": "The evidence does not state a validity period.",
+    })
+    draft = "A Returns Authorisation number is valid for 14 days [OPS-03#002]."
+    result = schema.parse(payload, {"OPS-03#002"}, POLICY, draft=draft)
+
+    assert result.final_answer == "The evidence does not state a validity period."
+    assert result.revised
+    assert not result.revision_rejected
+
+
+def test_a_revision_that_repairs_a_miscitation_is_warranted():
+    """Correcting a wrong citation is the layer's job, not a cosmetic rewrite.
+
+    The first version of the warrant rule blocked this, which would have
+    stopped the verifier making the one correction it is best placed to make.
+    """
+    payload = json.dumps({
+        "claims": [{"claim": "25 days", "verdict": "SUPPORTED",
+                    "supporting": ["HR-01#001"]}],
+        "relationship": "no_relationship",
+        "final_answer": "Employees receive 25 days [HR-01#001].",
+    })
+    result = schema.parse(
+        payload, {"HR-01#001"}, POLICY,
+        draft="Employees receive 25 days [ZZ-99#001].",
+    )
+
+    assert result.revised
+    assert not result.revision_rejected
+    assert result.final_answer == "Employees receive 25 days [HR-01#001]."
+
+
+def test_a_detected_conflict_warrants_a_revision():
+    payload = json.dumps({
+        "claims": [{"claim": "the stricter limit applies", "verdict": "SUPPORTED",
+                    "supporting": ["FIN-02#001"]}],
+        "relationship": "stricter_looser",
+        "conflicting_chunks": ["FIN-02#001", "OPS-01#003"],
+        "final_answer": "Two limits apply; follow the stricter [FIN-02#001].",
+    })
+    result = schema.parse(
+        payload, {"FIN-02#001", "OPS-01#003"}, POLICY, draft="The limit is 5,000.",
+    )
+
+    assert result.revised
+    assert not result.revision_rejected
 
 
 # --- a silent normalisation is still a repair --------------------------------
@@ -624,8 +762,12 @@ def test_a_correctly_spelled_response_is_untouched():
     })
     result = schema.parse(payload, {"HR-01#001"}, POLICY, draft="draft text")
     assert not result.validation_failures
-    assert result.final_answer == "Leave is 25 days [HR-01#001]."
     assert result.confidence == "medium"
+    # The revision is withheld, but for the separate reason that the
+    # verification found nothing to fix. No validation failure was recorded,
+    # which is what this test is about.
+    assert result.final_answer == "draft text"
+    assert result.revision_rejected
 
 
 # --- prompt revision 2, after dev-pilot-01 -----------------------------------
@@ -697,6 +839,62 @@ def test_underscore_metadata_never_reaches_the_model(config):
     generation = client.generate("hello", options={"_note": "documentation"})
     assert not any(k.startswith("_") for k in generation.options)
     assert not any(k.startswith("_") for k in client.last_options)
+
+
+def test_the_real_client_records_exactly_what_it_posted(config):
+    """The recorded options are the posted options, on the real code path.
+
+    MockClient mirrors the merge and filter, which makes the behaviour
+    testable without a server but proves nothing about OllamaClient: the two
+    implementations are duplicated and could drift apart silently, leaving the
+    mock green while real runs recorded something other than what they sent.
+
+    Stubbing the transport rather than the client keeps the whole of
+    ``generate`` under test and captures the actual HTTP payload.
+    """
+    from sme_assistant.common.llm_client import OllamaClient
+
+    client = OllamaClient(config)
+    captured: dict[str, Any] = {}
+
+    def fake_post(endpoint: str, payload: dict) -> dict:
+        captured["endpoint"] = endpoint
+        captured["payload"] = payload
+        return {"response": " grounded answer ", "prompt_eval_count": 11,
+                "eval_count": 5, "prompt_eval_duration": 2_000_000_000,
+                "eval_duration": 1_000_000_000, "load_duration": 0}
+
+    client._post = fake_post  # type: ignore[method-assign]
+    generation = client.generate(
+        "hello", options={"num_predict": 700, "num_ctx": 4096, "_note": "docs"}
+    )
+
+    assert captured["endpoint"] == "/api/generate"
+    assert generation.options == captured["payload"]["options"]
+    assert generation.to_dict()["options"] == captured["payload"]["options"]
+    # The filter has to happen before the wire, not merely before the record.
+    assert not any(k.startswith("_") for k in captured["payload"]["options"])
+    assert captured["payload"]["options"]["num_ctx"] == 4096
+    assert captured["payload"]["options"]["seed"] == 42
+    assert generation.text == "grounded answer"
+
+
+def test_the_two_clients_merge_options_identically(config):
+    """The mock is only a stand-in if it produces the same merge."""
+    from sme_assistant.common.llm_client import OllamaClient
+
+    real = OllamaClient(config)
+    captured: dict[str, Any] = {}
+    real._post = lambda endpoint, payload: (  # type: ignore[method-assign]
+        captured.update(payload) or {"response": "x"}
+    )
+    overrides = {"temperature": 0.0, "num_predict": 700, "_note": "ignored"}
+    real.generate("hello", options=overrides)
+
+    mock = MockClient(config)
+    mock.generate("hello", options=overrides)
+
+    assert captured["options"] == mock.last_options
 
 
 def test_the_verified_record_carries_the_verifier_options(retriever, config):

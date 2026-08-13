@@ -356,6 +356,38 @@ def parse(
 
     final = str(payload.get("final_answer") or "").strip()
 
+    # Did the verification record any reason to change the answer? A layer that
+    # finds nothing must be a no-op. The first version had no such rule, and in
+    # pilot 02 six answers were rewritten on a verdict of no_relationship with
+    # every claim SUPPORTED. One replaced a correct, cited answer about mileage
+    # rates with the sentence "The answer under review does not address a
+    # conflict between passages", which is commentary on the review served to
+    # the user as the answer.
+    #
+    # The methodological cost is larger than the two bad answers. B and D share
+    # a draft precisely so that any difference between them is attributable to
+    # verification. Cosmetic rewrites of answers the verifier had no complaint
+    # about put differences into that contrast which verification did not cause.
+    # The draft citing evidence that was never retrieved is a defect the
+    # verifier can see and repair, and repairing it is squarely the layer's
+    # job. Without this the rule would have blocked exactly the correction it
+    # exists to make: a supported claim attached to the wrong passage.
+    draft_miscites = bool(
+        {i for i in CHUNK_ID_RE.findall(draft) if i not in available}
+        or {doc for doc, ordinal in BRACKET_CITE_RE.findall(draft) if not ordinal}
+    )
+    warrants_revision = (
+        relationship in CONFLICTING_RELATIONSHIPS
+        or any(v.verdict in {CONTRADICTED, INSUFFICIENT_EVIDENCE} for v in verdicts)
+        or draft_miscites
+    )
+    # Withdrawing a claim the evidence does not support legitimately produces an
+    # answer with nothing left to cite. Rewriting a supported answer into an
+    # uncited one does not.
+    is_abstention = bool(verdicts) and all(
+        v.verdict == INSUFFICIENT_EVIDENCE for v in verdicts
+    )
+
     # A revision written from a finding that did not survive validation is not
     # served. The verifier may have described a conflict in prose that the
     # structural check has just withdrawn, and accepting the prose while
@@ -382,8 +414,28 @@ def parse(
                 f"the revised answer cites documents rather than passages: "
                 f"{document_only}"
             )
+        # Checking that cited identifiers resolve says nothing about a revision
+        # that cites none: the check passes vacuously. Two of pilot 02's served
+        # revisions stripped every citation from a cited draft and passed.
+        if (not is_abstention
+                and CHUNK_ID_RE.search(draft) and not CHUNK_ID_RE.search(final)):
+            failures.append(
+                "the revised answer cites no passages while the draft it "
+                "replaces cited evidence"
+            )
 
-    if failures:
+    # Kept out of ``failures`` because it is a policy about what may be served,
+    # not a defect in what the model produced. Conflating the two would make
+    # validation_failures unreadable as a measure of malformed output.
+    unwarranted = bool(final) and not warrants_revision
+    rejected_reasons = list(failures)
+    if unwarranted:
+        rejected_reasons.append(
+            "the verification found no conflict and no unsupported claim, so "
+            "there was nothing for a revision to fix"
+        )
+
+    if failures or unwarranted:
         final_answer, revised = draft, False
     else:
         final_answer = final or draft
@@ -399,8 +451,8 @@ def parse(
         invented_ids=tuple(sorted(invented)),
         final_answer=final_answer,
         revised=revised,
-        revision_rejected=bool(failures and final),
-        revision_rejected_reason="; ".join(failures),
+        revision_rejected=bool(rejected_reasons and final),
+        revision_rejected_reason="; ".join(rejected_reasons),
         validation_failures=tuple(failures),
         raw=text,
     )
