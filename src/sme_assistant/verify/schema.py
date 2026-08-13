@@ -70,6 +70,10 @@ CONFLICTING_RELATIONSHIPS = frozenset({
 })
 
 CHUNK_ID_RE = re.compile(r"\b[A-Z]{2,4}-\d{2}#\d{1,3}\b")
+# Any bracketed citation, with or without a chunk ordinal. Arm D must cite
+# exact passages, so "[HR-13]" is not a valid citation for it even though the
+# document exists: the reader cannot check a claim against a whole document.
+BRACKET_CITE_RE = re.compile(r"\[([A-Z]{2,4}-\d{2})(#\d{1,3})?\]")
 
 # A relationship that is resolvable from document metadata alone. The current
 # document governs, so there is a right answer and no standing escalation.
@@ -140,6 +144,11 @@ class Verification:
     # unsupported conflict reach the user through the back door.
     revision_rejected: bool = False
     revision_rejected_reason: str = ""
+    # Every check the response failed, accumulated rather than short-circuited.
+    # The first version recorded only relationship failures, so a claim verdict
+    # could be downgraded for want of evidence while the revision written from
+    # it was served unchanged.
+    validation_failures: tuple[str, ...] = ()
     # Identifiers the verifier returned that were never retrieved. Recorded
     # rather than silently dropped: a verifier citing evidence it was not given
     # is the same failure as a generator doing it, and it must be visible.
@@ -187,6 +196,7 @@ class Verification:
             "revised": self.revised,
             "revision_rejected": self.revision_rejected,
             "revision_rejected_reason": self.revision_rejected_reason,
+            "validation_failures": list(self.validation_failures),
             "invented_ids": list(self.invented_ids),
             "parse_failed": self.parse_failed,
         }
@@ -277,6 +287,7 @@ def parse(
             final_answer=draft, revised=False,
         )
 
+    failures: list[str] = []
     verdicts: list[ClaimVerdict] = []
     for entry in payload.get("claims") or []:
         if not isinstance(entry, dict):
@@ -289,9 +300,17 @@ def parse(
 
         # Fail closed. A verdict is a claim about evidence, so it cannot
         # outlive the evidence it named.
+        claim_text = str(entry.get("claim", "")).strip()
         if verdict == SUPPORTED and not supporting:
+            failures.append(
+                f"claim {claim_text[:60]!r} was SUPPORTED with no valid supporting passage"
+            )
             verdict = INSUFFICIENT_EVIDENCE
         elif verdict == CONTRADICTED and not contradicting:
+            failures.append(
+                f"claim {claim_text[:60]!r} was CONTRADICTED with no valid "
+                "contradicting passage"
+            )
             verdict = INSUFFICIENT_EVIDENCE
 
         verdicts.append(ClaimVerdict(
@@ -304,11 +323,10 @@ def parse(
         relationship = INSUFFICIENT
 
     conflicting = split_ids(payload.get("conflicting_chunks"), available, invented)
-    structural_failure = ""
     if relationship in CONFLICTING_RELATIONSHIPS:
         documents = {c.split("#")[0] for c in conflicting}
         if len(documents) < 2:
-            structural_failure = (
+            failures.append(
                 f"claimed {relationship} but named evidence from "
                 f"{len(documents)} document(s); a disagreement needs two sides"
             )
@@ -327,18 +345,29 @@ def parse(
     # structural check has just withdrawn, and accepting the prose while
     # rejecting the finding would put the unsupported claim in front of the
     # user anyway.
-    if not structural_failure and final:
-        invented_in_answer = [
+    if final:
+        invented_in_answer = sorted({
             i for i in CHUNK_ID_RE.findall(final) if i not in available
-        ]
+        })
         if invented_in_answer:
             invented.update(invented_in_answer)
-            structural_failure = (
+            failures.append(
                 f"the revised answer cites evidence that was never retrieved: "
-                f"{sorted(set(invented_in_answer))}"
+                f"{invented_in_answer}"
+            )
+        # A document-only citation cannot be checked against a passage, which
+        # is the whole point of the exercise. Caught here rather than left to
+        # the citation metrics, which run after the answer has been served.
+        document_only = sorted({
+            f"[{doc}]" for doc, ordinal in BRACKET_CITE_RE.findall(final) if not ordinal
+        })
+        if document_only:
+            failures.append(
+                f"the revised answer cites documents rather than passages: "
+                f"{document_only}"
             )
 
-    if structural_failure:
+    if failures:
         final_answer, revised = draft, False
     else:
         final_answer = final or draft
@@ -354,8 +383,9 @@ def parse(
         invented_ids=tuple(sorted(invented)),
         final_answer=final_answer,
         revised=revised,
-        revision_rejected=bool(structural_failure and final),
-        revision_rejected_reason=structural_failure,
+        revision_rejected=bool(failures and final),
+        revision_rejected_reason="; ".join(failures),
+        validation_failures=tuple(failures),
         raw=text,
     )
     return replace_confidence(result, policy)
@@ -379,7 +409,7 @@ def replace_confidence(result: Verification, policy: Mapping[str, Any]) -> Verif
         return dataclasses.replace(
             result, confidence=str(policy.get("on_invented_evidence", "low"))
         )
-    if result.revision_rejected:
+    if result.validation_failures:
         return dataclasses.replace(
             result, confidence=str(policy.get("on_invented_evidence", "low"))
         )

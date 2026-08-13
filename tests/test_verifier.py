@@ -509,3 +509,56 @@ def test_citation_metrics_describe_the_served_answer_not_the_draft(retriever, co
     # The draft's figures survive for comparison rather than being overwritten.
     assert payload["draft_hallucinated_citations"] == ["ZZ-99#001"]
     assert payload["draft_has_valid_citation_ids"] is False
+
+
+def test_a_failed_claim_verdict_also_blocks_the_revision():
+    """The gate began at the relationship check, so this slipped through.
+
+    A CONTRADICTED verdict with nothing contradicting it was downgraded, but
+    because the relationship was benign no failure was recorded, and the
+    revision written from that failed verdict was served.
+    """
+    payload = json.dumps({
+        "claims": [{"claim": "The rate is 40 pence", "verdict": "CONTRADICTED",
+                    "contradicting": []}],
+        "relationship": "no_relationship",
+        "final_answer": "The rate is actually 55 pence [HR-01#001].",
+    })
+    result = schema.parse(payload, {"HR-01#001"}, POLICY, draft="The rate is 40 pence.")
+
+    assert result.verdicts[0].verdict == INSUFFICIENT_EVIDENCE
+    assert result.validation_failures, "the downgrade was not recorded as a failure"
+    assert result.revision_rejected
+    assert result.final_answer == "The rate is 40 pence."
+    assert result.confidence == "low"
+
+
+def test_a_document_only_citation_in_the_revision_is_rejected():
+    """Arm D must cite passages. A reader cannot check a claim against a whole
+    document, and the citation metrics run after the answer has been served."""
+    payload = json.dumps({
+        "claims": [], "relationship": "no_relationship",
+        "final_answer": "The rate is 55 pence per mile [HR-13].",
+    })
+    result = schema.parse(payload, {"HR-13#001"}, POLICY, draft="draft text")
+
+    assert result.revision_rejected
+    assert "documents rather than passages" in result.revision_rejected_reason
+    assert result.final_answer == "draft text"
+    assert result.confidence == "low"
+
+
+def test_a_clean_revision_is_still_served():
+    """The gate must reject bad revisions, not all of them."""
+    payload = json.dumps({
+        "claims": [{"claim": "x", "verdict": "SUPPORTED", "supporting": ["HR-13#001"]}],
+        "relationship": "no_relationship",
+        "final_answer": "The rate is 55 pence per mile [HR-13#001].",
+    })
+    result = schema.parse(payload, {"HR-13#001"}, POLICY, draft="The rate is 40 pence.")
+
+    assert not result.validation_failures
+    assert not result.revision_rejected
+    assert result.revised
+    assert result.final_answer == "The rate is 55 pence per mile [HR-13#001]."
+    assert result.confidence == "medium"
