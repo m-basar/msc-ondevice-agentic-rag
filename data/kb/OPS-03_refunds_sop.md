@@ -22,6 +22,10 @@ Three routes exist and they are not interchangeable:
 | Faulty goods | Consumer Rights Act 2015 | Normally yes, but a short clear-cut fault must not be used to delay a refund beyond a reasonable period. |
 | Discretionary change of mind | Company policy only | Yes. Disposition under OPS-02 must be recorded first. |
 
+## Authorisation validity
+
+A Returns Authorisation number is valid for 14 days from issue. Refunds are not processed against an expired number.
+
 ## Timing
 
 | Customer type | Refund issued within |

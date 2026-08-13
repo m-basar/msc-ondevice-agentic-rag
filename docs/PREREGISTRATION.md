@@ -28,16 +28,16 @@ State frozen at registration:
 
 | | |
 |---|---|
-| Corpus | `3f761d41b44b` (38 documents) |
-| Chunk set | `03e5d42bfdfb` (140 chunks) |
-| Registry | `6985aedd8bf3` |
-| Conflict families | 15 reported, 6 tuning, in four types |
-| Question set | version 1.2, 103 questions, 51 groups |
+| Corpus | `63a92324d734` (38 documents) |
+| Chunk set | `2c92533c2f86` (141 chunks) |
+| Conflict families | 15 reported, 8 tuning, in four types |
+| Question set | version 1.3, 109 questions, 53 groups |
 | Reported sample | 68 questions, **32 test groups** |
-| Tests | 276 passing |
+| Retrieval | `top_k: 6`, `min_similarity: 0.30`, calibrated on development |
+| Tests | 288 passing |
 
-Superseded by amendments 1.1 and 1.2, both of the same date. The values above
-are the amended ones; the originals are recorded in each amendment.
+Superseded by amendments 1.1, 1.2 and 1.3, all of the same date. The values
+above are the amended ones; the originals are recorded in each amendment.
 
 ---
 
@@ -744,5 +744,108 @@ thresholds.
 | Question set | 78 questions, 42 groups | 103 questions, 51 groups |
 | Reported sample | 26 test groups | **32 test groups** |
 | Tests | 271 | 276 |
+
+No arm has been run. Stage 5 has not begun.
+
+---
+
+# Amendment 1.3 - 8 August 2026
+
+Retrieval calibration. Made **before any arm was run**, on the development split
+only, using `scripts/evaluate_retrieval.py`. The script refuses the test split.
+
+`top_k: 4` and `min_similarity: 0.32` had been carried since the Stage 4 pilot,
+where they were chosen from four questions. This is the first time either has
+been measured.
+
+## 1.3.1 top_k raised from 4 to 6
+
+| | k=4 | k=6 | k=8 |
+|---|---|---|---|
+| Strict recall | 0.667 | **0.815** | 0.852 |
+| Lenient recall | 0.963 | 0.963 | 0.963 |
+| MRR | 0.889 | | |
+| `version_supersession` pair recall | 1.00 | 1.00 | 1.00 |
+| `stricter_looser` pair recall | 0.56 | **0.89** | 0.89 |
+| `compatible` pair recall | 0.67 | **1.00** | 1.00 |
+
+At k=4, nearly half the `stricter_looser` conflicts were never assembled, so
+H2b would have failed on retrieval rather than on verification. The curve
+flattens after 6 and k=8 buys 0.037 of strict recall for 33% more evidence
+tokens on every Pi prompt.
+
+## 1.3.2 min_similarity lowered from 0.32 to 0.30, and reported as a finding
+
+| | Range of top-1 similarity |
+|---|---|
+| Answerable, n=27 | 0.5548 to 0.8515 |
+| Unanswerable, n=6 | 0.5555 to 0.6113 |
+
+**All six unanswerable questions scored above the lowest answerable one.** The
+distributions overlap completely, so no threshold separates them. At 0.32
+nothing is refused. The first threshold that refuses any unanswerable question
+is 0.60, which also wrongly refuses a real one, and every step from there trades
+one error directly for the other.
+
+This is a **finding, not a tuning failure**, and it is reported as one:
+cosine similarity over a 768-dimension embedding cannot distinguish "the corpus
+does not cover this" from "the corpus covers this". A question about pensions
+retrieves the HR documents with respectable similarity because it is
+recognisably an HR question; nothing in the geometry knows that the answer is
+absent.
+
+It is direct empirical support for **H4**, obtained before the verification
+layer exists rather than afterwards as an explanation. The threshold is set to
+0.30, below every observed score, so it refuses nothing and stops pretending to.
+Abstention becomes the verifier's job, which is what H4 predicts it must be.
+
+**Consequence for Arm A, B and C.** Those arms now have no refusal mechanism at
+all. That is the honest baseline: a retrieval-augmented pipeline without
+verification cannot abstain, and reporting a refusal rate produced by a
+threshold that fires at random would have overstated it.
+
+## 1.3.3 Two representative mutually_exclusive tuning families
+
+`mutually_exclusive` conflict-pair recall read **0.00 at every k up to 6**. That
+row was one family, three questions: TUNE-03.
+
+TUNE-03 is atypical. Its HR-06 side sits in a 122-word chunk headed
+*"Professional development; Study leave; Availability during training"*, with
+the core-hours sentence at the end. A query about core hours has no reason to
+rank it. Every one of the five reported `mutually_exclusive` families has the
+disputed fact in a topically matched chunk on both sides.
+
+So the 0.00 is probably a property of that family rather than of the type -
+**but that cannot be proved without measuring the families the protocol
+forbids looking at.** Two representative families were planted instead:
+
+| | Documents | Conflict | Both sides topically matched |
+|---|---|---|---|
+| TUNE-05 | HR-01 / GEN-01 | Leave year, April-March or January-December | `Leave year` in both |
+| TUNE-06 | OPS-02 / OPS-03 | RA number valid 21 or 14 days | `Return authorisation` / `Authorisation validity` |
+
+Development now has three `mutually_exclusive` families and nine questions.
+TUNE-03 is kept rather than fixed: a family whose disputed fact is buried in an
+unrelated chunk is a realistic hard case, and retaining it alongside two
+representative ones separates "this type is hard" from "this planting was hard".
+
+## What this does not license
+
+The calibrated values were chosen on development questions and are now frozen.
+They are not revisited after seeing any test result. If retrieval turns out to
+be the limiting factor on the test split, that is reported as a limitation, not
+corrected by retuning.
+
+## State after this amendment
+
+| | Before 1.3 | After 1.3 |
+|---|---|---|
+| Corpus | `3f761d41b44b` | `63a92324d734` |
+| Chunk set | `03e5d42bfdfb`, 140 chunks | `2c92533c2f86`, 141 chunks |
+| top_k | 4 | **6** |
+| min_similarity | 0.32 | **0.30** |
+| Tuning families | 6 | 8 |
+| Question set | 103 questions, 51 groups | 109 questions, 53 groups |
+| Tests | 276 | 288 |
 
 No arm has been run. Stage 5 has not begun.

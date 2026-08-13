@@ -123,11 +123,21 @@ def test_current_current_families_involve_only_live_documents(registry, kb):
             )
 
 
-def test_lookup_by_document(registry):
+def test_lookup_by_document(registry, kb):
     families = registry.for_document("HR-03")
     assert len(families) == 1
     assert families[0].authoritative == "HR-13"
-    assert registry.for_document("GEN-01") == []
+
+    # A document can be involved in more than one disagreement, which is
+    # realistic. The lookup returns all of them rather than the first.
+    assert len(registry.for_document("OPS-05")) >= 2
+    # A document in no family at all. GEN-01 was used here until it joined
+    # TUNE-05, which is why this now derives rather than hard-codes.
+    unused = {d.doc_id for d in kb} - {
+        doc for family in registry.all_families for doc in family.documents
+    }
+    assert unused, "every document is in a family, so this check is vacuous"
+    assert registry.for_document(sorted(unused)[0]) == []
 
 
 def test_confidence_policy_covers_every_outcome(registry):

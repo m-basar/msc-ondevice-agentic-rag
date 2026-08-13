@@ -2,9 +2,9 @@
   "schema_version": "1.0",
   "_warning": "Gold data. Not reachable from config.json and not to be read by any inference component.",
   "version": "1.1",
-  "corpus_sha256": "3f761d41b44b60f38411054f335ae3d2caa58ca36a98c183178cf9ae2e7ab95f",
-  "chunk_set_sha256": "03e5d42bfdfbff67c35a5d828bafb4e017948afdb1610eeb5d3679cbc7e76a3b",
-  "registry_sha256": "6985aedd8bf3f8c1b8a4a6c871571cc3572273a6e4b54291e9d62c90057fdfb4",
+  "corpus_sha256": "63a92324d734beb689a06c0344fc62fd4e1fe118f407ea5df132f2b4095d1c2d",
+  "chunk_set_sha256": "2c92533c2f868c286a1f43ed92ac619da9436909da2339215321195d5c1402f2",
+  "registry_sha256": "aeadf55b2d03752e58961e2ecdfc6a0822d64bfa13f7cdf7f95e322d506ed5da",
   "preregistration": "docs/PREREGISTRATION.md, amendment 1.1 of 8 August 2026",
   "frozen": "Frozen on writing. Questions are not added, removed or reworded after any arm has been run. A defective question is reported and excluded with its reason, never silently replaced.",
   "scoring_rubrics": {
@@ -46,36 +46,36 @@
   },
   "scoring_separation": "These criteria score content only. Citation validity, support and completeness are measured separately and automatically, and are reported alongside rather than folded into this scale.",
   "summary": {
-    "question_count": 103,
-    "group_count": 51,
-    "family_group_count": 21,
+    "question_count": 109,
+    "group_count": 53,
+    "family_group_count": 23,
     "by_split": {
-      "dev": 35,
+      "dev": 41,
       "test": 68
     },
     "by_category": {
-      "conflict": 63,
+      "conflict": 69,
       "factual": 15,
       "partial": 4,
       "synthesis": 5,
       "unanswerable": 16
     },
     "by_answerability": {
-      "answerable": 83,
+      "answerable": 89,
       "partial": 4,
       "unanswerable": 16
     },
     "by_risk": {
       "high": 15,
-      "low": 41,
+      "low": 47,
       "medium": 47
     },
     "groups_per_split": {
-      "dev": 19,
+      "dev": 21,
       "test": 32
     },
     "largest_group": 3,
-    "effective_sample_size_note": "103 questions but 51 independent groups. Report inference over groups."
+    "effective_sample_size_note": "109 questions but 53 independent groups. Report inference over groups."
   },
   "questions": [
     {
@@ -2411,6 +2411,228 @@
       ],
       "must_not_cite": [],
       "notes": "Focal claim: whether washing-up liquid may be used when washing by hand."
+    },
+    {
+      "question_id": "TUNE-05-Q1",
+      "text": "When does the leave year start and end?",
+      "category": "conflict",
+      "group_id": "TUNE-05",
+      "split": "dev",
+      "answerability": "answerable",
+      "expected_behaviour": "surface_both_and_escalate",
+      "risk_level": "low",
+      "family_id": "TUNE-05",
+      "gap_topic": null,
+      "paraphrase_of": null,
+      "gold_answer": "The documents disagree and both are current. HR-01 gives the leave year as 1 April to 31 March; GEN-01 gives 1 January to 31 December. Neither supersedes the other.",
+      "required_claims": [
+        "HR-01 gives 1 April to 31 March",
+        "GEN-01 gives 1 January to 31 December",
+        "the two documents disagree and neither supersedes the other"
+      ],
+      "forbidden_claims": [
+        "the leave year runs from 1 April to 31 March and that is the answer"
+      ],
+      "acceptable_variants": [
+        "conflict",
+        "contradiction",
+        "escalate"
+      ],
+      "expected_documents": [
+        "GEN-01",
+        "HR-01"
+      ],
+      "expected_chunks": [
+        "HR-01#002",
+        "GEN-01#004"
+      ],
+      "must_not_cite": [],
+      "notes": "Focal claim: the dates of the company leave year."
+    },
+    {
+      "question_id": "TUNE-05-Q2",
+      "text": "What are the dates of the company leave year?",
+      "category": "conflict",
+      "group_id": "TUNE-05",
+      "split": "dev",
+      "answerability": "answerable",
+      "expected_behaviour": "surface_both_and_escalate",
+      "risk_level": "low",
+      "family_id": "TUNE-05",
+      "gap_topic": null,
+      "paraphrase_of": "TUNE-05-Q1",
+      "gold_answer": "The documents disagree and both are current. HR-01 gives the leave year as 1 April to 31 March; GEN-01 gives 1 January to 31 December. Neither supersedes the other.",
+      "required_claims": [
+        "HR-01 gives 1 April to 31 March",
+        "GEN-01 gives 1 January to 31 December",
+        "the two documents disagree and neither supersedes the other"
+      ],
+      "forbidden_claims": [
+        "the leave year runs from 1 April to 31 March and that is the answer"
+      ],
+      "acceptable_variants": [
+        "conflict",
+        "contradiction",
+        "escalate"
+      ],
+      "expected_documents": [
+        "GEN-01",
+        "HR-01"
+      ],
+      "expected_chunks": [
+        "HR-01#002",
+        "GEN-01#004"
+      ],
+      "must_not_cite": [],
+      "notes": "Focal claim: the dates of the company leave year."
+    },
+    {
+      "question_id": "TUNE-05-Q3",
+      "text": "If I have leave left in March, do I lose it?",
+      "category": "conflict",
+      "group_id": "TUNE-05",
+      "split": "dev",
+      "answerability": "answerable",
+      "expected_behaviour": "surface_both_and_escalate",
+      "risk_level": "low",
+      "family_id": "TUNE-05",
+      "gap_topic": null,
+      "paraphrase_of": "TUNE-05-Q1",
+      "gold_answer": "The documents disagree and both are current. HR-01 gives the leave year as 1 April to 31 March; GEN-01 gives 1 January to 31 December. Neither supersedes the other.",
+      "required_claims": [
+        "HR-01 gives 1 April to 31 March",
+        "GEN-01 gives 1 January to 31 December",
+        "the two documents disagree and neither supersedes the other"
+      ],
+      "forbidden_claims": [
+        "the leave year runs from 1 April to 31 March and that is the answer"
+      ],
+      "acceptable_variants": [
+        "conflict",
+        "contradiction",
+        "escalate"
+      ],
+      "expected_documents": [
+        "GEN-01",
+        "HR-01"
+      ],
+      "expected_chunks": [
+        "HR-01#002",
+        "GEN-01#004"
+      ],
+      "must_not_cite": [],
+      "notes": "Focal claim: the dates of the company leave year."
+    },
+    {
+      "question_id": "TUNE-06-Q1",
+      "text": "How long is a Returns Authorisation number valid for?",
+      "category": "conflict",
+      "group_id": "TUNE-06",
+      "split": "dev",
+      "answerability": "answerable",
+      "expected_behaviour": "surface_both_and_escalate",
+      "risk_level": "low",
+      "family_id": "TUNE-06",
+      "gap_topic": null,
+      "paraphrase_of": null,
+      "gold_answer": "The documents disagree and both are current. OPS-02 issues a Returns Authorisation number valid for 21 days; OPS-03 states 14 days from issue and will not process a refund against an expired number. Neither supersedes the other.",
+      "required_claims": [
+        "OPS-02 gives 21 days",
+        "OPS-03 gives 14 days",
+        "the two documents disagree and neither supersedes the other"
+      ],
+      "forbidden_claims": [
+        "an RA number is valid for 21 days and that is the answer"
+      ],
+      "acceptable_variants": [
+        "conflict",
+        "contradiction",
+        "escalate"
+      ],
+      "expected_documents": [
+        "OPS-02",
+        "OPS-03"
+      ],
+      "expected_chunks": [
+        "OPS-02#001",
+        "OPS-03#002"
+      ],
+      "must_not_cite": [],
+      "notes": "Focal claim: how long a Returns Authorisation number stays valid."
+    },
+    {
+      "question_id": "TUNE-06-Q2",
+      "text": "When does an RA number expire?",
+      "category": "conflict",
+      "group_id": "TUNE-06",
+      "split": "dev",
+      "answerability": "answerable",
+      "expected_behaviour": "surface_both_and_escalate",
+      "risk_level": "low",
+      "family_id": "TUNE-06",
+      "gap_topic": null,
+      "paraphrase_of": "TUNE-06-Q1",
+      "gold_answer": "The documents disagree and both are current. OPS-02 issues a Returns Authorisation number valid for 21 days; OPS-03 states 14 days from issue and will not process a refund against an expired number. Neither supersedes the other.",
+      "required_claims": [
+        "OPS-02 gives 21 days",
+        "OPS-03 gives 14 days",
+        "the two documents disagree and neither supersedes the other"
+      ],
+      "forbidden_claims": [
+        "an RA number is valid for 21 days and that is the answer"
+      ],
+      "acceptable_variants": [
+        "conflict",
+        "contradiction",
+        "escalate"
+      ],
+      "expected_documents": [
+        "OPS-02",
+        "OPS-03"
+      ],
+      "expected_chunks": [
+        "OPS-02#001",
+        "OPS-03#002"
+      ],
+      "must_not_cite": [],
+      "notes": "Focal claim: how long a Returns Authorisation number stays valid."
+    },
+    {
+      "question_id": "TUNE-06-Q3",
+      "text": "My RA number was issued 18 days ago. Can I still use it?",
+      "category": "conflict",
+      "group_id": "TUNE-06",
+      "split": "dev",
+      "answerability": "answerable",
+      "expected_behaviour": "surface_both_and_escalate",
+      "risk_level": "low",
+      "family_id": "TUNE-06",
+      "gap_topic": null,
+      "paraphrase_of": "TUNE-06-Q1",
+      "gold_answer": "The documents disagree and both are current. OPS-02 issues a Returns Authorisation number valid for 21 days; OPS-03 states 14 days from issue and will not process a refund against an expired number. Neither supersedes the other.",
+      "required_claims": [
+        "OPS-02 gives 21 days",
+        "OPS-03 gives 14 days",
+        "the two documents disagree and neither supersedes the other"
+      ],
+      "forbidden_claims": [
+        "an RA number is valid for 21 days and that is the answer"
+      ],
+      "acceptable_variants": [
+        "conflict",
+        "contradiction",
+        "escalate"
+      ],
+      "expected_documents": [
+        "OPS-02",
+        "OPS-03"
+      ],
+      "expected_chunks": [
+        "OPS-02#001",
+        "OPS-03#002"
+      ],
+      "must_not_cite": [],
+      "notes": "Focal claim: how long a Returns Authorisation number stays valid."
     },
     {
       "question_id": "GAP-pensions-Q1",

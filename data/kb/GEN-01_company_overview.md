@@ -35,6 +35,10 @@ Roughly 70% of revenue comes from trade customers: independent restaurants, cafe
 
 The company has six departments: Sales, Customer Services, Warehouse and Logistics, Finance, IT, and People. Each department head reports to the Managing Director. The senior team meets weekly on Monday mornings.
 
+## Leave year
+
+The company leave year runs from 1 January to 31 December. Entitlement is pro-rated for anyone joining part way through it.
+
 ## Trading history
 
 Turnover for the year ending 31 March 2026 was £8.2 million. The company has traded profitably every year since 2014.

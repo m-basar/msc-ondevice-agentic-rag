@@ -1,0 +1,206 @@
+{
+  "questions": 35,
+  "questions_with_expected_chunks": 27,
+  "recall": {
+    "@1": {
+      "strict": 0.3704,
+      "lenient": 0.8148
+    },
+    "@2": {
+      "strict": 0.5185,
+      "lenient": 0.963
+    },
+    "@3": {
+      "strict": 0.5926,
+      "lenient": 0.963
+    },
+    "@4": {
+      "strict": 0.6667,
+      "lenient": 0.963
+    },
+    "@6": {
+      "strict": 0.8148,
+      "lenient": 0.963
+    },
+    "@8": {
+      "strict": 0.8519,
+      "lenient": 0.963
+    },
+    "@10": {
+      "strict": 0.8519,
+      "lenient": 0.963
+    }
+  },
+  "mrr": 0.8889,
+  "conflict_pair_recall": {
+    "compatible": {
+      "@1": 0.0,
+      "@2": 0.3333,
+      "@3": 0.3333,
+      "@4": 0.6667,
+      "@6": 1.0,
+      "@8": 1.0,
+      "@10": 1.0
+    },
+    "mutually_exclusive": {
+      "@1": 0.0,
+      "@2": 0.0,
+      "@3": 0.0,
+      "@4": 0.0,
+      "@6": 0.0,
+      "@8": 0.3333,
+      "@10": 0.3333
+    },
+    "stricter_looser": {
+      "@1": 0.0,
+      "@2": 0.4444,
+      "@3": 0.5556,
+      "@4": 0.5556,
+      "@6": 0.8889,
+      "@8": 0.8889,
+      "@10": 0.8889
+    },
+    "version_supersession": {
+      "@1": 0.0,
+      "@2": 1.0,
+      "@3": 1.0,
+      "@4": 1.0,
+      "@6": 1.0,
+      "@8": 1.0,
+      "@10": 1.0
+    }
+  },
+  "threshold_sweep": [
+    {
+      "min_similarity": 0.0,
+      "answerable_wrongly_refused": 0,
+      "answerable_total": 27,
+      "unanswerable_correctly_refused": 0,
+      "unanswerable_total": 6,
+      "youden_j": 0.0
+    },
+    {
+      "min_similarity": 0.2,
+      "answerable_wrongly_refused": 0,
+      "answerable_total": 27,
+      "unanswerable_correctly_refused": 0,
+      "unanswerable_total": 6,
+      "youden_j": 0.0
+    },
+    {
+      "min_similarity": 0.25,
+      "answerable_wrongly_refused": 0,
+      "answerable_total": 27,
+      "unanswerable_correctly_refused": 0,
+      "unanswerable_total": 6,
+      "youden_j": 0.0
+    },
+    {
+      "min_similarity": 0.3,
+      "answerable_wrongly_refused": 0,
+      "answerable_total": 27,
+      "unanswerable_correctly_refused": 0,
+      "unanswerable_total": 6,
+      "youden_j": 0.0
+    },
+    {
+      "min_similarity": 0.32,
+      "answerable_wrongly_refused": 0,
+      "answerable_total": 27,
+      "unanswerable_correctly_refused": 0,
+      "unanswerable_total": 6,
+      "youden_j": 0.0
+    },
+    {
+      "min_similarity": 0.35,
+      "answerable_wrongly_refused": 0,
+      "answerable_total": 27,
+      "unanswerable_correctly_refused": 0,
+      "unanswerable_total": 6,
+      "youden_j": 0.0
+    },
+    {
+      "min_similarity": 0.4,
+      "answerable_wrongly_refused": 0,
+      "answerable_total": 27,
+      "unanswerable_correctly_refused": 0,
+      "unanswerable_total": 6,
+      "youden_j": 0.0
+    },
+    {
+      "min_similarity": 0.45,
+      "answerable_wrongly_refused": 0,
+      "answerable_total": 27,
+      "unanswerable_correctly_refused": 0,
+      "unanswerable_total": 6,
+      "youden_j": 0.0
+    },
+    {
+      "min_similarity": 0.5,
+      "answerable_wrongly_refused": 0,
+      "answerable_total": 27,
+      "unanswerable_correctly_refused": 0,
+      "unanswerable_total": 6,
+      "youden_j": 0.0
+    },
+    {
+      "min_similarity": 0.6,
+      "answerable_wrongly_refused": 1,
+      "answerable_total": 27,
+      "unanswerable_correctly_refused": 3,
+      "unanswerable_total": 6,
+      "youden_j": 0.463
+    }
+  ],
+  "top_score_distribution": {
+    "answerable": [
+      0.5548,
+      0.6164,
+      0.6416,
+      0.6514,
+      0.6533,
+      0.6583,
+      0.6599,
+      0.6672,
+      0.6673,
+      0.682,
+      0.6884,
+      0.6909,
+      0.6961,
+      0.6988,
+      0.716,
+      0.7183,
+      0.7237,
+      0.7503,
+      0.7699,
+      0.7744,
+      0.7771,
+      0.7791,
+      0.7849,
+      0.7885,
+      0.8116,
+      0.8273,
+      0.8515
+    ],
+    "unanswerable": [
+      0.5555,
+      0.5575,
+      0.5593,
+      0.6006,
+      0.6024,
+      0.6113
+    ]
+  },
+  "split": "dev",
+  "mock": false,
+  "generated_at": "2026-08-13T08:47:01.067910+00:00",
+  "provenance": {
+    "corpus_sha256": "3f761d41b44b60f38411054f335ae3d2caa58ca36a98c183178cf9ae2e7ab95f",
+    "chunk_set_sha256": "03e5d42bfdfbff67c35a5d828bafb4e017948afdb1610eeb5d3679cbc7e76a3b",
+    "registry_sha256": "6985aedd8bf3f8c1b8a4a6c871571cc3572273a6e4b54291e9d62c90057fdfb4",
+    "current_settings": {
+      "top_k": 4,
+      "min_similarity": 0.32
+    }
+  }
+}

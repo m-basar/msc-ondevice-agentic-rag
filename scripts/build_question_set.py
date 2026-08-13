@@ -1151,5 +1151,65 @@ AMENDMENT_1_2: dict[str, dict] = {
 CONFLICTS.update(AMENDMENT_1_2)
 
 
+
+# --- amendment 1.3 ----------------------------------------------------------
+# Two representative mutually_exclusive tuning families. Development previously
+# had one, TUNE-03, whose conflict-pair recall of 0.00 could not be told apart
+# from a property of the type because its disputed fact is buried in a chunk
+# about study leave.
+
+AMENDMENT_1_3: dict[str, dict] = {
+    "TUNE-05": {
+        "risk": "low",
+        "focal": "the dates of the company leave year",
+        "cite": ["HR-01#002", "GEN-01#004"],
+        "not": [],
+        "required": [
+            "HR-01 gives 1 April to 31 March",
+            "GEN-01 gives 1 January to 31 December",
+            DISAGREE,
+        ],
+        "variants": ["conflict", "contradiction", "escalate"],
+        "forbidden": ["the leave year runs from 1 April to 31 March and that is the answer"],
+        "gold": (
+            "The documents disagree and both are current. HR-01 gives the leave year as "
+            "1 April to 31 March; GEN-01 gives 1 January to 31 December. Neither "
+            "supersedes the other."
+        ),
+        "questions": [
+            "When does the leave year start and end?",
+            "What are the dates of the company leave year?",
+            "If I have leave left in March, do I lose it?",
+        ],
+    },
+    "TUNE-06": {
+        "risk": "low",
+        "focal": "how long a Returns Authorisation number stays valid",
+        "cite": ["OPS-02#001", "OPS-03#002"],
+        "not": [],
+        "required": [
+            "OPS-02 gives 21 days",
+            "OPS-03 gives 14 days",
+            DISAGREE,
+        ],
+        "variants": ["conflict", "contradiction", "escalate"],
+        "forbidden": ["an RA number is valid for 21 days and that is the answer"],
+        "gold": (
+            "The documents disagree and both are current. OPS-02 issues a Returns "
+            "Authorisation number valid for 21 days; OPS-03 states 14 days from issue "
+            "and will not process a refund against an expired number. Neither "
+            "supersedes the other."
+        ),
+        "questions": [
+            "How long is a Returns Authorisation number valid for?",
+            "When does an RA number expire?",
+            "My RA number was issued 18 days ago. Can I still use it?",
+        ],
+    },
+}
+
+CONFLICTS.update(AMENDMENT_1_3)
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

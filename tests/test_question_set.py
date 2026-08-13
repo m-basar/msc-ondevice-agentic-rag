@@ -350,8 +350,8 @@ def test_a_tuning_family_in_the_development_split_is_accepted(registry):
 def test_tuning_families_are_not_counted_as_reported(registry):
     """A reader must not be able to mistake eleven families for the sample size."""
     assert len(registry.families) == 15
-    assert len(registry.tuning_families) == 6
-    assert len(registry.all_families) == 21
+    assert len(registry.tuning_families) == 8
+    assert len(registry.all_families) == 23
     assert {f.family_id for f in registry.families}.isdisjoint(
         {f.family_id for f in registry.tuning_families}
     )
@@ -415,7 +415,7 @@ def test_the_conflict_families_are_the_largest_category(real_question_set):
     change to the study, not a tidy-up."""
     summary = real_question_set.summary()
     assert summary["by_category"]["conflict"] >= summary["by_category"]["factual"]
-    assert summary["family_group_count"] == 21
+    assert summary["family_group_count"] == 23
 
 
 def test_the_test_split_covers_every_reported_family(real_question_set, registry):

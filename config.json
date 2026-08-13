@@ -40,8 +40,9 @@
     "min_words": 40
   },
   "retrieval": {
-    "top_k": 4,
-    "min_similarity": 0.32
+    "top_k": 6,
+    "min_similarity": 0.3,
+    "_calibration": "Calibrated on the development split, 8 August 2026, by scripts/evaluate_retrieval.py. top_k raised from 4: strict recall 0.667 -> 0.815, stricter_looser conflict-pair recall 0.56 -> 0.89, compatible 0.67 -> 1.00. The curve flattens after 6. min_similarity lowered from 0.32: the answerable and unanswerable score distributions overlap completely (all six unanswerable questions scored above the lowest answerable one), so no threshold separates them. 0.30 sits below every observed score and refuses nothing, which is honest about what the measurement showed. Abstention is the verification layer's job, which is what H4 predicts."
   },
   "confidence": {
     "weights": {

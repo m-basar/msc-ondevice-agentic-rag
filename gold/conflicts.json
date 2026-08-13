@@ -905,6 +905,76 @@
       "reconciliation_anchors": {
         "PRD-02": "Enamelled pans are not seasoned"
       }
+    },
+    {
+      "id": "TUNE-05",
+      "split": "tuning",
+      "name": "Leave year dates",
+      "type": "mutually_exclusive",
+      "domain": "hr",
+      "risk_level": "low",
+      "documents": [
+        "HR-01",
+        "GEN-01"
+      ],
+      "authoritative": null,
+      "resolution": "escalate_unresolved",
+      "note": "Tuning only. Planted 8 August 2026 under amendment 1.3. Development had one mutually_exclusive family, TUNE-03, whose disputed fact sits buried in a 122-word chunk about study leave, so its conflict-pair recall of 0.00 could not be distinguished from a property of the type. These two put the disputed fact in topically matched chunks on both sides, matching how every reported mutually_exclusive family looks.",
+      "conflicting_facts": [
+        {
+          "fact": "the dates of the company leave year",
+          "values": {
+            "HR-01": "1 April to 31 March",
+            "GEN-01": "1 January to 31 December"
+          },
+          "anchors": {
+            "HR-01": "The leave year runs from 1 April to 31 March",
+            "GEN-01": "The company leave year runs from 1 January to 31 December"
+          }
+        }
+      ],
+      "must_cite": [
+        "HR-01",
+        "GEN-01"
+      ],
+      "must_not_assert": [
+        "that either set of dates is the operative one"
+      ]
+    },
+    {
+      "id": "TUNE-06",
+      "split": "tuning",
+      "name": "Returns authorisation validity",
+      "type": "mutually_exclusive",
+      "domain": "operations",
+      "risk_level": "low",
+      "documents": [
+        "OPS-02",
+        "OPS-03"
+      ],
+      "authoritative": null,
+      "resolution": "escalate_unresolved",
+      "note": "Tuning only. Planted 8 August 2026 under amendment 1.3. Development had one mutually_exclusive family, TUNE-03, whose disputed fact sits buried in a 122-word chunk about study leave, so its conflict-pair recall of 0.00 could not be distinguished from a property of the type. These two put the disputed fact in topically matched chunks on both sides, matching how every reported mutually_exclusive family looks.",
+      "conflicting_facts": [
+        {
+          "fact": "how long a Returns Authorisation number stays valid",
+          "values": {
+            "OPS-02": "21 days",
+            "OPS-03": "14 days"
+          },
+          "anchors": {
+            "OPS-02": "valid for 21 days",
+            "OPS-03": "valid for 14 days from issue"
+          }
+        }
+      ],
+      "must_cite": [
+        "OPS-02",
+        "OPS-03"
+      ],
+      "must_not_assert": [
+        "that either validity period is the operative one"
+      ]
     }
   ],
   "deliberate_gaps": {
