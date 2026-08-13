@@ -32,7 +32,16 @@
   "verification": {
     "seed": 42,
     "temperature": 0.0,
-    "num_predict": 10
+    "num_predict": 700,
+    "confidence": {
+      "_note": "Runtime confidence policy. A separate scoring-side policy describes what should happen and is applied only when results are marked. Reading that one here would let the system consult the answer key about its own certainty.",
+      "on_supported": "medium",
+      "on_conflict": "low",
+      "on_contradiction": "low",
+      "on_insufficient": "low",
+      "on_invented_evidence": "low",
+      "on_parse_failure": "low"
+    }
   },
   "chunking": {
     "max_words": 180,
