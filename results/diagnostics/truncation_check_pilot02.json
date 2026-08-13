@@ -1,0 +1,19 @@
+{
+  "check": "truncation, pilot 02 Arm D verification calls",
+  "run": "20260813_110154_D_dev_pilot02",
+  "questions": 41,
+  "prompt_tokens": {
+    "min": 1502,
+    "max": 1978
+  },
+  "eval_tokens": {
+    "min": 91,
+    "max": 375,
+    "cap": 700
+  },
+  "hit_output_cap": 0,
+  "prompt_over_2048": 0,
+  "num_ctx_in_force": "Ollama default; num_ctx was not set on the verification call",
+  "conclusion": "Truncation is excluded as an explanation for pilot 02. Every prompt fitted inside the default context and every generation stopped voluntarily well below the output cap. CONF-01-Q1 read 1636 tokens containing both HR-13#001 and HR-03#001 with the SUPERSEDED marker, emitted 125 tokens, and reported that the evidence does not mention mileage rates. That is a reasoning failure with nothing mechanical behind it.",
+  "incidental_finding": "The verification block set no num_ctx, so these calls inherited the default rather than the 4096 used for generation. Nothing was clipped here because the longest prompt was 1978 tokens, but the margin was accidental. Fixed on 13 August 2026 by setting num_ctx explicitly."
+}
