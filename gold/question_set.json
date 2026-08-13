@@ -2208,19 +2208,20 @@
       "family_id": "TUNE-03",
       "gap_topic": null,
       "paraphrase_of": null,
-      "gold_answer": "The documents disagree and both are current. HR-04 gives core hours of 09:30 to 16:00 for remote working; HR-06 gives 10:00 to 16:30 during training. Neither supersedes the other.",
+      "gold_answer": "It depends on the circumstance, and the documents are not in conflict. HR-04 sets core hours of 09:30 to 16:00 for employees working remotely. HR-06 sets 10:00 to 16:30 for employees attending training. An employee is in one situation or the other.",
       "required_claims": [
-        "HR-04 gives core hours of 09:30 to 16:00",
-        "HR-06 gives 10:00 to 16:30",
-        "the two documents disagree and neither supersedes the other"
+        "HR-04 gives 09:30 to 16:00 for employees working remotely",
+        "HR-06 gives 10:00 to 16:30 for employees attending training",
+        "which applies depends on the circumstance"
       ],
       "forbidden_claims": [
-        "core hours are 09:30 to 16:00 and that is the answer"
+        "the two documents contradict each other",
+        "core hours are 09:30 to 16:00 in all circumstances"
       ],
       "acceptable_variants": [
-        "conflict",
-        "contradiction",
-        "escalate"
+        "it depends",
+        "different situations",
+        "both apply, in different cases"
       ],
       "expected_documents": [
         "HR-04",
@@ -2245,19 +2246,20 @@
       "family_id": "TUNE-03",
       "gap_topic": null,
       "paraphrase_of": "TUNE-03-Q1",
-      "gold_answer": "The documents disagree and both are current. HR-04 gives core hours of 09:30 to 16:00 for remote working; HR-06 gives 10:00 to 16:30 during training. Neither supersedes the other.",
+      "gold_answer": "It depends on the circumstance, and the documents are not in conflict. HR-04 sets core hours of 09:30 to 16:00 for employees working remotely. HR-06 sets 10:00 to 16:30 for employees attending training. An employee is in one situation or the other.",
       "required_claims": [
-        "HR-04 gives core hours of 09:30 to 16:00",
-        "HR-06 gives 10:00 to 16:30",
-        "the two documents disagree and neither supersedes the other"
+        "HR-04 gives 09:30 to 16:00 for employees working remotely",
+        "HR-06 gives 10:00 to 16:30 for employees attending training",
+        "which applies depends on the circumstance"
       ],
       "forbidden_claims": [
-        "core hours are 09:30 to 16:00 and that is the answer"
+        "the two documents contradict each other",
+        "core hours are 09:30 to 16:00 in all circumstances"
       ],
       "acceptable_variants": [
-        "conflict",
-        "contradiction",
-        "escalate"
+        "it depends",
+        "different situations",
+        "both apply, in different cases"
       ],
       "expected_documents": [
         "HR-04",
@@ -2282,19 +2284,20 @@
       "family_id": "TUNE-03",
       "gap_topic": null,
       "paraphrase_of": "TUNE-03-Q1",
-      "gold_answer": "The documents disagree and both are current. HR-04 gives core hours of 09:30 to 16:00 for remote working; HR-06 gives 10:00 to 16:30 during training. Neither supersedes the other.",
+      "gold_answer": "It depends on the circumstance, and the documents are not in conflict. HR-04 sets core hours of 09:30 to 16:00 for employees working remotely. HR-06 sets 10:00 to 16:30 for employees attending training. An employee is in one situation or the other.",
       "required_claims": [
-        "HR-04 gives core hours of 09:30 to 16:00",
-        "HR-06 gives 10:00 to 16:30",
-        "the two documents disagree and neither supersedes the other"
+        "HR-04 gives 09:30 to 16:00 for employees working remotely",
+        "HR-06 gives 10:00 to 16:30 for employees attending training",
+        "which applies depends on the circumstance"
       ],
       "forbidden_claims": [
-        "core hours are 09:30 to 16:00 and that is the answer"
+        "the two documents contradict each other",
+        "core hours are 09:30 to 16:00 in all circumstances"
       ],
       "acceptable_variants": [
-        "conflict",
-        "contradiction",
-        "escalate"
+        "it depends",
+        "different situations",
+        "both apply, in different cases"
       ],
       "expected_documents": [
         "HR-04",

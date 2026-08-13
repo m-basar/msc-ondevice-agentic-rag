@@ -554,3 +554,43 @@ def test_every_unresolvable_conflict_requires_the_disagreement_to_be_stated(real
         assert any("disagree" in claim for claim in question.required_claims), (
             f"{question.question_id} does not require the disagreement to be stated"
         )
+
+
+def test_a_negative_control_never_requires_the_answer_to_allege_a_conflict(real_question_set):
+    """TUNE-03 was reclassified from mutually_exclusive to compatible and its
+    rubric was left behind, still demanding "the two documents disagree" while
+    the new behaviour forbids exactly that. A correct answer would have been
+    marked wrong.
+
+    Reclassification propagates the behaviour automatically, because it is
+    derived from the type. The claims are hand-written, so they need this.
+    """
+    for question in real_question_set:
+        if question.expected_behaviour != "answer_without_flagging_conflict":
+            continue
+        for claim in question.required_claims:
+            lowered = claim.lower()
+            assert not any(
+                word in lowered
+                for word in ("disagree", "contradict", "conflict", "supersede")
+            ), (
+                f"{question.question_id} is a negative control but requires the "
+                f"answer to allege a conflict: {claim!r}"
+            )
+
+
+def test_a_conflict_question_never_forbids_stating_the_conflict(real_question_set):
+    """The mirror. A family that moves the other way, into a conflict type,
+    must not keep a forbidden claim that rules out the correct behaviour."""
+    escalating = {"surface_both_and_escalate", "prefer_stricter_and_escalate"}
+    for question in real_question_set:
+        if question.expected_behaviour not in escalating:
+            continue
+        for claim in question.forbidden_claims:
+            lowered = claim.lower()
+            assert not (
+                "contradict each other" in lowered or "documents disagree" in lowered
+            ), (
+                f"{question.question_id} expects escalation but forbids saying the "
+                f"documents conflict: {claim!r}"
+            )

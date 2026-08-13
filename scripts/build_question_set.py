@@ -1105,17 +1105,25 @@ AMENDMENT_1_2: dict[str, dict] = {
         "focal": "the core hours during which an employee must be contactable",
         "cite": ["HR-04#003", "HR-06#002"],
         "not": [],
+        # Rewritten under amendment 1.4. TUNE-03 was reclassified from
+        # mutually_exclusive to compatible, and its rubric still required the
+        # answer to say the documents disagree, which the new behaviour forbids.
+        # A correct answer would have been marked wrong.
         "required": [
-            "HR-04 gives core hours of 09:30 to 16:00",
-            "HR-06 gives 10:00 to 16:30",
-            DISAGREE,
+            "HR-04 gives 09:30 to 16:00 for employees working remotely",
+            "HR-06 gives 10:00 to 16:30 for employees attending training",
+            "which applies depends on the circumstance",
         ],
-        "variants": ["conflict", "contradiction", "escalate"],
-        "forbidden": ["core hours are 09:30 to 16:00 and that is the answer"],
+        "variants": ["it depends", "different situations", "both apply, in different cases"],
+        "forbidden": [
+            "the two documents contradict each other",
+            "core hours are 09:30 to 16:00 in all circumstances",
+        ],
         "gold": (
-            "The documents disagree and both are current. HR-04 gives core hours of 09:30 "
-            "to 16:00 for remote working; HR-06 gives 10:00 to 16:30 during training. "
-            "Neither supersedes the other."
+            "It depends on the circumstance, and the documents are not in conflict. HR-04 "
+            "sets core hours of 09:30 to 16:00 for employees working remotely. HR-06 sets "
+            "10:00 to 16:30 for employees attending training. An employee is in one "
+            "situation or the other."
         ),
         "questions": [
             "What are the core hours I have to be contactable?",

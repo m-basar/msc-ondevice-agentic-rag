@@ -1,0 +1,294 @@
+{
+  "questions": 41,
+  "questions_with_expected_chunks": 33,
+  "recall": {
+    "@1": {
+      "strict": 0.303,
+      "lenient": 0.8182
+    },
+    "@2": {
+      "strict": 0.5152,
+      "lenient": 0.9697
+    },
+    "@3": {
+      "strict": 0.6667,
+      "lenient": 0.9697
+    },
+    "@4": {
+      "strict": 0.7273,
+      "lenient": 0.9697
+    },
+    "@6": {
+      "strict": 0.8485,
+      "lenient": 0.9697
+    },
+    "@8": {
+      "strict": 0.8788,
+      "lenient": 0.9697
+    },
+    "@10": {
+      "strict": 0.8788,
+      "lenient": 0.9697
+    }
+  },
+  "mrr": 0.8939,
+  "conflict_pair_recall": {
+    "compatible": {
+      "@1": 0.0,
+      "@2": 0.1667,
+      "@3": 0.1667,
+      "@4": 0.3333,
+      "@6": 0.5,
+      "@8": 0.6667,
+      "@10": 0.6667
+    },
+    "mutually_exclusive": {
+      "@1": 0.0,
+      "@2": 0.3333,
+      "@3": 1.0,
+      "@4": 1.0,
+      "@6": 1.0,
+      "@8": 1.0,
+      "@10": 1.0
+    },
+    "stricter_looser": {
+      "@1": 0.0,
+      "@2": 0.4167,
+      "@3": 0.6667,
+      "@4": 0.6667,
+      "@6": 0.9167,
+      "@8": 0.9167,
+      "@10": 0.9167
+    },
+    "version_supersession": {
+      "@1": 0.0,
+      "@2": 1.0,
+      "@3": 1.0,
+      "@4": 1.0,
+      "@6": 1.0,
+      "@8": 1.0,
+      "@10": 1.0
+    }
+  },
+  "conflict_pair_recall_by_family": {
+    "CONF-01": {
+      "type": "version_supersession",
+      "@1": 0.0,
+      "@2": 1.0,
+      "@3": 1.0,
+      "@4": 1.0,
+      "@6": 1.0,
+      "@8": 1.0,
+      "@10": 1.0
+    },
+    "CONF-05": {
+      "type": "stricter_looser",
+      "@1": 0.0,
+      "@2": 0.0,
+      "@3": 0.3333,
+      "@4": 0.3333,
+      "@6": 1.0,
+      "@8": 1.0,
+      "@10": 1.0
+    },
+    "TUNE-01": {
+      "type": "stricter_looser",
+      "@1": 0.0,
+      "@2": 0.3333,
+      "@3": 0.3333,
+      "@4": 0.3333,
+      "@6": 0.6667,
+      "@8": 0.6667,
+      "@10": 0.6667
+    },
+    "TUNE-02": {
+      "type": "stricter_looser",
+      "@1": 0.0,
+      "@2": 0.6667,
+      "@3": 1.0,
+      "@4": 1.0,
+      "@6": 1.0,
+      "@8": 1.0,
+      "@10": 1.0
+    },
+    "TUNE-03": {
+      "type": "compatible",
+      "@1": 0.0,
+      "@2": 0.0,
+      "@3": 0.0,
+      "@4": 0.0,
+      "@6": 0.0,
+      "@8": 0.3333,
+      "@10": 0.3333
+    },
+    "TUNE-04": {
+      "type": "compatible",
+      "@1": 0.0,
+      "@2": 0.3333,
+      "@3": 0.3333,
+      "@4": 0.6667,
+      "@6": 1.0,
+      "@8": 1.0,
+      "@10": 1.0
+    },
+    "TUNE-05": {
+      "type": "mutually_exclusive",
+      "@1": 0.0,
+      "@2": 0.3333,
+      "@3": 1.0,
+      "@4": 1.0,
+      "@6": 1.0,
+      "@8": 1.0,
+      "@10": 1.0
+    },
+    "TUNE-06": {
+      "type": "stricter_looser",
+      "@1": 0.0,
+      "@2": 0.6667,
+      "@3": 1.0,
+      "@4": 1.0,
+      "@6": 1.0,
+      "@8": 1.0,
+      "@10": 1.0
+    }
+  },
+  "threshold_sweep": [
+    {
+      "min_similarity": 0.0,
+      "answerable_wrongly_refused": 0,
+      "answerable_total": 33,
+      "unanswerable_correctly_refused": 0,
+      "unanswerable_total": 6,
+      "youden_j": 0.0
+    },
+    {
+      "min_similarity": 0.2,
+      "answerable_wrongly_refused": 0,
+      "answerable_total": 33,
+      "unanswerable_correctly_refused": 0,
+      "unanswerable_total": 6,
+      "youden_j": 0.0
+    },
+    {
+      "min_similarity": 0.25,
+      "answerable_wrongly_refused": 0,
+      "answerable_total": 33,
+      "unanswerable_correctly_refused": 0,
+      "unanswerable_total": 6,
+      "youden_j": 0.0
+    },
+    {
+      "min_similarity": 0.3,
+      "answerable_wrongly_refused": 0,
+      "answerable_total": 33,
+      "unanswerable_correctly_refused": 0,
+      "unanswerable_total": 6,
+      "youden_j": 0.0
+    },
+    {
+      "min_similarity": 0.32,
+      "answerable_wrongly_refused": 0,
+      "answerable_total": 33,
+      "unanswerable_correctly_refused": 0,
+      "unanswerable_total": 6,
+      "youden_j": 0.0
+    },
+    {
+      "min_similarity": 0.35,
+      "answerable_wrongly_refused": 0,
+      "answerable_total": 33,
+      "unanswerable_correctly_refused": 0,
+      "unanswerable_total": 6,
+      "youden_j": 0.0
+    },
+    {
+      "min_similarity": 0.4,
+      "answerable_wrongly_refused": 0,
+      "answerable_total": 33,
+      "unanswerable_correctly_refused": 0,
+      "unanswerable_total": 6,
+      "youden_j": 0.0
+    },
+    {
+      "min_similarity": 0.45,
+      "answerable_wrongly_refused": 0,
+      "answerable_total": 33,
+      "unanswerable_correctly_refused": 0,
+      "unanswerable_total": 6,
+      "youden_j": 0.0
+    },
+    {
+      "min_similarity": 0.5,
+      "answerable_wrongly_refused": 0,
+      "answerable_total": 33,
+      "unanswerable_correctly_refused": 0,
+      "unanswerable_total": 6,
+      "youden_j": 0.0
+    },
+    {
+      "min_similarity": 0.6,
+      "answerable_wrongly_refused": 2,
+      "answerable_total": 33,
+      "unanswerable_correctly_refused": 3,
+      "unanswerable_total": 6,
+      "youden_j": 0.4394
+    }
+  ],
+  "top_score_distribution": {
+    "answerable": [
+      0.5548,
+      0.5635,
+      0.6068,
+      0.6164,
+      0.6416,
+      0.6514,
+      0.6533,
+      0.6583,
+      0.6599,
+      0.6672,
+      0.6673,
+      0.682,
+      0.6884,
+      0.6909,
+      0.6961,
+      0.6988,
+      0.716,
+      0.7183,
+      0.7237,
+      0.7503,
+      0.7699,
+      0.7744,
+      0.7771,
+      0.7791,
+      0.7849,
+      0.7885,
+      0.802,
+      0.802,
+      0.8116,
+      0.8117,
+      0.8273,
+      0.834,
+      0.8515
+    ],
+    "unanswerable": [
+      0.5575,
+      0.5593,
+      0.5783,
+      0.6006,
+      0.6024,
+      0.6113
+    ]
+  },
+  "split": "dev",
+  "mock": false,
+  "generated_at": "2026-08-13T09:29:39.125787+00:00",
+  "provenance": {
+    "corpus_sha256": "63a92324d734beb689a06c0344fc62fd4e1fe118f407ea5df132f2b4095d1c2d",
+    "chunk_set_sha256": "2c92533c2f868c286a1f43ed92ac619da9436909da2339215321195d5c1402f2",
+    "registry_sha256": "1b7ed1da34c1ab5e0295fc3ce4f0ab104fc6dec453ffc20718b346de0fba498c",
+    "current_settings": {
+      "top_k": 6,
+      "min_similarity": 0.3
+    }
+  }
+}
