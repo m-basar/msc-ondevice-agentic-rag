@@ -829,6 +829,36 @@ TUNE-03 is kept rather than fixed: a family whose disputed fact is buried in an
 unrelated chunk is a realistic hard case, and retaining it alongside two
 representative ones separates "this type is hard" from "this planting was hard".
 
+### Resolution, measured
+
+| Family | Type | Pair recall @4 | @6 | @8 |
+|---|---|---|---|---|
+| TUNE-05 | `mutually_exclusive` | **1.00** | 1.00 | 1.00 |
+| TUNE-06 | `mutually_exclusive` | **1.00** | 1.00 | 1.00 |
+| TUNE-03 | `mutually_exclusive` | 0.00 | 0.00 | 0.33 |
+| CONF-05 | `stricter_looser` | 0.33 | **1.00** | 1.00 |
+| TUNE-02 | `stricter_looser` | 1.00 | 1.00 | 1.00 |
+| TUNE-01 | `stricter_looser` | 0.33 | 0.67 | 0.67 |
+| CONF-01 | `version_supersession` | 1.00 | 1.00 | 1.00 |
+| TUNE-04 | `compatible` | 0.67 | **1.00** | 1.00 |
+
+The type-level 0.67 was two families at 1.00 and one at zero, not three
+middling ones. **The separation is a property of the planting, not of the
+type.** Retrieval is not the binding constraint on H2a, and Stage 5 proceeds.
+
+TUNE-03 is retained and reported as a **finding in its own right**: when a
+policy statement is buried inside a document about something else, no amount of
+verification helps, because the retriever never assembles the pair. That is a
+limit on the whole approach rather than on this implementation, and it belongs
+in the limitations chapter. It is also the honest reading of why cross-document
+contradictions survive in real organisations: the two halves rarely surface
+together, for a retriever or for a person.
+
+TUNE-01 plateaus at 0.67 and does not reach 1.00 by k=10. One of its three
+paraphrases never assembles OPS-02 with CS-03. Recorded, not fixed: a family
+that is hard for one phrasing out of three is a realistic case and removing it
+would flatter the measurement.
+
 ## What this does not license
 
 The calibrated values were chosen on development questions and are now frozen.
