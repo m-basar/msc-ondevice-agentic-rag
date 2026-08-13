@@ -113,6 +113,40 @@ FUNCTION_WORDS = frozenset({
 CITATION_REPAIR_MIN_SIMILARITY = 0.90
 
 
+# A quantity is what makes a policy answer checkable: a rate, a deadline, a
+# threshold, a number of days. Chunk identifiers carry digits too, so they are
+# removed before looking.
+QUANTITY_RE = re.compile(r"\d")
+
+
+def cites_a_passage(text: str) -> bool:
+    """A citation in the form the rest of the pipeline counts.
+
+    Bracketed and carrying an ordinal. This has to match ``extract_citations``
+    or the two disagree about whether an answer is grounded, and the first
+    version of ``asserts_uncited_quantity`` got exactly that wrong: it accepted
+    a bare "OPS-03#002" written into prose, which the citation extractor does
+    not count, so the check passed on an answer the pipeline recorded as
+    having no citations at all.
+    """
+    return any(ordinal for _, ordinal in BRACKET_CITE_RE.findall(text))
+
+
+def asserts_uncited_quantity(text: str) -> bool:
+    """Does this answer state a figure without pointing at a passage for it?
+
+    The grounding standard the whole system rests on: give a number, say which
+    passage it came from. Pilot 03 served "the validity period ... is not
+    explicitly stated in the provided evidence. However, it can be inferred
+    that the 14-day validity period mentioned in OPS-03#002 ..." in place of a
+    draft that stated the same fact and cited it properly. That is an
+    abstention in its first clause and an ungrounded assertion in its second,
+    which is worse than either alone.
+    """
+    stripped = BRACKET_CITE_RE.sub(" ", CHUNK_ID_RE.sub(" ", text))
+    return bool(QUANTITY_RE.search(stripped)) and not cites_a_passage(text)
+
+
 def content_tokens(text: str) -> list[str]:
     """The words that carry the claim, with citations and function words gone."""
     stripped = BRACKET_CITE_RE.sub(" ", CHUNK_ID_RE.sub(" ", text))
@@ -484,6 +518,17 @@ def parse(
             failures.append(
                 "the revised answer cites no passages while the draft it "
                 "replaces cited evidence"
+            )
+        # The abstention exception above was too wide. An abstention withdraws
+        # a claim; it does not restate the figure it has just called
+        # unsupported. Pilot 03 served exactly that, and the exception is what
+        # let it through, so the exception is narrowed rather than the finding
+        # explained away.
+        if asserts_uncited_quantity(final):
+            failures.append(
+                "the revised answer states a figure without citing a passage "
+                "for it; an abstention withdraws a claim rather than "
+                "reasserting it without evidence"
             )
         # A narrow warrant must not license a wide change. If the only reason
         # to revise is that the draft cited the wrong passage, the licence is

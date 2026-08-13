@@ -178,6 +178,41 @@ def test_contextually_compatible_is_not_a_detection():
     assert all(f.classified == 3 for f in controls)
 
 
+def test_the_gate_reads_the_served_answer_not_the_decision():
+    """Why the gate is not simply a copy of the verifier's own rules.
+
+    If it re-derived the decision it would agree with the decision by
+    construction and catch nothing. It reads what reached the user instead,
+    which is how both defects so far were found. This is pilot 03's answer.
+    """
+    rows = build(perfect(), DEV_TYPES)
+    rows[0].update(
+        answer_revised=True,
+        revision_rejected=False,
+        hallucinated_citations=[],
+        has_valid_citation_ids=False,
+        answer=("The validity period is not explicitly stated in the provided "
+                "evidence. However, it can be inferred that the 14-day validity "
+                "period mentioned in OPS-03#002 may not apply."),
+    )
+    result = evaluate_gate(rows, FakeRegistry(DEV_TYPES))
+
+    assert result.invalid_revisions_served == 1
+    assert result.decision()[0] == "DEFECT"
+
+
+def test_a_served_abstention_that_states_no_figure_is_not_a_defect():
+    rows = build(perfect(), DEV_TYPES)
+    rows[0].update(
+        answer_revised=True, revision_rejected=False, has_valid_citation_ids=False,
+        answer="The evidence does not state a validity period.",
+    )
+    result = evaluate_gate(rows, FakeRegistry(DEV_TYPES))
+
+    assert result.invalid_revisions_served == 0
+    assert result.decision()[0] == "PROCEED"
+
+
 def test_a_rejected_revision_is_the_guard_working_not_a_defect():
     rows = build(perfect(), DEV_TYPES)
     rows[0].update(answer_revised=True, revision_rejected=True,

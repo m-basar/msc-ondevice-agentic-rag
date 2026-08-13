@@ -44,6 +44,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Iterable, Mapping, Sequence
 
+from ..verify.schema import asserts_uncited_quantity
 from .aggregate import aggregate
 
 # The registry's vocabulary and the verifier's vocabulary are separate by
@@ -188,21 +189,26 @@ def _get(record: Mapping[str, Any], dotted: str) -> Any:
 
 
 def _invalid_revision_served(record: Mapping[str, Any]) -> bool:
-    """A revision that reached the served answer while failing its own checks.
+    """A revision that reached the user while failing the grounding standard.
 
-    The verifier is allowed to rewrite an answer, and the rejection guard is
-    supposed to discard a rewrite whose citations do not resolve. If one is
-    served anyway, the guard is not working. This is a correctness check on the
-    pipeline, not a measurement of the model, so it is reported separately and
-    it vetoes the rest of the gate.
+    Deliberately reads the **answer that was served**, not the decision that
+    served it. The verifier's own rules are enforced in ``verify.schema``; if
+    this re-derived them it would agree with them by construction and catch
+    nothing. Reading the output instead means a fault anywhere in the serving
+    path shows up here, which is how both defects so far were found.
+
+    The standard is the one the system rests on: an answer that states a figure
+    says which passage it came from. A revision citing evidence that was never
+    retrieved fails it too.
+
+    This is a correctness check on the pipeline rather than a measurement of
+    the model, so it is reported separately and vetoes the rest of the gate.
     """
-    if not record.get("answer_revised"):
-        return False
-    if record.get("revision_rejected"):
-        return False  # the guard held: the draft was served instead
-    return bool(record.get("hallucinated_citations")) or not record.get(
-        "has_valid_citation_ids", True
-    )
+    if not record.get("answer_revised") or record.get("revision_rejected"):
+        return False  # not revised, or the guard held and the draft was served
+    if record.get("hallucinated_citations"):
+        return True
+    return asserts_uncited_quantity(str(record.get("answer") or ""))
 
 
 def evaluate_gate(

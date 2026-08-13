@@ -646,6 +646,68 @@ def test_stripping_every_citation_from_a_supported_answer_is_rejected():
     assert result.validation_failures
 
 
+PILOT_03_SERVED = (
+    "The validity period of a Returns Authorisation number is not explicitly "
+    "stated in the provided evidence. However, it can be inferred that the "
+    "14-day validity period mentioned in OPS-03#002 may not be applicable to "
+    "all situations, as indicated by the different refund policies and "
+    "procedures outlined in other documents."
+)
+
+
+def test_a_bare_identifier_in_prose_is_not_a_citation():
+    """The near-miss that would have silenced the alarm without fixing anything.
+
+    The first version of this check used the bare-identifier pattern, so it
+    accepted "mentioned in OPS-03#002" as a citation. The pipeline's own
+    extractor requires brackets and recorded that same answer as having no
+    citations at all, so the check passed on an answer the system considered
+    ungrounded. Two definitions of "cites" in one codebase is the bug.
+    """
+    assert not schema.cites_a_passage("the 14-day period mentioned in OPS-03#002")
+    assert not schema.cites_a_passage("see HR-13 for details")
+    assert not schema.cites_a_passage("see [HR-13] for details"), "document, not passage"
+    assert schema.cites_a_passage("the rate is 55 pence [HR-13#001]")
+
+
+def test_an_abstention_may_not_reassert_the_figure_it_withdrew():
+    """The exact answer pilot 03 served, verbatim.
+
+    Its first clause abstains and its second states the figure anyway with no
+    citation the pipeline recognises. That is worse than either the draft or a
+    clean abstention, and the abstention exception is what let it through.
+    """
+    assert schema.asserts_uncited_quantity(PILOT_03_SERVED)
+
+    payload = json.dumps({
+        "claims": [{"claim": "valid for 14 days", "verdict": "INSUFFICIENT_EVIDENCE"}],
+        "relationship": "no_relationship",
+        "final_answer": PILOT_03_SERVED,
+    })
+    draft = "A Returns Authorisation number is valid for 14 days [OPS-03#002]."
+    result = schema.parse(payload, {"OPS-03#002"}, POLICY, draft=draft)
+
+    assert result.final_answer == draft
+    assert result.revision_rejected
+    assert "without citing a passage" in result.revision_rejected_reason
+
+
+def test_a_clean_abstention_states_no_figure_and_is_allowed():
+    for text in [
+        "The evidence does not state a validity period.",
+        "The evidence does not cover pensions.",
+    ]:
+        assert not schema.asserts_uncited_quantity(text)
+
+
+def test_a_cited_figure_is_never_flagged():
+    for text in [
+        "A Returns Authorisation number is valid for 14 days [OPS-03#002].",
+        "The rate is 55 pence per mile [HR-13#001].",
+    ]:
+        assert not schema.asserts_uncited_quantity(text)
+
+
 def test_an_abstention_may_legitimately_cite_nothing():
     """Withdrawing an unsupported claim leaves nothing to cite.
 
