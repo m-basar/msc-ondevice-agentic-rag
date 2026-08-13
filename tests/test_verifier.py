@@ -42,9 +42,11 @@ def retriever(kb, config):
     return Retriever(build_index(kb, client, config), client, config)
 
 
-POLICY = {"on_supported": "medium", "on_conflict": "low", "on_insufficient": "low",
+POLICY = {"on_supported": "medium", "on_resolved_conflict": "medium",
+          "on_unresolved_conflict": "low", "on_insufficient": "low",
           "on_contradiction": "low", "on_invented_evidence": "low",
           "on_parse_failure": "low"}
+TWO = {"HR-01#001", "IT-03#002"}
 
 
 # --- the boundary that makes the result mean anything ------------------------
@@ -139,14 +141,101 @@ def test_an_invented_chunk_id_is_discarded_and_recorded():
     assert result.confidence == "low", "invented evidence must not leave confidence high"
 
 
-def test_conflicting_chunks_are_validated_too():
+def test_a_conflict_left_with_one_document_is_downgraded():
+    """Stripping the invented identifier is not enough on its own.
+
+    An earlier version removed the bad chunk and left the mutually_exclusive
+    verdict standing on a single valid one. A disagreement needs two sides, so
+    a conflict that survives on one document is not evidenced and the finding
+    is withdrawn rather than repaired.
+    """
     payload = json.dumps({
         "claims": [], "relationship": "mutually_exclusive",
         "conflicting_chunks": ["HR-01#001", "QQ-11#003"],
     })
     result = schema.parse(payload, {"HR-01#001"}, POLICY)
-    assert result.conflicting_chunks == ("HR-01#001",)
     assert "QQ-11#003" in result.invented_ids
+    assert result.relationship == "insufficient"
+    assert not result.conflict_detected
+    assert result.conflicting_chunks == ()
+
+
+def test_two_chunks_from_one_document_are_one_side_not_two():
+    payload = json.dumps({
+        "claims": [], "relationship": "stricter_looser",
+        "conflicting_chunks": ["HR-01#001", "HR-01#002"],
+    })
+    result = schema.parse(payload, {"HR-01#001", "HR-01#002"}, POLICY)
+    assert result.relationship == "insufficient", (
+        "two passages of the same document are one position, not a disagreement"
+    )
+
+
+def test_a_conflict_across_two_documents_stands():
+    payload = json.dumps({
+        "claims": [], "relationship": "mutually_exclusive",
+        "conflicting_chunks": sorted(TWO),
+    })
+    assert schema.parse(payload, TWO, POLICY).conflict_detected
+
+
+# --- verdicts cannot outlive their evidence ----------------------------------
+
+
+def test_supported_without_supporting_evidence_is_downgraded():
+    payload = json.dumps({
+        "claims": [{"claim": "x", "verdict": "SUPPORTED", "supporting": ["ZZ-99#001"]}],
+        "relationship": "no_relationship",
+    })
+    result = schema.parse(payload, {"HR-01#001"}, POLICY)
+    assert result.verdicts[0].verdict == INSUFFICIENT_EVIDENCE
+
+
+def test_contradicted_without_contradicting_evidence_is_downgraded():
+    payload = json.dumps({
+        "claims": [{"claim": "x", "verdict": "CONTRADICTED", "contradicting": []}],
+        "relationship": "no_relationship",
+    })
+    result = schema.parse(payload, {"HR-01#001"}, POLICY)
+    assert result.verdicts[0].verdict == INSUFFICIENT_EVIDENCE
+    assert not result.any_contradiction
+
+
+@pytest.mark.parametrize("raw,expected", [
+    (True, True), (False, False), ("true", True), ("false", False),
+    ("TRUE", True), ("no", False), (1, True), (0, False), (None, False),
+])
+def test_escalate_is_parsed_not_coerced(raw, expected):
+    """bool("false") is True, so a verifier writing the string would have
+    escalated everything."""
+    payload = json.dumps({"claims": [], "relationship": "no_relationship",
+                          "escalate": raw})
+    assert schema.parse(payload, set(), POLICY).escalate is expected
+
+
+# --- a resolved supersession is not an unresolved conflict -------------------
+
+
+def test_supersession_is_detected_but_not_treated_as_unresolved():
+    """It has a right answer: the current document governs.
+
+    Capping its confidence with the unresolvable kinds would punish the system
+    for noticing the withdrawn document rather than for mishandling it.
+    """
+    payload = json.dumps({"claims": [], "relationship": "supersession",
+                          "conflicting_chunks": sorted(TWO)})
+    result = schema.parse(payload, TWO, POLICY)
+    assert result.conflict_detected
+    assert result.is_resolved and not result.is_unresolved
+    assert result.confidence == "medium"
+
+
+def test_an_unresolvable_conflict_still_caps_confidence():
+    payload = json.dumps({"claims": [], "relationship": "mutually_exclusive",
+                          "conflicting_chunks": sorted(TWO)})
+    result = schema.parse(payload, TWO, POLICY)
+    assert result.is_unresolved and not result.is_resolved
+    assert result.confidence == "low"
 
 
 # --- parsing what small models actually emit ---------------------------------
@@ -204,16 +293,18 @@ def test_contextually_compatible_is_not_a_detected_conflict(relationship, detect
     false-conflict rate unmeasurable, which is the metric that keeps the
     contribution honest.
     """
-    payload = json.dumps({"claims": [], "relationship": relationship})
-    assert schema.parse(payload, set(), POLICY).conflict_detected is detected
+    payload = json.dumps({"claims": [], "relationship": relationship,
+                          "conflicting_chunks": sorted(TWO)})
+    assert schema.parse(payload, TWO, POLICY).conflict_detected is detected
 
 
 # --- confidence comes from runtime policy, not gold --------------------------
 
 
 def test_a_detected_conflict_caps_confidence():
-    payload = json.dumps({"claims": [], "relationship": "mutually_exclusive"})
-    assert schema.parse(payload, set(), POLICY).confidence == "low"
+    payload = json.dumps({"claims": [], "relationship": "mutually_exclusive",
+                          "conflicting_chunks": sorted(TWO)})
+    assert schema.parse(payload, TWO, POLICY).confidence == "low"
 
 
 def test_a_clean_supported_answer_may_hold_medium_confidence():
@@ -228,7 +319,8 @@ def test_the_runtime_policy_is_configured_outside_the_registry(config):
     """Two confidence policies exist and only one is readable at runtime."""
     policy = config.get("verification.confidence")
     assert policy, "no runtime confidence policy in config.json"
-    for outcome in ("on_conflict", "on_insufficient", "on_supported"):
+    for outcome in ("on_resolved_conflict", "on_unresolved_conflict",
+                    "on_insufficient", "on_supported"):
         assert outcome in policy
 
 
@@ -285,3 +377,56 @@ def test_a_contradiction_is_carried_through_to_the_record(retriever, config):
     assert verified.verification.conflict_detected
     assert verified.verification.escalate
     assert verified.to_dict()["verification"]["verdicts"][0]["verdict"] == CONTRADICTED
+
+
+# --- the verifier must be able to change the answer --------------------------
+
+
+def test_arm_d_is_scored_on_the_revised_answer_not_the_draft(retriever, config):
+    """Without this, Arm D cannot beat Arm B by construction.
+
+    The blinded scorer reads record["answer"]. An earlier version returned the
+    audit and left the draft untouched, so a verifier could detect a conflict
+    perfectly and still serve the wrong text.
+    """
+    retrieval = retriever.retrieve("mileage expenses", top_k=6, min_similarity=0.0)
+    ids = [s.chunk_id for s in retrieval]
+    docs = sorted({i.split("#")[0] for i in ids})
+    pair = [next(i for i in ids if i.startswith(d)) for d in docs[:2]]
+
+    client = MockClient(config, responses={"EVIDENCE": "The rate is 40 pence."})
+    answer = Generator(client, config).answer("What is the mileage rate?", retrieval)
+
+    corrected = f"The current rate is 55 pence per mile [{pair[1]}]."
+    verifier_client = MockClient(config, responses={"policy auditor": json.dumps({
+        "claims": [{"claim": "The rate is 40 pence", "verdict": "CONTRADICTED",
+                    "contradicting": [pair[0]]}],
+        "relationship": "supersession", "conflicting_chunks": pair,
+        "escalate": False, "final_answer": corrected,
+    })})
+    verified = Verifier(verifier_client, config).verify(answer)
+    payload = verified.to_dict()
+
+    assert verified.final_answer == corrected
+    assert payload["answer"] == corrected, "the scorer would read the stale draft"
+    assert payload["draft_answer"] == "The rate is 40 pence."
+    assert payload["answer_revised"] is True
+
+
+def test_a_parse_failure_degrades_to_the_draft_not_to_silence(retriever, config):
+    retrieval = retriever.retrieve("annual leave", min_similarity=0.0)
+    client = MockClient(config, responses={"EVIDENCE": "Leave is 25 days."})
+    answer = Generator(client, config).answer("How much leave?", retrieval)
+    verifier_client = MockClient(config, responses={"policy auditor": "I cannot do that."})
+    verified = Verifier(verifier_client, config).verify(answer)
+
+    assert verified.verification.parse_failed
+    assert verified.final_answer == "Leave is 25 days."
+    assert verified.to_dict()["answer_revised"] is False
+
+
+def test_the_prompt_asks_for_a_final_answer():
+    from sme_assistant.verify.verifier import VERIFIER_SYSTEM
+
+    assert "final_answer" in VERIFIER_SYSTEM
+    assert "correct it" in VERIFIER_SYSTEM

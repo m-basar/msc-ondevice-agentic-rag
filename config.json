@@ -36,11 +36,12 @@
     "confidence": {
       "_note": "Runtime confidence policy. A separate scoring-side policy describes what should happen and is applied only when results are marked. Reading that one here would let the system consult the answer key about its own certainty.",
       "on_supported": "medium",
-      "on_conflict": "low",
       "on_contradiction": "low",
       "on_insufficient": "low",
       "on_invented_evidence": "low",
-      "on_parse_failure": "low"
+      "on_parse_failure": "low",
+      "on_resolved_conflict": "medium",
+      "on_unresolved_conflict": "low"
     }
   },
   "chunking": {

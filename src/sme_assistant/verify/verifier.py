@@ -19,14 +19,21 @@ scoring criteria expect. Behaviour is inferred, and if the inference is wrong
 the result says so. A verifier that looked up the answer would produce
 excellent output and measure nothing.
 
-Two passes, not one
--------------------
+Two passes, and the second one answers
+--------------------------------------
 Verification is a separate call rather than a longer prompt on the first. That
 costs a second generation, which H5 predicts and RQ4 measures. The reason is
 that a single prompt asking a 3B model to answer *and* audit its own answer
 gets neither: the audit is written to justify the answer already produced.
 Separating them means the second pass sees the answer as text to be checked,
 not as a conclusion to be defended.
+
+**The second pass returns a revised answer, not only an audit.** An earlier
+version returned the audit alone and left the draft untouched, which made Arm D
+unable to improve on Arm B by construction: the scorer reads the answer, so a
+verifier could detect a conflict perfectly and still serve the wrong text. Two
+calls, and the second one produces the answer that is scored. The draft is kept
+alongside it so the change is visible and the revision rate is measurable.
 """
 
 from __future__ import annotations
@@ -62,7 +69,8 @@ Return a single JSON object and nothing else:
   "conflicting_chunks": ["<chunk id>"],
   "safe_action": "<what to do that satisfies every passage, or null>",
   "escalate": true | false,
-  "rationale": "<one or two sentences>"
+  "rationale": "<one or two sentences>",
+  "final_answer": "<the corrected answer for the user, with citations>"
 }
 
 Rules:
@@ -71,7 +79,9 @@ Rules:
 is not support.
 3. A claim is CONTRADICTED if a named passage says otherwise.
 4. Decide the relationship between the passages that bear on the question:
-   - "supersession": one passage is marked as replacing the other.
+   - "supersession": one passage is marked as replacing the other. The \
+replacement governs, so answer from it, do not present the withdrawn figure as \
+current, and set escalate to false. This one has a right answer.
    - "mutually_exclusive": both are in force and no single action satisfies \
 both. Set escalate to true and safe_action to null.
    - "stricter_looser": both are in force and one is stricter, so acting on \
@@ -82,7 +92,12 @@ circumstances, so both hold. Set escalate to false.
    - "no_relationship": the passages do not bear on the same point.
    - "insufficient": you cannot tell from what you were given.
 5. Do not report a conflict you cannot point at. Every conflict must name the \
-chunks in conflicting_chunks."""
+chunks in conflicting_chunks, from at least two different documents.
+6. Write final_answer for the user. If the answer under review is correct, \
+repeat it. If it is wrong, incomplete, or cites the wrong passage, correct it. \
+Where the passages disagree and cannot be reconciled, state both positions, \
+name both documents, say neither supersedes the other, and say the discrepancy \
+should be raised. Cite chunk identifiers in square brackets."""
 
 
 def build_verification_prompt(question: str, answer: str, evidence: str) -> str:
@@ -109,6 +124,15 @@ class VerifiedAnswer:
     prompt: str
 
     @property
+    def final_answer(self) -> str:
+        """What Arm D serves, and what the blinded scorer reads.
+
+        Falls back to the draft if the verifier returned nothing usable, so a
+        parse failure degrades to Arm B behaviour rather than to silence.
+        """
+        return self.verification.final_answer or self.answer.answer
+
+    @property
     def wall_seconds(self) -> float:
         """End to end, including the verification pass.
 
@@ -125,6 +149,12 @@ class VerifiedAnswer:
     def to_dict(self) -> dict[str, Any]:
         payload = self.answer.to_dict()
         payload.update({
+            # The scored answer is the revised one. The draft is kept beside it
+            # so a reader can see what verification changed, and so the revision
+            # rate is measurable rather than assumed.
+            "answer": self.final_answer,
+            "draft_answer": self.answer.answer,
+            "answer_revised": self.verification.revised,
             "verification": self.verification.to_dict(),
             "verification_generation": self.generation.to_dict(),
             "verification_prompt": self.prompt,
@@ -174,6 +204,7 @@ class Verifier:
             generation.text,
             [s.chunk_id for s in retrieval],
             self._policy,
+            draft=answer.answer,
         )
         _ = elapsed  # generation.wall_seconds is authoritative; kept for clarity
         return VerifiedAnswer(

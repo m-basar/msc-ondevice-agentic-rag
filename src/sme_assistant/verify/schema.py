@@ -71,6 +71,29 @@ CONFLICTING_RELATIONSHIPS = frozenset({
 
 CHUNK_ID_RE = re.compile(r"\b[A-Z]{2,4}-\d{2}#\d{1,3}\b")
 
+# A relationship that is resolvable from document metadata alone. The current
+# document governs, so there is a right answer and no standing escalation.
+# Collapsing this with the unresolvable kinds would treat "I found the
+# superseded version and used the current one" as a failure state.
+RESOLVED_RELATIONSHIPS = frozenset({SUPERSESSION})
+UNRESOLVED_RELATIONSHIPS = CONFLICTING_RELATIONSHIPS - RESOLVED_RELATIONSHIPS
+
+
+def as_bool(value: Any) -> bool:
+    """Parse a boolean the way a model actually emits one.
+
+    ``bool("false")`` is ``True``, so a verifier writing ``"escalate": "false"``
+    would have escalated everything. JSON booleans, the strings both ways, and
+    0/1 are all in the wild.
+    """
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return bool(value)
+    if isinstance(value, str):
+        return value.strip().lower() in {"true", "yes", "1"}
+    return False
+
 
 class VerificationError(RuntimeError):
     """Raised when the verifier's output cannot be interpreted at all."""
@@ -105,6 +128,12 @@ class Verification:
     escalate: bool = False
     rationale: str = ""
     confidence: str = "low"
+    # The answer after verification. Arm D is scored on this, not on the draft.
+    # Without it the verifier could detect a conflict perfectly and still serve
+    # the unchanged wrong answer, so no amount of verification quality could
+    # reach the conflict-handling metric.
+    final_answer: str = ""
+    revised: bool = False
     # Identifiers the verifier returned that were never retrieved. Recorded
     # rather than silently dropped: a verifier citing evidence it was not given
     # is the same failure as a generator doing it, and it must be visible.
@@ -115,6 +144,16 @@ class Verification:
     @property
     def conflict_detected(self) -> bool:
         return self.relationship in CONFLICTING_RELATIONSHIPS
+
+    @property
+    def is_resolved(self) -> bool:
+        """A disagreement with a right answer, resolvable from metadata."""
+        return self.relationship in RESOLVED_RELATIONSHIPS
+
+    @property
+    def is_unresolved(self) -> bool:
+        """A disagreement with no basis in metadata for choosing."""
+        return self.relationship in UNRESOLVED_RELATIONSHIPS
 
     @property
     def any_contradiction(self) -> bool:
@@ -136,6 +175,10 @@ class Verification:
             "escalate": self.escalate,
             "rationale": self.rationale,
             "confidence": self.confidence,
+            "is_resolved": self.is_resolved,
+            "is_unresolved": self.is_unresolved,
+            "final_answer": self.final_answer,
+            "revised": self.revised,
             "invented_ids": list(self.invented_ids),
             "parse_failed": self.parse_failed,
         }
@@ -190,13 +233,29 @@ def split_ids(value: Any, retrieved: set[str], invented: set[str]) -> tuple[str,
     return tuple(kept)
 
 
-def parse(text: str, retrieved: Iterable[str], policy: Mapping[str, Any]) -> Verification:
-    """Interpret a verifier response, discarding evidence it was never given.
+def parse(
+    text: str,
+    retrieved: Iterable[str],
+    policy: Mapping[str, Any],
+    draft: str = "",
+) -> Verification:
+    """Interpret a verifier response, and fail closed on unevidenced findings.
 
-    Every identifier is checked against the retrieved set. A verifier that
-    names a passage it was not shown has invented it, exactly as a generator
-    citing an unretrieved chunk has, and the count is reported rather than
-    quietly repaired.
+    Discarding an invented identifier is not enough on its own. An earlier
+    version stripped the identifier and left the verdict standing, so a claim
+    could be SUPPORTED with nothing supporting it and a conflict could be
+    declared with one chunk. Every finding must now survive on evidence that
+    was actually retrieved, or it is downgraded:
+
+    * ``SUPPORTED`` without a valid supporting chunk becomes
+      ``INSUFFICIENT_EVIDENCE``
+    * ``CONTRADICTED`` without a valid contradicting chunk becomes
+      ``INSUFFICIENT_EVIDENCE``
+    * a relationship between documents needs at least two valid chunks from
+      **distinct documents**, or the relationship becomes ``insufficient``
+
+    The last rule is why the count is by document rather than by chunk. Two
+    chunks from the same document are one side of a disagreement, not two.
     """
     available = set(retrieved)
     invented: set[str] = set()
@@ -207,6 +266,7 @@ def parse(text: str, retrieved: Iterable[str], policy: Mapping[str, Any]) -> Ver
         return Verification(
             verdicts=(), relationship=INSUFFICIENT, parse_failed=True, raw=text,
             confidence=str(policy.get("on_parse_failure", "low")),
+            final_answer=draft, revised=False,
         )
 
     verdicts: list[ClaimVerdict] = []
@@ -216,30 +276,50 @@ def parse(text: str, retrieved: Iterable[str], policy: Mapping[str, Any]) -> Ver
         verdict = str(entry.get("verdict", "")).strip().upper()
         if verdict not in VALID_VERDICTS:
             verdict = INSUFFICIENT_EVIDENCE
+        supporting = split_ids(entry.get("supporting"), available, invented)
+        contradicting = split_ids(entry.get("contradicting"), available, invented)
+
+        # Fail closed. A verdict is a claim about evidence, so it cannot
+        # outlive the evidence it named.
+        if verdict == SUPPORTED and not supporting:
+            verdict = INSUFFICIENT_EVIDENCE
+        elif verdict == CONTRADICTED and not contradicting:
+            verdict = INSUFFICIENT_EVIDENCE
+
         verdicts.append(ClaimVerdict(
             claim=str(entry.get("claim", "")).strip(),
-            verdict=verdict,
-            supporting=split_ids(entry.get("supporting"), available, invented),
-            contradicting=split_ids(entry.get("contradicting"), available, invented),
+            verdict=verdict, supporting=supporting, contradicting=contradicting,
         ))
 
     relationship = str(payload.get("relationship", "")).strip().lower()
     if relationship not in VALID_RELATIONSHIPS:
         relationship = INSUFFICIENT
 
+    conflicting = split_ids(payload.get("conflicting_chunks"), available, invented)
+    if relationship in CONFLICTING_RELATIONSHIPS:
+        documents = {c.split("#")[0] for c in conflicting}
+        if len(documents) < 2:
+            relationship = INSUFFICIENT
+            conflicting = ()
+
     safe_action = payload.get("safe_action")
     safe_action = str(safe_action).strip() if safe_action else None
     if safe_action and safe_action.lower() in {"none", "null", "n/a", ""}:
         safe_action = None
 
+    final = str(payload.get("final_answer") or "").strip()
+    revised = bool(final) and final != draft.strip()
+
     result = Verification(
         verdicts=tuple(verdicts),
         relationship=relationship,
-        conflicting_chunks=split_ids(payload.get("conflicting_chunks"), available, invented),
+        conflicting_chunks=conflicting,
         safe_action=safe_action,
-        escalate=bool(payload.get("escalate", False)),
+        escalate=as_bool(payload.get("escalate")),
         rationale=str(payload.get("rationale", "")).strip(),
         invented_ids=tuple(sorted(invented)),
+        final_answer=final or draft,
+        revised=revised,
         raw=text,
     )
     return replace_confidence(result, policy)
@@ -259,8 +339,13 @@ def replace_confidence(result: Verification, policy: Mapping[str, Any]) -> Verif
     if result.parse_failed:
         return result
 
-    if result.relationship in CONFLICTING_RELATIONSHIPS:
-        confidence = str(policy.get("on_conflict", "low"))
+    if result.is_resolved:
+        # A supersession the system detected and resolved from metadata has a
+        # right answer. Capping it at low would punish the system for noticing
+        # the withdrawn document rather than for mishandling it.
+        confidence = str(policy.get("on_resolved_conflict", "medium"))
+    elif result.is_unresolved:
+        confidence = str(policy.get("on_unresolved_conflict", "low"))
     elif result.all_insufficient or result.relationship == INSUFFICIENT:
         confidence = str(policy.get("on_insufficient", "low"))
     elif any(v.verdict == CONTRADICTED for v in result.verdicts):
