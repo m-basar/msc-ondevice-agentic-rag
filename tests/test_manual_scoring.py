@@ -1,0 +1,566 @@
+"""Tests for the blinded manual scoring instrument.
+
+The primary metric of this study is a human judgement, which makes the tool
+that collects it part of the method rather than a convenience. Three things
+have to hold, and each is asserted here rather than described in a docstring:
+
+- the reviewer is never shown anything that identifies the arm, including the
+  opaque code, which is a stable per-arm label and therefore a pattern to
+  accumulate against
+- a judgement survives the terminal closing
+- the key is not reachable during a scoring pass
+
+The last one is tested by recording every file the scoring path opens and
+asserting the key is not among them. A comment saying "we do not read the key"
+is worth nothing; the pre-registration is explicit that boundaries are enforced
+in code rather than by intention, and this is that boundary.
+"""
+
+from __future__ import annotations
+
+import builtins
+import json
+import pathlib
+import sys
+from pathlib import Path
+
+import pytest
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+
+from score_answers import main  # noqa: E402
+
+from sme_assistant.common.config import load_config
+from sme_assistant.common.llm_client import MockClient
+from sme_assistant.evaluation.manual_scoring import (
+    InputError,
+    Judgement,
+    ScoringError,
+    append_judgement,
+    consistency_report,
+    load_judgements,
+    load_sheet,
+    next_unscored,
+    open_session,
+    parse_score_input,
+    progress,
+    render_item,
+)
+from sme_assistant.evaluation.question_set import load_question_set
+from sme_assistant.evaluation.config import load_evaluation_config
+from sme_assistant.evaluation.run_writer import (
+    ArmDefinition,
+    RunWriter,
+    write_review_sheet,
+)
+from sme_assistant.generate.generator import Generator
+from sme_assistant.ingest.index import build_index
+from sme_assistant.kb.loader import load_knowledge_base
+from sme_assistant.retrieve.retriever import EvidenceFormat, Retriever
+
+
+# --- fixtures ---------------------------------------------------------------
+
+
+def sheet_line(item: int, question_id: str, answer: str, system: str = "system_A", **extra):
+    return {
+        "item": item,
+        "question_id": question_id,
+        "group_id": question_id,
+        "question": f"question for {question_id}?",
+        "system": system,
+        "answer": answer,
+        "required_claims": ["the rate is 45p per mile"],
+        "forbidden_claims": ["the rate is 40p per mile"],
+        "acceptable_variants": [],
+        "scoring_criteria": {"2": "correct", "1": "partial", "0": "wrong"},
+        **extra,
+    }
+
+
+def write_sheet(path: Path, records) -> Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        "\n".join(json.dumps(r) for r in records) + "\n", encoding="utf-8"
+    )
+    return path
+
+
+@pytest.fixture
+def sheet(tmp_path):
+    return write_sheet(
+        tmp_path / "review.jsonl",
+        [
+            sheet_line(1, "TEST-001", "the rate is 45p", "system_C"),
+            sheet_line(2, "TEST-001", "the rate is 45p", "system_A"),
+            sheet_line(3, "TEST-002", "no evidence covers this", "system_D"),
+            sheet_line(4, "TEST-003", "the rate is 40p", "system_B"),
+        ],
+    )
+
+
+@pytest.fixture(scope="module")
+def config():
+    return load_config()
+
+
+@pytest.fixture(scope="module")
+def kb(config):
+    return load_knowledge_base(config.path("paths.kb_docs"))
+
+
+@pytest.fixture(scope="module")
+def index(kb, config):
+    return build_index(kb, MockClient(config), config)
+
+
+# --- the sheet must be blind ------------------------------------------------
+
+
+def test_a_sheet_carrying_the_arm_is_refused(tmp_path):
+    """The sheet is a text file anyone can regenerate with different arguments.
+
+    Checking it on load turns "the blinding was correct when written" into
+    "the blinding is correct now".
+    """
+    path = write_sheet(tmp_path / "leaky.jsonl", [sheet_line(1, "TEST-001", "x", arm="D")])
+    with pytest.raises(ScoringError, match="not blind"):
+        load_sheet(path)
+
+
+@pytest.mark.parametrize(
+    "leak", ["arm", "prompt", "evidence", "wall_seconds", "generation", "scoring"]
+)
+def test_every_arm_identifying_field_is_refused(tmp_path, leak):
+    path = write_sheet(tmp_path / "leaky.jsonl", [sheet_line(1, "TEST-001", "x", **{leak: 1})])
+    with pytest.raises(ScoringError, match="not blind"):
+        load_sheet(path)
+
+
+def test_duplicate_item_numbers_are_refused(tmp_path):
+    """Item numbers key the judgement log, so duplicates overwrite silently."""
+    path = write_sheet(
+        tmp_path / "dupes.jsonl",
+        [sheet_line(1, "TEST-001", "a"), sheet_line(1, "TEST-002", "b")],
+    )
+    with pytest.raises(ScoringError, match="duplicate item number"):
+        load_sheet(path)
+
+
+def test_the_opaque_code_never_reaches_the_screen(sheet):
+    """system_C is a stable label for one arm across the whole pass.
+
+    Show it and a reviewer who notices that one code escalates more than the
+    others has deanonymised every remaining item. This is the defeat amendment
+    1.1.10 closed for the evidence block, closed the same way: by not emitting
+    the thing.
+    """
+    items = load_sheet(sheet)
+    for position, item in enumerate(items, start=1):
+        rendered = render_item(item, position=position, total=len(items), scored=0)
+        assert item.system not in rendered
+        assert "system_" not in rendered
+        assert item.answer in rendered
+        assert item.question_id in rendered
+
+
+def test_the_judgement_record_does_not_store_the_code_either(tmp_path, sheet):
+    items = load_sheet(sheet)
+    log = tmp_path / "judgements.jsonl"
+    append_judgement(log, Judgement(item=items[0].item, question_id="TEST-001", score=2))
+    written = json.loads(log.read_text(encoding="utf-8").strip())
+    assert "system" not in written
+    assert not any("system_" in str(v) for v in written.values())
+
+
+# --- durability and resumption ----------------------------------------------
+
+
+def test_a_judgement_is_on_disk_before_the_next_item_is_shown(tmp_path):
+    """A pass over 272 answers is not one sitting."""
+    log = tmp_path / "judgements.jsonl"
+    append_judgement(log, Judgement(item=7, question_id="TEST-001", score=1))
+    assert log.exists()
+    assert json.loads(log.read_text(encoding="utf-8").strip())["score"] == 1
+
+
+def test_scoring_resumes_where_an_interrupted_pass_stopped(sheet, tmp_path):
+    items = load_sheet(sheet)
+    log = tmp_path / "judgements.jsonl"
+    for item in items[:2]:
+        append_judgement(log, Judgement(item=item.item, question_id=item.question_id, score=2))
+
+    reloaded = load_judgements(log)
+    assert len(reloaded) == 2
+    assert next_unscored(items, reloaded) == 3
+    assert progress(items, reloaded)["remaining"] == 2
+    assert progress(items, reloaded)["complete"] is False
+
+
+def test_a_rescored_item_wins_but_the_original_is_not_erased(tmp_path):
+    """A reviewer who revisits an item should be able to, and the record
+    should show that they did rather than presenting the second score as
+    the first."""
+    log = tmp_path / "judgements.jsonl"
+    append_judgement(log, Judgement(item=3, question_id="TEST-002", score=0))
+    append_judgement(log, Judgement(item=3, question_id="TEST-002", score=2, revision=1))
+
+    current = load_judgements(log)
+    assert current[3].score == 2
+    assert current[3].revision == 1
+    assert len(log.read_text(encoding="utf-8").strip().splitlines()) == 2
+
+
+def test_a_corrupt_final_line_is_named_rather_than_skipped(tmp_path):
+    log = tmp_path / "judgements.jsonl"
+    append_judgement(log, Judgement(item=1, question_id="TEST-001", score=2))
+    with log.open("a", encoding="utf-8") as handle:
+        handle.write('{"item": 2, "sco')
+    with pytest.raises(ScoringError, match="append-only"):
+        load_judgements(log)
+
+
+def test_a_score_outside_the_three_point_scale_is_refused():
+    with pytest.raises(ScoringError, match="three-point"):
+        Judgement(item=1, question_id="TEST-001", score=3)
+
+
+# --- the sheet a log was started against ------------------------------------
+
+
+def test_a_rebuilt_sheet_invalidates_the_log(tmp_path, sheet):
+    """Item numbers are positions in a shuffled file.
+
+    Rebuild it from different runs and item 37 is a different answer while the
+    log still claims it was scored.
+    """
+    session = tmp_path / "session.json"
+    open_session(session, sheet, item_count=4)
+
+    write_sheet(sheet, [sheet_line(1, "TEST-009", "something else")])
+    with pytest.raises(ScoringError, match="has changed since scoring began"):
+        open_session(session, sheet, item_count=1)
+
+
+# --- input grammar ----------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "text,expected",
+    [
+        ("2", (2, False, False, False)),
+        ("0", (0, False, False, False)),
+        ("1c", (1, True, False, False)),
+        ("0a", (0, False, True, False)),
+        ("2cu", (2, True, False, True)),
+        (" 1 c a ", (1, True, True, False)),
+        ("2N", (2, False, False, False)),
+    ],
+)
+def test_input_grammar(text, expected):
+    parsed = parse_score_input(text)
+    assert (
+        parsed.score,
+        parsed.asserts_conflict,
+        parsed.abstained,
+        parsed.uncertain,
+    ) == expected
+
+
+def test_uncertain_always_prompts_for_a_note():
+    assert parse_score_input("1u").wants_note is True
+    assert parse_score_input("1n").wants_note is True
+    assert parse_score_input("1").wants_note is False
+
+
+@pytest.mark.parametrize("text", ["", "3", "x", "2z", "2cc", "c2", "22"])
+def test_malformed_input_is_rejected_rather_than_guessed(text):
+    """A swallowed stray character in a 272-item pass is a wrong score in the
+    primary metric."""
+    with pytest.raises(InputError):
+        parse_score_input(text)
+
+
+# --- consistency ------------------------------------------------------------
+
+
+def test_identical_answers_scored_differently_are_reported(sheet, tmp_path):
+    """Arm D replays Arm B's drafts, so a verification pass that changes
+    nothing leaves two byte-identical answers in the pool. Independent scoring
+    can put a 1 on one and a 2 on the other, and that noise lands on the B
+    versus D contrast."""
+    items = load_sheet(sheet)
+    log = tmp_path / "judgements.jsonl"
+    append_judgement(log, Judgement(item=1, question_id="TEST-001", score=2))
+    append_judgement(log, Judgement(item=2, question_id="TEST-001", score=1))
+    append_judgement(log, Judgement(item=3, question_id="TEST-002", score=2))
+    append_judgement(log, Judgement(item=4, question_id="TEST-003", score=0))
+
+    report = consistency_report(items, load_judgements(log))
+    assert report["duplicate_groups"] == 1
+    assert len(report["divergent"]) == 1
+    assert report["divergent"][0]["items"] == [1, 2]
+    assert report["consistent"] == 0
+
+
+def test_agreeing_duplicates_are_not_reported(sheet, tmp_path):
+    items = load_sheet(sheet)
+    log = tmp_path / "judgements.jsonl"
+    for number in (1, 2):
+        append_judgement(log, Judgement(item=number, question_id="TEST-001", score=2))
+    report = consistency_report(items, load_judgements(log))
+    assert report["divergent"] == []
+    assert report["consistent"] == 1
+
+
+def test_a_differing_flag_counts_as_a_divergence(sheet, tmp_path):
+    items = load_sheet(sheet)
+    log = tmp_path / "judgements.jsonl"
+    append_judgement(log, Judgement(item=1, question_id="TEST-001", score=2))
+    append_judgement(
+        log, Judgement(item=2, question_id="TEST-001", score=2, asserts_conflict=True)
+    )
+    report = consistency_report(items, load_judgements(log))
+    assert len(report["divergent"]) == 1
+
+
+def test_identical_text_on_different_questions_is_not_a_duplicate(tmp_path):
+    """The system-written abstention template is byte-identical across many
+    different gaps. Those are judged against different rubrics and may
+    legitimately differ, so keying on text alone would manufacture
+    disagreements."""
+    path = write_sheet(
+        tmp_path / "review.jsonl",
+        [
+            sheet_line(1, "TEST-010", "The evidence does not cover this."),
+            sheet_line(2, "TEST-011", "The evidence does not cover this."),
+        ],
+    )
+    items = load_sheet(path)
+    log = tmp_path / "judgements.jsonl"
+    append_judgement(log, Judgement(item=1, question_id="TEST-010", score=2))
+    append_judgement(log, Judgement(item=2, question_id="TEST-011", score=0))
+    report = consistency_report(items, load_judgements(log))
+    assert report["duplicate_groups"] == 0
+    assert report["divergent"] == []
+
+
+# --- the command line, end to end -------------------------------------------
+
+
+@pytest.fixture
+def watched_opens(monkeypatch):
+    """Record every path the code under test opens."""
+    opened: list[str] = []
+
+    real_open = builtins.open
+    real_path_open = pathlib.Path.open
+    real_read_text = pathlib.Path.read_text
+    real_read_bytes = pathlib.Path.read_bytes
+
+    def note(target):
+        opened.append(str(target))
+
+    def traced_open(file, *args, **kwargs):
+        note(file)
+        return real_open(file, *args, **kwargs)
+
+    def traced_path_open(self, *args, **kwargs):
+        note(self)
+        return real_path_open(self, *args, **kwargs)
+
+    def traced_read_text(self, *args, **kwargs):
+        note(self)
+        return real_read_text(self, *args, **kwargs)
+
+    def traced_read_bytes(self, *args, **kwargs):
+        note(self)
+        return real_read_bytes(self, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "open", traced_open)
+    monkeypatch.setattr(pathlib.Path, "open", traced_path_open)
+    monkeypatch.setattr(pathlib.Path, "read_text", traced_read_text)
+    monkeypatch.setattr(pathlib.Path, "read_bytes", traced_read_bytes)
+    return opened
+
+
+def scripted_input(monkeypatch, answers):
+    supplied = iter(answers)
+
+    def fake_input(prompt=""):
+        try:
+            return next(supplied)
+        except StopIteration:  # pragma: no cover - a test that ran out of input
+            raise EOFError
+
+    monkeypatch.setattr(builtins, "input", fake_input)
+
+
+def test_a_full_pass_never_opens_the_key(tmp_path, sheet, monkeypatch, watched_opens):
+    key = sheet.with_name(sheet.stem + "_key.json")
+    key.write_text(
+        json.dumps({"warning": "Do not open", "seed": 42,
+                    "mapping": {"A": "system_C", "B": "system_A",
+                                "C": "system_D", "D": "system_B"}}),
+        encoding="utf-8",
+    )
+    log = tmp_path / "judgements.jsonl"
+    scripted_input(monkeypatch, ["2", "1", "0a", "2"])
+
+    # Creating the key above is itself a file operation, and the tracer sees
+    # it. Only what the scoring pass touches is the claim being tested.
+    watched_opens.clear()
+
+    assert main([
+        "--sheet", str(sheet), "--judgements", str(log),
+        "score", "--session", str(tmp_path / "session.json"),
+    ]) == 0
+
+    assert not any("_key.json" in path for path in watched_opens), (
+        "the scoring pass touched the key file"
+    )
+    assert progress(load_sheet(sheet), load_judgements(log))["complete"] is True
+
+
+def test_the_flags_are_recorded_through_the_command_line(tmp_path, sheet, monkeypatch):
+    log = tmp_path / "judgements.jsonl"
+    scripted_input(monkeypatch, ["2", "1c", "0a", "2u", "borderline"])
+    main([
+        "--sheet", str(sheet), "--judgements", str(log),
+        "score", "--session", str(tmp_path / "session.json"),
+    ])
+
+    judgements = load_judgements(log)
+    assert judgements[2].asserts_conflict is True
+    assert judgements[3].abstained is True
+    assert judgements[4].uncertain is True
+    assert judgements[4].note == "borderline"
+    assert judgements[1].asserts_conflict is False
+
+
+def test_quitting_keeps_everything_scored_so_far(tmp_path, sheet, monkeypatch):
+    log = tmp_path / "judgements.jsonl"
+    scripted_input(monkeypatch, ["2", "1", "q"])
+    main([
+        "--sheet", str(sheet), "--judgements", str(log),
+        "score", "--session", str(tmp_path / "session.json"),
+    ])
+    assert len(load_judgements(log)) == 2
+
+    scripted_input(monkeypatch, ["0", "2"])
+    main([
+        "--sheet", str(sheet), "--judgements", str(log),
+        "score", "--session", str(tmp_path / "session.json"),
+    ])
+    assert progress(load_sheet(sheet), load_judgements(log))["complete"] is True
+
+
+def test_unseal_refuses_while_items_are_unscored(tmp_path, sheet, monkeypatch, capsys):
+    key = sheet.with_name(sheet.stem + "_key.json")
+    key.write_text(json.dumps({"mapping": {"A": "system_C"}}), encoding="utf-8")
+    log = tmp_path / "judgements.jsonl"
+    scripted_input(monkeypatch, ["2", "q"])
+    main(["--sheet", str(sheet), "--judgements", str(log),
+          "score", "--session", str(tmp_path / "session.json")])
+
+    code = main(["--sheet", str(sheet), "--judgements", str(log),
+                 "unseal", "--i-have-finished-scoring"])
+    assert code == 1
+    assert "Refusing to unseal" in capsys.readouterr().err
+    assert "system_C" not in capsys.readouterr().out
+
+
+def test_unseal_refuses_without_the_awkward_flag(tmp_path, sheet, monkeypatch, capsys):
+    key = sheet.with_name(sheet.stem + "_key.json")
+    key.write_text(json.dumps({"mapping": {"A": "system_C"}}), encoding="utf-8")
+    log = tmp_path / "judgements.jsonl"
+    scripted_input(monkeypatch, ["2", "1", "0", "2"])
+    main(["--sheet", str(sheet), "--judgements", str(log),
+          "score", "--session", str(tmp_path / "session.json")])
+    capsys.readouterr()
+
+    assert main(["--sheet", str(sheet), "--judgements", str(log), "unseal"]) == 1
+    captured = capsys.readouterr()
+    assert "system_C" not in captured.out
+
+
+def test_unseal_prints_the_mapping_once_the_pass_is_complete(
+    tmp_path, sheet, monkeypatch, capsys
+):
+    key = sheet.with_name(sheet.stem + "_key.json")
+    key.write_text(json.dumps({"mapping": {"A": "system_C", "B": "system_A"}}),
+                   encoding="utf-8")
+    log = tmp_path / "judgements.jsonl"
+    scripted_input(monkeypatch, ["2", "2", "0", "2"])
+    main(["--sheet", str(sheet), "--judgements", str(log),
+          "score", "--session", str(tmp_path / "session.json")])
+    capsys.readouterr()
+
+    assert main(["--sheet", str(sheet), "--judgements", str(log),
+                 "unseal", "--i-have-finished-scoring"]) == 0
+    assert "system_C" in capsys.readouterr().out
+
+
+def test_build_refuses_to_renumber_a_sheet_that_has_been_scored(
+    tmp_path, sheet, monkeypatch, capsys
+):
+    log = tmp_path / "judgements.jsonl"
+    scripted_input(monkeypatch, ["2", "q"])
+    main(["--sheet", str(sheet), "--judgements", str(log),
+          "score", "--session", str(tmp_path / "session.json")])
+
+    assert main(["--sheet", str(sheet), "--judgements", str(log), "build"]) == 1
+    assert "Refusing to rebuild" in capsys.readouterr().err
+
+
+# --- integration with the pre-registered blinding function ------------------
+
+
+def test_a_real_review_sheet_loads_and_carries_a_rubric(tmp_path, kb, index, config):
+    """The sheet the pre-registration names must be scoreable by this tool.
+
+    write_review_sheet is the blinding procedure of record. If its output did
+    not load here, the tool would be scoring something else.
+    """
+    client = MockClient(config)
+    retriever = Retriever(index, client, config)
+    generator = Generator(client, config)
+    question_set = load_question_set(load_evaluation_config().path("question_set"))
+    questions = [q for q in question_set if q.split == "dev"][:3]
+
+    runs = []
+    for name, fmt in (("A", EvidenceFormat.PLAIN), ("D", EvidenceFormat.WITH_STATUS)):
+        writer = RunWriter(
+            ArmDefinition(
+                arm=name, description="test", retrieval_mode="all",
+                evidence_format=fmt.value, verification=False,
+                generation_model="mock-generate",
+            ),
+            split="dev", config=config, kb=kb, index=index, root=tmp_path / name,
+        )
+        for question in questions:
+            retrieval = retriever.retrieve(question.text, min_similarity=0.0)
+            answer = generator.answer(question.text, retrieval, evidence_format=fmt)
+            writer.record(
+                question_id=question.question_id,
+                question=question.text,
+                answer=answer,
+                group_id=question.group_id,
+                category=question.category,
+            )
+        runs.append(writer.finish())
+
+    sheet = tmp_path / "review.jsonl"
+    write_review_sheet(runs, sheet, question_set=question_set)
+
+    items = load_sheet(sheet)
+    assert len(items) == 2 * len(questions)
+    assert all(item.scoring_criteria for item in items), "every item needs its rubric"
+    assert all(set(item.scoring_criteria) == {"0", "1", "2"} for item in items)
+
+    rendered = "\n".join(
+        render_item(item, position=n, total=len(items), scored=0)
+        for n, item in enumerate(items, start=1)
+    )
+    for leak in ("system_", "Arm ", "llama", "qwen", "SUPERSEDED"):
+        assert leak not in rendered, f"the scoring screen leaks {leak!r}"

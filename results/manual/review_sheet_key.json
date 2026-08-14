@@ -1,0 +1,10 @@
+{
+  "warning": "Do not open until manual scoring is complete.",
+  "seed": 42,
+  "mapping": {
+    "A": "system_C",
+    "B": "system_B",
+    "C": "system_D",
+    "D": "system_A"
+  }
+}
