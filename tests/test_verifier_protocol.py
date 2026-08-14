@@ -339,3 +339,85 @@ def test_r4_separates_detection_from_classification():
     rule, reason = verifier_protocol.apply_rules(entries, {})
     assert rule.startswith("R4")
     assert "revision 3 is permitted" in reason
+
+
+# --- the precondition is exercised, not merely present ------------------------
+
+
+def test_the_precondition_refuses_a_pilot_that_served_an_invalid_revision(
+    tmp_path, monkeypatch
+):
+    """This guard shipped broken and no test noticed.
+
+    A field rename left require_clean_pilot reading an attribute that no longer
+    existed, so the protocol crashed on the line that was supposed to protect
+    it. The guard was written, committed and never called in a test - which is
+    the same as not having it, except that it looks like having it.
+    """
+    import json
+
+    import verifier_protocol
+    from sme_assistant.verify.schema import ABSTENTION_TEXT
+
+    def run(directory, answer):
+        directory.mkdir(parents=True, exist_ok=True)
+        (directory / "manifest.json").write_text(
+            json.dumps({"arm": {"arm": "D"}}), encoding="utf-8")
+        (directory / "answers.jsonl").write_text(json.dumps({
+            "question_id": "Q1", "group_id": "G", "family_id": None,
+            "category": "factual", "answer": answer, "answer_revised": True,
+            "revision_rejected": False, "hallucinated_citations": [],
+            "has_valid_citation_ids": False,
+            "retrieval": {"results": []},
+            "verification": {"relationship": "no_relationship",
+                             "conflict_detected": False, "parse_failed": False},
+        }) + "\n", encoding="utf-8")
+        return directory
+
+    class FakeConfig:
+        def path(self, key):
+            return tmp_path
+
+    run(tmp_path / "20260814_010000_D_dev_bad",
+        "It remains valid for two weeks.")
+    with pytest.raises(SystemExit) as excinfo:
+        verifier_protocol.require_clean_pilot(FakeConfig())
+    assert "invalid revision" in str(excinfo.value)
+    assert "section 7" in str(excinfo.value)
+
+
+def test_the_precondition_passes_a_clean_pilot(tmp_path):
+    import json
+
+    import verifier_protocol
+    from sme_assistant.verify.schema import ABSTENTION_TEXT
+
+    directory = tmp_path / "20260814_010000_D_dev_good"
+    directory.mkdir(parents=True)
+    (directory / "manifest.json").write_text(
+        json.dumps({"arm": {"arm": "D"}}), encoding="utf-8")
+    (directory / "answers.jsonl").write_text(json.dumps({
+        "question_id": "Q1", "group_id": "G", "family_id": None,
+        "category": "factual", "answer": ABSTENTION_TEXT,
+        "answer_revised": True, "revision_rejected": False,
+        "hallucinated_citations": [], "has_valid_citation_ids": False,
+        "retrieval": {"results": []},
+        "verification": {"relationship": "no_relationship",
+                         "conflict_detected": False, "parse_failed": False,
+                         "served_abstention": True},
+    }) + "\n", encoding="utf-8")
+
+    class FakeConfig:
+        def path(self, key):
+            return tmp_path
+
+    verifier_protocol.require_clean_pilot(FakeConfig())  # must not raise
+
+
+def test_no_call_site_uses_the_old_field_name():
+    """The rename that broke the guard, caught structurally."""
+    for name in ("verifier_protocol.py", "summarise_arms.py"):
+        source = (ROOT / "scripts" / name).read_text(encoding="utf-8")
+        assert ".invalid_revisions_served" not in source, (
+            f"{name} still reads the renamed field"
+        )

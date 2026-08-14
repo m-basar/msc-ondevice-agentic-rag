@@ -193,7 +193,7 @@ def require_clean_pilot(config) -> None:
         )
     latest = runs[-1]
     _, records = read_run(latest)
-    invalid = evaluate_gate(records, None).invalid_revisions_served
+    invalid = evaluate_gate(records, None).structurally_invalid_revisions_served
     if invalid:
         raise SystemExit(
             f"{latest.name} served {invalid} invalid revision(s).\n\n"
