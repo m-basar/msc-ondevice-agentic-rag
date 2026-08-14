@@ -107,21 +107,32 @@ Evidence: [AA-01#001] (SUPERSEDED, replaced by AA-11) Fee is £10.
           [AA-11#001] Fee is £15.
 -> {"relationship": "supersession", "conflicting_chunks": ["AA-01#001",
    "AA-11#001"], "rationale": "AA-11 replaces AA-01.", "escalate": false,
+   "claims": [{"claim": "the fee is £10", "verdict": "CONTRADICTED",
+               "supporting": [], "contradicting": ["AA-11#001"]}],
    "safe_action": null, "final_answer": "The fee is £15 [AA-11#001]."}
 
 Evidence: [BB-01#002] Report faults within 4 hours.
           [BB-02#003] Report faults within 24 hours.
 -> {"relationship": "stricter_looser", "conflicting_chunks": ["BB-01#002",
    "BB-02#003"], "rationale": "Both live; 4 hours is stricter.",
-   "escalate": true, "safe_action": "Report within 4 hours, which meets both."}
+   "escalate": true,
+   "claims": [{"claim": "faults are reported within 24 hours",
+               "verdict": "SUPPORTED", "supporting": ["BB-02#003"],
+               "contradicting": []}],
+   "safe_action": "Report within 4 hours, which meets both."}
 
 Evidence: [CC-01#001] Drivers wear a hard hat in the yard.
           [CC-02#001] Office staff need no hard hat at their desk.
 -> {"relationship": "contextually_compatible", "conflicting_chunks": [],
    "rationale": "Different places and people.", "escalate": false,
+   "claims": [{"claim": "drivers wear a hard hat in the yard",
+               "verdict": "SUPPORTED", "supporting": ["CC-01#001"],
+               "contradicting": []}],
    "final_answer": null}
 
 RULES
+0. "claims" is required in every response. Audit each assertion in the answer
+   under review, even when you are not rewriting it.
 1. Use only identifiers shown in the evidence. Never invent one.
 2. Every conflict needs conflicting_chunks from two different documents.
 3. Cite passages, not documents: [AA-11#001], never [AA-11].

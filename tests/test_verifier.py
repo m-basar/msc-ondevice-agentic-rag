@@ -1254,3 +1254,55 @@ def test_a_properly_cited_revision_with_an_audit_is_still_served():
     assert result.claim_audit_complete
     assert result.revised
     assert not result.revision_rejected
+
+
+# --- prompt revision 3, the last one -----------------------------------------
+
+
+def test_every_worked_example_demonstrates_the_claims_audit():
+    """The defect that produced pilot 05.
+
+    The schema required `claims` in one place and all three worked examples
+    omitted it, so the prompt demonstrated skipping the audit three times and
+    required it once. Qwen omitted it on all 41 development calls.
+    """
+    import re
+
+    from sme_assistant.verify.verifier import VERIFIER_SYSTEM
+
+    blocks = re.findall(r"\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}", VERIFIER_SYSTEM)
+    assert blocks, "the prompt shows no JSON at all"
+    missing = [b for b in blocks if '"claims"' not in b]
+    assert not missing, (
+        f"{len(missing)} of {len(blocks)} JSON blocks omit claims; an example "
+        "that skips a required field teaches that skipping it is allowed"
+    )
+
+
+def test_the_claims_requirement_is_stated_as_a_rule():
+    """Present in the schema is not the same as required in the rules."""
+    from sme_assistant.verify.verifier import VERIFIER_SYSTEM
+
+    assert '"claims" is required in every response' in VERIFIER_SYSTEM
+    assert "even when you are not rewriting it" in VERIFIER_SYSTEM
+
+
+def test_revision_3_changed_the_examples_and_nothing_else():
+    """The budget bought a defect repair, not a redesign.
+
+    Revision 3 is the last one available. If it had also reworded the steps or
+    the relationship definitions, the run that follows would measure a mixture
+    of the repair and whatever else was changed, and nothing would attribute
+    either.
+    """
+    from sme_assistant.verify.verifier import VERIFIER_SYSTEM
+
+    for anchor in (
+        "STEP 1. Compare the passages with each other, before you look at the answer.",
+        "STEP 3. Check each claim in the answer against a named passage.",
+        "STEP 4. Only if the answer is wrong or omits a disagreement, rewrite it.",
+        "stricter_looser         - both are in force and one is stricter.",
+        "Use only identifiers shown in the evidence. Never invent one.",
+        "Cite passages, not documents: [AA-11#001], never [AA-11].",
+    ):
+        assert anchor in VERIFIER_SYSTEM, f"revision 3 disturbed: {anchor!r}"
