@@ -1789,3 +1789,118 @@ that the laptop figures do not show.
 | Tests | 437 | 437 |
 
 No test-split arm has been run. The verifier is not frozen.
+
+---
+
+# Amendment 1.11 - 14 August 2026
+
+A fail-closed validation amendment only. **No change to the prompt, the model,
+the corpus, the retrieval settings or the taxonomy.** Pilot 05's raw outputs
+are reparsed under the corrected validation; no model call is made.
+
+## 1.11.1 Every Qwen response omitted the claim audit
+
+Not the eleven unrevised detections. **All 41.** Including all 14 detections
+and all 3 revisions.
+
+The parser read `payload.get("claims") or []`, which collapses two different
+things: a verifier that audited claims and found none, and a response that
+never performed the audit at all. The second is a schema violation and it went
+through silently 41 times.
+
+## 1.11.2 The prompt taught the omission
+
+The verifier prompt mentions `claims` **once**, in the schema block. Its
+**three worked examples all omit the field.**
+
+So the prompt requires the audit in one place and demonstrates skipping it in
+three. Attributing the omission to Qwen alone is unsound: what failed is the
+configuration of Qwen **plus** revision-2 prompting **plus** a permissive
+parser, and the prompt is not the least of the three.
+
+The prompt is **not** being changed here. It is frozen for the same reason it
+was frozen before the diagnostic, and this is recorded as a known confound
+rather than fixed mid-analysis.
+
+## 1.11.3 The validated helper was never wired in
+
+`cites_a_passage` requires a bracketed identifier with an ordinal, matching
+`extract_citations`. It was written after pilot 03, given a regression test,
+and used in exactly one place - `asserts_uncited_quantity`.
+
+The serving decision still used `CHUNK_ID_RE`, the bare-identifier pattern. So
+pilot 05 served:
+
+> "The answer under review is incorrect. The correct timeframe ... as outlined
+> in both CS-03#001 and OPS-02#001."
+
+in place of a correctly cited draft. It reads as cited; the pipeline recorded
+zero citations for it.
+
+**This is the third instance of the same failure**: `Generation.options`
+declared and never populated, `require_clean_pilot` reading a renamed field,
+and now a validated helper never called from the path it was written for. Each
+looked correct in review and each was inert. Worth stating plainly in the
+methodology chapter: a check that exists is not a check that runs.
+
+## 1.11.4 What changes
+
+1. A bare identifier in prose no longer satisfies the citation requirement.
+   `cites_a_passage` is wired into the serving decision.
+2. A `final_answer` is not served when the claim audit is missing or empty. A
+   relationship label alone does not license replacing an answer.
+3. `claim_audit_complete` is recorded on every verification, separately from
+   the relationship, because "named a relationship without auditing" and
+   "audited and found nothing" are different failures.
+4. The DEFECT message now states its scope: served-answer results are
+   compromised, **inference results are not.** Detection, classification and
+   the control false-positive rate are read from the verifier's own output
+   before anything is served. The previous wording said the detection figures
+   "mean nothing until it is fixed", which discarded valid evidence.
+
+## 1.11.5 Pilot 05 reparsed
+
+| | As recorded | Under corrected validation |
+|---|---|---|
+| Revisions served | 3 | **0** |
+| Complete claim audits | not measured | **0 / 41** |
+| Conflicts detected | 14 | **14, unchanged** |
+
+Detection is unchanged because it is read before anything is served. That is
+the point of 1.11.4.
+
+## 1.11.6 The gate still fails, and not because of this
+
+None of the above rescues pilot 05. Against the declared gate:
+
+| Condition | Required | Pilot 05 |
+|---|---|---|
+| Genuine families detected | >= 5 / 6 | **2 / 6** |
+| Correctly classified | - | 1 / 6 |
+| Control false positives | 0 / 2 | **1 / 2** |
+| Parse failures | <= 2 | 0 / 41 |
+
+Qwen detects considerably more than Llama and still fails on sensitivity,
+subtype classification and false detection. The validation repair changes what
+is served; it cannot change 2/6 into 5/6.
+
+The defensible finding:
+
+> With revision-2 prompting, Qwen produced relationship labels but omitted the
+> required per-claim audit on all 41 development calls. Schema-incomplete
+> worked examples and permissive parsing confound attribution to the model
+> alone. Independently of that, Qwen failed the declared development gate:
+> 2/6 families detected, 1/6 correctly classified, 1/2 compatible controls
+> falsely flagged.
+
+## State after this amendment
+
+| | Before 1.11 | After 1.11 |
+|---|---|---|
+| Missing claims audit | silently accepted | **validation failure, recorded** |
+| Revision on a label alone | served | **refused** |
+| Bare identifier as citation | accepted at serving | **refused** |
+| DEFECT scope | "the figures mean nothing" | **served-answer only** |
+| Tests | 437 | **442** |
+
+No test-split arm has been run. The verifier is not frozen.

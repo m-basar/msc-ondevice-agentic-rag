@@ -200,10 +200,17 @@ class GateResult:
 
         if self.structurally_invalid_revisions_served:
             return ("DEFECT", (
-                f"{self.structurally_invalid_revisions_served} revised answers were served "
-                "without a citation that resolves and without being the "
-                "abstention template. The serving path is broken, so the "
-                "detection figures describe a broken pipeline."
+                f"{self.structurally_invalid_revisions_served} revised answers "
+                "were served without a citation that resolves and without "
+                "being the abstention template.\n\n"
+                "SCOPE: this compromises the served-answer results - citation "
+                "metrics, revision counts, answer quality. The inference "
+                "results above are unaffected: detection, classification and "
+                "the control false-positive rate are read from the verifier's "
+                "own output before anything is served, so they stand.\n\n"
+                "An earlier wording said the detection figures 'describe a "
+                "broken pipeline and mean nothing'. That discarded valid "
+                "evidence, which is not a form of caution."
             ))
 
         if controls and self.controls_falsely_detected == controls:

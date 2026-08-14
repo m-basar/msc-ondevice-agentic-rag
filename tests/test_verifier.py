@@ -640,7 +640,7 @@ def test_stripping_every_citation_from_a_supported_answer_is_rejected():
 
     assert result.final_answer == draft
     assert result.revision_rejected
-    assert "cites no passages" in result.revision_rejected_reason
+    assert "cites no retrievable passage" in result.revision_rejected_reason
     # A policy refusal and a validation failure are different things and are
     # recorded separately, or validation_failures stops measuring bad output.
     assert result.validation_failures
@@ -1166,3 +1166,91 @@ def test_the_verified_record_carries_the_verifier_options(retriever, config):
     assert payload["verification_options"]["num_ctx"] == 4096
     assert payload["verification_options"]["num_predict"] == 700
     assert not any(k.startswith("_") for k in payload["verification_options"])
+
+
+# --- pilot 05: a relationship label is not a claim audit ----------------------
+
+
+def test_a_missing_claims_key_is_a_validation_failure():
+    """All 41 pilot 05 responses omitted it and nothing noticed.
+
+    `payload.get("claims") or []` collapsed "audited nothing" together with
+    "never performed the audit". They are different failures and only the
+    second is a schema violation.
+    """
+    payload = json.dumps({
+        "relationship": "mutually_exclusive",
+        "conflicting_chunks": ["HR-13#001", "HR-03#001"],
+    })
+    result = schema.parse(payload, {"HR-13#001", "HR-03#001"}, POLICY, draft="x")
+
+    assert not result.claim_audit_complete
+    assert any("omitted the required claims audit" in f
+               for f in result.validation_failures)
+
+
+def test_an_empty_claims_list_is_not_the_same_as_a_missing_one():
+    payload = json.dumps({"claims": [], "relationship": "no_relationship"})
+    result = schema.parse(payload, {"HR-13#001"}, POLICY, draft="x")
+
+    assert not result.claim_audit_complete
+    assert not any("omitted" in f for f in result.validation_failures), (
+        "an explicit empty list is a verifier that audited nothing, not a "
+        "response that skipped the audit"
+    )
+
+
+def test_a_revision_is_not_served_on_a_relationship_label_alone():
+    """Pilot 05 rewrote three answers with no per-claim finding behind them."""
+    payload = json.dumps({
+        "relationship": "mutually_exclusive",
+        "conflicting_chunks": ["CS-03#001", "OPS-02#001"],
+        "final_answer": "The answer under review is incorrect [CS-03#001].",
+    })
+    draft = "You can return an item within 28 days [CS-03#001]."
+    result = schema.parse(payload, {"CS-03#001", "OPS-02#001"}, POLICY, draft=draft)
+
+    assert result.final_answer == draft
+    assert result.revision_rejected
+    assert "no claim audit" in result.revision_rejected_reason
+
+
+def test_a_bare_identifier_in_a_revision_is_not_a_citation():
+    """The exact pilot 05 answer. cites_a_passage was tested and never wired in.
+
+    "as outlined in both CS-03#001 and OPS-02#001" reads as cited and the
+    pipeline recorded zero citations for it, because extract_citations
+    requires brackets and the serving check used the bare-identifier pattern.
+    """
+    payload = json.dumps({
+        "claims": [{"claim": "28 days", "verdict": "CONTRADICTED",
+                    "contradicting": ["OPS-02#001"]}],
+        "relationship": "mutually_exclusive",
+        "conflicting_chunks": ["CS-03#001", "OPS-02#001"],
+        "final_answer": ("The answer under review is incorrect. The correct "
+                         "timeframe depends on the circumstances, as outlined "
+                         "in both CS-03#001 and OPS-02#001."),
+    })
+    draft = "You can return an item within 28 days [CS-03#001]."
+    result = schema.parse(payload, {"CS-03#001", "OPS-02#001"}, POLICY, draft=draft)
+
+    assert result.final_answer == draft, "the bare-identifier revision is refused"
+    assert "bare identifier" in result.revision_rejected_reason
+
+
+def test_a_properly_cited_revision_with_an_audit_is_still_served():
+    """The rules must reject the bad cases, not every case."""
+    payload = json.dumps({
+        "claims": [{"claim": "28 days", "verdict": "CONTRADICTED",
+                    "contradicting": ["OPS-02#001"]}],
+        "relationship": "mutually_exclusive",
+        "conflicting_chunks": ["CS-03#001", "OPS-02#001"],
+        "final_answer": ("Two live documents disagree: 28 days [CS-03#001] "
+                         "and 14 days [OPS-02#001]."),
+    })
+    draft = "You can return an item within 28 days [CS-03#001]."
+    result = schema.parse(payload, {"CS-03#001", "OPS-02#001"}, POLICY, draft=draft)
+
+    assert result.claim_audit_complete
+    assert result.revised
+    assert not result.revision_rejected

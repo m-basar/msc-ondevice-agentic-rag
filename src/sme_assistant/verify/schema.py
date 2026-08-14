@@ -251,6 +251,11 @@ class Verification:
     # Why the revision was permitted. Non-empty whenever ``revised`` is true,
     # which is asserted in the tests rather than assumed.
     revision_warrant: tuple[str, ...] = ()
+    # Did the response actually perform the per-claim audit it was asked for?
+    # Kept apart from ``relationship``, because a verifier can name a
+    # relationship without auditing anything and the two failures call for
+    # different responses.
+    claim_audit_complete: bool = False
     # Every check the response failed, accumulated rather than short-circuited.
     # The first version recorded only relationship failures, so a claim verdict
     # could be downgraded for want of evidence while the revision written from
@@ -318,6 +323,7 @@ class Verification:
             "revision_rejected_reason": self.revision_rejected_reason,
             "revision_warrant": list(self.revision_warrant),
             "served_abstention": self.served_abstention,
+            "claim_audit_complete": self.claim_audit_complete,
             "validation_failures": list(self.validation_failures),
             "invented_ids": list(self.invented_ids),
             "parse_failed": self.parse_failed,
@@ -412,7 +418,23 @@ def parse(
 
     failures: list[str] = []
     verdicts: list[ClaimVerdict] = []
-    for entry in payload.get("claims") or []:
+    # Recorded rather than inferred from an empty list. "No claims" and "the
+    # claims key was absent" are different failures: the first is a verifier
+    # that found nothing to check, the second a response that never performed
+    # the audit. ``payload.get("claims") or []`` collapsed them silently, and
+    # all 41 pilot 05 responses took the second path unnoticed.
+    raw_claims = payload.get("claims")
+    claims_present = isinstance(raw_claims, list) and bool(raw_claims)
+    if raw_claims is None:
+        failures.append(
+            "the response omitted the required claims audit entirely"
+        )
+    elif not isinstance(raw_claims, list):
+        failures.append(
+            f"claims was {type(raw_claims).__name__}, not a list"
+        )
+
+    for entry in raw_claims if isinstance(raw_claims, list) else []:
         if not isinstance(entry, dict):
             continue
         raw_verdict = str(entry.get("verdict", "")).strip()
@@ -547,11 +569,18 @@ def parse(
         # Checking that cited identifiers resolve says nothing about a revision
         # that cites none: the check passes vacuously. Two of pilot 02's served
         # revisions stripped every citation from a cited draft and passed.
+        # ``cites_a_passage`` requires a bracketed identifier with an ordinal,
+        # which is what ``extract_citations`` counts. This check previously
+        # used CHUNK_ID_RE, the bare-identifier pattern, so pilot 05 served
+        # "as outlined in both CS-03#001 and OPS-02#001" as though it were
+        # cited while the pipeline recorded zero citations for it. The helper
+        # was written for exactly this, tested, and never wired in.
         if (not is_abstention
-                and CHUNK_ID_RE.search(draft) and not CHUNK_ID_RE.search(final)):
+                and cites_a_passage(draft) and not cites_a_passage(final)):
             failures.append(
-                "the revised answer cites no passages while the draft it "
-                "replaces cited evidence"
+                "the revised answer cites no retrievable passage in bracketed "
+                "form while the draft it replaces did; a bare identifier "
+                "written into prose is not a citation the pipeline can check"
             )
         # A narrow warrant must not license a wide change. If the only reason
         # to revise is that the draft cited the wrong passage, the licence is
@@ -575,6 +604,17 @@ def parse(
     # Kept out of ``failures`` because it is a policy about what may be served,
     # not a defect in what the model produced. Conflating the two would make
     # validation_failures unreadable as a measure of malformed output.
+    # A revision may not be served on a relationship label alone. The verifier
+    # is asked to audit claims and then act on that audit; with no audit there
+    # is nothing for the revision to be grounded in, and pilot 05 rewrote three
+    # answers on that basis. Fail closed: the finding is still recorded, the
+    # rewrite is not served.
+    if final and not claims_present:
+        failures.append(
+            "the response carried no claim audit, so a revision has no "
+            "per-claim finding to rest on; the relationship label alone does "
+            "not license replacing the answer"
+        )
     unwarranted = bool(final) and not warrants_revision
     rejected_reasons = list(failures)
     if unwarranted:
@@ -617,6 +657,7 @@ def parse(
         # Only on a revision that was actually served. Recording a warrant
         # against a rejected revision would suggest one had been exercised.
         revision_warrant=tuple(warrants) if revised else (),
+        claim_audit_complete=claims_present,
         validation_failures=tuple(failures),
         raw=text,
     )
