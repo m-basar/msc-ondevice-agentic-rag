@@ -2017,3 +2017,132 @@ split is evaluated **once**, and nothing is tuned from its results.
 | Development verdict | **FAIL, 4/6 detection against 5/6 required** |
 | Revisions remaining | **0** |
 | Tests | 451 |
+
+---
+
+# Amendment 1.13 - 14 August 2026
+
+Recorded while manual scoring is in progress. A small number of items had been
+judged before the flag below existed; the exact count is read from the log
+rather than restated here, for the reason given in 1.13.4.
+
+## 1.13.1 The blinding is defeated, and not on thirteen items
+
+**Found.** Thirteen of the 272 entries in `results/manual/review_sheet.jsonl`
+are the verbatim `ABSTENTION_TEXT` constant from
+`src/sme_assistant/verify/schema.py`. They span 13 questions in 12 groups, and
+all thirteen carry a single opaque code.
+
+Only the verified arm can produce that string. `schema.py` assigns it as the
+final answer when every claim returns `INSUFFICIENT_EVIDENCE`, so an unverified
+arm has no path to it. The reviewer wrote the constant.
+
+The count that matters is not thirteen. Opaque codes are stable across the
+whole sheet, at 68 items each. Recognising the template once attaches a code to
+the verified arm, and that code then identifies **all 68 of its items**,
+including every conflict question. A thirteen-item trigger unblinds a quarter
+of the sheet.
+
+This is the failure of 1.1.10 repeated. That amendment removed the evidence
+block for exactly this reason: blinding that a careful reader can defeat is
+worse than none, because it is reported as a control.
+
+## 1.13.2 Amendment 1.7.6 created it and the blinding check was not revisited
+
+1.7.6 replaced the model's abstention prose with a fixed template written in
+the source, so that no claim could be smuggled into free text. That was the
+right decision for the serving rule and it is not withdrawn.
+
+Its side effect is a byte-exact arm signature in the answer field, and the
+answer field is the one thing the review sheet has to carry.
+
+The build-time audit missed it because it was a list of known give-aways: arm
+labels, model names, opaque codes, evidence status markers. It tested for the
+leaks already known rather than for the property, so a constant introduced five
+amendments later was never going to appear on it. The blinding was audited
+against its own docstring.
+
+## 1.13.3 It is recorded, not repaired
+
+Two reasons the sheet is not rebuilt.
+
+Item numbers are positions in a shuffled file and judgements already key on
+them, so rebuilding would leave recorded scores pointing at different answers.
+`manual_scoring.open_session` refuses a changed sheet for this reason.
+
+More fundamentally, redaction would destroy the items. On those thirteen the
+judgement *is* whether declining to answer was the right response to the
+question asked, scored against whatever rubric that question carries. Replacing
+the text with a placeholder leaves nothing to score, and scoring a paraphrase
+of it scores something the system did not say.
+
+There is no version of this in which the thirteen items are both blind and
+judgeable. The leak stands and is reported.
+
+## 1.13.4 The unblinding rate is measured rather than assumed
+
+A per-item flag is added to the scoring tool. `i` records that the reviewer
+believes they can identify which system produced the answer. It is tri-state:
+items scored before the flag existed are recorded as **not asked**, not as
+"no". Item 3 is among them, and item 3 is one of the thirteen.
+
+The denominator is **derived, not declared.** Those lines simply have no
+`arm_identified` field, and `load_judgements` reads an absent field as "not
+asked" rather than as False, so the rate is computed over the items where the
+question was actually put. Writing the count into this document instead would
+make it wrong as soon as another item was scored, and a pre-registration whose
+numbers rot is worse than one that says where to look. `score_answers.py
+status` prints it.
+
+**The flag does not ask which arm.** Prompting for a guess on every item is an
+invitation to speculate, and would raise the unblinding it is meant to measure.
+Blinding indices are conventionally collected after assessment for this reason.
+
+**The resulting figure is a self-report and bounds nothing in either
+direction.** A reviewer who believes they can identify the arm may be wrong,
+which overstates it. A reviewer who has absorbed the pattern without noticing
+will not flag it, which understates it. It is reported as what it is: the rate
+at which the reviewer was aware of being unblinded. That is more than this
+study previously had and less than a verified measurement.
+
+## 1.13.5 What this does to the reported result
+
+The affected arm is the contribution. B versus D is the confirmatory contrast
+for H1 and H2, D is the arm the reviewer built and wants to win, and this
+document says so in those words. Blinding was the control protecting that
+contrast, and on 68 of 272 items it is now known to be defeasible.
+
+Nothing here establishes that the reviewer did identify the arm. That is what
+1.13.4 measures. What is established is that the control cannot be asserted, so
+it will not be asserted.
+
+Conflict handling and answer correctness are therefore reported with the
+blinding described as **partial and self-monitored**, with the unblinding rate
+stated alongside them rather than in a footnote. If that rate is high, the
+manual metrics are reported as unblinded, and the confirmatory weight falls
+back to the automatic metrics, which is less weight than the manual ones were
+designed to carry. That consequence is accepted in advance here so it cannot be
+negotiated later.
+
+## What was not changed
+
+* The review sheet and the key. Both are byte-identical to the files built at
+  272 items, and the sheet hash is recorded in `results/manual/session.json`.
+* The existing judgements. Not rescored on account of this, not deleted, not
+  back-filled with a flag their reviewer was never shown.
+* The frozen verifier, the four test runs, `SCORING_RUBRICS` and the arm
+  definitions.
+* Amendment 1.7.6. The template stays. The defect is in the blinding audit, not
+  in the serving rule.
+
+## 1.13.6 State
+
+| | |
+|---|---|
+| Review sheet | 272 items, unchanged |
+| Leaked items | 13 verbatim `ABSTENTION_TEXT`, one opaque code |
+| Items exposed through that code | 68 |
+| Blinding | **partial, self-monitored** |
+| Unblinding flag denominator | items carrying the field, derived from the log |
+| Items judged before the flag existed | recorded as not asked, not as no |
+| Tests | 505 |

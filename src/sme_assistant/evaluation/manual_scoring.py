@@ -35,6 +35,24 @@ identical across items so the question does not disclose which family type the
 reviewer is looking at - and it makes over-detection outside the negative
 controls visible instead of unmeasured.
 
+**The blinding is partial, and the tool says so rather than assuming it.**
+Amendment 1.13 records that thirteen items in the built sheet are the verbatim
+``ABSTENTION_TEXT`` template, which only the verified arm can emit, and that
+opaque codes are stable, so recognising the template once exposes all 68 items
+carrying that code. The sheet cannot be repaired: item numbers are positions in
+a shuffled file that judgements already key on, and redacting the template would
+leave nothing to score on items whose whole question is whether declining was
+right. Two things follow here. ``arm_signature_audit`` refuses to let a *new*
+sheet be built with the defect, which fixes the class rather than the instance.
+And the ``i`` flag records, per item, that the reviewer believes they can
+identify the arm, so the unblinding rate is measured instead of asserted.
+
+That flag deliberately does not ask *which* arm. Prompting for a guess on every
+item invites speculation and would inflate the quantity it is meant to observe;
+blinding indices are conventionally collected after assessment for the same
+reason. The resulting rate is a self-report and bounds nothing in either
+direction, and amendment 1.13.4 says so.
+
 No model is called from this module and nothing here reads a run directory, the
 conflict registry or the key. The inputs are the blinded sheet and the
 reviewer.
@@ -51,7 +69,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
-SCHEMA_VERSION = "1.0"
+from ..verify.schema import ABSTENTION_TEXT
+
+SCHEMA_VERSION = "1.1"
 
 VALID_SCORES = (0, 1, 2)
 
@@ -60,7 +80,15 @@ FLAGS: dict[str, str] = {
     "c": "asserts_conflict",
     "a": "abstained",
     "u": "uncertain",
+    "i": "arm_identified",
 }
+
+# Fixed text the system serves verbatim. ABSTENTION_TEXT is written by the
+# source rather than by the model, under amendment 1.7.6, so its presence in an
+# answer is a byte-exact signature of the verified arm. Auditing for served
+# templates rather than for a list of previously known give-aways is the
+# difference between catching this class of leak and catching the last one.
+SERVED_TEMPLATES: dict[str, str] = {"ABSTENTION_TEXT": ABSTENTION_TEXT}
 
 #: ``n`` requests a note. It is not a recorded field of its own.
 NOTE_FLAG = "n"
@@ -239,6 +267,12 @@ class Judgement:
     asserts_conflict: bool = False
     abstained: bool = False
     uncertain: bool = False
+    # Tri-state, and the third state is load-bearing. ``False`` means the
+    # reviewer was asked and said no. ``None`` means the item was scored before
+    # the flag existed and the question was never put. Collapsing the two would
+    # move those items into the denominator of the unblinding rate as evidence
+    # of blinding that was never gathered.
+    arm_identified: bool | None = None
     note: str = ""
     revision: int = 0
     recorded_at: str = ""
@@ -259,6 +293,7 @@ class Judgement:
             "asserts_conflict": self.asserts_conflict,
             "abstained": self.abstained,
             "uncertain": self.uncertain,
+            "arm_identified": self.arm_identified,
             "note": self.note,
             "revision": self.revision,
             "recorded_at": self.recorded_at,
@@ -313,6 +348,13 @@ def load_judgements(path: Path | str) -> dict[int, Judgement]:
             asserts_conflict=bool(record.get("asserts_conflict", False)),
             abstained=bool(record.get("abstained", False)),
             uncertain=bool(record.get("uncertain", False)),
+            # Absent means the flag did not exist when this line was written.
+            # Reading it as False would fabricate a negative answer.
+            arm_identified=(
+                None
+                if record.get("arm_identified") is None
+                else bool(record["arm_identified"])
+            ),
             note=str(record.get("note", "")),
             revision=int(record.get("revision", 0)),
             recorded_at=str(record.get("recorded_at", "")),
@@ -376,6 +418,7 @@ class ParsedScore:
     asserts_conflict: bool = False
     abstained: bool = False
     uncertain: bool = False
+    arm_identified: bool = False
     wants_note: bool = False
 
 
@@ -398,7 +441,7 @@ def parse_score_input(text: str) -> ParsedScore:
     for letter in tail:
         if letter not in FLAGS and letter != NOTE_FLAG:
             raise InputError(
-                f"{letter!r} is not a flag. Use c, a, u or n."
+                f"{letter!r} is not a flag. Use c, a, u, i or n."
             )
         if letter in seen:
             raise InputError(f"{letter!r} given twice.")
@@ -409,6 +452,11 @@ def parse_score_input(text: str) -> ParsedScore:
         asserts_conflict="c" in seen,
         abstained="a" in seen,
         uncertain="u" in seen,
+        arm_identified="i" in seen,
+        # ``i`` deliberately does not force a note. Friction on an honesty flag
+        # suppresses the flag, and an undercounted unblinding rate is worse
+        # than an unexplained one. ``n`` is there if the reviewer wants to say
+        # why.
         wants_note=NOTE_FLAG in seen or "u" in seen,
     )
 
@@ -520,6 +568,8 @@ def describe_flags(judgement: Judgement) -> str:
         names.append("declined to answer")
     if judgement.uncertain:
         names.append("uncertain")
+    if judgement.arm_identified:
+        names.append("arm identifiable")
     return ", ".join(names)
 
 
@@ -531,9 +581,13 @@ HELP = """
             those grounds
     a       the answer declines to answer rather than answering
     u       you are not confident in this judgement (prompts for a note)
+    i       you believe you can tell which system produced this answer,
+            for any reason. Judge it anyway; the flag records that the
+            blinding did not hold here, so the rate is measured rather
+            than assumed. Do not write down which system you think it is.
     n       add a note
 
-  examples:  2      1c      0a      2cu      1 c n
+  examples:  2      1c      0a      2cu      1 c n      2i
 
   commands:
     s       skip this item, come back to it at the end
@@ -553,6 +607,8 @@ def progress(
 ) -> dict[str, Any]:
     numbers = [i.item for i in items]
     scored = [n for n in numbers if n in judgements]
+    asked = [n for n in scored if judgements[n].arm_identified is not None]
+    identified = [n for n in asked if judgements[n].arm_identified]
     return {
         "total": len(numbers),
         "scored": len(scored),
@@ -560,7 +616,56 @@ def progress(
         "uncertain": sum(1 for n in scored if judgements[n].uncertain),
         "revised": sum(1 for n in scored if judgements[n].revision > 0),
         "with_notes": sum(1 for n in scored if judgements[n].note),
+        "arm_identified": len(identified),
+        "identification_asked": len(asked),
+        "identification_not_asked": len(scored) - len(asked),
+        # Reported over the items where the question was actually put. Dividing
+        # by everything scored would treat "not asked" as "said no".
+        "unblinding_rate": (len(identified) / len(asked)) if asked else None,
         "complete": len(scored) == len(numbers),
+    }
+
+
+def arm_signature_audit(items: Iterable[ReviewItem]) -> dict[str, Any]:
+    """Which items carry text the system serves verbatim, and how far it reaches.
+
+    The build-time blinding check was a list of give-aways already known: arm
+    labels, model names, opaque codes, evidence status markers. It could not
+    catch ``ABSTENTION_TEXT``, because that constant was introduced by amendment
+    1.7.6 long after the list was written. Checking for served templates instead
+    tests the property rather than enumerating its past violations.
+
+    The second figure is the one that matters. A template appearing on thirteen
+    items is not a thirteen-item leak: opaque codes are stable across the sheet,
+    so recognising it once identifies every item sharing that code. The audit
+    reports the exposure, not the trigger count.
+    """
+    pooled = list(items)
+    by_code: dict[str, int] = {}
+    for item in pooled:
+        by_code[item.system] = by_code.get(item.system, 0) + 1
+
+    findings: list[dict[str, Any]] = []
+    exposed: set[str] = set()
+    for name, template in SERVED_TEMPLATES.items():
+        matches = [i for i in pooled if i.answer.strip() == template.strip()]
+        if not matches:
+            continue
+        codes = {i.system for i in matches}
+        exposed |= codes
+        findings.append({
+            "template": name,
+            "items": sorted(i.item for i in matches),
+            "questions": len({i.question_id for i in matches}),
+            "codes_carrying_it": len(codes),
+            "items_exposed": sum(by_code.get(code, 0) for code in codes),
+        })
+
+    return {
+        "total_items": len(pooled),
+        "findings": findings,
+        "items_exposed": sum(by_code.get(code, 0) for code in exposed),
+        "blind": not findings,
     }
 
 

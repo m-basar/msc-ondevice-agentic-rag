@@ -42,6 +42,7 @@ from sme_assistant.evaluation.manual_scoring import (  # noqa: E402
     Judgement,
     ScoringError,
     append_judgement,
+    arm_signature_audit,
     consistency_report,
     describe_flags,
     load_judgements,
@@ -126,6 +127,25 @@ def command_build(args: argparse.Namespace) -> int:
     # the scoring, and a mapping echoed to a terminal is a mapping they have
     # seen. write_review_sheet has already written it to the sealed key file.
     write_review_sheet(runs, sheet, seed=args.seed, question_set=question_set)
+
+    # The blinding check that amendment 1.13 says was missing. It runs on the
+    # sheet just written, before it can be scored, and it tests for text the
+    # system serves verbatim rather than for the give-aways already known. The
+    # existing sheet cannot be repaired; this stops the next one repeating it.
+    audit = arm_signature_audit(load_sheet(sheet))
+    if not audit["blind"]:
+        templates = ", ".join(f["template"] for f in audit["findings"])
+        print(
+            f"\nThis sheet is not blind. It carries {templates} verbatim on "
+            f"{sum(len(f['items']) for f in audit['findings'])} items, which "
+            f"exposes {audit['items_exposed']} of {audit['total_items']} through "
+            "the opaque codes those items share.\n"
+            "Only the verified arm serves that text, so recognising it once "
+            "identifies that arm across the whole sheet. See amendment 1.13.\n"
+            "The sheet has been written but must not be scored as blind.",
+            file=sys.stderr,
+        )
+        return 1
 
     print(f"Built {sheet}")
     print(f"  {total} answers from {len(runs)} runs, pooled and shuffled")
@@ -227,6 +247,7 @@ def command_score(args: argparse.Namespace) -> int:
                 asserts_conflict=parsed.asserts_conflict,
                 abstained=parsed.abstained,
                 uncertain=parsed.uncertain,
+                arm_identified=parsed.arm_identified,
                 note=note,
                 revision=(previous.revision + 1) if previous else 0,
             ),
@@ -268,6 +289,25 @@ def command_status(args: argparse.Namespace) -> int:
     if state["uncertain"]:
         flagged = sorted(j.item for j in judgements.values() if j.uncertain)
         print(f"\n  flagged uncertain: {flagged}")
+
+    # Reported every time, whatever it says. A blinding control that is only
+    # examined when it looks good is not a control.
+    print("\n  blinding (amendment 1.13)")
+    print(f"    arm identifiable      {state['arm_identified']}")
+    print(f"    of items asked        {state['identification_asked']}")
+    print(f"    scored before flag    {state['identification_not_asked']}")
+    rate = state["unblinding_rate"]
+    print(f"    self-reported rate    "
+          + ("not yet measurable" if rate is None else f"{rate:.3f}"))
+    print("    this rate is a self-report and bounds nothing in either direction")
+
+    audit = arm_signature_audit(items)
+    if not audit["blind"]:
+        for finding in audit["findings"]:
+            print(f"\n    known leak: {finding['template']} verbatim on "
+                  f"{len(finding['items'])} items across {finding['questions']} "
+                  f"questions, exposing {finding['items_exposed']} of "
+                  f"{audit['total_items']} items")
     return 0
 
 

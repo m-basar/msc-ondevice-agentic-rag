@@ -23,6 +23,7 @@ import json
 import pathlib
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -37,6 +38,7 @@ from sme_assistant.evaluation.manual_scoring import (
     Judgement,
     ScoringError,
     append_judgement,
+    arm_signature_audit,
     consistency_report,
     load_judgements,
     load_sheet,
@@ -57,6 +59,7 @@ from sme_assistant.generate.generator import Generator
 from sme_assistant.ingest.index import build_index
 from sme_assistant.kb.loader import load_knowledge_base
 from sme_assistant.retrieve.retriever import EvidenceFormat, Retriever
+from sme_assistant.verify.schema import ABSTENTION_TEXT
 
 
 # --- fixtures ---------------------------------------------------------------
@@ -279,6 +282,150 @@ def test_malformed_input_is_rejected_rather_than_guessed(text):
     primary metric."""
     with pytest.raises(InputError):
         parse_score_input(text)
+
+
+# --- the blinding is partial, and measured rather than assumed --------------
+
+
+def test_the_served_abstention_template_is_caught_as_an_arm_signature(tmp_path):
+    """The leak amendment 1.13 records.
+
+    Only the verified arm serves ABSTENTION_TEXT, so its presence is a
+    byte-exact arm signature. The build-time check that missed it looked for
+    give-aways already known; this one looks for text the system serves
+    verbatim, which is the property rather than a list of its past violations.
+    """
+    path = write_sheet(
+        tmp_path / "leaky.jsonl",
+        [
+            sheet_line(1, "TEST-001", ABSTENTION_TEXT, "system_B"),
+            sheet_line(2, "TEST-002", "a real answer", "system_B"),
+            sheet_line(3, "TEST-003", "another answer", "system_A"),
+        ],
+    )
+    audit = arm_signature_audit(load_sheet(path))
+    assert audit["blind"] is False
+    assert audit["findings"][0]["template"] == "ABSTENTION_TEXT"
+    assert audit["findings"][0]["items"] == [1]
+
+
+def test_the_audit_reports_the_exposure_not_the_trigger_count(tmp_path):
+    """One template on one item unblinds every item sharing its code.
+
+    Reporting 1 here rather than 2 would describe the leak as an order of
+    magnitude smaller than it is, which is the mistake the original audit made
+    by counting nothing at all.
+    """
+    path = write_sheet(
+        tmp_path / "leaky.jsonl",
+        [
+            sheet_line(1, "TEST-001", ABSTENTION_TEXT, "system_B"),
+            sheet_line(2, "TEST-002", "a real answer", "system_B"),
+            sheet_line(3, "TEST-003", "another answer", "system_A"),
+        ],
+    )
+    audit = arm_signature_audit(load_sheet(path))
+    assert audit["findings"][0]["items_exposed"] == 2
+    assert audit["items_exposed"] == 2
+
+
+def test_a_clean_sheet_passes_the_audit(sheet):
+    assert arm_signature_audit(load_sheet(sheet))["blind"] is True
+
+
+def test_build_refuses_to_write_a_sheet_carrying_a_served_template(
+    tmp_path, monkeypatch, capsys
+):
+    """The class fix. The existing sheet cannot be repaired; the next one can
+    be prevented."""
+    import score_answers
+
+    target = tmp_path / "new_sheet.jsonl"
+
+    def fake_write(runs, output, *, seed=42, question_set=None):
+        write_sheet(Path(output), [sheet_line(1, "TEST-001", ABSTENTION_TEXT)])
+        return {"D": "system_A"}
+
+    monkeypatch.setattr(score_answers, "write_review_sheet", fake_write)
+    monkeypatch.setattr(score_answers, "discover_test_runs", lambda root: [tmp_path])
+    monkeypatch.setattr(score_answers, "read_run", lambda d: ({}, []))
+    monkeypatch.setattr(score_answers, "load_question_set", lambda p: None)
+    monkeypatch.setattr(
+        score_answers,
+        "load_evaluation_config",
+        lambda: SimpleNamespace(path=lambda name: tmp_path / "question_set.json"),
+    )
+
+    code = main(["--sheet", str(target),
+                 "--judgements", str(tmp_path / "j.jsonl"), "build"])
+    assert code == 1
+    assert "not blind" in capsys.readouterr().err
+
+
+def test_the_identification_flag_is_recorded(tmp_path, sheet, monkeypatch):
+    log = tmp_path / "judgements.jsonl"
+    scripted_input(monkeypatch, ["2", "1i", "0", "2"])
+    main(["--sheet", str(sheet), "--judgements", str(log),
+          "score", "--session", str(tmp_path / "session.json")])
+
+    judgements = load_judgements(log)
+    assert judgements[2].arm_identified is True
+    assert judgements[1].arm_identified is False
+
+
+def test_a_line_written_before_the_flag_existed_is_not_asked_rather_than_no(tmp_path):
+    """Some items were scored before the flag existed.
+
+    Reading a missing field as False would fabricate answers to a question that
+    was never put, and move those items into the denominator of the unblinding
+    rate as evidence of blinding that was never gathered.
+    """
+    log = tmp_path / "judgements.jsonl"
+    log.write_text(
+        json.dumps({"item": 1, "question_id": "TEST-001", "score": 2}) + "\n",
+        encoding="utf-8",
+    )
+    assert load_judgements(log)[1].arm_identified is None
+
+
+def test_the_unblinding_rate_excludes_items_that_were_never_asked(sheet, tmp_path):
+    items = load_sheet(sheet)
+    log = tmp_path / "judgements.jsonl"
+    log.write_text(
+        json.dumps({"item": 1, "question_id": "TEST-001", "score": 2}) + "\n",
+        encoding="utf-8",
+    )
+    append_judgement(log, Judgement(item=2, question_id="TEST-001", score=2,
+                                    arm_identified=True))
+    append_judgement(log, Judgement(item=3, question_id="TEST-002", score=2,
+                                    arm_identified=False))
+
+    state = progress(items, load_judgements(log))
+    assert state["identification_not_asked"] == 1
+    assert state["identification_asked"] == 2
+    assert state["arm_identified"] == 1
+    assert state["unblinding_rate"] == pytest.approx(0.5)
+
+
+def test_the_identification_flag_does_not_force_a_note(monkeypatch):
+    """Friction on an honesty flag suppresses the flag."""
+    assert parse_score_input("2i").wants_note is False
+    assert parse_score_input("2i").arm_identified is True
+
+
+def test_identification_is_not_treated_as_a_scoring_disagreement(sheet, tmp_path):
+    """It is a fact about the reviewer, not about the answer.
+
+    Two identical answers where one was recognised and one was not is not a
+    scoring inconsistency, and reporting it as one would bury the real ones.
+    """
+    items = load_sheet(sheet)
+    log = tmp_path / "judgements.jsonl"
+    append_judgement(log, Judgement(item=1, question_id="TEST-001", score=2,
+                                    arm_identified=True))
+    append_judgement(log, Judgement(item=2, question_id="TEST-001", score=2,
+                                    arm_identified=False))
+    assert consistency_report(items, load_judgements(log))["divergent"] == []
 
 
 # --- consistency ------------------------------------------------------------
