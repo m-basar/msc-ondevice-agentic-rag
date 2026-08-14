@@ -1,0 +1,2182 @@
+{
+  "schedule": "complete passes in protocol order, not adjacent repeats",
+  "run": "20260813_231710_D_dev_pilot03",
+  "model": "llama3.2:3b",
+  "options": {
+    "seed": 42,
+    "temperature": 0.0,
+    "num_ctx": 4096,
+    "num_predict": 700
+  },
+  "passes": 3,
+  "environment": {
+    "host": {
+      "hostname": "Basar",
+      "system": "Windows",
+      "release": "11",
+      "machine": "AMD64",
+      "processor": "AMD64 Family 25 Model 116 Stepping 1, AuthenticAMD",
+      "cpu_count": 16,
+      "python": "3.13.5",
+      "memory_total_gb": 15.29,
+      "memory_available_gb": 4.71,
+      "cpu_temperature_c": null,
+      "throttle": null,
+      "power_profile": "Balanced",
+      "gpus": [
+        {
+          "name": "NVIDIA GeForce RTX 4050 Laptop GPU",
+          "memory_total_mb": 6141,
+          "memory_used_mb": 738,
+          "temperature_c": 46
+        }
+      ]
+    },
+    "ollama": {
+      "base_url": "http://localhost:11434",
+      "reachable": true,
+      "version": "0.32.6",
+      "models": [
+        {
+          "name": "gemma:2b",
+          "digest": "b50d6c999e59",
+          "size": 1678456656
+        },
+        {
+          "name": "llama3.2:1b",
+          "digest": "baf6a787fdff",
+          "size": 1321098329
+        },
+        {
+          "name": "llama3.2:3b",
+          "digest": "a80c4f17acd5",
+          "size": 2019393189
+        },
+        {
+          "name": "nomic-embed-text:latest",
+          "digest": "0a109f422b47",
+          "size": 274302450
+        },
+        {
+          "name": "phi3:mini",
+          "digest": "4f2222927938",
+          "size": 2176178913
+        },
+        {
+          "name": "qwen2.5:3b",
+          "digest": "357c53fb659c",
+          "size": 1929912432
+        }
+      ],
+      "model_store_fingerprint": "e39bc25c0edd",
+      "loaded": []
+    },
+    "gpu_offload_fraction": null
+  },
+  "summary": {
+    "raw_sha256": {
+      "pass1_matches_recorded": 41,
+      "stable_across_passes": 26,
+      "n": 41
+    },
+    "relationship": {
+      "pass1_matches_recorded": 41,
+      "stable_across_passes": 38,
+      "n": 41
+    },
+    "conflict_detected": {
+      "pass1_matches_recorded": 41,
+      "stable_across_passes": 41,
+      "n": 41
+    },
+    "verdicts": {
+      "pass1_matches_recorded": 41,
+      "stable_across_passes": 35,
+      "n": 41
+    },
+    "parse_failed": {
+      "pass1_matches_recorded": 41,
+      "stable_across_passes": 39,
+      "n": 41
+    },
+    "validation_failures": {
+      "pass1_matches_recorded": 41,
+      "stable_across_passes": 36,
+      "n": 41
+    },
+    "invented_ids": {
+      "pass1_matches_recorded": 41,
+      "stable_across_passes": 40,
+      "n": 41
+    },
+    "revision_served": {
+      "pass1_matches_recorded": 41,
+      "stable_across_passes": 36,
+      "n": 41
+    },
+    "final_answer_sha256": {
+      "pass1_matches_recorded": 41,
+      "stable_across_passes": 36,
+      "n": 41
+    },
+    "citations": {
+      "pass1_matches_recorded": 41,
+      "stable_across_passes": 38,
+      "n": 41
+    }
+  },
+  "recorded": {
+    "CONF-01-Q1": {
+      "raw_sha256": "1b83485fdecf",
+      "relationship": "no_relationship",
+      "conflict_detected": "False",
+      "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+      "parse_failed": "False",
+      "validation_failures": "()",
+      "invented_ids": "()",
+      "revision_served": "True",
+      "final_answer_sha256": "9148d34e6d0a",
+      "citations": "()"
+    },
+    "CONF-01-Q2": {
+      "raw_sha256": "9a1c6ab0caf5",
+      "relationship": "no_relationship",
+      "conflict_detected": "False",
+      "verdicts": "('SUPPORTED',)",
+      "parse_failed": "False",
+      "validation_failures": "()",
+      "invented_ids": "()",
+      "revision_served": "False",
+      "final_answer_sha256": "8921e4fe4022",
+      "citations": "('HR-13#001',)"
+    },
+    "CONF-01-Q3": {
+      "raw_sha256": "44415592cb5c",
+      "relationship": "no_relationship",
+      "conflict_detected": "False",
+      "verdicts": "('SUPPORTED',)",
+      "parse_failed": "False",
+      "validation_failures": "('the revised answer cites no passages while the draft it replaces cited evidence',)",
+      "invented_ids": "()",
+      "revision_served": "False",
+      "final_answer_sha256": "8921e4fe4022",
+      "citations": "('HR-13#001',)"
+    },
+    "CONF-05-Q1": {
+      "raw_sha256": "5ece51514724",
+      "relationship": "no_relationship",
+      "conflict_detected": "False",
+      "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+      "parse_failed": "False",
+      "validation_failures": "(\"claim 'You must report a lost company laptop to the IT helpdesk wit' was SUPPORTED with no valid supporting passage\",)",
+      "invented_ids": "()",
+      "revision_served": "False",
+      "final_answer_sha256": "635b9c60ca70",
+      "citations": "('IT-03#001',)"
+    },
+    "CONF-05-Q2": {
+      "raw_sha256": "f24cda11560a",
+      "relationship": "no_relationship",
+      "conflict_detected": "False",
+      "verdicts": "('INSUFFICIENT_EVIDENCE', 'INSUFFICIENT_EVIDENCE')",
+      "parse_failed": "False",
+      "validation_failures": "()",
+      "invented_ids": "()",
+      "revision_served": "True",
+      "final_answer_sha256": "9148d34e6d0a",
+      "citations": "()"
+    },
+    "CONF-05-Q3": {
+      "raw_sha256": "224114b763a3",
+      "relationship": "no_relationship",
+      "conflict_detected": "False",
+      "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+      "parse_failed": "False",
+      "validation_failures": "()",
+      "invented_ids": "()",
+      "revision_served": "True",
+      "final_answer_sha256": "9148d34e6d0a",
+      "citations": "()"
+    },
+    "TUNE-01-Q1": {
+      "raw_sha256": "6caf8ebec699",
+      "relationship": "no_relationship",
+      "conflict_detected": "False",
+      "verdicts": "('SUPPORTED',)",
+      "parse_failed": "False",
+      "validation_failures": "()",
+      "invented_ids": "()",
+      "revision_served": "False",
+      "final_answer_sha256": "e07ddb82e5f7",
+      "citations": "('CS-03#001',)"
+    },
+    "TUNE-01-Q2": {
+      "raw_sha256": "b71c91a2a184",
+      "relationship": "no_relationship",
+      "conflict_detected": "False",
+      "verdicts": "('INSUFFICIENT_EVIDENCE', 'INSUFFICIENT_EVIDENCE')",
+      "parse_failed": "False",
+      "validation_failures": "()",
+      "invented_ids": "()",
+      "revision_served": "True",
+      "final_answer_sha256": "9148d34e6d0a",
+      "citations": "()"
+    },
+    "TUNE-01-Q3": {
+      "raw_sha256": "71f14ad8b1cc",
+      "relationship": "no_relationship",
+      "conflict_detected": "False",
+      "verdicts": "('INSUFFICIENT_EVIDENCE', 'INSUFFICIENT_EVIDENCE', 'INSUFFICIENT_EVIDENCE')",
+      "parse_failed": "False",
+      "validation_failures": "()",
+      "invented_ids": "()",
+      "revision_served": "True",
+      "final_answer_sha256": "9148d34e6d0a",
+      "citations": "()"
+    },
+    "TUNE-02-Q1": {
+      "raw_sha256": "3a778a568650",
+      "relationship": "no_relationship",
+      "conflict_detected": "False",
+      "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+      "parse_failed": "False",
+      "validation_failures": "(\"claim 'The Health and Safety Coordinator reviews each entry within ' was SUPPORTED with no valid supporting passage\",)",
+      "invented_ids": "()",
+      "revision_served": "False",
+      "final_answer_sha256": "4503fe954307",
+      "citations": "('REG-01#005',)"
+    },
+    "TUNE-02-Q2": {
+      "raw_sha256": "618db65a31d1",
+      "relationship": "no_relationship",
+      "conflict_detected": "False",
+      "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+      "parse_failed": "False",
+      "validation_failures": "()",
+      "invented_ids": "()",
+      "revision_served": "True",
+      "final_answer_sha256": "9148d34e6d0a",
+      "citations": "()"
+    },
+    "TUNE-02-Q3": {
+      "raw_sha256": "618db65a31d1",
+      "relationship": "no_relationship",
+      "conflict_detected": "False",
+      "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+      "parse_failed": "False",
+      "validation_failures": "()",
+      "invented_ids": "()",
+      "revision_served": "True",
+      "final_answer_sha256": "9148d34e6d0a",
+      "citations": "()"
+    },
+    "TUNE-03-Q1": {
+      "raw_sha256": "1959a4818e95",
+      "relationship": "no_relationship",
+      "conflict_detected": "False",
+      "verdicts": "('SUPPORTED',)",
+      "parse_failed": "False",
+      "validation_failures": "()",
+      "invented_ids": "()",
+      "revision_served": "False",
+      "final_answer_sha256": "bc5adf90b005",
+      "citations": "('HR-04#003',)"
+    },
+    "TUNE-03-Q2": {
+      "raw_sha256": "fb9e1d3cf635",
+      "relationship": "no_relationship",
+      "conflict_detected": "False",
+      "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+      "parse_failed": "False",
+      "validation_failures": "()",
+      "invented_ids": "()",
+      "revision_served": "True",
+      "final_answer_sha256": "9148d34e6d0a",
+      "citations": "()"
+    },
+    "TUNE-03-Q3": {
+      "raw_sha256": "03622413c285",
+      "relationship": "no_relationship",
+      "conflict_detected": "False",
+      "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+      "parse_failed": "False",
+      "validation_failures": "()",
+      "invented_ids": "()",
+      "revision_served": "True",
+      "final_answer_sha256": "9148d34e6d0a",
+      "citations": "()"
+    },
+    "TUNE-04-Q1": {
+      "raw_sha256": "a9bbe8182953",
+      "relationship": "no_relationship",
+      "conflict_detected": "False",
+      "verdicts": "('CONTRADICTED', 'SUPPORTED')",
+      "parse_failed": "False",
+      "validation_failures": "()",
+      "invented_ids": "()",
+      "revision_served": "False",
+      "final_answer_sha256": "16691862606e",
+      "citations": "('PRD-02#002',)"
+    },
+    "TUNE-04-Q2": {
+      "raw_sha256": "c32dd3c55d39",
+      "relationship": "no_relationship",
+      "conflict_detected": "False",
+      "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+      "parse_failed": "False",
+      "validation_failures": "()",
+      "invented_ids": "()",
+      "revision_served": "True",
+      "final_answer_sha256": "9148d34e6d0a",
+      "citations": "()"
+    },
+    "TUNE-04-Q3": {
+      "raw_sha256": "8a01e8a59392",
+      "relationship": "no_relationship",
+      "conflict_detected": "False",
+      "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+      "parse_failed": "False",
+      "validation_failures": "()",
+      "invented_ids": "()",
+      "revision_served": "True",
+      "final_answer_sha256": "9148d34e6d0a",
+      "citations": "()"
+    },
+    "TUNE-05-Q1": {
+      "raw_sha256": "f605bdfbb400",
+      "relationship": "no_relationship",
+      "conflict_detected": "False",
+      "verdicts": "('INSUFFICIENT_EVIDENCE', 'INSUFFICIENT_EVIDENCE')",
+      "parse_failed": "False",
+      "validation_failures": "(\"claim 'The company leave year runs from 1 January to 31 December. E' was CONTRADICTED with no valid contradicting passage\", \"claim 'The leave year runs from 1 April to 31 March [HR-01#002].' was SUPPORTED with no valid supporting passage\")",
+      "invented_ids": "()",
+      "revision_served": "False",
+      "final_answer_sha256": "9d5b446a5226",
+      "citations": "('HR-01#002',)"
+    },
+    "TUNE-05-Q2": {
+      "raw_sha256": "048dcbfe3fb6",
+      "relationship": "no_relationship",
+      "conflict_detected": "False",
+      "verdicts": "('SUPPORTED',)",
+      "parse_failed": "False",
+      "validation_failures": "()",
+      "invented_ids": "()",
+      "revision_served": "False",
+      "final_answer_sha256": "c760ab9dc40c",
+      "citations": "('GEN-01#004',)"
+    },
+    "TUNE-05-Q3": {
+      "raw_sha256": "1081d6e308bf",
+      "relationship": "no_relationship",
+      "conflict_detected": "False",
+      "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+      "parse_failed": "False",
+      "validation_failures": "()",
+      "invented_ids": "()",
+      "revision_served": "True",
+      "final_answer_sha256": "9148d34e6d0a",
+      "citations": "()"
+    },
+    "TUNE-06-Q1": {
+      "raw_sha256": "cb1a185f6d04",
+      "relationship": "no_relationship",
+      "conflict_detected": "False",
+      "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+      "parse_failed": "False",
+      "validation_failures": "()",
+      "invented_ids": "()",
+      "revision_served": "True",
+      "final_answer_sha256": "9148d34e6d0a",
+      "citations": "()"
+    },
+    "TUNE-06-Q2": {
+      "raw_sha256": "fff928eb66c5",
+      "relationship": "no_relationship",
+      "conflict_detected": "False",
+      "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+      "parse_failed": "False",
+      "validation_failures": "()",
+      "invented_ids": "()",
+      "revision_served": "True",
+      "final_answer_sha256": "9148d34e6d0a",
+      "citations": "()"
+    },
+    "TUNE-06-Q3": {
+      "raw_sha256": "e00bc9f5f19a",
+      "relationship": "no_relationship",
+      "conflict_detected": "False",
+      "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+      "parse_failed": "False",
+      "validation_failures": "()",
+      "invented_ids": "()",
+      "revision_served": "True",
+      "final_answer_sha256": "9148d34e6d0a",
+      "citations": "()"
+    },
+    "GAP-pensions-Q1": {
+      "raw_sha256": "16c3cabc3caa",
+      "relationship": "no_relationship",
+      "conflict_detected": "False",
+      "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+      "parse_failed": "False",
+      "validation_failures": "()",
+      "invented_ids": "()",
+      "revision_served": "True",
+      "final_answer_sha256": "9148d34e6d0a",
+      "citations": "()"
+    },
+    "GAP-pensions-Q2": {
+      "raw_sha256": "577f506a1e1e",
+      "relationship": "no_relationship",
+      "conflict_detected": "False",
+      "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+      "parse_failed": "False",
+      "validation_failures": "()",
+      "invented_ids": "()",
+      "revision_served": "True",
+      "final_answer_sha256": "9148d34e6d0a",
+      "citations": "()"
+    },
+    "GAP-company-Q1": {
+      "raw_sha256": "9198194b0b82",
+      "relationship": "no_relationship",
+      "conflict_detected": "False",
+      "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+      "parse_failed": "False",
+      "validation_failures": "()",
+      "invented_ids": "()",
+      "revision_served": "True",
+      "final_answer_sha256": "9148d34e6d0a",
+      "citations": "()"
+    },
+    "GAP-company-Q2": {
+      "raw_sha256": "9782b5f5c80f",
+      "relationship": "no_relationship",
+      "conflict_detected": "False",
+      "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+      "parse_failed": "False",
+      "validation_failures": "()",
+      "invented_ids": "()",
+      "revision_served": "True",
+      "final_answer_sha256": "9148d34e6d0a",
+      "citations": "()"
+    },
+    "GAP-export-Q1": {
+      "raw_sha256": "2190e79ace9c",
+      "relationship": "insufficient",
+      "conflict_detected": "False",
+      "verdicts": "()",
+      "parse_failed": "True",
+      "validation_failures": "()",
+      "invented_ids": "()",
+      "revision_served": "False",
+      "final_answer_sha256": "6afe0f185dfc",
+      "citations": "()"
+    },
+    "GAP-export-Q2": {
+      "raw_sha256": "b2b33159605e",
+      "relationship": "insufficient",
+      "conflict_detected": "False",
+      "verdicts": "()",
+      "parse_failed": "True",
+      "validation_failures": "()",
+      "invented_ids": "()",
+      "revision_served": "False",
+      "final_answer_sha256": "4171e74c75b8",
+      "citations": "()"
+    },
+    "PART-probationary-Q1": {
+      "raw_sha256": "5a5c310e67f0",
+      "relationship": "no_relationship",
+      "conflict_detected": "False",
+      "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+      "parse_failed": "False",
+      "validation_failures": "()",
+      "invented_ids": "()",
+      "revision_served": "True",
+      "final_answer_sha256": "9148d34e6d0a",
+      "citations": "()"
+    },
+    "PART-probationary-Q2": {
+      "raw_sha256": "41998f7df01d",
+      "relationship": "no_relationship",
+      "conflict_detected": "False",
+      "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+      "parse_failed": "False",
+      "validation_failures": "()",
+      "invented_ids": "()",
+      "revision_served": "True",
+      "final_answer_sha256": "9148d34e6d0a",
+      "citations": "()"
+    },
+    "FACT-leave-entitlement": {
+      "raw_sha256": "f10c0b66ac88",
+      "relationship": "no_relationship",
+      "conflict_detected": "False",
+      "verdicts": "('SUPPORTED',)",
+      "parse_failed": "False",
+      "validation_failures": "()",
+      "invented_ids": "()",
+      "revision_served": "False",
+      "final_answer_sha256": "015cdda5f000",
+      "citations": "('HR-01#001',)"
+    },
+    "FACT-fire-wardens": {
+      "raw_sha256": "4c83396217f8",
+      "relationship": "insufficient",
+      "conflict_detected": "False",
+      "verdicts": "()",
+      "parse_failed": "True",
+      "validation_failures": "()",
+      "invented_ids": "()",
+      "revision_served": "False",
+      "final_answer_sha256": "8a294cb0b54a",
+      "citations": "('OPS-07#005',)"
+    },
+    "FACT-petty-cash-limit": {
+      "raw_sha256": "1b7c56425f0e",
+      "relationship": "insufficient",
+      "conflict_detected": "False",
+      "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+      "parse_failed": "False",
+      "validation_failures": "(\"claim 'The maximum single petty cash transaction is \u00a350 [FIN-02#002' was CONTRADICTED with no valid contradicting passage\", 'claimed supersession but named evidence from 1 document(s); a disagreement needs two sides', \"the revised answer cites evidence that was never retrieved: ['FIN-03#001']\")",
+      "invented_ids": "('FIN-03', 'FIN-03#001')",
+      "revision_served": "False",
+      "final_answer_sha256": "32662afa6d08",
+      "citations": "('FIN-02#002',)"
+    },
+    "FACT-goods-in-detailed-check": {
+      "raw_sha256": "e0a8ff6a319d",
+      "relationship": "no_relationship",
+      "conflict_detected": "False",
+      "verdicts": "('INSUFFICIENT_EVIDENCE', 'SUPPORTED')",
+      "parse_failed": "False",
+      "validation_failures": "()",
+      "invented_ids": "()",
+      "revision_served": "False",
+      "final_answer_sha256": "59cc2066263d",
+      "citations": "('OPS-04#003',)"
+    },
+    "FACT-knives-dishwasher": {
+      "raw_sha256": "5c732cf7c748",
+      "relationship": "no_relationship",
+      "conflict_detected": "False",
+      "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+      "parse_failed": "False",
+      "validation_failures": "()",
+      "invented_ids": "()",
+      "revision_served": "True",
+      "final_answer_sha256": "9148d34e6d0a",
+      "citations": "()"
+    },
+    "FACT-remote-days": {
+      "raw_sha256": "9430412a79ae",
+      "relationship": "no_relationship",
+      "conflict_detected": "False",
+      "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+      "parse_failed": "False",
+      "validation_failures": "()",
+      "invented_ids": "()",
+      "revision_served": "True",
+      "final_answer_sha256": "9148d34e6d0a",
+      "citations": "()"
+    },
+    "FACT-development-conversation": {
+      "raw_sha256": "284d723f6545",
+      "relationship": "no_relationship",
+      "conflict_detected": "False",
+      "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+      "parse_failed": "False",
+      "validation_failures": "()",
+      "invented_ids": "()",
+      "revision_served": "True",
+      "final_answer_sha256": "9148d34e6d0a",
+      "citations": "()"
+    },
+    "SYN-new-starter-week-one": {
+      "raw_sha256": "59edc3611885",
+      "relationship": "contextually_compatible",
+      "conflict_detected": "False",
+      "verdicts": "('INSUFFICIENT_EVIDENCE', 'INSUFFICIENT_EVIDENCE')",
+      "parse_failed": "False",
+      "validation_failures": "(\"claim 'You will also receive standard equipment allocated to office' was SUPPORTED with no valid supporting passage\",)",
+      "invented_ids": "()",
+      "revision_served": "False",
+      "final_answer_sha256": "9afa78f1bb7d",
+      "citations": "('HR-06#001', 'GEN-04#001', 'HR-06#002')"
+    },
+    "SYN-short-delivery-dispute": {
+      "raw_sha256": "ea4897ce8ada",
+      "relationship": "no_relationship",
+      "conflict_detected": "False",
+      "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+      "parse_failed": "False",
+      "validation_failures": "()",
+      "invented_ids": "()",
+      "revision_served": "True",
+      "final_answer_sha256": "9148d34e6d0a",
+      "citations": "()"
+    }
+  },
+  "observed": {
+    "CONF-01-Q1": [
+      {
+        "raw_sha256": "1b83485fdecf",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "1b83485fdecf",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "1b83485fdecf",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      }
+    ],
+    "CONF-01-Q2": [
+      {
+        "raw_sha256": "9a1c6ab0caf5",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('SUPPORTED',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "False",
+        "final_answer_sha256": "8921e4fe4022",
+        "citations": "('HR-13#001',)"
+      },
+      {
+        "raw_sha256": "9a1c6ab0caf5",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('SUPPORTED',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "False",
+        "final_answer_sha256": "8921e4fe4022",
+        "citations": "('HR-13#001',)"
+      },
+      {
+        "raw_sha256": "9a1c6ab0caf5",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('SUPPORTED',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "False",
+        "final_answer_sha256": "8921e4fe4022",
+        "citations": "('HR-13#001',)"
+      }
+    ],
+    "CONF-01-Q3": [
+      {
+        "raw_sha256": "44415592cb5c",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('SUPPORTED',)",
+        "parse_failed": "False",
+        "validation_failures": "('the revised answer cites no passages while the draft it replaces cited evidence',)",
+        "invented_ids": "()",
+        "revision_served": "False",
+        "final_answer_sha256": "8921e4fe4022",
+        "citations": "('HR-13#001',)"
+      },
+      {
+        "raw_sha256": "44415592cb5c",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('SUPPORTED',)",
+        "parse_failed": "False",
+        "validation_failures": "('the revised answer cites no passages while the draft it replaces cited evidence',)",
+        "invented_ids": "()",
+        "revision_served": "False",
+        "final_answer_sha256": "8921e4fe4022",
+        "citations": "('HR-13#001',)"
+      },
+      {
+        "raw_sha256": "9c409db2477c",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      }
+    ],
+    "CONF-05-Q1": [
+      {
+        "raw_sha256": "5ece51514724",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "(\"claim 'You must report a lost company laptop to the IT helpdesk wit' was SUPPORTED with no valid supporting passage\",)",
+        "invented_ids": "()",
+        "revision_served": "False",
+        "final_answer_sha256": "635b9c60ca70",
+        "citations": "('IT-03#001',)"
+      },
+      {
+        "raw_sha256": "5ece51514724",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "(\"claim 'You must report a lost company laptop to the IT helpdesk wit' was SUPPORTED with no valid supporting passage\",)",
+        "invented_ids": "()",
+        "revision_served": "False",
+        "final_answer_sha256": "635b9c60ca70",
+        "citations": "('IT-03#001',)"
+      },
+      {
+        "raw_sha256": "5ece51514724",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "(\"claim 'You must report a lost company laptop to the IT helpdesk wit' was SUPPORTED with no valid supporting passage\",)",
+        "invented_ids": "()",
+        "revision_served": "False",
+        "final_answer_sha256": "635b9c60ca70",
+        "citations": "('IT-03#001',)"
+      }
+    ],
+    "CONF-05-Q2": [
+      {
+        "raw_sha256": "f24cda11560a",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE', 'INSUFFICIENT_EVIDENCE')",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "f24cda11560a",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE', 'INSUFFICIENT_EVIDENCE')",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "b21780d61be2",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE', 'INSUFFICIENT_EVIDENCE')",
+        "parse_failed": "False",
+        "validation_failures": "(\"claim 'Reporting lost or stolen company equipment must be done with' was CONTRADICTED with no valid contradicting passage\",)",
+        "invented_ids": "()",
+        "revision_served": "False",
+        "final_answer_sha256": "c4d92fc6ff62",
+        "citations": "('GEN-04#001', 'IT-03#002')"
+      }
+    ],
+    "CONF-05-Q3": [
+      {
+        "raw_sha256": "224114b763a3",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "224114b763a3",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "224114b763a3",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      }
+    ],
+    "TUNE-01-Q1": [
+      {
+        "raw_sha256": "6caf8ebec699",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('SUPPORTED',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "False",
+        "final_answer_sha256": "e07ddb82e5f7",
+        "citations": "('CS-03#001',)"
+      },
+      {
+        "raw_sha256": "6caf8ebec699",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('SUPPORTED',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "False",
+        "final_answer_sha256": "e07ddb82e5f7",
+        "citations": "('CS-03#001',)"
+      },
+      {
+        "raw_sha256": "6caf8ebec699",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('SUPPORTED',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "False",
+        "final_answer_sha256": "e07ddb82e5f7",
+        "citations": "('CS-03#001',)"
+      }
+    ],
+    "TUNE-01-Q2": [
+      {
+        "raw_sha256": "b71c91a2a184",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE', 'INSUFFICIENT_EVIDENCE')",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "b71c91a2a184",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE', 'INSUFFICIENT_EVIDENCE')",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "b71c91a2a184",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE', 'INSUFFICIENT_EVIDENCE')",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      }
+    ],
+    "TUNE-01-Q3": [
+      {
+        "raw_sha256": "71f14ad8b1cc",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE', 'INSUFFICIENT_EVIDENCE', 'INSUFFICIENT_EVIDENCE')",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "b6800cc7892d",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE', 'INSUFFICIENT_EVIDENCE')",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "b6800cc7892d",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE', 'INSUFFICIENT_EVIDENCE')",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      }
+    ],
+    "TUNE-02-Q1": [
+      {
+        "raw_sha256": "3a778a568650",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "(\"claim 'The Health and Safety Coordinator reviews each entry within ' was SUPPORTED with no valid supporting passage\",)",
+        "invented_ids": "()",
+        "revision_served": "False",
+        "final_answer_sha256": "4503fe954307",
+        "citations": "('REG-01#005',)"
+      },
+      {
+        "raw_sha256": "dabb80d2ea91",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "(\"claim 'The Health and Safety Coordinator reviews each entry within ' was SUPPORTED with no valid supporting passage\",)",
+        "invented_ids": "()",
+        "revision_served": "False",
+        "final_answer_sha256": "4503fe954307",
+        "citations": "('REG-01#005',)"
+      },
+      {
+        "raw_sha256": "dabb80d2ea91",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "(\"claim 'The Health and Safety Coordinator reviews each entry within ' was SUPPORTED with no valid supporting passage\",)",
+        "invented_ids": "()",
+        "revision_served": "False",
+        "final_answer_sha256": "4503fe954307",
+        "citations": "('REG-01#005',)"
+      }
+    ],
+    "TUNE-02-Q2": [
+      {
+        "raw_sha256": "618db65a31d1",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "618db65a31d1",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "618db65a31d1",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      }
+    ],
+    "TUNE-02-Q3": [
+      {
+        "raw_sha256": "618db65a31d1",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "618db65a31d1",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "618db65a31d1",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      }
+    ],
+    "TUNE-03-Q1": [
+      {
+        "raw_sha256": "1959a4818e95",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('SUPPORTED',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "False",
+        "final_answer_sha256": "bc5adf90b005",
+        "citations": "('HR-04#003',)"
+      },
+      {
+        "raw_sha256": "1959a4818e95",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('SUPPORTED',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "False",
+        "final_answer_sha256": "bc5adf90b005",
+        "citations": "('HR-04#003',)"
+      },
+      {
+        "raw_sha256": "1959a4818e95",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('SUPPORTED',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "False",
+        "final_answer_sha256": "bc5adf90b005",
+        "citations": "('HR-04#003',)"
+      }
+    ],
+    "TUNE-03-Q2": [
+      {
+        "raw_sha256": "fb9e1d3cf635",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "37260b47c28e",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "37260b47c28e",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      }
+    ],
+    "TUNE-03-Q3": [
+      {
+        "raw_sha256": "03622413c285",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "03622413c285",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "03622413c285",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      }
+    ],
+    "TUNE-04-Q1": [
+      {
+        "raw_sha256": "a9bbe8182953",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('CONTRADICTED', 'SUPPORTED')",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "False",
+        "final_answer_sha256": "16691862606e",
+        "citations": "('PRD-02#002',)"
+      },
+      {
+        "raw_sha256": "35285b294336",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE', 'SUPPORTED')",
+        "parse_failed": "False",
+        "validation_failures": "(\"claim 'Wash knives by hand in warm soapy water and dry immediately.' was CONTRADICTED with no valid contradicting passage\",)",
+        "invented_ids": "()",
+        "revision_served": "False",
+        "final_answer_sha256": "16691862606e",
+        "citations": "('PRD-02#002',)"
+      },
+      {
+        "raw_sha256": "35285b294336",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE', 'SUPPORTED')",
+        "parse_failed": "False",
+        "validation_failures": "(\"claim 'Wash knives by hand in warm soapy water and dry immediately.' was CONTRADICTED with no valid contradicting passage\",)",
+        "invented_ids": "()",
+        "revision_served": "False",
+        "final_answer_sha256": "16691862606e",
+        "citations": "('PRD-02#002',)"
+      }
+    ],
+    "TUNE-04-Q2": [
+      {
+        "raw_sha256": "c32dd3c55d39",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "c32dd3c55d39",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "c32dd3c55d39",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      }
+    ],
+    "TUNE-04-Q3": [
+      {
+        "raw_sha256": "8a01e8a59392",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "8a01e8a59392",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "8a01e8a59392",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      }
+    ],
+    "TUNE-05-Q1": [
+      {
+        "raw_sha256": "f605bdfbb400",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE', 'INSUFFICIENT_EVIDENCE')",
+        "parse_failed": "False",
+        "validation_failures": "(\"claim 'The company leave year runs from 1 January to 31 December. E' was CONTRADICTED with no valid contradicting passage\", \"claim 'The leave year runs from 1 April to 31 March [HR-01#002].' was SUPPORTED with no valid supporting passage\")",
+        "invented_ids": "()",
+        "revision_served": "False",
+        "final_answer_sha256": "9d5b446a5226",
+        "citations": "('HR-01#002',)"
+      },
+      {
+        "raw_sha256": "f605bdfbb400",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE', 'INSUFFICIENT_EVIDENCE')",
+        "parse_failed": "False",
+        "validation_failures": "(\"claim 'The company leave year runs from 1 January to 31 December. E' was CONTRADICTED with no valid contradicting passage\", \"claim 'The leave year runs from 1 April to 31 March [HR-01#002].' was SUPPORTED with no valid supporting passage\")",
+        "invented_ids": "()",
+        "revision_served": "False",
+        "final_answer_sha256": "9d5b446a5226",
+        "citations": "('HR-01#002',)"
+      },
+      {
+        "raw_sha256": "333a9f6990fe",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('SUPPORTED',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "False",
+        "final_answer_sha256": "9d5b446a5226",
+        "citations": "('HR-01#002',)"
+      }
+    ],
+    "TUNE-05-Q2": [
+      {
+        "raw_sha256": "048dcbfe3fb6",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('SUPPORTED',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "False",
+        "final_answer_sha256": "c760ab9dc40c",
+        "citations": "('GEN-01#004',)"
+      },
+      {
+        "raw_sha256": "048dcbfe3fb6",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('SUPPORTED',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "False",
+        "final_answer_sha256": "c760ab9dc40c",
+        "citations": "('GEN-01#004',)"
+      },
+      {
+        "raw_sha256": "048dcbfe3fb6",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('SUPPORTED',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "False",
+        "final_answer_sha256": "c760ab9dc40c",
+        "citations": "('GEN-01#004',)"
+      }
+    ],
+    "TUNE-05-Q3": [
+      {
+        "raw_sha256": "1081d6e308bf",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "1081d6e308bf",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "1081d6e308bf",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      }
+    ],
+    "TUNE-06-Q1": [
+      {
+        "raw_sha256": "cb1a185f6d04",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "da08495bbfb4",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "da08495bbfb4",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      }
+    ],
+    "TUNE-06-Q2": [
+      {
+        "raw_sha256": "fff928eb66c5",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "fff928eb66c5",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "fff928eb66c5",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      }
+    ],
+    "TUNE-06-Q3": [
+      {
+        "raw_sha256": "e00bc9f5f19a",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "e00bc9f5f19a",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "e00bc9f5f19a",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      }
+    ],
+    "GAP-pensions-Q1": [
+      {
+        "raw_sha256": "16c3cabc3caa",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "916e9db1f1f3",
+        "relationship": "insufficient",
+        "conflict_detected": "False",
+        "verdicts": "()",
+        "parse_failed": "True",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "False",
+        "final_answer_sha256": "3ce44e24ca1f",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "52b58197f92e",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      }
+    ],
+    "GAP-pensions-Q2": [
+      {
+        "raw_sha256": "577f506a1e1e",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "577f506a1e1e",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "51fcd3ae5195",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      }
+    ],
+    "GAP-company-Q1": [
+      {
+        "raw_sha256": "9198194b0b82",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "9198194b0b82",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "9198194b0b82",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      }
+    ],
+    "GAP-company-Q2": [
+      {
+        "raw_sha256": "9782b5f5c80f",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "9782b5f5c80f",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "cb25babb0c2b",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      }
+    ],
+    "GAP-export-Q1": [
+      {
+        "raw_sha256": "2190e79ace9c",
+        "relationship": "insufficient",
+        "conflict_detected": "False",
+        "verdicts": "()",
+        "parse_failed": "True",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "False",
+        "final_answer_sha256": "6afe0f185dfc",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "2190e79ace9c",
+        "relationship": "insufficient",
+        "conflict_detected": "False",
+        "verdicts": "()",
+        "parse_failed": "True",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "False",
+        "final_answer_sha256": "6afe0f185dfc",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "2190e79ace9c",
+        "relationship": "insufficient",
+        "conflict_detected": "False",
+        "verdicts": "()",
+        "parse_failed": "True",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "False",
+        "final_answer_sha256": "6afe0f185dfc",
+        "citations": "()"
+      }
+    ],
+    "GAP-export-Q2": [
+      {
+        "raw_sha256": "b2b33159605e",
+        "relationship": "insufficient",
+        "conflict_detected": "False",
+        "verdicts": "()",
+        "parse_failed": "True",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "False",
+        "final_answer_sha256": "4171e74c75b8",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "074255f40ff5",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "074255f40ff5",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      }
+    ],
+    "PART-probationary-Q1": [
+      {
+        "raw_sha256": "5a5c310e67f0",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "92a66361e727",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "92a66361e727",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      }
+    ],
+    "PART-probationary-Q2": [
+      {
+        "raw_sha256": "41998f7df01d",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "2195a5a9aea6",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "2195a5a9aea6",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      }
+    ],
+    "FACT-leave-entitlement": [
+      {
+        "raw_sha256": "f10c0b66ac88",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('SUPPORTED',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "False",
+        "final_answer_sha256": "015cdda5f000",
+        "citations": "('HR-01#001',)"
+      },
+      {
+        "raw_sha256": "f10c0b66ac88",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('SUPPORTED',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "False",
+        "final_answer_sha256": "015cdda5f000",
+        "citations": "('HR-01#001',)"
+      },
+      {
+        "raw_sha256": "f10c0b66ac88",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('SUPPORTED',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "False",
+        "final_answer_sha256": "015cdda5f000",
+        "citations": "('HR-01#001',)"
+      }
+    ],
+    "FACT-fire-wardens": [
+      {
+        "raw_sha256": "4c83396217f8",
+        "relationship": "insufficient",
+        "conflict_detected": "False",
+        "verdicts": "()",
+        "parse_failed": "True",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "False",
+        "final_answer_sha256": "8a294cb0b54a",
+        "citations": "('OPS-07#005',)"
+      },
+      {
+        "raw_sha256": "4c83396217f8",
+        "relationship": "insufficient",
+        "conflict_detected": "False",
+        "verdicts": "()",
+        "parse_failed": "True",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "False",
+        "final_answer_sha256": "8a294cb0b54a",
+        "citations": "('OPS-07#005',)"
+      },
+      {
+        "raw_sha256": "4c83396217f8",
+        "relationship": "insufficient",
+        "conflict_detected": "False",
+        "verdicts": "()",
+        "parse_failed": "True",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "False",
+        "final_answer_sha256": "8a294cb0b54a",
+        "citations": "('OPS-07#005',)"
+      }
+    ],
+    "FACT-petty-cash-limit": [
+      {
+        "raw_sha256": "1b7c56425f0e",
+        "relationship": "insufficient",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "(\"claim 'The maximum single petty cash transaction is \u00a350 [FIN-02#002' was CONTRADICTED with no valid contradicting passage\", 'claimed supersession but named evidence from 1 document(s); a disagreement needs two sides', \"the revised answer cites evidence that was never retrieved: ['FIN-03#001']\")",
+        "invented_ids": "('FIN-03', 'FIN-03#001')",
+        "revision_served": "False",
+        "final_answer_sha256": "32662afa6d08",
+        "citations": "('FIN-02#002',)"
+      },
+      {
+        "raw_sha256": "22086fdd59c7",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "1b7c56425f0e",
+        "relationship": "insufficient",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "(\"claim 'The maximum single petty cash transaction is \u00a350 [FIN-02#002' was CONTRADICTED with no valid contradicting passage\", 'claimed supersession but named evidence from 1 document(s); a disagreement needs two sides', \"the revised answer cites evidence that was never retrieved: ['FIN-03#001']\")",
+        "invented_ids": "('FIN-03', 'FIN-03#001')",
+        "revision_served": "False",
+        "final_answer_sha256": "32662afa6d08",
+        "citations": "('FIN-02#002',)"
+      }
+    ],
+    "FACT-goods-in-detailed-check": [
+      {
+        "raw_sha256": "e0a8ff6a319d",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE', 'SUPPORTED')",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "False",
+        "final_answer_sha256": "59cc2066263d",
+        "citations": "('OPS-04#003',)"
+      },
+      {
+        "raw_sha256": "e0a8ff6a319d",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE', 'SUPPORTED')",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "False",
+        "final_answer_sha256": "59cc2066263d",
+        "citations": "('OPS-04#003',)"
+      },
+      {
+        "raw_sha256": "e0a8ff6a319d",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE', 'SUPPORTED')",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "False",
+        "final_answer_sha256": "59cc2066263d",
+        "citations": "('OPS-04#003',)"
+      }
+    ],
+    "FACT-knives-dishwasher": [
+      {
+        "raw_sha256": "5c732cf7c748",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "5c732cf7c748",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "5c732cf7c748",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      }
+    ],
+    "FACT-remote-days": [
+      {
+        "raw_sha256": "9430412a79ae",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "9430412a79ae",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "9430412a79ae",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      }
+    ],
+    "FACT-development-conversation": [
+      {
+        "raw_sha256": "284d723f6545",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "284d723f6545",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "284d723f6545",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      }
+    ],
+    "SYN-new-starter-week-one": [
+      {
+        "raw_sha256": "59edc3611885",
+        "relationship": "contextually_compatible",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE', 'INSUFFICIENT_EVIDENCE')",
+        "parse_failed": "False",
+        "validation_failures": "(\"claim 'You will also receive standard equipment allocated to office' was SUPPORTED with no valid supporting passage\",)",
+        "invented_ids": "()",
+        "revision_served": "False",
+        "final_answer_sha256": "9afa78f1bb7d",
+        "citations": "('HR-06#001', 'GEN-04#001', 'HR-06#002')"
+      },
+      {
+        "raw_sha256": "59edc3611885",
+        "relationship": "contextually_compatible",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE', 'INSUFFICIENT_EVIDENCE')",
+        "parse_failed": "False",
+        "validation_failures": "(\"claim 'You will also receive standard equipment allocated to office' was SUPPORTED with no valid supporting passage\",)",
+        "invented_ids": "()",
+        "revision_served": "False",
+        "final_answer_sha256": "9afa78f1bb7d",
+        "citations": "('HR-06#001', 'GEN-04#001', 'HR-06#002')"
+      },
+      {
+        "raw_sha256": "59edc3611885",
+        "relationship": "contextually_compatible",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE', 'INSUFFICIENT_EVIDENCE')",
+        "parse_failed": "False",
+        "validation_failures": "(\"claim 'You will also receive standard equipment allocated to office' was SUPPORTED with no valid supporting passage\",)",
+        "invented_ids": "()",
+        "revision_served": "False",
+        "final_answer_sha256": "9afa78f1bb7d",
+        "citations": "('HR-06#001', 'GEN-04#001', 'HR-06#002')"
+      }
+    ],
+    "SYN-short-delivery-dispute": [
+      {
+        "raw_sha256": "ea4897ce8ada",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "ea4897ce8ada",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      },
+      {
+        "raw_sha256": "ea4897ce8ada",
+        "relationship": "no_relationship",
+        "conflict_detected": "False",
+        "verdicts": "('INSUFFICIENT_EVIDENCE',)",
+        "parse_failed": "False",
+        "validation_failures": "()",
+        "invented_ids": "()",
+        "revision_served": "True",
+        "final_answer_sha256": "9148d34e6d0a",
+        "citations": "()"
+      }
+    ]
+  }
+}
