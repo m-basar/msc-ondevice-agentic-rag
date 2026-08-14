@@ -21,7 +21,8 @@
       "gemma:2b"
     ],
     "timeout_seconds": 1200,
-    "verification_model": "llama3.2:3b"
+    "verification_model": "qwen2.5:3b",
+    "_verification_model": "Set by R3 of the diagnostic protocol, amendment 1.10. With the disputed pair isolated Qwen detected 5/6 families to Llama's 2/6, and on the deployed six-chunk window 2/6 to Llama's 0/6. The generator stays llama3.2:3b, so Arm D is a Llama answer audited by Qwen."
   },
   "generation": {
     "seed": 42,

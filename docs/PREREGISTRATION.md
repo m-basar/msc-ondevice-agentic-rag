@@ -1661,3 +1661,131 @@ been measured end to end.
 | Unmet conditions | first failure only | **all, including unevaluable ones** |
 | STOP wording | "the null result" | **one model, one prompt, one window** |
 | Tests | 428 | **432** |
+
+---
+
+# Amendment 1.10 - 14 August 2026
+
+The diagnostic protocol ran to completion at commit `001c82f`, 288 calls in
+three complete blocks, after the precondition confirmed pilot 04 served no
+structurally invalid revision. Artefact:
+`results/diagnostics/20260814_043323_verifier_protocol.json`.
+
+## 1.10.1 The result
+
+Detection and correct classification, family-level majority within each block,
+identical in all three blocks:
+
+| Verifier | Evidence | Detected | Classified |
+|---|---|---|---|
+| llama3.2:3b | full, six chunks | 0 / 6 | 0 / 6 |
+| llama3.2:3b | oracle pair | 2 / 6 | 1 / 6 |
+| qwen2.5:3b | full, six chunks | 2 / 6 | 1 / 6 |
+| **qwen2.5:3b** | **oracle pair** | **5 / 6** | **3 / 6** |
+
+**R3 fired: model.** Arm D becomes a Llama-generated answer audited by Qwen.
+
+## 1.10.2 What this is not
+
+It is not "Qwen solves it". Read across the table rather than at the best cell:
+
+* Qwen reaches the threshold **only when the disputed pair is isolated**. On
+  the deployed six-chunk window it detects 2 of 6.
+* Llama stays below threshold even with the oracle pair, so this is not a
+  window problem alone.
+* **Both matter.** Model capability and evidence dilution each account for part
+  of the gap, and neither explanation is sufficient by itself.
+
+Classification lags detection badly. Of Qwen's 24 detections on
+`stricter_looser` families under the oracle condition, **18 were called
+`mutually_exclusive`** and 6 were correct. It finds the disagreement and
+misnames its kind, which matters because the two demand different behaviour:
+one surfaces both positions and picks neither, the other names the safe course.
+
+The defensible statement:
+
+> Qwen demonstrated substantially greater conflict-detection capability than
+> Llama under controlled evidence, but full-context performance remained
+> limited by evidence dilution and subtype misclassification.
+
+## 1.10.3 A control that was excluded, and what it hides
+
+The reported control false-positive figure in the `full` condition is `0/1`,
+not `0/2`. TUNE-03's disputed pair was not retrieved, so the family was
+excluded under section 3 of the protocol, which is correct: a verifier shown
+one side has nothing to detect.
+
+But the exclusion conceals a real result. In the `full` condition Qwen flagged
+**TUNE-03 on 6 of 9 observations** - a majority false positive on a compatible
+control - while Llama flagged it 0 of 9.
+
+Recorded here descriptively because the pre-registered rule properly excludes
+it and I will not amend a rule after seeing its output. It qualifies the
+reading of R3: Qwen detects more, and it also over-detects more. On the one
+control the protocol could evaluate, TUNE-04, both models were clean at 0/9.
+
+H2c predicted exactly this over-detection, and it now has development evidence
+behind it.
+
+## 1.10.4 Invalid evidence identifiers are one-sided
+
+9 of 288 calls cited a chunk that was never supplied. **All nine were Llama
+under the oracle condition**; Qwen produced none. Given a two-chunk window
+Llama invented identifiers, which is a worse failure than silence and is worth
+reporting alongside its low detection rate.
+
+## 1.10.5 The three blocks were unnecessary, and that is a finding
+
+**Zero of 96 prompts differed across the three blocks.** Raw text, relationship,
+detection, classification and parse status all agreed at 1.00. The 288 calls
+produced precisely what 96 would have.
+
+The block count came from the corrected reproducibility check on pilot 03's
+prompts, which found relationship, verdicts and served answers moving between
+passes. On this prompt set, under these conditions, nothing moved.
+
+Recorded rather than tidied away. It says the variability measured on pilot 03
+does not generalise across prompt sets, and it is a further argument against
+the non-reproducibility claim I made and withdrew in Amendment 1.7. The cost of
+having run three blocks is eight minutes; the cost of having assumed stability
+would have been an unexamined assumption in the results chapter.
+
+## 1.10.6 What changes, and what does not
+
+| | |
+|---|---|
+| Verifier model | **`qwen2.5:3b`** |
+| Generator | unchanged, `llama3.2:3b` |
+| Verifier prompt | **unchanged**, revision 2 |
+| Serving rule | **unchanged** |
+| Retrieval | **unchanged**, `top_k: 6`, `min_similarity: 0.30` |
+| Evidence condition at runtime | **full retrieval** |
+
+**The oracle pair does not become Arm D's retrieval.** Selecting it requires
+knowing which passages carry the disputed claims, which is the question the
+system exists to answer. It was an instrument and it stays one.
+
+Pi latency for Arm D must now include **model-loading cost**: two 3B models
+will not stay resident together on 8 GB, so a verification call may pay a load
+that the laptop figures do not show.
+
+## 1.10.7 Next, in order
+
+1. A development Arm D over the 41 questions with Qwen as verifier, replaying
+   the same Arm B drafts from pilot 02. Only the verifier model differs from
+   pilot 04, so the comparison is clean.
+2. Read the stopping gate on that run.
+3. Freeze the verifier **only after** that evaluation, and commit the freeze
+   before any test-split run.
+
+## State after this amendment
+
+| | Before 1.10 | After 1.10 |
+|---|---|---|
+| Verifier model | `llama3.2:3b` | **`qwen2.5:3b`** |
+| Basis | pilot evidence | **288-call pre-registered protocol, R3** |
+| Block variability | expected | **none observed, 0/96** |
+| H2c over-detection | predicted | **observed on the excluded control** |
+| Tests | 437 | 437 |
+
+No test-split arm has been run. The verifier is not frozen.
