@@ -1560,9 +1560,28 @@ to do with what they claim to measure.
 
 | Figure | Reported | Actual |
 |---|---|---|
-| Citation validity | 0.342 | **0.875** over answers that make a claim |
+| Citation validity | 0.342, mislabelled | **three figures, reported together** |
 | Refusal | 2 / 41 | **25 / 41** served abstentions |
 | "Invalid revisions" | 0 | 0 **structurally**; 21 semantically wrong |
+
+**0.875 does not replace 0.342.** They measure different things, and an
+earlier draft of this amendment said "0.875, not 0.342" as though the second
+were simply an error. It was mislabelled, not wrong.
+
+| Figure | Pilot 04 | What it answers |
+|---|---|---|
+| Conditional citation validity | 14/16 = **0.875** | of the answers that made a claim, how many cited validly |
+| Claim-making coverage | 16/41 = **0.390** | of the questions asked, how many were answered at all |
+| Grounded answer coverage | 14/41 = **0.341** | of the questions asked, how many got a validly cited answer |
+| Abstention rate | 25/41 = **0.610** | |
+| End-to-end false refusal | 21/35 = **0.600** | answerable questions refused |
+| Correct refusal | 4/6 = **0.667** | unanswerable questions refused |
+
+Reporting the conditional figure alone rewards selective abstention: a verifier
+that refuses everything it would have got wrong drives 0.875 towards 1.00 while
+grounded coverage falls. At a 61% abstention rate that distortion is not
+hypothetical. The three are printed together and the gate refuses to show one
+without the others.
 
 An abstention cites nothing by design, so including abstentions in citation
 validity measures how often the verifier refused and prints it under the
@@ -1576,6 +1595,10 @@ Corrections:
    recovered by matching prose.
 2. Abstention is split: **21 of 35 answerable questions falsely refused**, 4 of
    6 unanswerable correctly refused. "25 refusals" reports neither.
+   The 21 are split again by whether the evidence was there:
+   **20 had the expected passage retrieved** and were refused anyway, which is
+   the verifier's error; **1 did not**, and is attributable to retrieval. All
+   21 are system-level failures, but only the 20 are the verifier's.
 3. Citation metrics are computed over claim-making answers, with abstentions
    counted separately.
 4. The gate field is `structurally_invalid_revisions_served`. It was never a

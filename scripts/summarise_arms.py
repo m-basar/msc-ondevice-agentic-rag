@@ -240,8 +240,11 @@ def main() -> int:
     # decision is computed, not formed by looking at a table.
     if "D" in runs:
         print()
+        expected = {q.question_id: tuple(q.expected_chunks or ())
+                    for q in question_set.split(args.split)}
         for line in format_gate(evaluate_gate(
             runs["D"], registry, arm="D", baseline=runs.get("B"),
+            expected_chunks=expected,
         )):
             print(line)
         if "B" not in runs:

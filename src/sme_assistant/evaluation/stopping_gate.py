@@ -114,6 +114,38 @@ class GateResult:
     unanswerable_correctly_refused: int = 0
     answerable_questions: int = 0
     unanswerable_questions: int = 0
+    claim_making_answers: int = 0
+    validly_cited_answers: int = 0
+    # A false refusal is only the verifier's error when the evidence was
+    # actually in front of it. Where the expected passage was never retrieved,
+    # the verifier was right that what it held did not support an answer.
+    false_refusals_with_evidence: int = 0
+    false_refusals_without_evidence: int = 0
+
+    # --- coverage, reported beside every conditional figure ------------------
+
+    @property
+    def conditional_citation_validity(self) -> float | None:
+        """Of the answers that made a claim, how many cited validly."""
+        if not self.claim_making_answers:
+            return None
+        return self.validly_cited_answers / self.claim_making_answers
+
+    @property
+    def claim_making_coverage(self) -> float | None:
+        """Of the questions asked, how many got an answer at all."""
+        return self.claim_making_answers / self.answers if self.answers else None
+
+    @property
+    def grounded_answer_coverage(self) -> float | None:
+        """Of the questions asked, how many got a validly cited answer.
+
+        The figure that cannot be improved by refusing. A verifier abstaining
+        on everything it would have got wrong drives conditional validity
+        towards 1.00 while this falls, so the two are always reported together:
+        quoting the conditional figure alone rewards selective abstention.
+        """
+        return self.validly_cited_answers / self.answers if self.answers else None
 
     # --- the five quantities ------------------------------------------------
 
@@ -283,6 +315,7 @@ def evaluate_gate(
     *,
     arm: str = "D",
     baseline: Sequence[Mapping[str, Any]] | None = None,
+    expected_chunks: Mapping[str, Sequence[str]] | None = None,
 ) -> GateResult:
     """Compute the gate for one arm's records.
 
@@ -297,6 +330,19 @@ def evaluate_gate(
         # Runs recorded before the flag existed.
         return str(record.get("answer") or "").strip() == ABSTENTION_TEXT
 
+    def _valid_citations(record: Mapping[str, Any]) -> bool:
+        return bool(record.get("has_valid_citation_ids"))
+
+    def _had_the_evidence(record: Mapping[str, Any]) -> bool:
+        """Was the passage the question needs among the retrieved chunks?"""
+        wanted = set((expected_chunks or {}).get(record.get("question_id"), ()))
+        if not wanted:
+            return True  # nothing declared, so retrieval cannot be blamed
+        got = {s.get("chunk_id") for s in
+               (record.get("retrieval") or {}).get("results", [])}
+        return bool(wanted & got)
+
+    claim_making = [r for r in records if not _abstained(r)]
     answerable = sum(r.get("category") != "unanswerable" for r in records)
     unanswerable = len(records) - answerable
     abstentions = sum(_abstained(r) for r in records)
@@ -304,6 +350,9 @@ def evaluate_gate(
         _abstained(r) and r.get("category") != "unanswerable" for r in records
     )
     correctly_refused = abstentions - falsely_refused
+    false_refusals = [r for r in records
+                      if _abstained(r) and r.get("category") != "unanswerable"]
+    with_evidence = sum(_had_the_evidence(r) for r in false_refusals)
 
     grouped: dict[str, list[Mapping[str, Any]]] = {}
     for record in records:
@@ -349,6 +398,10 @@ def evaluate_gate(
         unanswerable_correctly_refused=correctly_refused,
         answerable_questions=answerable,
         unanswerable_questions=unanswerable,
+        claim_making_answers=len(claim_making),
+        validly_cited_answers=sum(_valid_citations(r) for r in claim_making),
+        false_refusals_with_evidence=with_evidence,
+        false_refusals_without_evidence=len(false_refusals) - with_evidence,
         revisions_rejected=sum(bool(r.get("revision_rejected")) for r in records),
         citation_completeness_delta=delta,
         parse_failures=sum(
@@ -382,6 +435,23 @@ def format_gate(result: GateResult) -> Iterable[str]:
            "   (citations resolve, or the template)")
     yield f"    (revisions rejected by guard {result.revisions_rejected:>3})"
     yield ""
+    yield "  Coverage. Conditional figures are never reported alone: a verifier"
+    yield "  that abstains on what it would get wrong improves the first line"
+    yield "  and worsens the third."
+
+    def _pct(value):
+        return "     -" if value is None else f"{value:6.3f}"
+
+    yield (f"    conditional citation validity {_pct(result.conditional_citation_validity)}"
+           f"   {result.validly_cited_answers}/{result.claim_making_answers}"
+           "   given the answer made a claim")
+    yield (f"    claim-making coverage         {_pct(result.claim_making_coverage)}"
+           f"   {result.claim_making_answers}/{result.answers}"
+           "   answered at all")
+    yield (f"    grounded answer coverage      {_pct(result.grounded_answer_coverage)}"
+           f"   {result.validly_cited_answers}/{result.answers}"
+           "   cannot be improved by refusing")
+    yield ""
     yield "  Abstention, counted structurally rather than read off the prose:"
     yield (f"    served                       {result.abstentions_served:>3}"
            f" / {result.answers}")
@@ -392,6 +462,11 @@ def format_gate(result: GateResult) -> Iterable[str]:
     yield (f"    unanswerable, correctly      "
            f"{result.unanswerable_correctly_refused:>3} / "
            f"{result.unanswerable_questions}")
+    yield ("      of the false refusals, the expected passage was:")
+    yield (f"        retrieved   {result.false_refusals_with_evidence:>3}"
+           "   the verifier had the evidence and refused anyway")
+    yield (f"        not retrieved {result.false_refusals_without_evidence:>3}"
+           "   attributable to retrieval, not the verifier")
     delta = result.citation_completeness_delta
     yield ("  citation completeness D-B      "
            + ("    n/a" if delta is None else f"{delta:+7.3f}") + "   (group level)")
