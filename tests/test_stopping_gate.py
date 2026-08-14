@@ -505,3 +505,46 @@ def test_claim_audit_completeness_is_reported():
 
     assert result.claim_audits_complete == 7
     assert "claim audits complete" in "\n".join(format_gate(result))
+
+
+# --- the gate is a development instrument ------------------------------------
+
+
+def test_no_verdict_is_printed_when_the_rule_was_not_declared_for_the_split():
+    """The test split gets measurements and no decision.
+
+    DETECTION_REQUIRED is an absolute 5, declared for the development split's
+    six genuine families. On the twelve-family test split it was satisfied at
+    5/12 - 42% - by a bar that was declared to mean 83%, and the development
+    run that failed at 4/6 was held to a stricter standard than the test run
+    that passed.
+
+    Rescaling it after seeing the test results would be inventing a test
+    threshold to judge data already in hand. So no verdict is printed instead.
+    """
+    result = evaluate_gate(build(perfect(), DEV_TYPES), FakeRegistry(DEV_TYPES),
+                           baseline=build(perfect(), DEV_TYPES))
+
+    with_decision = "\n".join(format_gate(result, decision=True))
+    without = "\n".join(format_gate(result, decision=False))
+
+    assert "DECISION:" in with_decision
+    assert "DECISION:" not in without
+    # The measurements survive either way; only the verdict is withheld.
+    for line in ("genuine families detected", "controls falsely detected",
+                 "claim audits complete", "grounded answer coverage"):
+        assert line in without
+
+
+def test_the_threshold_is_documented_as_absolute_not_proportional():
+    """The docstring claimed fractions and the code always used counts.
+
+    That claim is what made applying the rule to another split look safe.
+    """
+    from sme_assistant.evaluation import stopping_gate
+
+    source = stopping_gate.__doc__ or ""
+    decision_doc = stopping_gate.GateResult.decision.__doc__ or ""
+    assert "absolute counts declared for the development" in decision_doc
+    assert "not scale-invariant" in decision_doc
+    assert "fractions of the families available" not in decision_doc + source

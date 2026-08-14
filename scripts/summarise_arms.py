@@ -299,11 +299,29 @@ def main() -> int:
             baseline = replayed_baseline(
                 d_path if d_path.is_absolute() else ROOT / d_path, runs["D"]
             )
-        for line in format_gate(evaluate_gate(
+        gate = evaluate_gate(
             runs["D"], registry, arm="D", baseline=baseline,
             expected_chunks=expected,
-        )):
+        )
+        # The gate is a **development** stopping rule and its thresholds were
+        # declared against the development split's six genuine families. On the
+        # test split it printed a verdict anyway, and because DETECTION_REQUIRED
+        # is an absolute 5 rather than the proportion the docstring claimed, 5
+        # of 12 test families satisfied a bar that means 5 of 6 - a weaker
+        # standard than the development run that failed it at 4 of 6.
+        #
+        # The fix is not to rescale the threshold. Deriving a test threshold
+        # after seeing test results would be inventing a gate to judge data
+        # already in hand, which is the thing the pre-registration exists to
+        # prevent. The test split gets its metrics and no verdict; its
+        # hypotheses are H1, H2 and H2c under the registered analysis plan,
+        # with blinded manual scoring.
+        for line in format_gate(gate, decision=(args.split == "dev")):
             print(line)
+        if args.split != "dev":
+            print("  No gate decision is printed for this split. The stopping")
+            print("  rule is a development instrument; these results are read")
+            print("  against H1, H2 and H2c under the registered analysis plan.")
         if baseline is None:
             print("\n  Note: no Arm B in the run index and none recorded as "
                   "replayed, so the\n  citation-completeness contrast could "

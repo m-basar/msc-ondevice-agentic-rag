@@ -64,6 +64,11 @@ MAJORITY = 2
 # The gate as originally declared, before pilots 02 and 03 were seen. Named
 # constants so the numbers can be read against the pre-registration rather
 # than reverse-engineered from branches.
+# Declared against the DEVELOPMENT split's six genuine families. An absolute
+# count, not a proportion: the docstring below once claimed these were
+# fractions of the families available and they never were, so on a twelve-
+# family split 5 would have meant 42% where it was declared to mean 83%.
+# ``format_gate(decision=False)`` is how other splits are reported instead.
 DETECTION_REQUIRED = 5              # of 6 genuine development families
 CONTROL_FALSE_POSITIVES_ALLOWED = 0  # of 2 compatible controls
 PARSE_FAILURES_ALLOWED = 2           # of the answers in the run
@@ -200,7 +205,17 @@ class GateResult:
         =========================  ==================================
 
         Every condition must hold to PROCEED. Anything genuinely below the null
-        floor STOPs; everything between is a REVISE, and one revision remains.
+        floor STOPs; everything between is a REVISE.
+
+        **Scope.** These are absolute counts declared for the development
+        split's six genuine families. They are not proportions and this rule is
+        not scale-invariant, so it is meaningful on that split alone. An
+        earlier docstring claimed they were fractions of the families
+        available, which is what made applying the rule to the twelve-family
+        test split look safe: 5 satisfied a bar declared to mean 83% at 42%,
+        and the development run that failed at 4/6 was held to a stricter
+        standard than the test run that passed. Other splits are reported with
+        ``format_gate(decision=False)`` and no verdict.
         """
         genuine, controls = len(self.genuine), len(self.controls)
         answers = self.answers or 1
@@ -451,12 +466,19 @@ def evaluate_gate(
     )
 
 
-def format_gate(result: GateResult) -> Iterable[str]:
-    """The gate as printable lines. Counts first, decision last."""
-    genuine, controls = len(result.genuine), len(result.controls)
-    decision, reason = result.decision()
+def format_gate(result: GateResult, *, decision: bool = True) -> Iterable[str]:
+    """The gate as printable lines. Counts first, decision last.
 
-    yield f"Stopping gate, arm {result.arm}, over {result.answers} verified answers"
+    ``decision=False`` prints the measurements without a verdict, for splits
+    the rule was not declared against. The thresholds were set for the
+    development split's six genuine families; applying them to a split with a
+    different number of families compares against a bar that was never
+    declared for it.
+    """
+    genuine, controls = len(result.genuine), len(result.controls)
+
+    label = "Stopping gate" if decision else "Verifier diagnostics"
+    yield f"{label}, arm {result.arm}, over {result.answers} verified answers"
     yield f"  families detected by majority ({MAJORITY} of 3 paraphrases):"
     for family in result.families:
         kind = "conflict " if family.is_conflict else "CONTROL  "
@@ -518,7 +540,10 @@ def format_gate(result: GateResult) -> Iterable[str]:
     yield (f"  claim audits complete          {result.claim_audits_complete:>3}"
            f" / {result.answers}   (what prompt revision 3 targeted)")
     yield ""
-    yield f"  DECISION: {decision}"
+    if not decision:
+        return
+    verdict, reason = result.decision()
+    yield f"  DECISION: {verdict}"
     for line in _wrap(reason, 70):
         yield f"    {line}"
 
