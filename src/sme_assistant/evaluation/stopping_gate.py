@@ -69,6 +69,12 @@ CONTROL_FALSE_POSITIVES_ALLOWED = 0  # of 2 compatible controls
 PARSE_FAILURES_ALLOWED = 2           # of the answers in the run
 CITATION_COMPLETENESS_TOLERANCE = 0.05  # against Arm B, at group level
 
+# Prompt revisions left in the development budget. Revision 3 was spent on the
+# claims-audit defect before pilot 06 and was declared the last one. With none
+# remaining, REVISE is not an available verdict: a gate that keeps offering
+# another revision after the budget is gone invites one to be taken.
+PROMPT_REVISIONS_REMAINING = 0
+
 
 @dataclass(frozen=True)
 class FamilyOutcome:
@@ -106,6 +112,7 @@ class GateResult:
     citation_completeness_delta: float | None
     parse_failures: int
     answers: int
+    claim_audits_complete: int = 0
     # Abstention is counted structurally and split by whether the question had
     # an answer. "25 refusals" is not a finding; "21 answerable questions
     # refused and 4 unanswerable ones correctly refused" is.
@@ -262,10 +269,12 @@ class GateResult:
         if delta is None:
             unmet.append("citation completeness against B: UNAVAILABLE, Arm B "
                          "absent from the run index")
-        if self.answerable_falsely_refused:
-            unmet.append(f"answerable questions refused "
-                         f"{self.answerable_falsely_refused}/"
-                         f"{self.answerable_questions}")
+
+        # False refusals are NOT a declared condition. Amendment 1.9 added them
+        # to this list, which is adding a gate condition after seeing the data
+        # the gate is judging - the exact move the pre-registration exists to
+        # prevent, made by me. The count is reported above and stays out of the
+        # verdict. The declared gate has five conditions and this is not one.
 
         if not unmet:
             return ("PROCEED", (
@@ -275,9 +284,16 @@ class GateResult:
                 "every declared condition met."
             ))
 
+        summary = "the declared gate is not met: " + "; ".join(unmet) + "."
+        if PROMPT_REVISIONS_REMAINING <= 0:
+            return ("FAIL", (
+                summary + " The final prompt revision has been spent, so no "
+                "development revisions remain. Freeze this configuration and "
+                "report the result."
+            ))
         return ("REVISE", (
-            "the declared gate is not met: " + "; ".join(unmet) + ". "
-            "One prompt revision remains and it is the last one."
+            summary + f" {PROMPT_REVISIONS_REMAINING} prompt revision(s) "
+            "remain."
         ))
 
 def _get(record: Mapping[str, Any], dotted: str) -> Any:
@@ -428,6 +444,9 @@ def evaluate_gate(
         parse_failures=sum(
             bool(_get(r, "verification.parse_failed")) for r in records
         ),
+        claim_audits_complete=sum(
+            bool(_get(r, "verification.claim_audit_complete")) for r in records
+        ),
         answers=sum("verification" in r for r in records),
     )
 
@@ -496,6 +515,8 @@ def format_gate(result: GateResult) -> Iterable[str]:
     yield ("  citation completeness D-B      "
            + ("    n/a" if delta is None else f"{delta:+7.3f}") + "   (group level)")
     yield f"  parse failures                 {result.parse_failures:>3} / {result.answers}"
+    yield (f"  claim audits complete          {result.claim_audits_complete:>3}"
+           f" / {result.answers}   (what prompt revision 3 targeted)")
     yield ""
     yield f"  DECISION: {decision}"
     for line in _wrap(reason, 70):

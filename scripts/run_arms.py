@@ -245,8 +245,13 @@ def main() -> int:
             verifier=verifier, config=config, kb=kb, index=index,
             question_set=question_set, registry=registry, split=args.split,
             tag=args.tag or ("mock" if args.mock else ""), drafts=reuse,
-            drafts_source=(args.reuse_drafts_from if name == "D" and reuse
-                           and args.reuse_drafts_from else None),
+            # Repository-relative with forward slashes. Recorded verbatim,
+            # a Windows path is unreadable on the Pi - the same portability
+            # bug that once broke the run index across the two machines.
+            drafts_source=(
+                Path(args.reuse_drafts_from).as_posix()
+                if name == "D" and reuse and args.reuse_drafts_from else None
+            ),
         )
         print(f"    -> {directories[name].name}\n")
 

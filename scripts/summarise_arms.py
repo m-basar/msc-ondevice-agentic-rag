@@ -72,6 +72,53 @@ def load_runs(config, split: str, mock: bool) -> tuple[dict[str, list[dict]], di
             {arm: manifest for arm, (manifest, _) in loaded.items()})
 
 
+def replayed_baseline(directory: Path, answers: list[dict]) -> list[dict] | None:
+    """Arm B's answers, when the run recorded that it replayed them.
+
+    Reporting the citation-completeness condition as UNAVAILABLE while the run
+    itself records which Arm B run it replayed was a gap, not a limitation: an
+    unevaluable condition withholds PROCEED, so leaving it unevaluable when the
+    data is on disk means a gate condition never gets tested.
+
+    The question ids and the evidence hashes are checked. If they do not match,
+    this returns nothing rather than comparing two different question sets,
+    which would be worse than not comparing at all.
+    """
+    summary_path = directory / "summary.json"
+    if not summary_path.exists():
+        return None
+    source = json.loads(summary_path.read_text(encoding="utf-8")).get(
+        "drafts_replayed_from"
+    )
+    if not source:
+        return None
+    # Runs before this was normalised recorded a native path, so a Windows
+    # separator has to be understood when reading on any platform.
+    path = Path(str(source).replace("\\", "/"))
+    if not path.is_absolute():
+        path = ROOT / path
+    if not path.exists():
+        print(f"  Arm B was recorded as replayed from {source!r}, which is "
+              "not on disk;\n  the contrast is not computed.\n")
+        return None
+
+    _, baseline = read_run(path)
+    here = {r["question_id"]: r.get("evidence_sha256") for r in answers}
+    there = {r["question_id"]: r.get("evidence_sha256") for r in baseline}
+    if here.keys() != there.keys():
+        print(f"  Arm B at {path.name} answers different questions; "
+              "the contrast is not computed.\n")
+        return None
+    mismatched = [q for q in here if here[q] and there[q] and here[q] != there[q]]
+    if mismatched:
+        print(f"  Arm B at {path.name} saw different evidence on "
+              f"{len(mismatched)} questions; the contrast is not computed.\n")
+        return None
+    print(f"  Arm B loaded from {path.name}, the run these drafts were "
+          "replayed from.\n  Question ids and evidence hashes match.\n")
+    return baseline
+
+
 def hardware_of(manifest: dict) -> tuple[str, str]:
     """``(machine, hostname)`` as recorded when the run was made."""
     host = ((manifest or {}).get("environment") or {}).get("host") or {}
@@ -242,14 +289,25 @@ def main() -> int:
         print()
         expected = {q.question_id: tuple(q.expected_chunks or ())
                     for q in question_set.split(args.split)}
+        baseline = runs.get("B")
+        if baseline is None:
+            index_path = Path(config.path("paths.results")) / (
+                f"latest_{args.split}{'_mock' if args.mock else ''}.json"
+            )
+            directories = json.loads(index_path.read_text(encoding="utf-8"))
+            d_path = Path(directories["D"])
+            baseline = replayed_baseline(
+                d_path if d_path.is_absolute() else ROOT / d_path, runs["D"]
+            )
         for line in format_gate(evaluate_gate(
-            runs["D"], registry, arm="D", baseline=runs.get("B"),
+            runs["D"], registry, arm="D", baseline=baseline,
             expected_chunks=expected,
         )):
             print(line)
-        if "B" not in runs:
-            print("\n  Note: Arm B is absent, so the citation-completeness "
-                  "contrast is unavailable.")
+        if baseline is None:
+            print("\n  Note: no Arm B in the run index and none recorded as "
+                  "replayed, so the\n  citation-completeness contrast could "
+                  "not be computed.")
     return 0
 
 

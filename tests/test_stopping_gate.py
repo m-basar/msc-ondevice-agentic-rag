@@ -365,9 +365,13 @@ def test_a_false_refusal_is_reported_not_suppressed():
     result = evaluate_gate(rows, FakeRegistry(DEV_TYPES))
 
     assert result.structurally_invalid_revisions_served == 0, "structurally fine"
-    decision, reason = result.decision()
-    assert decision == "REVISE"
-    assert "answerable questions refused" in reason
+    assert result.answerable_falsely_refused == 4
+    # Reported, and NOT a gate condition. Amendment 1.9 put false refusals into
+    # the unmet list, which added a condition to the declared gate after seeing
+    # the data it judges. The declared gate has five conditions and this is not
+    # one of them.
+    _, reason = result.decision()
+    assert "answerable questions refused" not in reason
 
 
 def test_every_unmet_condition_is_reported_not_just_the_first():
@@ -462,3 +466,42 @@ def test_an_undeclared_expectation_is_not_evidence_of_anything():
 
     assert result.false_refusals_all_evidence == 0
     assert result.false_refusals_no_expectation == 1
+
+
+# --- the revision budget is spent, so REVISE is no longer offered ------------
+
+
+def test_no_revisions_remain_so_the_verdict_is_fail():
+    """Revision 3 was the last one and was spent before pilot 06.
+
+    A gate that keeps saying "one prompt revision remains" after the budget is
+    gone invites one to be taken. Pilot 06 read REVISE on exactly that stale
+    wording.
+    """
+    from sme_assistant.evaluation.stopping_gate import PROMPT_REVISIONS_REMAINING
+
+    assert PROMPT_REVISIONS_REMAINING == 0
+
+    pattern = dict(silent())
+    for fid in ("CONF-01", "TUNE-01", "TUNE-02", "TUNE-05"):
+        pattern[fid] = [DECLARED_TO_INFERRED[DEV_TYPES[fid]]] * 3
+    result = evaluate_gate(build(pattern, DEV_TYPES), FakeRegistry(DEV_TYPES),
+                           baseline=build(pattern, DEV_TYPES))
+
+    assert result.genuine_detected == 4, "pilot 06's figure"
+    decision, reason = result.decision()
+    assert decision == "FAIL"
+    assert "detection 4/6, needs 5" in reason
+    assert "no development revisions remain" in reason
+    assert "revision remains" not in reason
+
+
+def test_claim_audit_completeness_is_reported():
+    """Prompt revision 3 targeted it, so the summary has to show it."""
+    rows = build(perfect(), DEV_TYPES)
+    for row in rows[:7]:
+        row["verification"]["claim_audit_complete"] = True
+    result = evaluate_gate(rows, FakeRegistry(DEV_TYPES))
+
+    assert result.claim_audits_complete == 7
+    assert "claim audits complete" in "\n".join(format_gate(result))
