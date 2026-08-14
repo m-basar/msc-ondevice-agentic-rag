@@ -44,7 +44,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Iterable, Mapping, Sequence
 
-from ..verify.schema import asserts_uncited_quantity
+from ..verify.schema import ABSTENTION_TEXT, cites_a_passage
 from .aggregate import aggregate
 
 # The registry's vocabulary and the verifier's vocabulary are separate by
@@ -60,6 +60,14 @@ DECLARED_TO_INFERRED = {
 
 # Majority of the paraphrases in a family.
 MAJORITY = 2
+
+# The gate as originally declared, before pilots 02 and 03 were seen. Named
+# constants so the numbers can be read against the pre-registration rather
+# than reverse-engineered from branches.
+DETECTION_REQUIRED = 5              # of 6 genuine development families
+CONTROL_FALSE_POSITIVES_ALLOWED = 0  # of 2 compatible controls
+PARSE_FAILURES_ALLOWED = 2           # of the answers in the run
+CITATION_COMPLETENESS_TOLERANCE = 0.05  # against Arm B, at group level
 
 
 @dataclass(frozen=True)
@@ -124,60 +132,82 @@ class GateResult:
     # --- the decision --------------------------------------------------------
 
     def decision(self) -> tuple[str, str]:
-        """Return ``(decision, reason)`` from the pre-committed rule.
+        """Return ``(decision, reason)`` from the **originally declared** gate.
 
-        The thresholds are fractions of the families available rather than raw
-        counts, so the same rule reads correctly on the development split's six
-        genuine families and on any other split without being rewritten to suit
-        whatever number came out.
+        A weaker version of this ran for one commit: it permitted 4 of 6
+        detections, tolerated one control false positive, and ignored parse
+        failures and citation completeness entirely. Those numbers were written
+        after pilots 02 and 03, appeared in no document, and were looser than
+        what had been declared. Thresholds relaxed after seeing the data are
+        not a pre-registration, whatever they are called, so the declared ones
+        are restored:
+
+        =========================  ==================================
+        detection                  >= 5 of 6 genuine families
+        control false positives    0 of 2
+        parse failures             <= 2 of the answers
+        citation completeness      within 0.05 of Arm B
+        invalid revisions served   0
+        =========================  ==================================
+
+        Every condition must hold to PROCEED. Anything genuinely below the null
+        floor STOPs; everything between is a REVISE, and one revision remains.
         """
-        genuine = len(self.genuine)
-        controls = len(self.controls)
+        genuine, controls = len(self.genuine), len(self.controls)
+        answers = self.answers or 1
 
         if self.invalid_revisions_served:
             return ("DEFECT", (
                 f"{self.invalid_revisions_served} revised answers were served "
-                "with citations that do not resolve. The rejection guard did "
-                "not hold, so the detection figures describe a broken pipeline "
-                "and mean nothing until it is fixed."
+                "without a citation that resolves and without being the "
+                "abstention template. The serving path is broken, so the "
+                "detection figures describe a broken pipeline."
             ))
 
         if controls and self.controls_falsely_detected == controls:
             return ("STOP", (
                 f"every compatible control ({controls}/{controls}) was flagged "
                 "as a conflict. A verifier that flags everything cannot be "
-                "credited with the conflicts it flags, so detection on the "
-                "genuine families is uninformative."
+                "credited with the conflicts it flags."
             ))
 
-        if genuine and self.genuine_detected <= genuine // 6:
+        if genuine and self.genuine_detected == 0:
             return ("STOP", (
-                f"{self.genuine_detected}/{genuine} genuine families detected "
-                "by majority. This is the null result. Freeze the verifier and "
-                "report it, rather than revising the prompt again."
+                f"0/{genuine} genuine families detected by majority. This is "
+                "the null result. Freeze the verifier and report it, rather "
+                "than revising the prompt again."
             ))
 
-        if genuine and self.genuine_detected >= (2 * genuine) // 3:
-            if self.genuine_classified >= genuine // 2:
-                return ("PROCEED", (
-                    f"{self.genuine_detected}/{genuine} detected and "
-                    f"{self.genuine_classified}/{genuine} correctly classified, "
-                    f"with {self.controls_falsely_detected}/{controls} false "
-                    "positives on the controls."
-                ))
-            return ("REVISE", (
-                f"{self.genuine_detected}/{genuine} detected but only "
-                f"{self.genuine_classified}/{genuine} correctly classified. "
-                "Detection works and classification does not, which is a "
-                "prompt-shaped problem rather than a capability ceiling."
+        # The declared gate, every condition required.
+        unmet = []
+        if genuine and self.genuine_detected < DETECTION_REQUIRED:
+            unmet.append(f"detection {self.genuine_detected}/{genuine}, "
+                         f"needs {DETECTION_REQUIRED}")
+        if self.controls_falsely_detected > CONTROL_FALSE_POSITIVES_ALLOWED:
+            unmet.append(f"control false positives "
+                         f"{self.controls_falsely_detected}/{controls}, needs "
+                         f"{CONTROL_FALSE_POSITIVES_ALLOWED}")
+        if self.parse_failures > PARSE_FAILURES_ALLOWED:
+            unmet.append(f"parse failures {self.parse_failures}/{answers}, "
+                         f"needs at most {PARSE_FAILURES_ALLOWED}")
+        delta = self.citation_completeness_delta
+        if delta is not None and delta < -CITATION_COMPLETENESS_TOLERANCE:
+            unmet.append(f"citation completeness {delta:+.3f} against B, "
+                         f"needs no worse than "
+                         f"-{CITATION_COMPLETENESS_TOLERANCE}")
+
+        if not unmet:
+            return ("PROCEED", (
+                f"{self.genuine_detected}/{genuine} detected, "
+                f"{self.controls_falsely_detected}/{controls} control false "
+                f"positives, {self.parse_failures}/{answers} parse failures, "
+                "every declared condition met."
             ))
 
         return ("REVISE", (
-            f"{self.genuine_detected}/{genuine} genuine families detected. "
-            "Above the null floor and below the proceed threshold: one further "
-            "prompt revision is permitted, and it is the last one."
+            "the declared gate is not met: " + "; ".join(unmet) + ". "
+            "One prompt revision remains and it is the last one."
         ))
-
 
 def _get(record: Mapping[str, Any], dotted: str) -> Any:
     value: Any = record
@@ -197,18 +227,24 @@ def _invalid_revision_served(record: Mapping[str, Any]) -> bool:
     nothing. Reading the output instead means a fault anywhere in the serving
     path shows up here, which is how both defects so far were found.
 
-    The standard is the one the system rests on: an answer that states a figure
-    says which passage it came from. A revision citing evidence that was never
-    retrieved fails it too.
+    The standard is simple enough to state in one line: **every served revision
+    cites a passage that resolves, unless it is exactly the abstention
+    template.** No detection of assertions, no inspection of prose. Either the
+    answer points at evidence or it is the system's fixed refusal.
 
     This is a correctness check on the pipeline rather than a measurement of
     the model, so it is reported separately and vetoes the rest of the gate.
     """
     if not record.get("answer_revised") or record.get("revision_rejected"):
         return False  # not revised, or the guard held and the draft was served
-    if record.get("hallucinated_citations"):
-        return True
-    return asserts_uncited_quantity(str(record.get("answer") or ""))
+    served = str(record.get("answer") or "")
+    if served.strip() == ABSTENTION_TEXT:
+        return False  # the system's own words, which assert nothing
+    # Everything else that was served must cite a passage that resolves. Stated
+    # this way rather than as a list of things to detect: the previous version
+    # hunted for figures in prose and could not have caught an assertion
+    # phrased without digits.
+    return bool(record.get("hallucinated_citations")) or not cites_a_passage(served)
 
 
 def evaluate_gate(

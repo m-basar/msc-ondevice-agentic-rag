@@ -32,14 +32,15 @@ throughout.
 
 ## 2. Design
 
-**96 verifier calls.** 8 development families x 3 paraphrases x 2 models x 2
-evidence conditions, in **one block**.
+**288 verifier calls: three blocks of 96.** 8 development families x 3
+paraphrases x 2 models x 2 evidence conditions, run as **three complete
+blocks**.
 
-A block is one complete pass. Whether the protocol runs one block or three is
-decided by the reproducibility check in section 2a, and is currently one. If it
-becomes three, the decision rules are applied **independently to each block**
-and the three outcomes reported with their mean and range. Three blocks are
-three results, not 288 independent observations.
+The block count was set by the measurement in section 2a, not by preference.
+The decision rules are applied **independently to each block** and the three
+outcomes reported with their mean and range. Three blocks are **three results,
+not 288 independent observations**: calls within a block are not independent of
+each other, and pooling them would inflate every denominator in the analysis.
 
 ### Families
 
@@ -65,9 +66,10 @@ The two compatible controls are included in **every** condition. Detection
 figures on the genuine families are uninterpretable without them: a verifier
 that flags everything scores perfectly on conflicts.
 
-### 2a. Reproducibility, and what is actually known
+### 2a. Reproducibility: measured, and what it showed
 
-Not settled, and the first attempt to settle it was misread.
+The first attempt to settle this was misread, and both the error and the
+correction are recorded because the error decided a design.
 
 `seed: 42`, `temperature: 0.0`, one host, one Ollama build, one model store.
 A check repeated each of 12 recorded prompts three times **back to back** and
@@ -93,11 +95,41 @@ variability: 4 / 12**. It says nothing about whether a reported outcome moves,
 because a reordered JSON key or a reworded rationale changes the hash and
 changes no result.
 
-**Still open.** Pilots 02 and 03 differed on 24 of 41 raw outputs with
-byte-identical prompts. Pilot 02 predates option recording, so an options
-difference cannot be excluded from the record, and Arm D ran after A, B and C
-in pilot 02 and alone in pilot 03, so the preceding workload differed too.
-Neither is ruled out.
+**The corrected measurement.** 41 prompts, three complete passes in protocol
+order, replaying the model and options recorded in the run:
+
+| Outcome | pass 1 vs recorded | pass to pass |
+|---|---|---|
+| raw text | 41 / 41 | 26 / 41 |
+| **conflict detection** | **41 / 41** | **41 / 41** |
+| relationship | 41 / 41 | 38 / 41 |
+| claim verdicts | 41 / 41 | 35 / 41 |
+| parse status | 41 / 41 | 39 / 41 |
+| validation failures | 41 / 41 | 36 / 41 |
+| invented evidence | 41 / 41 | 40 / 41 |
+| revision served | 41 / 41 | 36 / 41 |
+| served answer | 41 / 41 | 36 / 41 |
+| citations | 41 / 41 | 38 / 41 |
+
+**Cross-session reproduction of a fresh prompt is exact on every outcome.**
+Within a session, block-level variability appears in the relationship label,
+the structural validation and the served answer.
+
+The accurate statement, and the one to use in the write-up:
+
+> Binary conflict detection was reproducible, while relationship labels,
+> structural validation and served-answer outcomes showed block-level
+> variability.
+
+Not "the verifier is unreproducible". The confirmatory metric did not move on a
+single prompt of 41; several secondary outcomes did, and they feed reported
+figures, which is why the pre-declared rule fires.
+
+Pilots 02 and 03 also differed on 24 of 41 raw outputs with byte-identical
+prompts. Pilot 02 predates option recording, so an options difference cannot be
+excluded from the record, and Arm D ran after A, B and C in pilot 02 and alone
+in pilot 03. Neither explanation is ruled out and neither needs to be: the
+protocol now runs blocks regardless.
 
 `scripts/check_determinism.py` now runs **complete passes in protocol order**,
 replays the options and model recorded in the run rather than the current

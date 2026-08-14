@@ -571,12 +571,17 @@ def parse(
 
     if failures or unwarranted:
         final_answer, revised = draft, False
-    elif is_abstention and not cites_a_passage(final or ""):
-        # The verifier found every claim unsupported and wrote a replacement
-        # citing nothing. The finding is respected; the wording is not. Serving
-        # the template rather than the model's prose removes the only route by
-        # which an abstention can carry an uncited assertion, and it does so
-        # without needing to detect one.
+    elif is_abstention:
+        # Whenever the verifier abstains, however it worded the replacement.
+        #
+        # The condition was previously "abstains AND cited nothing", which left
+        # the hole open from the other side: "the authorisation remains valid
+        # for two weeks [OPS-03#002]" carries a citation, passes, and asserts
+        # the very claim the verdict just called unsupported. Attaching a
+        # passage to an assertion the verifier does not believe is worse than
+        # asserting it bare, because it looks grounded.
+        #
+        # The finding is respected; the wording is not.
         final_answer = ABSTENTION_TEXT
         revised = final_answer != draft.strip()
     else:

@@ -201,6 +201,28 @@ def main() -> int:
         print(f"{field:<24}{f'{across_sessions}/{n}':>20}"
               f"{f'{within_session}/{n}':>16}{mark}")
 
+    # --- pairwise, to separate continuing drift from a cold-to-warm step ----
+    if args.repeats >= 3:
+        print(f"\n{'outcome':<24}{'pass 1 vs 2':>14}{'pass 2 vs 3':>14}")
+        print("-" * 52)
+        for field in OUTCOMES:
+            one_two = sum(observed[q][0][field] == observed[q][1][field]
+                          for q in recorded)
+            two_three = sum(observed[q][1][field] == observed[q][2][field]
+                            for q in recorded)
+            summary[field]["pass1_vs_pass2"] = one_two
+            summary[field]["pass2_vs_pass3"] = two_three
+            print(f"{field:<24}{f'{one_two}/{len(recorded)}':>14}"
+                  f"{f'{two_three}/{len(recorded)}':>14}")
+        raw = summary["raw_sha256"]
+        if raw["pass2_vs_pass3"] > raw["pass1_vs_pass2"]:
+            print("\n  2 vs 3 agrees more than 1 vs 2: consistent with a "
+                  "cold-to-warm transition")
+            print("  rather than continuing drift. Worth stating as such "
+                  "rather than as instability.")
+        elif raw["pass2_vs_pass3"] < raw["pass1_vs_pass2"]:
+            print("\n  Agreement does not settle after the first pass.")
+
     n = len(recorded)
     detection_stable = (summary["conflict_detected"]["stable_across_passes"] == n
                         and summary["conflict_detected"]["pass1_matches_recorded"] == n)

@@ -135,9 +135,10 @@ def test_the_design_matches_the_committed_document():
     assert MODELS == ("llama3.2:3b", "qwen2.5:3b")
     assert "phi3" not in " ".join(MODELS)
     assert CONDITIONS == ("full", "oracle_pair")
-    assert REPEATS == 1, "raise only if a reported outcome is shown to move"
-    assert "96 verifier calls" in text
+    assert REPEATS == 3, "set by the corrected reproducibility check"
+    assert "288 verifier calls" in text
     assert "complete passes in protocol order" in text
+    assert "three results" in text and "not 288 independent observations" in text
     for model in MODELS:
         assert model in text
 
@@ -148,7 +149,7 @@ def test_the_dry_run_reports_the_committed_call_count():
         capture_output=True, text=True, cwd=ROOT,
     )
     assert out.returncode == 0, out.stderr
-    assert "Calls       96" in out.stdout
+    assert "Calls       288" in out.stdout
     assert "Questions   24" in out.stdout
 
 
@@ -196,3 +197,145 @@ def test_cancelling_changes_do_not_look_stable():
               for n in (1, 2)]
     assert totals[0] == totals[1], "the totals are identical, which is the trap"
     assert stability(rows)["inferred_relationship"] == 0.0
+
+
+# --- the protocol is not changeable from the command line ---------------------
+
+
+def test_no_flag_can_change_the_committed_design():
+    """A protocol that can be reconfigured at the prompt was not pre-registered.
+
+    The flags would be reached for at exactly the moment the guard mattered.
+    Changing the design means editing the file, which the freeze check then
+    requires to be committed.
+    """
+    source = (ROOT / "scripts" / "verifier_protocol.py").read_text(encoding="utf-8")
+    for flag in ("--models", "--repeats", "--i-accept-a-defective-pipeline"):
+        assert f'add_argument("{flag}"' not in source, (
+            f"{flag} lets the committed design be bypassed"
+        )
+    # --dry-run stays: it runs nothing and changes nothing.
+    assert 'add_argument("--dry-run"' in source
+
+
+def test_git_failure_is_not_read_as_a_clean_tree(monkeypatch):
+    """The failure mode of the first version was "permit everything".
+
+    A failed git status returns empty stdout, which the guard read as a clean
+    working tree: the one answer that lets an unfrozen experiment run.
+    """
+    import subprocess as sp
+
+    import verifier_protocol
+
+    class Failed:
+        returncode = 128
+        stdout = ""
+        stderr = "fatal: not a git repository"
+
+    monkeypatch.setattr(sp, "run", lambda *a, **k: Failed())
+    with pytest.raises(SystemExit) as excinfo:
+        verifier_protocol.git("status", "--porcelain")
+    assert "failed with status 128" in str(excinfo.value)
+    assert "reads as a clean tree" in str(excinfo.value)
+
+
+# --- the design is validated before any call is made --------------------------
+
+
+def test_a_missing_family_stops_the_run():
+    """Seven families would still produce a full results file and a decision."""
+    from types import SimpleNamespace
+
+    import verifier_protocol
+
+    questions = [SimpleNamespace(family_id=f"F{i}", question_id=f"F{i}-Q{j}")
+                 for i in range(7) for j in range(3)]
+    registry = SimpleNamespace(by_id=lambda f: SimpleNamespace(is_conflict=True))
+    with pytest.raises(SystemExit) as excinfo:
+        verifier_protocol.validate_design(questions, registry)
+    assert "7 families" in str(excinfo.value)
+
+
+def test_a_family_with_two_paraphrases_stops_the_run():
+    from types import SimpleNamespace
+
+    import verifier_protocol
+
+    questions = [SimpleNamespace(family_id=f"F{i}", question_id=f"F{i}-Q{j}")
+                 for i in range(8) for j in range(3)]
+    questions = [q for q in questions if q.question_id != "F0-Q2"]
+    registry = SimpleNamespace(
+        by_id=lambda f: SimpleNamespace(is_conflict=f not in ("F6", "F7"))
+    )
+    with pytest.raises(SystemExit) as excinfo:
+        verifier_protocol.validate_design(questions, registry)
+    assert "exactly 3 paraphrases" in str(excinfo.value)
+
+
+def test_the_real_question_set_matches_the_design():
+    import verifier_protocol
+    from sme_assistant.evaluation.config import load_evaluation_config
+    from sme_assistant.evaluation.conflicts import load_conflicts
+    from sme_assistant.evaluation.question_set import load_question_set
+
+    evaluation = load_evaluation_config()
+    registry = load_conflicts(evaluation.path("conflicts"))
+    question_set = load_question_set(evaluation.path("question_set"))
+    questions = [q for q in question_set.split("dev") if q.family_id]
+    verifier_protocol.validate_design(questions, registry)  # must not raise
+
+
+# --- the decision rules are executed, not printed for a reader ----------------
+
+
+def block(model="llama3.2:3b", condition="full", block=1, detected=0,
+          classified=0, controls_false=0, genuine=6, controls=2):
+    return dict(model=model, condition=condition, block=block,
+                genuine_detected=detected, genuine_classified=classified,
+                genuine=genuine, controls_false=controls_false,
+                controls=controls, pair_absent=0)
+
+
+def test_r1_fires_on_the_null_result():
+    import verifier_protocol
+
+    rule, reason = verifier_protocol.apply_rules(
+        [block(m, c, b) for m in verifier_protocol.MODELS
+         for c in CONDITIONS for b in (1, 2, 3)], {})
+    assert rule.startswith("R1")
+    assert "null result" in reason
+
+
+def test_r0_refuses_to_credit_a_model_that_flags_every_control():
+    import verifier_protocol
+
+    entries = [block("llama3.2:3b", "full", b, detected=6, controls_false=2)
+               for b in (1, 2, 3)]
+    entries += [block("qwen2.5:3b", c, b) for c in CONDITIONS for b in (1, 2, 3)]
+    entries += [block("llama3.2:3b", "oracle_pair", b) for b in (1, 2, 3)]
+    rule, _ = verifier_protocol.apply_rules(entries, {})
+    assert not rule.startswith("R1"), "detection existed, so this is not the null"
+
+
+def test_r2_fires_when_the_oracle_condition_rescues_detection():
+    import verifier_protocol
+
+    entries = [block(m, "full", b, detected=1) for m in verifier_protocol.MODELS
+               for b in (1, 2, 3)]
+    entries += [block(m, "oracle_pair", b, detected=5, classified=5)
+                for m in verifier_protocol.MODELS for b in (1, 2, 3)]
+    rule, reason = verifier_protocol.apply_rules(entries, {})
+    assert rule.startswith("R2")
+    assert "retrieval finding" in reason
+
+
+def test_r4_separates_detection_from_classification():
+    import verifier_protocol
+
+    entries = [block(m, c, b, detected=5, classified=1)
+               for m in verifier_protocol.MODELS for c in CONDITIONS
+               for b in (1, 2, 3)]
+    rule, reason = verifier_protocol.apply_rules(entries, {})
+    assert rule.startswith("R4")
+    assert "revision 3 is permitted" in reason

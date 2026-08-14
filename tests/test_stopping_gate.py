@@ -201,16 +201,29 @@ def test_the_gate_reads_the_served_answer_not_the_decision():
     assert result.decision()[0] == "DEFECT"
 
 
-def test_a_served_abstention_that_states_no_figure_is_not_a_defect():
-    rows = build(perfect(), DEV_TYPES)
-    rows[0].update(
-        answer_revised=True, revision_rejected=False, has_valid_citation_ids=False,
-        answer="The evidence does not state a validity period.",
-    )
-    result = evaluate_gate(rows, FakeRegistry(DEV_TYPES))
+def test_only_the_exact_abstention_template_may_be_served_uncited():
+    """The gate's whole rule, in one sentence.
 
-    assert result.invalid_revisions_served == 0
-    assert result.decision()[0] == "PROCEED"
+    Every served revision cites a passage that resolves, unless it is exactly
+    the template. No detection of assertions, no reading of prose. Model-written
+    prose that merely resembles an abstention does not qualify: that is how "it
+    can be inferred that the 14-day validity period" reached a user.
+    """
+    from sme_assistant.verify.schema import ABSTENTION_TEXT
+
+    rows = build(perfect(), DEV_TYPES)
+    rows[0].update(answer_revised=True, revision_rejected=False,
+                   has_valid_citation_ids=False, answer=ABSTENTION_TEXT)
+    assert evaluate_gate(rows, FakeRegistry(DEV_TYPES)).invalid_revisions_served == 0
+
+    rows[0]["answer"] = "The evidence does not state a validity period."
+    assert evaluate_gate(rows, FakeRegistry(DEV_TYPES)).invalid_revisions_served == 1
+
+    rows[0]["answer"] = "It remains valid for two weeks [OPS-03#002]."
+    assert evaluate_gate(rows, FakeRegistry(DEV_TYPES)).invalid_revisions_served == 0, (
+        "a cited answer passes the gate; whether the verifier should have "
+        "served it is decided in schema.parse, not here"
+    )
 
 
 def test_a_rejected_revision_is_the_guard_working_not_a_defect():

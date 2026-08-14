@@ -1409,3 +1409,120 @@ evaluates the gate against the latest development Arm D run and refuses.
 
 Pilot 03's served-answer measurements are superseded by 1.7.6 and 1.7.7. Its
 detection result, zero on every genuine family, agrees with pilot 02's.
+
+---
+
+# Amendment 1.8 - 14 August 2026
+
+Made after the corrected reproducibility measurement and **before** the
+diagnostic protocol was run. The measurement was committed on its own, ahead of
+this amendment, so the evidence precedes the decision in the history and not
+only in the prose.
+
+## 1.8.1 The measurement
+
+41 prompts, three complete passes in protocol order, replaying the model and
+options recorded in pilot 03 rather than the current configuration.
+
+| Outcome | pass 1 vs recorded | pass to pass |
+|---|---|---|
+| raw text | 41 / 41 | 26 / 41 |
+| **conflict detection** | **41 / 41** | **41 / 41** |
+| relationship | 41 / 41 | 38 / 41 |
+| claim verdicts | 41 / 41 | 35 / 41 |
+| parse status | 41 / 41 | 39 / 41 |
+| validation failures | 41 / 41 | 36 / 41 |
+| invented evidence | 41 / 41 | 40 / 41 |
+| revision served | 41 / 41 | 36 / 41 |
+| served answer | 41 / 41 | 36 / 41 |
+| citations | 41 / 41 | 38 / 41 |
+
+**Cross-session reproduction of a fresh prompt is exact on every outcome.**
+
+The statement to use, and the only one supported:
+
+> Binary conflict detection was reproducible, while relationship labels,
+> structural validation and served-answer outcomes showed block-level
+> variability.
+
+Not "the verifier is unreproducible", which is what I said a day earlier on
+weaker evidence. The confirmatory metric did not move on a single prompt of 41.
+
+## 1.8.2 The pre-declared rule fires
+
+Secondary outcomes that feed reported figures do move, so the protocol becomes
+**three complete blocks of 96 calls**. R0 to R5 are applied independently to
+each block and the three outcomes reported with their mean and range.
+
+**288 calls are three results, not 288 observations.** Calls within a block are
+not independent of each other. Pooling them would inflate every denominator and
+present three runs as a sample of 288.
+
+## 1.8.3 The declared gate is restored
+
+Amendment 1.7.8 documented the thresholds that were in the code. It should have
+noticed that they were not the thresholds that had been declared. The code
+permitted 4 of 6 detections, tolerated one control false positive, and ignored
+parse failures and citation completeness entirely. All three are looser than
+what was promised, and all three were written after pilots 02 and 03.
+
+Documenting a weakened threshold is not the same as pre-registering it.
+Restored:
+
+| Condition | Requirement |
+|---|---|
+| Detection | >= 5 of 6 genuine families |
+| Control false positives | 0 of 2 |
+| Parse failures | <= 2 of the answers |
+| Citation completeness | within 0.05 of Arm B, at group level |
+| Invalid revisions served | 0 |
+
+Every condition must hold to PROCEED.
+
+## 1.8.4 The abstention template applies whenever the verifier abstains
+
+1.7.6 applied it only when the model also omitted citations, which left the
+hole open from the other side. "The authorisation remains valid for two weeks
+[OPS-03#002]" carries a citation, would have passed, and asserts the very claim
+the verdict just called unsupported. Attaching a passage to an assertion the
+verifier does not believe is worse than asserting it bare, because it looks
+grounded.
+
+The condition is now `is_abstention` alone.
+
+## 1.8.5 The gate's rule, in one sentence
+
+Every served revision cites a passage that resolves, unless it is exactly the
+abstention template. No detection of assertions, no inspection of prose.
+
+## 1.8.6 Safeguards that were decorative
+
+| Was | Now |
+|---|---|
+| `--models`, `--repeats` and an override flag on the protocol runner | removed; a design changeable from the command line was never pre-registered |
+| `git()` ignored the exit status | fails closed; a failed `git status` returns empty stdout, which read as a clean tree - the one answer that lets an unfrozen experiment run |
+| R0 to R5 in prose, a table printed beneath them | executed in code, per block |
+| Families with the pair absent counted | excluded, as section 3 always required |
+| Design assumed | 8 families and 3 paraphrases each asserted before any call |
+| Chunk ids and raw output recorded | question, draft, evidence text and hash, prompt and hash, effective options |
+
+## 1.8.7 Pilot 04
+
+Pilot 03's stored answers still contain the invalid served revision.
+Re-parsing them inside a diagnostic did not produce a clean recorded arm run,
+and the enforced precondition reads the recorded run. Pilot 04 replays Arm B's
+pilot 02 drafts again under the amended rules and must report zero invalid
+served revisions before the protocol runs.
+
+## State after this amendment
+
+| | Before 1.8 | After 1.8 |
+|---|---|---|
+| Reproducibility | unmeasured | **measured; detection stable, secondary outcomes vary** |
+| Protocol | 96, one block | **288, three blocks, rules per block** |
+| Gate thresholds | weakened post-pilot | **as declared** |
+| Abstention template | only when uncited | **whenever abstaining** |
+| Protocol overrides | three flags | **none** |
+| Git guard | failed open | **fails closed** |
+| Decision rules | prose | **executed** |
+| Tests | 419 | **428** |
