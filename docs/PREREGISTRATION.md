@@ -1904,3 +1904,116 @@ The defensible finding:
 | Tests | 437 | **442** |
 
 No test-split arm has been run. The verifier is not frozen.
+
+---
+
+# Amendment 1.12 - 14 August 2026
+
+The final development result. Prompt revision 3 was committed at `0f0111c`
+**before** pilot 06 ran. The budget is now exhausted.
+
+## 1.12.1 Pilot 06 against the declared gate
+
+Arm D, development split, 41 questions, Arm B's pilot 02 drafts replayed so
+only the verifier differs.
+
+| Declared condition | Required | Pilot 06 | |
+|---|---|---|---|
+| Genuine families detected | >= 5 / 6 | **4 / 6** | **FAIL** |
+| Control false positives | 0 / 2 | 0 / 2 | pass |
+| Parse failures | <= 2 | 0 / 41 | pass |
+| Citation completeness vs B | within 0.05 | **-0.009** | pass |
+| Structurally invalid revisions | 0 | 0 | pass |
+
+**Four of five conditions pass. Detection alone defeats the gate**, and no
+revisions remain. `DECISION: FAIL`.
+
+## 1.12.2 What revision 3 did and did not demonstrate
+
+It targeted one thing: the worked examples omitted the `claims` field the
+schema required.
+
+| | Pilot 05 | Pilot 06 |
+|---|---|---|
+| **Claim audits complete** | **0 / 41** | **41 / 41** |
+| Conflicts detected (families) | 2 / 6 | 4 / 6 |
+| Correctly classified | 1 / 6 | 2 / 6 |
+| Control false positives | 1 / 2 | 0 / 2 |
+
+Only the first line is attributable to revision 3. It is the quantity the
+change was aimed at, it moved from nothing to complete, and no other
+explanation is available.
+
+**Detection rose from 2/6 to 4/6 after revision 3. It is not claimed that
+revision 3 caused it.** The examples always demonstrated the relationship
+label correctly, so there is no mechanism connecting the change to detection,
+and n=1 either side. It is reported as a sequence, not a cause.
+
+## 1.12.3 Everything else pilot 06 shows
+
+* **Classification stayed weak: 2 / 6.** The verifier finds a disagreement more
+  often than it names its kind, and the two demand different behaviour.
+* **Eight of 35 answerable questions were falsely refused.** Of those, five had
+  every expected passage retrieved, two had part of it, one had no expectation
+  declared. The five are the verifier's error outright.
+* **None of the six unanswerable questions received the abstention.** The
+  system refuses answerable questions and answers unanswerable ones, which is
+  close to the opposite of the intended behaviour and bears directly on RQ3.
+* **Two invented evidence identifiers**, on CONF-05-Q2 (`GEN-04#001`) and
+  GAP-export-Q2 (`ANSWER_UNDER_REVIEW`, which is not an identifier at all).
+  Validation contained both: the draft was served in each case and neither
+  reached a user. Contained is not absent, and they are reported.
+
+## 1.12.4 False refusals are not a gate condition
+
+Amendment 1.9 added them to the unmet list. That put a condition into the
+declared gate after seeing the data the gate was judging, which is the move the
+pre-registration exists to prevent, and I made it while correcting someone
+else's reporting.
+
+Removed. The declared gate has five conditions and this is not one. The count
+is reported prominently because it matters to RQ3; it does not enter the
+verdict. It would not have changed this outcome, and it would have if detection
+had reached 5/6.
+
+## 1.12.5 The budget
+
+Three prompt revisions were available. All three are spent. Revision 3 was
+declared the last before it was made, and the gate no longer offers a REVISE
+verdict: `PROMPT_REVISIONS_REMAINING = 0` in the source, asserted by a test.
+
+**There is no pilot 07.** No further change to the prompt, the model, the
+retrieval settings, the corpus, the taxonomy or the serving rules.
+
+## 1.12.6 The defensible statement
+
+> A verification layer using `qwen2.5:3b` over `llama3.2:3b` drafts, with
+> revision-2 prompting corrected for a schema defect, six retrieved chunks and
+> `min_similarity: 0.30`, detected 4 of 6 genuine conflict families on the
+> development split against a pre-declared threshold of 5, correctly
+> classifying 2. It produced no false conflicts on the compatible controls, no
+> parse failures, and citation completeness within 0.009 of the unverified
+> baseline. It falsely refused 8 of 35 answerable questions and abstained on
+> none of the 6 unanswerable ones. **The layer did not meet its declared
+> development gate.**
+
+What is not claimed: that verification cannot work, that a larger model would
+fail, or that this is the ceiling for the approach. What was tested is one
+configuration, arrived at through a pre-registered model diagnostic and three
+declared prompt revisions.
+
+## 1.12.7 State
+
+No test-split arm has been run. The verifier is frozen next, at the
+configuration above, and the freeze is committed before any test run. The test
+split is evaluated **once**, and nothing is tuned from its results.
+
+| | |
+|---|---|
+| Verifier | `qwen2.5:3b` |
+| Generator | `llama3.2:3b` |
+| Prompt | revision 3, sha256 `2d3bdaae...` |
+| Retrieval | `top_k: 6`, `min_similarity: 0.30` |
+| Development verdict | **FAIL, 4/6 detection against 5/6 required** |
+| Revisions remaining | **0** |
+| Tests | 451 |
