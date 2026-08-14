@@ -2146,3 +2146,148 @@ negotiated later.
 | Unblinding flag denominator | items carrying the field, derived from the log |
 | Items judged before the flag existed | recorded as not asked, not as no |
 | Tests | 505 |
+
+---
+
+# Amendment 1.14 - 14 August 2026
+
+Manual scoring of the test split is complete: 272 items, one reviewer, blind.
+This amendment records what the scoring shows about itself. The rule in 1.14.4
+is fixed **before** the re-pass it governs is run.
+
+## 1.14.1 The three-point scale is reliable, and this is now measured
+
+The sheet contains 58 groups of byte-identical answers on the same question,
+covering 147 of the 272 items. Arm D replays Arm B's drafts, so verification
+that changes nothing leaves duplicates in the pool, and the system-written
+abstention template repeats across gaps.
+
+Every one of those groups was scored independently, blind, at separations of up
+to 250 items in a shuffled sheet.
+
+> **The rubric score agreed in 58 of 58 groups. There were no score
+> divergences at all.**
+
+That is an intra-rater reliability figure for conflict handling and answer
+correctness, measured on this data rather than assumed or cited from elsewhere.
+It is reported alongside the primary metric.
+
+It exists only because scoring was independent. Deduplicating would have saved
+about a third of the effort and produced agreement by construction, which
+measures nothing. The cost of the slower option bought the one number that
+tells a reader the manual scale was applied consistently.
+
+## 1.14.2 The `abstained` flag drifted, and drift is not noise
+
+Seven groups diverged. All seven are flags, not scores: six on `abstained` and
+one on `asserts_conflict`.
+
+The six are not scattered.
+
+| Question | marked as declining | not marked |
+|---|---|---|
+| GAP-redundancy-Q1 | 19, 207 | 264 |
+| GAP-maternity-Q2 | 60, 92 | 271 |
+| GAP-share-Q1 | 75 | 227, 244 |
+| SYN-damaged-order-end-to-end | 118 | 254 |
+| GAP-flexible-Q1 | 126 | 262 |
+| CONF-17-Q2 | 140, 193 | 263 |
+
+In **every** group the marked items come earlier in the sequence than the
+unmarked ones. Under random assignment that ordering has probability 0.003,
+about 1 in 324. The flag was applied less and less as the pass went on.
+
+**The visible six are a sample of an invisible population.** 125 of the 272
+items appear in no duplicate group, so the same drift there leaves no trace.
+The observable divergence rate is 6 of 58 groups, about **10%**, and that is the
+honest estimate of the error rate across the whole field.
+
+## 1.14.3 Why the scores survived and the flag did not
+
+The same reviewer, the same session, the same answers. The difference is what
+was being asked.
+
+The rubric score was the task. The flags were collected beside it, and a binary
+recorded while attention is on a three-point judgement is a secondary
+observation competing for the same attention. That is a property of the
+instrument, not of the reviewer, and it is the reason the fix below changes the
+instrument rather than asking for more care.
+
+**What this does not do is bias the arm comparison.** Sheet position is
+independent of arm: the order is a seeded shuffle over answers pooled from all
+four runs, fixed before any judgement. Drift with position therefore adds noise
+to H4 rather than a difference between arms. It degrades the measurement; it
+does not tilt it.
+
+## 1.14.4 The rule, fixed before the re-pass runs
+
+A second pass over all 272 items collects `abstained` and nothing else. One
+question per item: did this answer decline to answer? No rubric, no score, and
+the first pass's answer is not displayed, because showing it would anchor the
+second and produce agreement that measures suggestion.
+
+**The re-pass is presented in a different order**, seeded separately from the
+sheet. A second pass in the original order would drift at the same positions,
+the two would agree wrongly, and the agreement rate would report reliability
+the instrument does not have.
+
+Declared now, before the numbers exist:
+
+1. **The second pass is the reported value of `abstained`.** It is a focused
+   single-property judgement, which is the better instrument for this field.
+2. **The pass-to-pass agreement rate is reported as the reliability of that
+   field**, over all 272 items rather than the 147 that happened to repeat.
+   This replaces the 10% estimate with a measurement.
+3. **Neither pass is edited in the light of the other.** Both logs are kept.
+4. **The first pass's `abstained` values are not deleted**, and the
+   disagreements are reported by direction: the first pass drifted towards
+   under-marking, so the second finding abstentions the first missed is the
+   expected shape, and the reverse would need explaining.
+5. **The key stays sealed until the re-pass is complete.** `score_answers.py
+   unseal` refuses otherwise, so the arm mapping cannot reach the second pass.
+
+`asserts_conflict` is **not** re-passed. It diverged once in 58 groups, it
+carries no positional pattern, and re-collecting it after seeing that it is the
+cleaner field would be tuning the instrument to the result. The single
+divergence is reported.
+
+## 1.14.5 The unblinding self-report is zero, and that is not evidence
+
+The `i` flag was offered on 266 of the 272 items and raised on none.
+
+That figure is **not** reported as the blinding holding. Thirteen items carry
+`ABSTENTION_TEXT` verbatim and are identifiable on sight by anyone who has read
+the source, which the reviewer wrote; those thirteen were scored after the flag
+existed and none was flagged. The most likely reading is that the flag was not
+salient while attention was on the rubric, which is the same mechanism that
+produced the `abstained` drift.
+
+The reported statement is therefore: **no unblinding was self-reported, and 13
+items were identifiable in principle regardless.** Amendment 1.13.4 already
+declared that this rate bounds nothing in either direction, and that is why.
+
+Related: `uncertain` was raised on none of the 272 while 21 notes were written,
+which suggests `n` was used where `u` was meant. No claim of zero uncertainty is
+made from that field.
+
+## What was not changed
+
+* The review sheet and the key. Still byte-identical to the built files.
+* The first-pass judgement log. Not edited, not deleted, not back-filled.
+* The rubric scores. Nothing in this amendment touches them.
+* `SCORING_RUBRICS`, the frozen verifier, the arm definitions, the four test
+  runs.
+
+## 1.14.6 State
+
+| | |
+|---|---|
+| Manual scoring, first pass | **272 of 272 complete** |
+| Score agreement on repeats | **58 of 58 groups, no divergences** |
+| Flag divergences | 7 (6 `abstained`, 1 `asserts_conflict`) |
+| `abstained` drift | monotone with position, p = 0.003 |
+| Estimated `abstained` error rate | ~10%, from 6 of 58 detectable groups |
+| Unblinding self-reported | 0 of 266, **not evidence of blinding** |
+| Abstention re-pass | required, reported value, different order |
+| Key | sealed until the re-pass completes |
+| Tests | 524 |

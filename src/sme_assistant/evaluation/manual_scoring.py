@@ -63,6 +63,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import random
 import textwrap
 from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
@@ -300,8 +301,8 @@ class Judgement:
         }
 
 
-def append_judgement(path: Path | str, judgement: Judgement) -> Judgement:
-    """Append one judgement and force it to disk before returning.
+def _append_jsonl(path: Path | str, payload: Mapping[str, Any]) -> None:
+    """Append one record and force it to disk before returning.
 
     The flush and fsync are the whole point. Buffered writes mean a terminal
     closed at item 180 loses however much of the log the interpreter had not
@@ -309,11 +310,16 @@ def append_judgement(path: Path | str, judgement: Judgement) -> Judgement:
     """
     target = Path(path)
     target.parent.mkdir(parents=True, exist_ok=True)
-    stamped = judgement if judgement.recorded_at else replace(judgement, recorded_at=_now())
     with target.open("a", encoding="utf-8") as handle:
-        handle.write(json.dumps(stamped.to_dict()) + "\n")
+        handle.write(json.dumps(dict(payload)) + "\n")
         handle.flush()
         os.fsync(handle.fileno())
+
+
+def append_judgement(path: Path | str, judgement: Judgement) -> Judgement:
+    """Append one judgement, durably."""
+    stamped = judgement if judgement.recorded_at else replace(judgement, recorded_at=_now())
+    _append_jsonl(path, stamped.to_dict())
     return stamped
 
 
@@ -683,6 +689,199 @@ def next_unscored(
         if item.item not in judgements:
             return position
     return None
+
+
+# --- the abstention re-pass --------------------------------------------------
+#
+# The first pass collected ``abstained`` alongside a three-point rubric score.
+# The scores proved perfectly consistent across 58 blind repeats. The flag did
+# not: six duplicate groups disagreed, and in every one the items marked came
+# earlier in the sequence than the items not marked, which is drift rather than
+# noise. Half the sheet is singletons where the same drift leaves no trace, so
+# the observable disagreement rate is an estimate of an error rate that is
+# mostly invisible.
+#
+# The fix is a second pass that asks one question and nothing else. Reading an
+# answer for "did this decline?" is a different and much cheaper task than
+# scoring it against a rubric, and the flag stops competing for attention with
+# the judgement it was collected beside.
+
+ABSTENTION_ORDER_SEED = 4114
+
+
+@dataclass(frozen=True)
+class AbstentionJudgement:
+    """One answer to the single question the re-pass asks."""
+
+    item: int
+    question_id: str
+    abstained: bool
+    note: str = ""
+    revision: int = 0
+    recorded_at: str = ""
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "schema_version": SCHEMA_VERSION,
+            "pass": "abstention",
+            "item": self.item,
+            "question_id": self.question_id,
+            "abstained": self.abstained,
+            "note": self.note,
+            "revision": self.revision,
+            "recorded_at": self.recorded_at,
+        }
+
+
+def append_abstention(
+    path: Path | str, judgement: AbstentionJudgement
+) -> AbstentionJudgement:
+    stamped = judgement if judgement.recorded_at else replace(judgement, recorded_at=_now())
+    _append_jsonl(path, stamped.to_dict())
+    return stamped
+
+
+def load_abstention(path: Path | str) -> dict[int, AbstentionJudgement]:
+    source = Path(path)
+    if not source.exists():
+        return {}
+    current: dict[int, AbstentionJudgement] = {}
+    for number, line in enumerate(source.read_text(encoding="utf-8").splitlines(), 1):
+        if not line.strip():
+            continue
+        try:
+            record = json.loads(line)
+        except json.JSONDecodeError as exc:
+            raise ScoringError(f"{source} line {number} is not valid JSON: {exc}") from exc
+        current[int(record["item"])] = AbstentionJudgement(
+            item=int(record["item"]),
+            question_id=str(record.get("question_id", "")),
+            abstained=bool(record["abstained"]),
+            note=str(record.get("note", "")),
+            revision=int(record.get("revision", 0)),
+            recorded_at=str(record.get("recorded_at", "")),
+        )
+    return current
+
+
+def abstention_order(
+    items: Sequence[ReviewItem], *, seed: int = ABSTENTION_ORDER_SEED
+) -> tuple[ReviewItem, ...]:
+    """Present the re-pass in a different order from the first pass.
+
+    This is the point of the exercise. The first pass drifted with position, so
+    a second pass in the same order would drift at the same places, the two
+    would agree wrongly, and the agreement rate would report reliability the
+    instrument does not have. Re-ordering decorrelates any new drift from the
+    old, which is what makes the comparison worth making.
+
+    Item numbers are untouched, so the join back to the first pass, to the
+    sheet and to the key is unaffected.
+    """
+    shuffled = list(items)
+    random.Random(seed).shuffle(shuffled)
+    return tuple(shuffled)
+
+
+def render_abstention_item(
+    item: ReviewItem, *, position: int, total: int, decided: int
+) -> str:
+    """One question, no rubric, no score, and no sight of the first pass.
+
+    The first pass's answer is deliberately not displayed. Showing it would
+    anchor the second and produce agreement that measures suggestion rather
+    than reliability.
+    """
+    return "\n".join([
+        "",
+        _RULE,
+        f" Abstention pass  {position} of {total}".ljust(40) + f"decided {decided}",
+        _RULE,
+        "",
+        f"QUESTION  [{item.question_id}]",
+        _wrap(item.question),
+        "",
+        "ANSWER",
+        _wrap(item.answer),
+        "",
+        "  Did this answer decline to answer, rather than answering?",
+        "  y = declined      n = answered      (y? or n? to add a note)",
+        "",
+    ])
+
+
+ABSTENTION_HELP = """
+  y       the answer declines: it says the evidence does not support an
+          answer, or otherwise refuses rather than committing to one
+  n       the answer answers, however well or badly
+
+  y? n?   as above, and prompt for a note
+
+  commands:
+    s     skip, come back to it
+    b     back one item
+    p     redisplay
+    ?     this help
+    q     save and quit
+
+  Judge only whether it declined. Not whether declining was correct: that is
+  the rubric score, and it is already recorded.
+"""
+
+
+def parse_abstention_input(text: str) -> tuple[bool, bool]:
+    """Return (abstained, wants_note)."""
+    cleaned = "".join(text.split()).lower()
+    if not cleaned:
+        raise InputError("Nothing entered.")
+    wants_note = cleaned.endswith("?")
+    head = cleaned[:-1] if wants_note else cleaned
+    if head not in {"y", "n", "yes", "no"}:
+        raise InputError(f"{text.strip()!r} is not y or n.")
+    return head.startswith("y"), wants_note
+
+
+def abstention_agreement(
+    first: Mapping[int, Judgement], second: Mapping[int, AbstentionJudgement]
+) -> dict[str, Any]:
+    """How far the two passes agree on the one field they share.
+
+    This replaces an estimate with a measurement. The first pass could only be
+    checked where the sheet happened to repeat an answer, which was 147 of 272
+    items; the re-pass covers every item, so the disagreement rate is observed
+    rather than extrapolated from the half that was visible.
+
+    Which pass is reported is fixed in advance by amendment 1.14 and is not
+    decided here or from these numbers.
+    """
+    shared = sorted(set(first) & set(second))
+    disagreements = [
+        {
+            "item": n,
+            "question_id": second[n].question_id,
+            "first_pass": first[n].abstained,
+            "second_pass": second[n].abstained,
+        }
+        for n in shared
+        if first[n].abstained != second[n].abstained
+    ]
+    only_second = sum(1 for n in shared if second[n].abstained and not first[n].abstained)
+    return {
+        "compared": len(shared),
+        "first_pass_only": sorted(set(first) - set(second)),
+        "second_pass_only": sorted(set(second) - set(first)),
+        "agreed": len(shared) - len(disagreements),
+        "disagreed": len(disagreements),
+        "agreement_rate": (
+            (len(shared) - len(disagreements)) / len(shared) if shared else None
+        ),
+        # Direction matters. The first pass drifted towards under-marking, so a
+        # second pass finding abstentions the first missed is the expected
+        # shape, and the reverse would need explaining.
+        "missed_by_first_pass": only_second,
+        "missed_by_second_pass": len(disagreements) - only_second,
+        "disagreements": disagreements,
+    }
 
 
 def consistency_report(

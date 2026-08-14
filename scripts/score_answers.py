@@ -37,20 +37,29 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from sme_assistant.evaluation.config import load_evaluation_config  # noqa: E402
 from sme_assistant.evaluation.manual_scoring import (  # noqa: E402
+    ABSTENTION_HELP,
+    ABSTENTION_ORDER_SEED,
     HELP,
+    AbstentionJudgement,
     InputError,
     Judgement,
     ScoringError,
+    abstention_agreement,
+    abstention_order,
+    append_abstention,
     append_judgement,
     arm_signature_audit,
     consistency_report,
     describe_flags,
+    load_abstention,
     load_judgements,
     load_sheet,
     next_unscored,
     open_session,
+    parse_abstention_input,
     parse_score_input,
     progress,
+    render_abstention_item,
     render_item,
 )
 from sme_assistant.evaluation.question_set import load_question_set  # noqa: E402
@@ -59,6 +68,7 @@ from sme_assistant.evaluation.run_writer import read_run, write_review_sheet  # 
 DEFAULT_DIR = ROOT / "results" / "manual"
 DEFAULT_SHEET = DEFAULT_DIR / "review_sheet.jsonl"
 DEFAULT_JUDGEMENTS = DEFAULT_DIR / "judgements.jsonl"
+DEFAULT_ABSTENTION = DEFAULT_DIR / "abstention_pass.jsonl"
 DEFAULT_SESSION = DEFAULT_DIR / "session.json"
 
 
@@ -280,6 +290,145 @@ def command_score(args: argparse.Namespace) -> int:
 # --- status and consistency --------------------------------------------------
 
 
+def command_abstention(args: argparse.Namespace) -> int:
+    """The focused re-pass: one property, no rubric, a different order.
+
+    Recorded to its own log. The first pass is not edited and not shown, so the
+    two remain independently auditable and the second is not anchored to the
+    first.
+    """
+    sheet = Path(args.sheet)
+    items = load_sheet(sheet)
+    open_session(Path(args.session), sheet, item_count=len(items))
+
+    ordered = abstention_order(items, seed=args.order_seed)
+    log = Path(args.abstention_log)
+    decided = load_abstention(log)
+    total = len(ordered)
+
+    position = 1
+    for index, item in enumerate(ordered, start=1):
+        if item.item not in decided:
+            position = index
+            break
+    else:
+        print(f"\nAll {total} items already have an abstention judgement.")
+        return 0
+
+    print(f"\n{len(decided)} of {total} decided. Resuming at {position}.")
+    print("One question per item: did the answer decline? ? for help, q to quit.\n")
+
+    while True:
+        item = ordered[position - 1]
+        print(
+            render_abstention_item(
+                item, position=position, total=total, decided=len(decided)
+            )
+        )
+        try:
+            raw = input("declined? ").strip()
+        except (EOFError, KeyboardInterrupt):
+            print("\nStopped. Everything decided so far is on disk.")
+            break
+
+        lowered = raw.lower()
+        if lowered in {"q", "quit", "exit"}:
+            break
+        if lowered in {"?", "h", "help"}:
+            print(ABSTENTION_HELP)
+            continue
+        if lowered in {"p", ""}:
+            continue
+        if lowered == "s":
+            position = position + 1 if position < total else 1
+            continue
+        if lowered == "b":
+            position = position - 1 if position > 1 else total
+            continue
+
+        try:
+            abstained, wants_note = parse_abstention_input(raw)
+        except InputError as exc:
+            print(f"  {exc} Type ? for the input format.")
+            continue
+
+        note = ""
+        if wants_note:
+            try:
+                note = input("  note> ").strip()
+            except (EOFError, KeyboardInterrupt):
+                note = ""
+
+        previous = decided.get(item.item)
+        decided[item.item] = append_abstention(
+            log,
+            AbstentionJudgement(
+                item=item.item,
+                question_id=item.question_id,
+                abstained=abstained,
+                note=note,
+                revision=(previous.revision + 1) if previous else 0,
+            ),
+        )
+        print(f"  recorded {'declined' if abstained else 'answered'}")
+
+        following = next(
+            (
+                index
+                for index, candidate in enumerate(ordered, start=1)
+                if index > position and candidate.item not in decided
+            ),
+            None,
+        ) or next(
+            (
+                index
+                for index, candidate in enumerate(ordered, start=1)
+                if candidate.item not in decided
+            ),
+            None,
+        )
+        if following is None:
+            print(f"\nAll {total} items decided.")
+            break
+        position = following
+
+    print(f"\n  decided  {len(decided)} of {total}")
+    print(f"  log      {log}")
+    if len(decided) == total:
+        print("\nRun `agreement` to compare the two passes.")
+    return 0
+
+
+def command_agreement(args: argparse.Namespace) -> int:
+    first = load_judgements(Path(args.judgements))
+    second = load_abstention(Path(args.abstention_log))
+    if not second:
+        print("No abstention re-pass recorded yet. Run `abstention` first.",
+              file=sys.stderr)
+        return 1
+
+    report = abstention_agreement(first, second)
+    print(f"  items compared        {report['compared']}")
+    print(f"  agreed                {report['agreed']}")
+    print(f"  disagreed             {report['disagreed']}")
+    rate = report["agreement_rate"]
+    print(f"  agreement rate        " + ("n/a" if rate is None else f"{rate:.3f}"))
+    print(f"  missed by first pass  {report['missed_by_first_pass']}")
+    print(f"  missed by second pass {report['missed_by_second_pass']}")
+    if report["first_pass_only"]:
+        print(f"  not yet re-passed     {len(report['first_pass_only'])}")
+
+    for entry in report["disagreements"]:
+        print(f"    item {entry['item']:>4}  {entry['question_id']:<32}"
+              f"  first {entry['first_pass']}  second {entry['second_pass']}")
+
+    if args.output:
+        Path(args.output).parent.mkdir(parents=True, exist_ok=True)
+        Path(args.output).write_text(json.dumps(report, indent=2), encoding="utf-8")
+        print(f"\n  written to {args.output}")
+    return 0
+
+
 def command_status(args: argparse.Namespace) -> int:
     items = load_sheet(Path(args.sheet))
     judgements = load_judgements(Path(args.judgements))
@@ -352,6 +501,21 @@ def command_unseal(args: argparse.Namespace) -> int:
             file=sys.stderr,
         )
         return 1
+    # Amendment 1.14 makes the abstention re-pass part of scoring, so the key
+    # stays sealed until it is finished too. Unsealing between the passes would
+    # let the arm mapping reach the second one, which is the whole thing the
+    # ordering exists to prevent.
+    second = load_abstention(Path(args.abstention_log))
+    outstanding = [i.item for i in items if i.item not in second]
+    if outstanding:
+        print(
+            f"Refusing to unseal: the abstention re-pass has {len(outstanding)} of "
+            f"{len(items)} items outstanding.\nAmendment 1.14 makes it part of "
+            "scoring. Run `abstention` first.",
+            file=sys.stderr,
+        )
+        return 1
+
     if not args.i_have_finished_scoring:
         print(
             "Refusing to unseal without --i-have-finished-scoring.",
@@ -381,6 +545,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--sheet", default=str(DEFAULT_SHEET))
     parser.add_argument("--judgements", default=str(DEFAULT_JUDGEMENTS))
+    parser.add_argument("--abstention-log", default=str(DEFAULT_ABSTENTION))
     sub = parser.add_subparsers(dest="command", required=True)
 
     build = sub.add_parser("build", help="write the blinded review sheet")
@@ -393,6 +558,19 @@ def main(argv: list[str] | None = None) -> int:
     score.add_argument("--session", default=str(DEFAULT_SESSION))
     score.add_argument("--start", type=int, default=0, metavar="POSITION")
     score.set_defaults(func=command_score)
+
+    abstention = sub.add_parser(
+        "abstention", help="focused re-pass: did the answer decline, yes or no"
+    )
+    abstention.add_argument("--session", default=str(DEFAULT_SESSION))
+    abstention.add_argument("--order-seed", type=int, default=ABSTENTION_ORDER_SEED)
+    abstention.set_defaults(func=command_abstention)
+
+    agreement = sub.add_parser(
+        "agreement", help="compare the two passes on the abstention field"
+    )
+    agreement.add_argument("--output", metavar="PATH")
+    agreement.set_defaults(func=command_agreement)
 
     status = sub.add_parser("status", help="how far through the pass you are")
     status.set_defaults(func=command_status)

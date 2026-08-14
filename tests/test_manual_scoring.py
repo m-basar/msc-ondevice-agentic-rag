@@ -34,18 +34,25 @@ from score_answers import main  # noqa: E402
 from sme_assistant.common.config import load_config
 from sme_assistant.common.llm_client import MockClient
 from sme_assistant.evaluation.manual_scoring import (
+    AbstentionJudgement,
     InputError,
     Judgement,
     ScoringError,
+    abstention_agreement,
+    abstention_order,
+    append_abstention,
     append_judgement,
     arm_signature_audit,
     consistency_report,
+    load_abstention,
     load_judgements,
     load_sheet,
     next_unscored,
     open_session,
+    parse_abstention_input,
     parse_score_input,
     progress,
+    render_abstention_item,
     render_item,
 )
 from sme_assistant.evaluation.question_set import load_question_set
@@ -428,6 +435,144 @@ def test_identification_is_not_treated_as_a_scoring_disagreement(sheet, tmp_path
     assert consistency_report(items, load_judgements(log))["divergent"] == []
 
 
+# --- the abstention re-pass -------------------------------------------------
+
+
+def test_the_repass_uses_a_different_order(sheet):
+    """A second pass in the same order drifts at the same places.
+
+    The two would then agree wrongly and the agreement rate would report
+    reliability the instrument does not have.
+    """
+    items = load_sheet(sheet)
+    reordered = abstention_order(items, seed=7)
+    assert [i.item for i in reordered] != [i.item for i in items]
+    assert sorted(i.item for i in reordered) == sorted(i.item for i in items)
+
+
+def test_the_repass_order_is_reproducible(sheet):
+    items = load_sheet(sheet)
+    assert abstention_order(items, seed=7) == abstention_order(items, seed=7)
+
+
+def test_the_repass_screen_shows_no_rubric_and_no_first_pass_answer(sheet):
+    """Showing the first pass would anchor the second and measure suggestion
+    rather than reliability."""
+    item = load_sheet(sheet)[0]
+    rendered = render_abstention_item(item, position=1, total=4, decided=0)
+    assert item.answer in rendered
+    assert "RUBRIC" not in rendered
+    assert "system_" not in rendered
+    for criterion in item.scoring_criteria.values():
+        assert criterion not in rendered
+
+
+@pytest.mark.parametrize(
+    "text,expected", [("y", (True, False)), ("n", (False, False)),
+                      ("Y", (True, False)), ("yes", (True, False)),
+                      ("no", (False, False)), ("y?", (True, True)),
+                      ("n?", (False, True))],
+)
+def test_abstention_input_grammar(text, expected):
+    assert parse_abstention_input(text) == expected
+
+
+@pytest.mark.parametrize("text", ["", "2", "maybe", "yn", "?y"])
+def test_malformed_abstention_input_is_rejected(text):
+    with pytest.raises(InputError):
+        parse_abstention_input(text)
+
+
+def test_the_repass_is_recorded_to_its_own_log(tmp_path, sheet, monkeypatch):
+    """The first pass is not edited, so both remain independently auditable."""
+    judgements = tmp_path / "judgements.jsonl"
+    repass = tmp_path / "abstention.jsonl"
+    scripted_input(monkeypatch, ["2", "1", "0a", "2"])
+    main(["--sheet", str(sheet), "--judgements", str(judgements),
+          "score", "--session", str(tmp_path / "session.json")])
+    before = judgements.read_text(encoding="utf-8")
+
+    scripted_input(monkeypatch, ["y", "n", "y", "n"])
+    main(["--sheet", str(sheet), "--judgements", str(judgements),
+          "--abstention-log", str(repass),
+          "abstention", "--session", str(tmp_path / "session.json")])
+
+    assert judgements.read_text(encoding="utf-8") == before, "the first pass was edited"
+    assert len(load_abstention(repass)) == 4
+
+
+def test_the_repass_resumes_after_an_interruption(tmp_path, sheet, monkeypatch):
+    repass = tmp_path / "abstention.jsonl"
+    scripted_input(monkeypatch, ["y", "n", "q"])
+    main(["--sheet", str(sheet), "--judgements", str(tmp_path / "j.jsonl"),
+          "--abstention-log", str(repass),
+          "abstention", "--session", str(tmp_path / "session.json")])
+    assert len(load_abstention(repass)) == 2
+
+    scripted_input(monkeypatch, ["y", "y"])
+    main(["--sheet", str(sheet), "--judgements", str(tmp_path / "j.jsonl"),
+          "--abstention-log", str(repass),
+          "abstention", "--session", str(tmp_path / "session.json")])
+    assert len(load_abstention(repass)) == 4
+
+
+def test_agreement_measures_every_item_not_only_the_repeated_ones(tmp_path, sheet):
+    """The first pass could only be checked where the sheet repeated an answer.
+
+    The re-pass covers everything, so the disagreement rate is observed rather
+    than extrapolated from the half that was visible.
+    """
+    judgements = tmp_path / "judgements.jsonl"
+    repass = tmp_path / "abstention.jsonl"
+    for number, abstained in ((1, True), (2, False), (3, False), (4, False)):
+        append_judgement(judgements, Judgement(item=number, question_id="Q",
+                                               score=2, abstained=abstained))
+    for number, abstained in ((1, True), (2, False), (3, True), (4, False)):
+        append_abstention(repass, AbstentionJudgement(item=number,
+                                                      question_id="Q",
+                                                      abstained=abstained))
+
+    report = abstention_agreement(load_judgements(judgements), load_abstention(repass))
+    assert report["compared"] == 4
+    assert report["disagreed"] == 1
+    assert report["agreement_rate"] == pytest.approx(0.75)
+    assert report["missed_by_first_pass"] == 1
+    assert report["missed_by_second_pass"] == 0
+
+
+def test_unseal_refuses_until_the_repass_is_done_too(tmp_path, sheet, monkeypatch, capsys):
+    """Unsealing between the passes would let the arm mapping reach the second
+    one."""
+    key = sheet.with_name(sheet.stem + "_key.json")
+    key.write_text(json.dumps({"mapping": {"A": "system_C"}}), encoding="utf-8")
+    judgements = tmp_path / "judgements.jsonl"
+    repass = tmp_path / "abstention.jsonl"
+
+    scripted_input(monkeypatch, ["2", "2", "0", "2"])
+    main(["--sheet", str(sheet), "--judgements", str(judgements),
+          "score", "--session", str(tmp_path / "session.json")])
+    capsys.readouterr()
+
+    code = main(["--sheet", str(sheet), "--judgements", str(judgements),
+                 "--abstention-log", str(repass),
+                 "unseal", "--i-have-finished-scoring"])
+    assert code == 1
+    captured = capsys.readouterr()
+    assert "abstention re-pass" in captured.err
+    assert "system_C" not in captured.out
+
+    scripted_input(monkeypatch, ["y", "n", "y", "n"])
+    main(["--sheet", str(sheet), "--judgements", str(judgements),
+          "--abstention-log", str(repass),
+          "abstention", "--session", str(tmp_path / "session.json")])
+    capsys.readouterr()
+
+    assert main(["--sheet", str(sheet), "--judgements", str(judgements),
+                 "--abstention-log", str(repass),
+                 "unseal", "--i-have-finished-scoring"]) == 0
+    assert "system_C" in capsys.readouterr().out
+
+
 # --- consistency ------------------------------------------------------------
 
 
@@ -638,12 +783,18 @@ def test_unseal_prints_the_mapping_once_the_pass_is_complete(
     key.write_text(json.dumps({"mapping": {"A": "system_C", "B": "system_A"}}),
                    encoding="utf-8")
     log = tmp_path / "judgements.jsonl"
+    repass = tmp_path / "abstention.jsonl"
     scripted_input(monkeypatch, ["2", "2", "0", "2"])
     main(["--sheet", str(sheet), "--judgements", str(log),
           "score", "--session", str(tmp_path / "session.json")])
+    scripted_input(monkeypatch, ["y", "n", "y", "n"])
+    main(["--sheet", str(sheet), "--judgements", str(log),
+          "--abstention-log", str(repass),
+          "abstention", "--session", str(tmp_path / "session.json")])
     capsys.readouterr()
 
     assert main(["--sheet", str(sheet), "--judgements", str(log),
+                 "--abstention-log", str(repass),
                  "unseal", "--i-have-finished-scoring"]) == 0
     assert "system_C" in capsys.readouterr().out
 
