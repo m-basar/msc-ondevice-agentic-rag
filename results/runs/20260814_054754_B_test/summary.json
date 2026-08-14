@@ -1,0 +1,90 @@
+{
+  "run_id": "20260814_054754_B_test",
+  "arm": "B",
+  "split": "test",
+  "records": 68,
+  "started_at": "2026-08-14T05:47:54.402094+00:00",
+  "finished_at": "2026-08-14T05:49:08.309408+00:00",
+  "elapsed_seconds": 73.91,
+  "environment_at_end": {
+    "host": {
+      "hostname": "Basar",
+      "system": "Windows",
+      "release": "11",
+      "machine": "AMD64",
+      "processor": "AMD64 Family 25 Model 116 Stepping 1, AuthenticAMD",
+      "cpu_count": 16,
+      "python": "3.13.5",
+      "memory_total_gb": 15.29,
+      "memory_available_gb": 0.39,
+      "cpu_temperature_c": null,
+      "throttle": null,
+      "power_profile": "Balanced",
+      "gpus": [
+        {
+          "name": "NVIDIA GeForce RTX 4050 Laptop GPU",
+          "memory_total_mb": 6141,
+          "memory_used_mb": 3775,
+          "temperature_c": 73
+        }
+      ]
+    },
+    "ollama": {
+      "base_url": "http://localhost:11434",
+      "reachable": true,
+      "version": "0.32.6",
+      "models": [
+        {
+          "name": "gemma:2b",
+          "digest": "b50d6c999e59",
+          "size": 1678456656
+        },
+        {
+          "name": "llama3.2:1b",
+          "digest": "baf6a787fdff",
+          "size": 1321098329
+        },
+        {
+          "name": "llama3.2:3b",
+          "digest": "a80c4f17acd5",
+          "size": 2019393189
+        },
+        {
+          "name": "nomic-embed-text:latest",
+          "digest": "0a109f422b47",
+          "size": 274302450
+        },
+        {
+          "name": "phi3:mini",
+          "digest": "4f2222927938",
+          "size": 2176178913
+        },
+        {
+          "name": "qwen2.5:3b",
+          "digest": "357c53fb659c",
+          "size": 1929912432
+        }
+      ],
+      "model_store_fingerprint": "e39bc25c0edd",
+      "loaded": [
+        {
+          "name": "llama3.2:3b",
+          "size": 2554708622,
+          "size_vram": 2554708622,
+          "context_length": 4096
+        },
+        {
+          "name": "nomic-embed-text:latest",
+          "size": 323150151,
+          "size_vram": 323150151,
+          "context_length": 2048
+        }
+      ]
+    },
+    "gpu_offload_fraction": 1.0
+  },
+  "questions": 68,
+  "drafts_reused_from": null,
+  "drafts_replayed_from": null,
+  "isolates_verification": null
+}
