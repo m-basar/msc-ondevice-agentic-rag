@@ -530,6 +530,12 @@ def test_no_verdict_is_printed_when_the_rule_was_not_declared_for_the_split():
 
     assert "DECISION:" in with_decision
     assert "DECISION:" not in without
+    # The heading says which of the two the reader is looking at. A block
+    # titled "Stopping gate" with no verdict under it invites the reader to
+    # supply one, and the numbers beneath were not judged against any
+    # declared threshold.
+    assert with_decision.startswith("Stopping gate,")
+    assert without.startswith("Verifier diagnostics,")
     # The measurements survive either way; only the verdict is withheld.
     for line in ("genuine families detected", "controls falsely detected",
                  "claim audits complete", "grounded answer coverage"):
