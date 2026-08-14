@@ -105,15 +105,26 @@ def test_a_working_verifier_proceeds():
     assert result.decision()[0] == "PROCEED"
 
 
-def test_pilot_02_is_the_null_result():
-    """Zero detections is the case that must not be talked into a REVISE."""
+def test_zero_detection_stops_tuning_without_claiming_a_null_result():
+    """Zero detections must not be talked into a REVISE, nor overclaimed.
+
+    This test previously asserted `"null result" in reason` and kept passing
+    after the wording was corrected to "not yet a null result", because the
+    old phrase is a substring of its own negation. It was asserting the
+    opposite of what it was named for and nothing noticed.
+    """
     registry = FakeRegistry(DEV_TYPES)
     result = evaluate_gate(build(silent(), DEV_TYPES), registry)
 
     assert result.genuine_detected == 0
     decision, reason = result.decision()
     assert decision == "STOP"
-    assert "null result" in reason
+    # Stop tuning this configuration...
+    assert "Stop further prompt tuning for llama3.2:3b at k=6" in reason
+    assert "model/window diagnostic" in reason
+    # ...without claiming a finding about the approach or any other model.
+    assert "not yet a null result" in reason
+    assert "This is the null result" not in reason
 
 
 def test_a_verifier_that_flags_everything_cannot_be_credited():
@@ -393,3 +404,61 @@ def test_an_unmeasured_condition_is_not_a_passed_condition():
     decision, reason = result.decision()
     assert decision != "PROCEED"
     assert "UNAVAILABLE" in reason
+
+
+# --- evidence attribution is three-way, not lenient ---------------------------
+
+
+def refusal(qid, retrieved):
+    from sme_assistant.verify.schema import ABSTENTION_TEXT
+    return {
+        "question_id": qid, "group_id": "G", "family_id": None,
+        "category": "conflict", "answer": ABSTENTION_TEXT,
+        "answer_revised": True, "revision_rejected": False,
+        "hallucinated_citations": [], "has_valid_citation_ids": False,
+        "retrieval": {"results": [{"chunk_id": c} for c in retrieved]},
+        "verification": {"relationship": "no_relationship",
+                         "conflict_detected": False, "parse_failed": False,
+                         "served_abstention": True},
+    }
+
+
+def test_partial_retrieval_is_not_counted_as_having_the_evidence():
+    """The lenient rule overstated what the verifier can be blamed for.
+
+    TUNE-01-Q3 expected OPS-02#001 and CS-03#001 and received only the second.
+    Refusing on half a disagreement is not the same failure as refusing with
+    both sides in hand, and `wanted & got` called them identical.
+    """
+    expected = {
+        "Q-all": ("A#001", "B#001"),
+        "Q-partial": ("A#001", "B#001"),
+        "Q-none": ("A#001", "B#001"),
+        "Q-undeclared": (),
+    }
+    rows = [
+        refusal("Q-all", ["A#001", "B#001"]),
+        refusal("Q-partial", ["A#001"]),
+        refusal("Q-none", ["Z#009"]),
+        refusal("Q-undeclared", ["A#001"]),
+    ]
+    result = evaluate_gate(rows, FakeRegistry(DEV_TYPES), expected_chunks=expected)
+
+    assert result.answerable_falsely_refused == 4
+    assert result.false_refusals_all_evidence == 1
+    assert result.false_refusals_partial_evidence == 1
+    assert result.false_refusals_no_evidence == 1
+    assert result.false_refusals_no_expectation == 1
+
+
+def test_an_undeclared_expectation_is_not_evidence_of_anything():
+    """"All required evidence present" is vacuously true with none declared.
+
+    Folding those into the attributable count inflates it, which is what an
+    18 that silently included them would have done.
+    """
+    rows = [refusal("Q1", ["A#001"])]
+    result = evaluate_gate(rows, FakeRegistry(DEV_TYPES), expected_chunks={"Q1": ()})
+
+    assert result.false_refusals_all_evidence == 0
+    assert result.false_refusals_no_expectation == 1

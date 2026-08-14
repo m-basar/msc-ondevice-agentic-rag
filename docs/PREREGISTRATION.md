@@ -1595,10 +1595,27 @@ Corrections:
    recovered by matching prose.
 2. Abstention is split: **21 of 35 answerable questions falsely refused**, 4 of
    6 unanswerable correctly refused. "25 refusals" reports neither.
-   The 21 are split again by whether the evidence was there:
-   **20 had the expected passage retrieved** and were refused anyway, which is
-   the verifier's error; **1 did not**, and is attributable to retrieval. All
-   21 are system-level failures, but only the 20 are the verifier's.
+   The 21 are split again by how much of the expected evidence arrived. The
+   first version of this split used ``wanted & got`` - at least one expected
+   chunk - which is the retrieval evaluation's **lenient** rule, and reported
+   the result as "the verifier had the evidence". That overstates what can be
+   laid at the verifier's door.
+
+   | Expected evidence retrieved | False refusals |
+   |---|---|
+   | All | **16** - the verifier's error; it held everything and refused |
+   | Some, but not all | **2** - mixed; it refused on half a disagreement |
+   | None | **1** - retrieval's error, not the verifier's |
+   | None declared | **2** - nothing to check against |
+
+   The two partial cases are TUNE-01-Q3, which expected `OPS-02#001` and
+   `CS-03#001` and received only the second, and TUNE-03-Q3, which expected
+   `HR-04#003` and `HR-06#002` and received only the first.
+
+   All 21 are system-level failures. **16 are clearly the verifier's.** The 2
+   with no declared expectation satisfy "all required evidence present"
+   vacuously and are counted separately rather than folded into the 16, which
+   would have inflated the attributable figure to 18.
 3. Citation metrics are computed over claim-making answers, with abstentions
    counted separately.
 4. The gate field is `structurally_invalid_revisions_served`. It was never a

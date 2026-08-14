@@ -119,8 +119,10 @@ class GateResult:
     # A false refusal is only the verifier's error when the evidence was
     # actually in front of it. Where the expected passage was never retrieved,
     # the verifier was right that what it held did not support an answer.
-    false_refusals_with_evidence: int = 0
-    false_refusals_without_evidence: int = 0
+    false_refusals_all_evidence: int = 0
+    false_refusals_partial_evidence: int = 0
+    false_refusals_no_evidence: int = 0
+    false_refusals_no_expectation: int = 0
 
     # --- coverage, reported beside every conditional figure ------------------
 
@@ -333,14 +335,24 @@ def evaluate_gate(
     def _valid_citations(record: Mapping[str, Any]) -> bool:
         return bool(record.get("has_valid_citation_ids"))
 
-    def _had_the_evidence(record: Mapping[str, Any]) -> bool:
-        """Was the passage the question needs among the retrieved chunks?"""
+    def _evidence_state(record: Mapping[str, Any]) -> str:
+        """How much of the expected evidence reached the verifier.
+
+        Three states, not two. The first version used ``wanted & got`` - at
+        least one expected chunk - and reported the result as "the verifier had
+        the evidence". That is the retrieval evaluation's **lenient** rule, and
+        describing it as complete evidence overstates what can be attributed to
+        the verifier: TUNE-01-Q3 expected OPS-02#001 and CS-03#001 and received
+        only the second, so it was refusing on half a disagreement.
+        """
         wanted = set((expected_chunks or {}).get(record.get("question_id"), ()))
         if not wanted:
-            return True  # nothing declared, so retrieval cannot be blamed
+            return "no_expectation"
         got = {s.get("chunk_id") for s in
                (record.get("retrieval") or {}).get("results", [])}
-        return bool(wanted & got)
+        if wanted <= got:
+            return "all"
+        return "partial" if wanted & got else "none"
 
     claim_making = [r for r in records if not _abstained(r)]
     answerable = sum(r.get("category") != "unanswerable" for r in records)
@@ -352,7 +364,7 @@ def evaluate_gate(
     correctly_refused = abstentions - falsely_refused
     false_refusals = [r for r in records
                       if _abstained(r) and r.get("category") != "unanswerable"]
-    with_evidence = sum(_had_the_evidence(r) for r in false_refusals)
+    states = [_evidence_state(r) for r in false_refusals]
 
     grouped: dict[str, list[Mapping[str, Any]]] = {}
     for record in records:
@@ -400,8 +412,10 @@ def evaluate_gate(
         unanswerable_questions=unanswerable,
         claim_making_answers=len(claim_making),
         validly_cited_answers=sum(_valid_citations(r) for r in claim_making),
-        false_refusals_with_evidence=with_evidence,
-        false_refusals_without_evidence=len(false_refusals) - with_evidence,
+        false_refusals_all_evidence=states.count("all"),
+        false_refusals_partial_evidence=states.count("partial"),
+        false_refusals_no_evidence=states.count("none"),
+        false_refusals_no_expectation=states.count("no_expectation"),
         revisions_rejected=sum(bool(r.get("revision_rejected")) for r in records),
         citation_completeness_delta=delta,
         parse_failures=sum(
@@ -462,11 +476,15 @@ def format_gate(result: GateResult) -> Iterable[str]:
     yield (f"    unanswerable, correctly      "
            f"{result.unanswerable_correctly_refused:>3} / "
            f"{result.unanswerable_questions}")
-    yield ("      of the false refusals, the expected passage was:")
-    yield (f"        retrieved   {result.false_refusals_with_evidence:>3}"
-           "   the verifier had the evidence and refused anyway")
-    yield (f"        not retrieved {result.false_refusals_without_evidence:>3}"
-           "   attributable to retrieval, not the verifier")
+    yield "      of the false refusals, the expected evidence was:"
+    yield (f"        all retrieved      {result.false_refusals_all_evidence:>3}"
+           "   the verifier's error; it had everything")
+    yield (f"        partly retrieved   {result.false_refusals_partial_evidence:>3}"
+           "   mixed; it refused on half a disagreement")
+    yield (f"        none retrieved     {result.false_refusals_no_evidence:>3}"
+           "   retrieval's error, not the verifier's")
+    yield (f"        none declared      {result.false_refusals_no_expectation:>3}"
+           "   no expectation to check against")
     delta = result.citation_completeness_delta
     yield ("  citation completeness D-B      "
            + ("    n/a" if delta is None else f"{delta:+7.3f}") + "   (group level)")
