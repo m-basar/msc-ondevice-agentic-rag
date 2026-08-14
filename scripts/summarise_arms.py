@@ -42,6 +42,7 @@ from sme_assistant.evaluation.config import load_evaluation_config  # noqa: E402
 from sme_assistant.evaluation.conflicts import load_conflicts  # noqa: E402
 from sme_assistant.evaluation.question_set import load_question_set  # noqa: E402
 from sme_assistant.evaluation.run_writer import read_run  # noqa: E402
+from sme_assistant.verify.schema import ABSTENTION_TEXT  # noqa: E402
 from sme_assistant.evaluation.stopping_gate import (  # noqa: E402
     evaluate_gate,
     format_gate,
@@ -106,20 +107,54 @@ def main() -> int:
           f"{len(question_set.split(args.split).groups)} groups\n")
 
     # --- countable metrics, both levels -------------------------------------
+    # Citation metrics are computed over answers that make a claim. An
+    # abstention cites nothing by design, so including them measures how often
+    # the verifier refused and calls it citation validity: pilot 04's figure
+    # fell from 0.78 to 0.34 with no change in citation behaviour at all,
+    # because 25 answers had become the template.
+    def makes_a_claim(record):
+        verification = record.get("verification") or {}
+        if "served_abstention" in verification:
+            return not verification["served_abstention"]
+        return str(record.get("answer") or "").strip() != ABSTENTION_TEXT
+
+    claiming = {arm: [r for r in records if makes_a_claim(r)]
+                for arm, records in runs.items()}
+    abstained = {arm: len(records) - len(claiming[arm])
+                 for arm, records in runs.items()}
+    if any(abstained.values()):
+        print("Abstentions served (excluded from the citation metrics below, "
+              "since an abstention cites nothing by design):")
+        for arm, n in abstained.items():
+            print(f"  {arm}  {n}/{len(runs[arm])}")
+        print()
+
     metrics = [
         ("has_valid_citation_ids", "citation validity"),
         ("scoring.citation_support", "citation support"),
         ("scoring.citation_completeness", "citation completeness"),
-        ("refusal_heuristic", "refusal (heuristic)"),
+        # Kept, and no longer the abstention figure. It reads prose for
+        # refusal phrasing, and the template does not phrase itself the way a
+        # model does, so it reported 2 of 41 while 25 abstentions were served.
+        # The structural count in the gate below is the one to cite.
+        ("refusal_heuristic", "refusal (prose heuristic)"),
     ]
-    print(f"{'metric':<26} {'arm':<4} {'question':>9} {'group':>8} {'n groups':>9}")
+    print(f"{'metric':<26} {'arm':<4} {'question':>9} {'group':>8} {'n groups':>9}"
+          "   (claim-making answers only)")
     for key, label in metrics:
         for arm, records in runs.items():
-            result = aggregate(records, key)
+            scope = claiming[arm] if key != "refusal_heuristic" else records
+            result = aggregate(scope, key)
             q = "     -   " if result.question_level is None else f"{result.question_level:9.3f}"
             g = "    -   " if result.group_level is None else f"{result.group_level:8.3f}"
             print(f"{label:<26} {arm:<4} {q} {g} {result.group_count:9}")
         print()
+
+    if any(abstained.values()):
+        print("  The prose heuristic above under-counts by design: it matches "
+              "refusal wording,\n  and the abstention template does not phrase "
+              "itself as a model would. Cite the\n  structural abstention "
+              "count in the gate below instead.\n")
 
     # --- what the verifier said about itself --------------------------------
     for arm, records in runs.items():

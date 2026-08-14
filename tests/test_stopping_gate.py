@@ -88,8 +88,16 @@ def silent() -> dict[str, list[str]]:
 
 
 def test_a_working_verifier_proceeds():
+    """A baseline is required, because one declared condition compares to B.
+
+    Without Arm B the citation-completeness condition cannot be evaluated, and
+    the gate refuses to call an unmeasured condition met. That is the point of
+    the change: a condition silently skipped for want of data used to read as
+    a condition passed.
+    """
     registry = FakeRegistry(DEV_TYPES)
-    result = evaluate_gate(build(perfect(), DEV_TYPES), registry)
+    result = evaluate_gate(build(perfect(), DEV_TYPES), registry,
+                           baseline=build(perfect(), DEV_TYPES))
 
     assert (result.genuine_detected, len(result.genuine)) == (6, 6)
     assert result.genuine_classified == 6
@@ -131,7 +139,7 @@ def test_a_broken_revision_guard_vetoes_everything():
     rows[0]["hallucinated_citations"] = ["ZZ-99#003"]
     result = evaluate_gate(rows, FakeRegistry(DEV_TYPES))
 
-    assert result.invalid_revisions_served == 1
+    assert result.structurally_invalid_revisions_served == 1
     assert result.decision()[0] == "DEFECT"
 
 
@@ -197,7 +205,7 @@ def test_the_gate_reads_the_served_answer_not_the_decision():
     )
     result = evaluate_gate(rows, FakeRegistry(DEV_TYPES))
 
-    assert result.invalid_revisions_served == 1
+    assert result.structurally_invalid_revisions_served == 1
     assert result.decision()[0] == "DEFECT"
 
 
@@ -214,13 +222,19 @@ def test_only_the_exact_abstention_template_may_be_served_uncited():
     rows = build(perfect(), DEV_TYPES)
     rows[0].update(answer_revised=True, revision_rejected=False,
                    has_valid_citation_ids=False, answer=ABSTENTION_TEXT)
-    assert evaluate_gate(rows, FakeRegistry(DEV_TYPES)).invalid_revisions_served == 0
+    assert evaluate_gate(
+        rows, FakeRegistry(DEV_TYPES)
+    ).structurally_invalid_revisions_served == 0
 
     rows[0]["answer"] = "The evidence does not state a validity period."
-    assert evaluate_gate(rows, FakeRegistry(DEV_TYPES)).invalid_revisions_served == 1
+    assert evaluate_gate(
+        rows, FakeRegistry(DEV_TYPES)
+    ).structurally_invalid_revisions_served == 1
 
     rows[0]["answer"] = "It remains valid for two weeks [OPS-03#002]."
-    assert evaluate_gate(rows, FakeRegistry(DEV_TYPES)).invalid_revisions_served == 0, (
+    assert evaluate_gate(
+        rows, FakeRegistry(DEV_TYPES)
+    ).structurally_invalid_revisions_served == 0, (
         "a cited answer passes the gate; whether the verifier should have "
         "served it is decided in schema.parse, not here"
     )
@@ -230,9 +244,10 @@ def test_a_rejected_revision_is_the_guard_working_not_a_defect():
     rows = build(perfect(), DEV_TYPES)
     rows[0].update(answer_revised=True, revision_rejected=True,
                    hallucinated_citations=["ZZ-99#003"])
-    result = evaluate_gate(rows, FakeRegistry(DEV_TYPES))
+    result = evaluate_gate(rows, FakeRegistry(DEV_TYPES),
+                           baseline=build(perfect(), DEV_TYPES))
 
-    assert result.invalid_revisions_served == 0
+    assert result.structurally_invalid_revisions_served == 0
     assert result.revisions_rejected == 1
     assert result.decision()[0] == "PROCEED"
 
@@ -263,8 +278,12 @@ def test_the_printed_report_states_the_counts_and_the_decision():
 
     assert "genuine families detected        0 / 6" in text
     assert "controls falsely detected        0 / 2" in text
-    assert "invalid revisions served         0" in text
+    assert "structurally invalid revisions " in text
     assert "DECISION: STOP" in text
+    # The wording claims one model, one prompt, one window - not the approach.
+    assert "llama3.2:3b at k=6" in text
+    assert "not yet a null result" in text
+    assert "Abstention, counted structurally" in text
 
 
 def test_the_verifier_cannot_import_the_gate():
@@ -289,3 +308,88 @@ def test_the_verifier_cannot_import_the_gate():
             assert not any("evaluation" in n for n in names), (
                 f"{source.name} imports evaluation code: {names}"
             )
+
+
+# --- abstention is counted, split, and never read off the prose ---------------
+
+
+def test_abstention_is_split_by_whether_the_question_had_an_answer():
+    """Pilot 04 served 25 abstentions: 21 answerable, 4 unanswerable.
+
+    "25 refusals" is not a finding. Refusing 21 answerable questions is a
+    verifier error and refusing 4 unanswerable ones is correct behaviour, and
+    a single count reports neither.
+    """
+    from sme_assistant.verify.schema import ABSTENTION_TEXT
+
+    rows = build(silent(), DEV_TYPES)
+    for row in rows[:5]:
+        row["category"] = "conflict"
+        row["verification"]["served_abstention"] = True
+        row["answer"] = ABSTENTION_TEXT
+    for row in rows[5:7]:
+        row["category"] = "unanswerable"
+        row["verification"]["served_abstention"] = True
+        row["answer"] = ABSTENTION_TEXT
+    result = evaluate_gate(rows, FakeRegistry(DEV_TYPES))
+
+    assert result.abstentions_served == 7
+    assert result.answerable_falsely_refused == 5
+    assert result.unanswerable_correctly_refused == 2
+
+
+def test_a_false_refusal_is_reported_not_suppressed():
+    """The verifier judging a supported claim insufficient is a real failure.
+
+    The template stops it asserting something ungrounded. It does not make the
+    misjudgement disappear, and the gate must not let it.
+    """
+    from sme_assistant.verify.schema import ABSTENTION_TEXT
+
+    rows = build(perfect(), DEV_TYPES)
+    for row in rows[:4]:
+        row["category"] = "conflict"
+        row["verification"]["served_abstention"] = True
+        row["answer"] = ABSTENTION_TEXT
+    result = evaluate_gate(rows, FakeRegistry(DEV_TYPES))
+
+    assert result.structurally_invalid_revisions_served == 0, "structurally fine"
+    decision, reason = result.decision()
+    assert decision == "REVISE"
+    assert "answerable questions refused" in reason
+
+
+def test_every_unmet_condition_is_reported_not_just_the_first():
+    """A gate reporting one failure invites fixing that one and re-running."""
+    rows = build(silent(), DEV_TYPES)
+    rows[0]["verification"]["parse_failed"] = True
+    rows[1]["verification"]["parse_failed"] = True
+    rows[2]["verification"]["parse_failed"] = True
+    result = evaluate_gate(rows, FakeRegistry(DEV_TYPES))
+    assert result.parse_failures == 3
+
+    # Detection is zero here, so STOP fires first; the point is that when the
+    # declared gate is evaluated it lists everything, including what it could
+    # not evaluate.
+    partial = build(perfect(), DEV_TYPES)
+    partial[0]["verification"]["parse_failed"] = True
+    partial[1]["verification"]["parse_failed"] = True
+    partial[2]["verification"]["parse_failed"] = True
+    _, reason = evaluate_gate(partial, FakeRegistry(DEV_TYPES)).decision()
+    assert "parse failures" in reason
+    assert "UNAVAILABLE" in reason, "a condition that could not be checked is not a pass"
+
+
+def test_an_unmeasured_condition_is_not_a_passed_condition():
+    """No Arm B means citation completeness cannot be checked.
+
+    The gate says so and withholds PROCEED, rather than passing a condition it
+    never evaluated. Pilot 04 printed "n/a" against this line and returned a
+    decision as though every condition had been tested.
+    """
+    result = evaluate_gate(build(perfect(), DEV_TYPES), FakeRegistry(DEV_TYPES))
+
+    assert result.citation_completeness_delta is None
+    decision, reason = result.decision()
+    assert decision != "PROCEED"
+    assert "UNAVAILABLE" in reason

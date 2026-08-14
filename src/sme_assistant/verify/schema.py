@@ -264,6 +264,19 @@ class Verification:
     raw: str = ""
 
     @property
+    def served_abstention(self) -> bool:
+        """Was the fixed template served in place of an answer?
+
+        A structural fact about what the pipeline did, recorded rather than
+        recovered later by matching prose. Pilot 04 served 25 abstentions and
+        the refusal heuristic, which reads wording, reported 2: the template
+        does not phrase itself the way a model phrases a refusal. A measurement
+        that has to recognise its own output is a measurement waiting to be
+        wrong.
+        """
+        return self.final_answer.strip() == ABSTENTION_TEXT
+
+    @property
     def conflict_detected(self) -> bool:
         return self.relationship in CONFLICTING_RELATIONSHIPS
 
@@ -304,6 +317,7 @@ class Verification:
             "revision_rejected": self.revision_rejected,
             "revision_rejected_reason": self.revision_rejected_reason,
             "revision_warrant": list(self.revision_warrant),
+            "served_abstention": self.served_abstention,
             "validation_failures": list(self.validation_failures),
             "invented_ids": list(self.invented_ids),
             "parse_failed": self.parse_failed,

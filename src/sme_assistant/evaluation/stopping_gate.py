@@ -101,11 +101,19 @@ class GateResult:
 
     arm: str
     families: tuple[FamilyOutcome, ...]
-    invalid_revisions_served: int
+    structurally_invalid_revisions_served: int
     revisions_rejected: int
     citation_completeness_delta: float | None
     parse_failures: int
     answers: int
+    # Abstention is counted structurally and split by whether the question had
+    # an answer. "25 refusals" is not a finding; "21 answerable questions
+    # refused and 4 unanswerable ones correctly refused" is.
+    abstentions_served: int = 0
+    answerable_falsely_refused: int = 0
+    unanswerable_correctly_refused: int = 0
+    answerable_questions: int = 0
+    unanswerable_questions: int = 0
 
     # --- the five quantities ------------------------------------------------
 
@@ -156,9 +164,9 @@ class GateResult:
         genuine, controls = len(self.genuine), len(self.controls)
         answers = self.answers or 1
 
-        if self.invalid_revisions_served:
+        if self.structurally_invalid_revisions_served:
             return ("DEFECT", (
-                f"{self.invalid_revisions_served} revised answers were served "
+                f"{self.structurally_invalid_revisions_served} revised answers were served "
                 "without a citation that resolves and without being the "
                 "abstention template. The serving path is broken, so the "
                 "detection figures describe a broken pipeline."
@@ -172,10 +180,20 @@ class GateResult:
             ))
 
         if genuine and self.genuine_detected == 0:
+            # Deliberately narrow. "The null result" claimed more than the run
+            # supports: it reads as a finding about verification as an
+            # approach, when what was tested is one model, one prompt revision
+            # and one evidence window. Qwen has not been run, and neither has
+            # the isolated-pair condition.
             return ("STOP", (
-                f"0/{genuine} genuine families detected by majority. This is "
-                "the null result. Freeze the verifier and report it, rather "
-                "than revising the prompt again."
+                "Stop further prompt tuning for llama3.2:3b at k=6; run the "
+                "precommitted model/window diagnostic. "
+                f"0/{genuine} genuine families detected by majority"
+                + (f", and {self.answerable_falsely_refused} of "
+                   f"{self.answerable_questions} answerable questions were "
+                   "refused outright." if self.answerable_falsely_refused else ".")
+                + " This is not yet a null result for the verification "
+                "approach or for any other model."
             ))
 
         # The declared gate, every condition required.
@@ -195,6 +213,18 @@ class GateResult:
             unmet.append(f"citation completeness {delta:+.3f} against B, "
                          f"needs no worse than "
                          f"-{CITATION_COMPLETENESS_TOLERANCE}")
+
+        # Every condition, met or not, including the ones that cannot be
+        # evaluated. A gate that reports only the first failure invites the
+        # reader to fix that one and re-run, and a condition silently skipped
+        # for want of data reads as a condition passed.
+        if delta is None:
+            unmet.append("citation completeness against B: UNAVAILABLE, Arm B "
+                         "absent from the run index")
+        if self.answerable_falsely_refused:
+            unmet.append(f"answerable questions refused "
+                         f"{self.answerable_falsely_refused}/"
+                         f"{self.answerable_questions}")
 
         if not unmet:
             return ("PROCEED", (
@@ -218,7 +248,7 @@ def _get(record: Mapping[str, Any], dotted: str) -> Any:
     return value
 
 
-def _invalid_revision_served(record: Mapping[str, Any]) -> bool:
+def _structurally_invalid_revision_served(record: Mapping[str, Any]) -> bool:
     """A revision that reached the user while failing the grounding standard.
 
     Deliberately reads the **answer that was served**, not the decision that
@@ -260,6 +290,21 @@ def evaluate_gate(
     meaningful against the arm D reused drafts from, and it is reported at
     group level because that is the unit the protocol infers over.
     """
+    def _abstained(record: Mapping[str, Any]) -> bool:
+        verification = record.get("verification") or {}
+        if "served_abstention" in verification:
+            return bool(verification["served_abstention"])
+        # Runs recorded before the flag existed.
+        return str(record.get("answer") or "").strip() == ABSTENTION_TEXT
+
+    answerable = sum(r.get("category") != "unanswerable" for r in records)
+    unanswerable = len(records) - answerable
+    abstentions = sum(_abstained(r) for r in records)
+    falsely_refused = sum(
+        _abstained(r) and r.get("category") != "unanswerable" for r in records
+    )
+    correctly_refused = abstentions - falsely_refused
+
     grouped: dict[str, list[Mapping[str, Any]]] = {}
     for record in records:
         family_id = record.get("family_id")
@@ -296,7 +341,14 @@ def evaluate_gate(
     return GateResult(
         arm=arm,
         families=tuple(families),
-        invalid_revisions_served=sum(_invalid_revision_served(r) for r in records),
+        structurally_invalid_revisions_served=sum(
+            _structurally_invalid_revision_served(r) for r in records
+        ),
+        abstentions_served=abstentions,
+        answerable_falsely_refused=falsely_refused,
+        unanswerable_correctly_refused=correctly_refused,
+        answerable_questions=answerable,
+        unanswerable_questions=unanswerable,
         revisions_rejected=sum(bool(r.get("revision_rejected")) for r in records),
         citation_completeness_delta=delta,
         parse_failures=sum(
@@ -325,8 +377,21 @@ def format_gate(result: GateResult) -> Iterable[str]:
     yield f"  genuine families detected      {result.genuine_detected:>3} / {genuine}"
     yield f"  genuine families classified    {result.genuine_classified:>3} / {genuine}"
     yield f"  controls falsely detected      {result.controls_falsely_detected:>3} / {controls}"
-    yield f"  invalid revisions served       {result.invalid_revisions_served:>3}"
+    yield ("  structurally invalid revisions "
+           f"{result.structurally_invalid_revisions_served:>3}"
+           "   (citations resolve, or the template)")
     yield f"    (revisions rejected by guard {result.revisions_rejected:>3})"
+    yield ""
+    yield "  Abstention, counted structurally rather than read off the prose:"
+    yield (f"    served                       {result.abstentions_served:>3}"
+           f" / {result.answers}")
+    yield (f"    answerable, falsely refused  "
+           f"{result.answerable_falsely_refused:>3} / {result.answerable_questions}"
+           + ("   <-- verifier error, not suppressed"
+              if result.answerable_falsely_refused else ""))
+    yield (f"    unanswerable, correctly      "
+           f"{result.unanswerable_correctly_refused:>3} / "
+           f"{result.unanswerable_questions}")
     delta = result.citation_completeness_delta
     yield ("  citation completeness D-B      "
            + ("    n/a" if delta is None else f"{delta:+7.3f}") + "   (group level)")

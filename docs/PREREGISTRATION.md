@@ -1526,3 +1526,98 @@ served revisions before the protocol runs.
 | Git guard | failed open | **fails closed** |
 | Decision rules | prose | **executed** |
 | Tests | 419 | **428** |
+
+---
+
+# Amendment 1.9 - 14 August 2026
+
+Pilot 04 passed structural containment and, in doing so, exposed a measurement
+defect created by amendment 1.8 itself.
+
+## 1.9.1 What pilot 04 actually shows
+
+| Check | Result |
+|---|---|
+| Structurally invalid revisions | **0** - pass |
+| Genuine families detected | **0 / 6** - fail |
+| Compatible false positives | **0 / 2** - pass |
+| Parse failures | **3 / 41** - exceeds the declared limit of 2 |
+| Citation completeness against B | **unavailable** - Arm B absent |
+
+All **25 served revisions are the abstention template**. There is not one
+substantive corrected answer in the run. Fifteen of the eighteen
+genuine-conflict questions were refused, along with correct drafts including
+the mileage rate and the dishwasher answer.
+
+That is a real verifier failure: the model judged supported claims
+insufficient. The template stops it asserting something ungrounded; it does not
+make the misjudgement disappear, and nothing here suppresses it.
+
+## 1.9.2 The measurement defect 1.8 introduced
+
+Serving a template changed three reported figures for reasons that have nothing
+to do with what they claim to measure.
+
+| Figure | Reported | Actual |
+|---|---|---|
+| Citation validity | 0.342 | **0.875** over answers that make a claim |
+| Refusal | 2 / 41 | **25 / 41** served abstentions |
+| "Invalid revisions" | 0 | 0 **structurally**; 21 semantically wrong |
+
+An abstention cites nothing by design, so including abstentions in citation
+validity measures how often the verifier refused and prints it under the
+heading of citation behaviour. The prose refusal heuristic missed the template
+entirely, because the template does not phrase itself the way a model phrases a
+refusal - a measurement that has to recognise its own output.
+
+Corrections:
+
+1. `served_abstention` is recorded **structurally** on the verification, not
+   recovered by matching prose.
+2. Abstention is split: **21 of 35 answerable questions falsely refused**, 4 of
+   6 unanswerable correctly refused. "25 refusals" reports neither.
+3. Citation metrics are computed over claim-making answers, with abstentions
+   counted separately.
+4. The gate field is `structurally_invalid_revisions_served`. It was never a
+   semantic check and the name implied it was.
+5. The gate reports **every** unmet condition, including parse failures and any
+   it could not evaluate. A condition skipped for want of data used to read as
+   a condition passed, so a missing Arm B now withholds PROCEED rather than
+   being silently absent from the verdict.
+
+## 1.9.3 The conclusion, at the width the evidence supports
+
+The STOP wording said "this is the null result. Freeze the verifier and report
+it." That claims a finding about verification as an approach. What was tested is
+one model, one prompt revision, one evidence window. Qwen has not been run and
+neither has the isolated-pair condition.
+
+The gate now says:
+
+> Stop further prompt tuning for llama3.2:3b at k=6; run the precommitted
+> model/window diagnostic.
+
+And the defensible statement of the result is:
+
+> `llama3.2:3b`, revision-2 prompting and six chunks failed the development
+> gate through zero conflict detection and extensive false abstention.
+
+Not a null result for Qwen, and not for the verification approach.
+
+## 1.9.4 No further changes before the diagnostic
+
+The verifier prompt and the serving rule are frozen as they stand. Both have
+been changed twice in two days, each time for a good reason, and a third change
+before the diagnostic would mean the diagnostic tested something that had never
+been measured end to end.
+
+## State after this amendment
+
+| | Before 1.9 | After 1.9 |
+|---|---|---|
+| Abstention | inferred from prose | **recorded structurally, split by answerability** |
+| Citation validity | 0.342, abstentions included | **0.875, claim-making answers** |
+| Gate field name | `invalid_revisions_served` | **`structurally_invalid_revisions_served`** |
+| Unmet conditions | first failure only | **all, including unevaluable ones** |
+| STOP wording | "the null result" | **one model, one prompt, one window** |
+| Tests | 428 | **432** |
