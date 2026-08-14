@@ -1,32 +1,24 @@
 {
-  "frozen_at": "2026-08-13T10:26:40.262311+00:00",
+  "frozen_at": "2026-08-14T05:43:45.564493+00:00",
   "git": {
     "available": true,
-    "commit": "1b144a2f57a59f06e94bbfa60f487f88440f2ede",
-    "commit_short": "1b144a2f57a5",
+    "commit": "c483b370d7c6de5411c1caa0206085245c55f2ba",
+    "commit_short": "c483b370d7c6",
     "branch": "main",
-    "dirty": true,
-    "dirty_files": [
-      ".gitignore",
-      "src/sme_assistant/verify/schema.py",
-      "tests/test_verifier.py",
-      "scripts/freeze_verifier.py",
-      "scripts/run_arms.py",
-      "scripts/summarise_arms.py",
-      "tests/test_run_arms.py"
-    ]
+    "dirty": false,
+    "dirty_files": []
   },
-  "working_tree_clean": false,
-  "prompt_sha256": "a7665aa59b68af707b9b1bb01219762a844c448e97ad3ec0caa8c90ac2e94d8b",
-  "prompt_characters": 2523,
+  "working_tree_clean": true,
+  "prompt_sha256": "2d3bdaaed41f5607f27cfa3d92db528a71976144ef0902918cacc91ed61c6682",
+  "prompt_characters": 3726,
   "models": {
     "generation": {
       "tag": "llama3.2:3b",
-      "digest": null
+      "digest": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72"
     },
     "verification": {
-      "tag": "llama3.2:3b",
-      "digest": null
+      "tag": "qwen2.5:3b",
+      "digest": "357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b"
     }
   },
   "generation_options": {
@@ -38,7 +30,9 @@
   "verification_options": {
     "seed": 42,
     "temperature": 0.0,
-    "num_predict": 700
+    "num_predict": 700,
+    "num_ctx": 4096,
+    "_note": "num_ctx is stated explicitly from 13 August 2026. It was previously absent here but never missing at the call: OllamaClient.generate starts from the generation block and merges verification options over it, so 4096 was always in force. Stating it removes the dependence on that inheritance."
   },
   "confidence_policy": {
     "_note": "Runtime confidence policy. A separate scoring-side policy describes what should happen and is applied only when results are marked. Reading that one here would let the system consult the answer key about its own certainty.",
@@ -54,11 +48,45 @@
     "top_k": 6,
     "min_similarity": 0.3
   },
-  "config_sha256": "313a2abcbf4cdcfb5c0a148fc669b7ec8fd0e3866b0a896e4f8ddcfaa27e052f",
+  "config_sha256": "6d0ba647a17ea7b9c06afa1b80915308536a9efd3e483f9ccd2c1db64e959068",
   "backend": {
     "base_url": "http://localhost:11434",
-    "reachable": false,
-    "error": "<urlopen error [Errno 111] Connection refused>"
+    "reachable": true,
+    "version": "0.32.6",
+    "models": [
+      {
+        "name": "gemma:2b",
+        "digest": "b50d6c999e59",
+        "size": 1678456656
+      },
+      {
+        "name": "llama3.2:1b",
+        "digest": "baf6a787fdff",
+        "size": 1321098329
+      },
+      {
+        "name": "llama3.2:3b",
+        "digest": "a80c4f17acd5",
+        "size": 2019393189
+      },
+      {
+        "name": "nomic-embed-text:latest",
+        "digest": "0a109f422b47",
+        "size": 274302450
+      },
+      {
+        "name": "phi3:mini",
+        "digest": "4f2222927938",
+        "size": 2176178913
+      },
+      {
+        "name": "qwen2.5:3b",
+        "digest": "357c53fb659c",
+        "size": 1929912432
+      }
+    ],
+    "model_store_fingerprint": "e39bc25c0edd",
+    "loaded": []
   },
   "declaration": "The verifier frozen here is the one developed against the eight development families, six of them conflicts and two of them compatible negative controls. No test-split arm had been run when this record was written. Any change to the prompt, the models or these options after this point invalidates the freeze and must be recorded as a pre-registration amendment."
 }
