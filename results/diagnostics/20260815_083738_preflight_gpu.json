@@ -1,0 +1,116 @@
+{
+  "checked_at": "2026-08-15T08:37:23.555882+00:00",
+  "requested_placement": "gpu",
+  "synthetic_prompt": "ping",
+  "uses_test_questions": false,
+  "stages": [
+    {
+      "model": "llama3.2:3b",
+      "endpoint": "/api/generate",
+      "expected_placement": "gpu",
+      "unload_wait": {
+        "cleared": true,
+        "elapsed_seconds": 0.025,
+        "successful_observations": 1,
+        "transient_errors": [],
+        "remaining": [],
+        "models_loaded": [],
+        "timeout_seconds": 30.0,
+        "poll_interval_seconds": 0.25
+      },
+      "loaded_after_eviction": [],
+      "options_applied": {
+        "num_gpu": -1
+      },
+      "load_keep_alive": "10m",
+      "loaded_after_synthetic_call": [
+        "llama3.2:3b"
+      ],
+      "vram_bytes": {
+        "llama3.2:3b": 2554708622
+      },
+      "observed_placement": "gpu"
+    },
+    {
+      "model": "qwen2.5:3b",
+      "endpoint": "/api/generate",
+      "expected_placement": "gpu",
+      "unload_wait": {
+        "cleared": true,
+        "elapsed_seconds": 0.001,
+        "successful_observations": 1,
+        "transient_errors": [],
+        "remaining": [],
+        "models_loaded": [
+          "llama3.2:3b"
+        ],
+        "timeout_seconds": 30.0,
+        "poll_interval_seconds": 0.25
+      },
+      "loaded_after_eviction": [],
+      "options_applied": {
+        "num_gpu": -1
+      },
+      "load_keep_alive": "10m",
+      "loaded_after_synthetic_call": [
+        "qwen2.5:3b",
+        "llama3.2:3b"
+      ],
+      "vram_bytes": {
+        "qwen2.5:3b": 2159374499,
+        "llama3.2:3b": 2554708622
+      },
+      "observed_placement": "gpu"
+    },
+    {
+      "model": "nomic-embed-text",
+      "endpoint": "/api/embeddings",
+      "expected_placement": "cpu",
+      "unload_wait": {
+        "cleared": true,
+        "elapsed_seconds": 0.045,
+        "successful_observations": 1,
+        "transient_errors": [],
+        "remaining": [],
+        "models_loaded": [
+          "qwen2.5:3b",
+          "llama3.2:3b"
+        ],
+        "timeout_seconds": 30.0,
+        "poll_interval_seconds": 0.25
+      },
+      "loaded_after_eviction": [],
+      "options_applied": {
+        "num_gpu": 0
+      },
+      "load_keep_alive": "10m",
+      "loaded_after_synthetic_call": [
+        "nomic-embed-text:latest",
+        "qwen2.5:3b",
+        "llama3.2:3b"
+      ],
+      "vram_bytes": {
+        "nomic-embed-text:latest": 0,
+        "qwen2.5:3b": 2159374499,
+        "llama3.2:3b": 2554708622
+      },
+      "observed_placement": "cpu"
+    }
+  ],
+  "result": "pass",
+  "cleanup_wait": {
+    "cleared": true,
+    "elapsed_seconds": 10.36,
+    "successful_observations": 40,
+    "transient_errors": [],
+    "remaining": [],
+    "models_loaded": [],
+    "timeout_seconds": 30.0,
+    "poll_interval_seconds": 0.25
+  },
+  "models_loaded_at_exit": [],
+  "project_models_remaining": [],
+  "project_cleanup_complete": true,
+  "clean_exit": true,
+  "cleanup_errors": []
+}
