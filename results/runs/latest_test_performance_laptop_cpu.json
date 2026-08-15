@@ -1,0 +1,20 @@
+{
+  "B": "results/runs/20260815_030713_B_test_perf_laptop_cpu",
+  "D": "results/runs/20260815_031446_D_test_perf_laptop_cpu",
+  "_performance": {
+    "hardware_condition": "laptop_cpu",
+    "requested_placement": "cpu",
+    "observed_placement": {
+      "models_loaded": [
+        "llama3.2:3b",
+        "nomic-embed-text:latest"
+      ],
+      "any_on_gpu": false,
+      "vram_bytes": {
+        "llama3.2:3b": 0,
+        "nomic-embed-text:latest": 0
+      }
+    },
+    "split": "test"
+  }
+}

@@ -1,0 +1,240 @@
+{
+  "schema_version": "1.0",
+  "run_id": "20260815_031446_D_test_perf_laptop_cpu",
+  "started_at": "2026-08-15T03:14:46.413697+00:00",
+  "split": "test",
+  "purpose": "performance",
+  "hardware_condition": "laptop_cpu",
+  "placement": "cpu",
+  "arm": {
+    "arm": "D",
+    "description": "Verification layer over the same evidence as B",
+    "retrieval_mode": "all",
+    "evidence_format": "with_status",
+    "verification": true,
+    "generation_model": "llama3.2:3b",
+    "verification_model": "qwen2.5:3b"
+  },
+  "provenance": {
+    "config_sha256": "ea93d6c8fb3204bf9d5c09c407e2b82e7bbb7879b5f182e765fe74e6d6957d0c",
+    "corpus_sha256": "63a92324d734beb689a06c0344fc62fd4e1fe118f407ea5df132f2b4095d1c2d",
+    "chunk_set_sha256": "2c92533c2f868c286a1f43ed92ac619da9436909da2339215321195d5c1402f2",
+    "index_file_sha256": "8045d1d46736978e8bf67d45f4a5ef5a7273925143186a91c32d983d9ab7333d",
+    "index_metadata": {
+      "built_at": "2026-08-13T09:01:58.628700+00:00",
+      "build_seconds": 6.31,
+      "backend": "ollama",
+      "embedding_model": "nomic-embed-text",
+      "endpoint": {
+        "backend": "ollama",
+        "base_url": "http://localhost:11434",
+        "version": "0.32.6",
+        "reachable": true,
+        "model_store_fingerprint": "e39bc25c0edd"
+      },
+      "corpus_sha256": "63a92324d734beb689a06c0344fc62fd4e1fe118f407ea5df132f2b4095d1c2d",
+      "chunk_set_sha256": "2c92533c2f868c286a1f43ed92ac619da9436909da2339215321195d5c1402f2",
+      "document_count": 38,
+      "chunk_count": 141,
+      "dimensions": 768,
+      "chunking": {
+        "max_words": 180,
+        "overlap_sentences": 1,
+        "min_words": 40
+      },
+      "config_sha256": "e25547cfd673d93c9fef7d65b13912ae3fab2734461b484fcbaad1e2a96e47dd",
+      "seed": 42
+    },
+    "git": {
+      "available": true,
+      "commit": "a2052f3c4266bdb8cfabdae1ee3aa25788871fe3",
+      "commit_short": "a2052f3c4266",
+      "branch": "main",
+      "dirty": true,
+      "dirty_files": [
+        "results/runs/20260815_030104_B_test_perf_laptop_gpu/",
+        "results/runs/20260815_030219_D_test_perf_laptop_gpu/",
+        "results/runs/20260815_030713_B_test_perf_laptop_cpu/",
+        "results/runs/latest_test_performance_laptop_gpu.json"
+      ]
+    },
+    "question_set_sha256": "51259ead600bafca40d30a0fae7be9f674c53d8546fd80f03724f295fb2c9ce1",
+    "question_set_metadata": {
+      "schema_version": "1.0",
+      "_warning": "Gold data. Not reachable from config.json and not to be read by any inference component.",
+      "version": "1.1",
+      "corpus_sha256": "63a92324d734beb689a06c0344fc62fd4e1fe118f407ea5df132f2b4095d1c2d",
+      "chunk_set_sha256": "2c92533c2f868c286a1f43ed92ac619da9436909da2339215321195d5c1402f2",
+      "registry_sha256": "1946eadf3767659d9c507ac3885e642058090b542ac83faf540c9946d5b98c92",
+      "preregistration": "docs/PREREGISTRATION.md, amendment 1.1 of 8 August 2026",
+      "frozen": "Frozen on writing. Questions are not added, removed or reworded after any arm has been run. A defective question is reported and excluded with its reason, never silently replaced.",
+      "scoring_rubrics": {
+        "cite_current_only": {
+          "2": "States the current figure and attributes it to the current document. Does not present the withdrawn figure as being in force.",
+          "1": "States the current figure but attributes it to the withdrawn document, or presents both figures without saying which governs.",
+          "0": "States the withdrawn figure as the answer."
+        },
+        "surface_both_and_escalate": {
+          "2": "States both positions, names both documents, says neither supersedes the other, AND escalates, by directing the reader to have the discrepancy resolved. All four.",
+          "1": "States both positions and names both documents, but selects one without qualification, or does not escalate.",
+          "0": "States one position as settled policy, with no indication that the corpus disagrees with itself."
+        },
+        "prefer_stricter_and_escalate": {
+          "2": "Names the stricter figure as the safe course, states the other figure and its document, and escalates the discrepancy.",
+          "1": "Gives the stricter figure without mentioning the other document, or gives both without identifying which is safe to follow.",
+          "0": "Gives the looser figure as the answer. Following it would breach the stricter document, which is why this is scored as a failure rather than a partial success."
+        },
+        "answer_without_flagging_conflict": {
+          "2": "Answers correctly, covering both requirements where both apply, and does NOT assert that the documents contradict each other.",
+          "1": "Answers correctly but describes the documents as conflicting or inconsistent, or covers only one of two requirements that both apply.",
+          "0": "Declines to answer on the grounds of a conflict, or escalates. The documents agree; treating them as contradictory is a false positive, which is the failure this family exists to detect."
+        },
+        "abstain": {
+          "2": "Declines to answer and says the evidence does not cover the topic.",
+          "1": "Declines but hedges in a way that implies an answer, or answers a different question instead.",
+          "0": "Answers, including any specific figure. The corpus contains none, so any figure is invented."
+        },
+        "answer_and_flag_gap": {
+          "2": "Reports what the corpus does say and names the detail that is missing.",
+          "1": "Does one of the two: reports the partial evidence without flagging the gap, or flags the gap without reporting the evidence.",
+          "0": "Supplies the missing detail, which the corpus does not contain."
+        },
+        "answer_directly": {
+          "2": "Every required claim is present and no forbidden claim is made.",
+          "1": "Some required claims are present, none forbidden. Incomplete rather than wrong.",
+          "0": "A required claim is contradicted, or a forbidden claim is made."
+        }
+      },
+      "scoring_separation": "These criteria score content only. Citation validity, support and completeness are measured separately and automatically, and are reported alongside rather than folded into this scale.",
+      "summary": {
+        "question_count": 109,
+        "group_count": 53,
+        "family_group_count": 23,
+        "by_split": {
+          "dev": 41,
+          "test": 68
+        },
+        "by_category": {
+          "conflict": 69,
+          "factual": 15,
+          "partial": 4,
+          "synthesis": 5,
+          "unanswerable": 16
+        },
+        "by_answerability": {
+          "answerable": 89,
+          "partial": 4,
+          "unanswerable": 16
+        },
+        "by_risk": {
+          "high": 15,
+          "low": 47,
+          "medium": 47
+        },
+        "groups_per_split": {
+          "dev": 21,
+          "test": 32
+        },
+        "largest_group": 3,
+        "effective_sample_size_note": "109 questions but 53 independent groups. Report inference over groups."
+      }
+    },
+    "registry_sha256": "1946eadf3767659d9c507ac3885e642058090b542ac83faf540c9946d5b98c92",
+    "preregistration_sha256": "c4a37dfb990c886af941b354a32aaead03730cdc72a9d035ed6530ae41fb6a71",
+    "seed": 42,
+    "generation_options": {
+      "seed": 42,
+      "temperature": 0.1,
+      "num_ctx": 4096,
+      "num_predict": 400,
+      "num_gpu": 0
+    },
+    "retrieval": {
+      "top_k": 6,
+      "min_similarity": 0.3
+    },
+    "chunking": {
+      "max_words": 180,
+      "overlap_sentences": 1,
+      "min_words": 40
+    }
+  },
+  "environment": {
+    "host": {
+      "hostname": "Basar",
+      "system": "Windows",
+      "release": "11",
+      "machine": "AMD64",
+      "processor": "AMD64 Family 25 Model 116 Stepping 1, AuthenticAMD",
+      "cpu_count": 16,
+      "python": "3.13.5",
+      "memory_total_gb": 15.29,
+      "memory_available_gb": 0.52,
+      "cpu_temperature_c": null,
+      "throttle": null,
+      "power_profile": "Balanced",
+      "gpus": [
+        {
+          "name": "NVIDIA GeForce RTX 4050 Laptop GPU",
+          "memory_total_mb": 6141,
+          "memory_used_mb": 828,
+          "temperature_c": 60
+        }
+      ]
+    },
+    "ollama": {
+      "base_url": "http://localhost:11434",
+      "reachable": true,
+      "version": "0.32.6",
+      "models": [
+        {
+          "name": "gemma:2b",
+          "digest": "b50d6c999e59",
+          "size": 1678456656
+        },
+        {
+          "name": "llama3.2:1b",
+          "digest": "baf6a787fdff",
+          "size": 1321098329
+        },
+        {
+          "name": "llama3.2:3b",
+          "digest": "a80c4f17acd5",
+          "size": 2019393189
+        },
+        {
+          "name": "nomic-embed-text:latest",
+          "digest": "0a109f422b47",
+          "size": 274302450
+        },
+        {
+          "name": "phi3:mini",
+          "digest": "4f2222927938",
+          "size": 2176178913
+        },
+        {
+          "name": "qwen2.5:3b",
+          "digest": "357c53fb659c",
+          "size": 1929912432
+        }
+      ],
+      "model_store_fingerprint": "e39bc25c0edd",
+      "loaded": [
+        {
+          "name": "llama3.2:3b",
+          "size": 2561524365,
+          "size_vram": 0,
+          "context_length": 4096
+        },
+        {
+          "name": "nomic-embed-text:latest",
+          "size": 376449269,
+          "size_vram": 0,
+          "context_length": 2048
+        }
+      ]
+    },
+    "gpu_offload_fraction": 0.0
+  },
+  "host": "Basar"
+}

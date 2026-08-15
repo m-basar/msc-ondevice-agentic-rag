@@ -1,0 +1,20 @@
+{
+  "B": "results/runs/20260815_030104_B_test_perf_laptop_gpu",
+  "D": "results/runs/20260815_030219_D_test_perf_laptop_gpu",
+  "_performance": {
+    "hardware_condition": "laptop_gpu",
+    "requested_placement": "gpu",
+    "observed_placement": {
+      "models_loaded": [
+        "llama3.2:3b",
+        "nomic-embed-text:latest"
+      ],
+      "any_on_gpu": true,
+      "vram_bytes": {
+        "llama3.2:3b": 2554708622,
+        "nomic-embed-text:latest": 0
+      }
+    },
+    "split": "test"
+  }
+}
