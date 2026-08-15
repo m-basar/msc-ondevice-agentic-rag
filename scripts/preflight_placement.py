@@ -48,15 +48,40 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from sme_assistant.common.config import load_config  # noqa: E402
-from sme_assistant.common.llm_client import LLMError, OllamaClient  # noqa: E402
+from sme_assistant.common.llm_client import (  # noqa: E402
+    LLMError,
+    OllamaClient,
+    canonical_model_name,
+)
 
 #: A prompt that is not a test question and asserts nothing about the corpus.
 SYNTHETIC_PROMPT = "ping"
 
 
+def resident_names(observed: dict) -> set[str]:
+    """Loaded model names, canonicalised. Amendment 1.21."""
+    return {canonical_model_name(n) for n in (observed.get("models_loaded") or [])}
+
+
+def vram_for(observed: dict, model: str):
+    """VRAM for a model, matched canonically rather than by exact string."""
+    wanted = canonical_model_name(model)
+    for name, value in (observed.get("vram_bytes") or {}).items():
+        if canonical_model_name(name) == wanted:
+            return value
+    return None
+
+
 def check_model(client: OllamaClient, model: str, *, embedding: bool,
-                expected: str) -> dict:
-    """One evict, load, observe, evict cycle for a single model."""
+                expected: str, placement: str) -> dict:
+    """One evict, load, observe cycle for a single model.
+
+    The caller is responsible for the final eviction, which happens in a
+    ``finally`` block so that a failure part way through still cleans up.
+    Amendment 1.21: the previous version unloaded at the end of this function,
+    so any raise above that line left the model resident, contradicting 1.20's
+    promise that nothing is left loaded.
+    """
     stage: dict = {"model": model, "endpoint":
                    "/api/embeddings" if embedding else "/api/generate",
                    "expected_placement": expected}
@@ -64,7 +89,7 @@ def check_model(client: OllamaClient, model: str, *, embedding: bool,
     client.unload(model, embedding=embedding)
     after_evict = client.observed_placement()
     stage["loaded_after_eviction"] = after_evict["models_loaded"]
-    if model in (after_evict["models_loaded"] or []):
+    if canonical_model_name(model) in resident_names(after_evict):
         raise LLMError(
             f"{model} is still resident after an eviction through "
             f"{stage['endpoint']}. Eviction is not taking effect, so a run "
@@ -72,21 +97,32 @@ def check_model(client: OllamaClient, model: str, *, embedding: bool,
         )
 
     if embedding:
+        # EMBEDDING_OPTIONS already pins num_gpu to 0.
         client.embed(SYNTHETIC_PROMPT)
     else:
-        client.generate(SYNTHETIC_PROMPT, model=model,
-                        options={"num_predict": 1})
+        # Amendment 1.21. The placement must be *applied*, not merely observed.
+        # Without num_gpu the server picks a device and the check becomes a
+        # report of whatever Ollama chose rather than a test of the condition.
+        client.generate(
+            SYNTHETIC_PROMPT, model=model,
+            options={"num_predict": 1,
+                     "num_gpu": 0 if placement == "cpu" else -1},
+        )
+    stage["options_applied"] = (
+        {"num_gpu": 0} if embedding
+        else {"num_gpu": 0 if placement == "cpu" else -1}
+    )
 
     after_load = client.observed_placement()
     stage["loaded_after_synthetic_call"] = after_load["models_loaded"]
     stage["vram_bytes"] = after_load["vram_bytes"]
 
-    if model not in (after_load["models_loaded"] or []):
+    if canonical_model_name(model) not in resident_names(after_load):
         raise LLMError(
             f"{model} is not resident after a synthetic call, so its placement "
             "cannot be observed."
         )
-    vram = after_load["vram_bytes"].get(model)
+    vram = vram_for(after_load, model)
     if not isinstance(vram, (int, float)):
         raise LLMError(
             f"/api/ps reported {model} without a numeric size_vram, so its "
@@ -99,9 +135,6 @@ def check_model(client: OllamaClient, model: str, *, embedding: bool,
             f"{model} loaded onto {seen} but {expected} was expected "
             f"(size_vram {vram})."
         )
-
-    client.unload(model, embedding=embedding)
-    stage["evicted_after_check"] = True
     return stage
 
 
@@ -138,22 +171,43 @@ def main(argv: list[str] | None = None) -> int:
             print(f"  checking {model} ({'embedding' if embedding else 'generate'}) "
                   f"-> expecting {expected}")
             report["stages"].append(
-                check_model(client, model, embedding=embedding, expected=expected)
+                check_model(client, model, embedding=embedding, expected=expected,
+                            placement=args.placement)
             )
             print(f"    confirmed on {report['stages'][-1]['observed_placement']}")
-        final = client.observed_placement()
-        report["loaded_at_exit"] = final["models_loaded"]
-        report["clean_exit"] = not final["models_loaded"]
-        if final["models_loaded"]:
-            raise LLMError(
-                f"models remain loaded at exit: {final['models_loaded']}. A "
-                "preflight that leaves a model resident warms the next run."
-            )
         report["result"] = "pass"
     except LLMError as exc:
         report["result"] = "fail"
         report["error"] = str(exc)
         print(f"\n  PREFLIGHT FAILED: {exc}", file=sys.stderr)
+    finally:
+        # Amendment 1.21. Cleanup is unconditional. A failure part way through
+        # previously jumped straight to the handler with a model still loaded,
+        # which is exactly the warm state 1.20 promised never to leave behind.
+        cleanup_errors = []
+        for model, embedding, _ in models:
+            try:
+                client.unload(model, embedding=embedding)
+            except Exception as exc:  # pragma: no cover - network dependent
+                cleanup_errors.append(f"{model}: {exc}")
+        try:
+            final = client.observed_placement()
+            report["loaded_at_exit"] = final["models_loaded"]
+            report["clean_exit"] = not final["models_loaded"]
+        except Exception as exc:  # pragma: no cover - network dependent
+            report["loaded_at_exit"] = None
+            report["clean_exit"] = False
+            cleanup_errors.append(f"residency unreadable at exit: {exc}")
+        report["cleanup_errors"] = cleanup_errors
+        # Exit residency is recorded whatever happened, and a dirty exit is a
+        # failure in its own right even when every model check passed.
+        if report.get("result") == "pass" and not report.get("clean_exit"):
+            report["result"] = "fail"
+            report["error"] = (
+                f"models remain loaded at exit: {report['loaded_at_exit']}. A "
+                "preflight that leaves a model resident warms the next run."
+            )
+            print(f"\n  PREFLIGHT FAILED: {report['error']}", file=sys.stderr)
 
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)

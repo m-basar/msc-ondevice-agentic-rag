@@ -3083,3 +3083,112 @@ edit is a correction, and the correction lives here and in 1.19.8.
 | Hardware runs | 6, unchanged |
 | H5 | **still unread** |
 | Tests | 618 |
+
+---
+
+# Amendment 1.21 - 15 August 2026
+
+Append-only, written **before any latency analysis and before the preflight has
+been run against a live server**. `results/analysis` still holds only the two
+quality files. The six hardware runs are unchanged and are not rerun.
+
+Review of `101a5f5` found four defects and one incomplete derivation. All five
+were verified against the code and the stored evidence before being accepted.
+
+## 1.21.1 The model name in the config is not the name Ollama reports
+
+`config.json` names the embedding model `nomic-embed-text`. `/api/ps` reports
+it as `nomic-embed-text:latest`, because Ollama supplies the implicit tag. The
+stored runs confirm it: their residency blocks list `nomic-embed-text:latest`
+while the config says otherwise.
+
+The preflight compared exactly, and the mismatch is dangerous in **both**
+directions:
+
+* **After an eviction**, the configured name is absent from the reported list
+  whether or not the model actually went. A failed eviction reads as a success.
+* **After a load**, the same mismatch makes a correctly resident model look
+  absent, and the preflight rejects a healthy server.
+
+`canonical_model_name` normalises the implicit tag, and comparison is
+canonical in the preflight and in the analyser's stage-model check. Two tests
+cover the fail-open and the false-reject directions.
+
+## 1.21.2 The placement was observed but never applied
+
+The standalone preflight passed only `num_predict` and never set `num_gpu`, so
+`--placement cpu` let the server choose the device and the check reported
+whatever Ollama did rather than testing the condition.
+
+`num_gpu` is now applied: `0` for CPU, `-1` for full offload on GPU. Embeddings
+were already pinned by `EMBEDDING_OPTIONS`.
+
+Applying it is a request, not a guarantee, so residency is still read back
+afterwards. A test simulates a server that disregards `num_gpu` and asserts the
+preflight catches it.
+
+## 1.21.3 Cleanup was skipped on the path where it mattered
+
+`check_model` unloaded at the end of its body, so any raise above that line -
+including the placement mismatch, which is the failure most likely to occur -
+jumped to the handler with the model still resident. Amendment 1.20 promised
+"everything is unloaded before exit" and the failure path did not honour it.
+
+Cleanup is now a `finally` block covering all three models, exit residency is
+recorded whatever happened, and **a dirty exit is itself a failure** even when
+every model check passed.
+
+## 1.21.4 A rejected report could disclose a timing-derived value
+
+The wall-time identity built its message as `"{question_id}: off by 0.4213s"`,
+and check messages are copied verbatim into the rejection file. Amendment 1.19
+said a rejected report contains no timing values, and this one carried a
+magnitude computed from three of them.
+
+The breach list now names **question identifiers only**. Counts and identifiers
+are reported; no magnitude, no drift, no derived seconds. The declared tolerance
+is the only number in that block, and it is a constant rather than an
+observation. A test asserts the string "off by" appears nowhere in the check or
+the findings.
+
+## 1.21.5 The tolerance derivation was correct but incompletely stated
+
+0.002 s stands, and the reasoning is now given in full rather than as a summary.
+
+`VerifiedAnswer.wall_seconds` is `self.answer.wall_seconds +
+self.generation.wall_seconds`, computed from the **live float attributes** of
+the reused draft and the verification, not from anything already serialised.
+Three values are then stored at three decimals: B's own wall time, D's
+`verification_seconds`, and D's total. The comparison therefore admits at most
+three half-ULP errors at 3 dp, which is **0.0015 s**.
+
+The record contains other roundings, and a derivation that ignores them is not
+one a reader can check. `prompt_seconds`, `eval_seconds`, `load_seconds` and
+`embed_seconds` are stored at **4 decimals**; `search_seconds` at **6**. None
+enters this arithmetic: they are separately serialised sub-fields, and the
+identity is computed from the unrounded attributes. They are named in the
+constant's docstring so the omission is visible rather than silent.
+
+0.002 leaves headroom over 0.0015 rather than sitting on the boundary, so the
+check fails on a genuine breach and not on a rounding edge.
+
+## 1.21.6 What is not changed
+
+* No hardware run is rerun, re-tagged, deleted or modified.
+* No latency analysis has been run, and the preflight has not yet been run
+  against a live server.
+* H1 to H4 stand as signed off at `be55077`.
+* Amendments 1.17 to 1.20 are left as written; corrections live here.
+
+## 1.21.7 State
+
+| | |
+|---|---|
+| Model names | canonicalised, both mismatch directions tested |
+| Placement | applied via `num_gpu`, then read back |
+| Cleanup | `finally`, all three models, dirty exit is a failure |
+| Rejected reports | identifiers only, no magnitude, asserted by test |
+| Tolerance | 0.002 s, derivation stated in full including the 4 and 6 dp roundings |
+| Hardware runs | 6, unchanged |
+| H5 | **still unread** |
+| Tests | 628 |

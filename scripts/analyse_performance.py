@@ -43,6 +43,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from sme_assistant.common.config import load_config  # noqa: E402
 from sme_assistant.evaluation.analysis import AnalysisError  # noqa: E402
+from sme_assistant.common.llm_client import canonical_model_name  # noqa: E402
 from sme_assistant.evaluation.run_writer import read_run  # noqa: E402
 
 H5_LOWER, H5_UPPER = 1.5, 2.5
@@ -62,11 +63,25 @@ CONDITION_PLACEMENT = {"laptop_gpu": "gpu", "laptop_cpu": "cpu", "pi5_cpu": "cpu
 #: while Qwen, the model being timed, ran on the CPU. Amendment 1.20.
 STAGE_MODEL_KEY = {"B": "generation_model", "D": "verification_model"}
 
-#: ``RunWriter`` stores wall_seconds and verification_seconds rounded to three
-#: decimals, and ``VerifiedAnswer.wall_seconds`` is defined as the reused
-#: draft's wall time plus the verification's. The identity is therefore exact
-#: by construction and can only be disturbed by three half-ULP roundings at
-#: 3 dp. The tolerance is derived from that, not fitted to any observation.
+#: Derived, not fitted. See amendment 1.21 for the full derivation.
+#:
+#: ``VerifiedAnswer.wall_seconds`` is ``self.answer.wall_seconds +
+#: self.generation.wall_seconds``, computed from the **live float attributes**
+#: of the reused draft and the verification, not from anything already
+#: serialised. Three values are then stored at three decimals: B's own wall
+#: time, D's verification_seconds, and D's total. The comparison
+#: ``|D_total - (B_wall + D_verification)|`` therefore admits at most three
+#: half-ULP errors at 3 dp, or 0.0015 s.
+#:
+#: The 4-decimal roundings on ``prompt_seconds``, ``eval_seconds``,
+#: ``load_seconds`` and ``embed_seconds``, and the 6-decimal rounding on
+#: ``search_seconds``, apply to separately serialised sub-fields that do not
+#: enter this arithmetic. They are named here because a derivation that ignores
+#: the other roundings in the same record is not a derivation a reader can
+#: check.
+#:
+#: 0.002 leaves headroom over the 0.0015 bound rather than sitting exactly on
+#: it, so the check fails on a genuine breach rather than on a boundary case.
 WALL_TIME_TOLERANCE = 0.002
 
 
@@ -110,7 +125,9 @@ def placement_of(models: list[dict]) -> dict:
     """
     out: dict = {}
     for model in models:
-        name = model.get("name") or model.get("model")
+        # Canonicalised, because /api/ps reports the implicit ":latest" tag that
+        # config.json omits. Amendment 1.21.
+        name = canonical_model_name(model.get("name") or model.get("model"))
         size, vram = model.get("size"), model.get("size_vram")
         fraction = (
             (vram / size) if isinstance(size, (int, float)) and size
@@ -272,8 +289,10 @@ def validate(runs: dict[str, tuple[dict, list[dict], dict]], index_meta: dict) -
             if unreported:
                 continue
 
-            stage_model = (manifest.get("arm") or {}).get(
-                STAGE_MODEL_KEY.get(arm, "generation_model")
+            stage_model = canonical_model_name(
+                (manifest.get("arm") or {}).get(
+                    STAGE_MODEL_KEY.get(arm, "generation_model")
+                )
             )
             check(f"{arm}_stage_model_resident", stage_model in models,
                   f"the timed stage model {stage_model!r} is not among the "
@@ -332,7 +351,13 @@ def validate(runs: dict[str, tuple[dict, list[dict], dict]], index_meta: dict) -
     # B, and the ratio would answer a different question. Amendment 1.20.
     if set(runs) == set(EXPECTED_ARMS):
         b_by_id = {r["question_id"]: r for r in runs["B"][1]}
-        breaches: list[str] = []
+        # Amendment 1.21. The breach list carries question identifiers only.
+        # The previous version wrote "off by 0.4213s" into the message, and
+        # that message is copied verbatim into the rejection file, so a
+        # rejected report disclosed a timing-derived quantity in the very field
+        # amendment 1.19 said would contain none.
+        breached_ids: list[str] = []
+        unmeasurable_ids: list[str] = []
         compared = 0
         for record in runs["D"][1]:
             baseline = b_by_id.get(record["question_id"])
@@ -342,20 +367,24 @@ def validate(runs: dict[str, tuple[dict, list[dict], dict]], index_meta: dict) -
                      record.get("verification_seconds"),
                      record.get("wall_seconds"))
             if not all(isinstance(v, (int, float)) for v in parts):
-                breaches.append(f"{record['question_id']}: non-numeric timing")
+                unmeasurable_ids.append(record["question_id"])
                 continue
             compared += 1
-            drift = abs(parts[2] - (parts[0] + parts[1]))
-            if drift > WALL_TIME_TOLERANCE:
-                breaches.append(f"{record['question_id']}: off by {drift:.4f}s")
+            if abs(parts[2] - (parts[0] + parts[1])) > WALL_TIME_TOLERANCE:
+                breached_ids.append(record["question_id"])
         check("D_wall_time_is_draft_plus_verification",
-              not breaches and compared == EXPECTED_QUESTIONS,
-              (f"{len(breaches)} of {EXPECTED_QUESTIONS} questions breach the "
-               f"{WALL_TIME_TOLERANCE}s rounding tolerance"
-               + (f"; first: {breaches[0]}" if breaches else "")
-               + (f"; only {compared} comparable" if compared != EXPECTED_QUESTIONS
-                  else "")),
-              compared=compared, breaches=len(breaches),
+              not breached_ids and not unmeasurable_ids
+              and compared == EXPECTED_QUESTIONS,
+              (f"{len(breached_ids)} of {EXPECTED_QUESTIONS} questions fall "
+               f"outside the rounding tolerance"
+               + (f"; {len(unmeasurable_ids)} not measurable"
+                  if unmeasurable_ids else "")
+               + (f"; only {compared} comparable"
+                  if compared != EXPECTED_QUESTIONS else "")),
+              compared=compared,
+              breaches=len(breached_ids),
+              breached_question_ids=sorted(breached_ids),
+              unmeasurable_question_ids=sorted(unmeasurable_ids),
               tolerance_seconds=WALL_TIME_TOLERANCE)
 
     # --- draft provenance ---------------------------------------------------

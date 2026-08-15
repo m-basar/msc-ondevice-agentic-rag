@@ -116,6 +116,25 @@ class LLMClient(Protocol):
 # --- real backend -----------------------------------------------------------
 
 
+def canonical_model_name(name: str | None) -> str:
+    """Compare model names the way Ollama actually reports them.
+
+    ``config.json`` names the embedding model ``nomic-embed-text``. ``/api/ps``
+    reports it as ``nomic-embed-text:latest``, because Ollama fills in the
+    implicit tag. An exact string comparison therefore fails in **both**
+    directions, and both are dangerous: after an eviction the configured name is
+    absent from the reported list whether or not the model actually went, so a
+    failed eviction reads as a success; and after a load the same mismatch
+    rejects a model that is correctly resident.
+
+    Amendment 1.21. Normalising the implicit tag is the whole fix.
+    """
+    if not name:
+        return ""
+    text = str(name).strip()
+    return text[: -len(":latest")] if text.endswith(":latest") else text
+
+
 class OllamaClient:
     """HTTP client for a local Ollama server."""
 

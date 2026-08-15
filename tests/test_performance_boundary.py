@@ -673,21 +673,29 @@ class FakeOllama:
         self.refuse_embedding = refuse_embedding
         self.calls: list[tuple[str, str]] = []
         self.default_model = "llama3.2:3b"
+        self.applied_num_gpu = None
 
     def unload(self, model=None, *, embedding=False):
         self.calls.append(("unload", model))
         if embedding and self.refuse_embedding:
             return {}
-        if model not in self.sticky:
+        name = model if ":" in (model or "") else f"{model}:latest"
+        if model not in self.sticky and name not in self.sticky:
+            self.loaded.pop(name, None)
             self.loaded.pop(model, None)
         return {}
 
     def _load(self, model, *, embedding):
-        vram = 0 if embedding else (100 if self.placement == "gpu" else 0)
-        self.loaded[model] = vram
+        # Ollama fills in the implicit ":latest" tag, which config.json omits.
+        name = model if ":" in model else f"{model}:latest"
+        vram = 0 if embedding else (
+            100 if (self.applied_num_gpu != 0 and self.placement == "gpu") else 0
+        )
+        self.loaded[name] = vram
 
     def generate(self, prompt, *, model=None, options=None):
         self.calls.append(("generate", model))
+        self.applied_num_gpu = (options or {}).get("num_gpu")
         self._load(model or self.default_model, embedding=False)
 
     def embed(self, text, *, model=None, options=None):
@@ -761,9 +769,19 @@ def test_the_preflight_fails_when_a_model_survives_eviction(monkeypatch, tmp_pat
     assert "still resident after an eviction" in report["error"]
 
 
-def test_the_preflight_fails_when_the_device_is_not_the_one_requested(monkeypatch, tmp_path):
-    server = FakeOllama(placement="gpu")
-    assert run_preflight(monkeypatch, tmp_path, server, placement="cpu") == 1
+def test_the_preflight_catches_a_server_that_ignores_the_placement(monkeypatch, tmp_path):
+    """Applying num_gpu is a request, not a guarantee.
+
+    A server that disregards it must still be caught, which is why the check
+    reads residency back rather than trusting that the option was honoured.
+    """
+    class IgnoresNumGpu(FakeOllama):
+        def _load(self, model, *, embedding):
+            name = model if ":" in model else f"{model}:latest"
+            self.loaded[name] = 0 if embedding else 100   # offloads regardless
+
+    assert run_preflight(monkeypatch, tmp_path, IgnoresNumGpu(),
+                         placement="cpu") == 1
     assert "loaded onto gpu" in latest_report(tmp_path)["error"]
 
 
@@ -830,3 +848,132 @@ def test_no_rejection_record_instructs_deletion():
     )
     for phrase in ("Delete or re-tag", "delete or re-tag", "re-tag the"):
         assert phrase not in text
+
+
+# --- amendment 1.21 ----------------------------------------------------------
+
+
+def test_the_implicit_latest_tag_does_not_defeat_the_preflight(monkeypatch, tmp_path):
+    """config.json says nomic-embed-text; /api/ps says nomic-embed-text:latest.
+
+    An exact comparison fails in both directions, and both are dangerous: a
+    failed eviction reads as success, and a correctly loaded model is rejected.
+    """
+    server = FakeOllama()
+    assert run_preflight(monkeypatch, tmp_path, server) == 0
+    report = latest_report(tmp_path)
+    assert report["result"] == "pass"
+    # The server reported the tagged form throughout.
+    assert any(":latest" in name
+               for stage in report["stages"]
+               for name in stage.get("loaded_after_synthetic_call", []))
+
+
+def test_a_failed_embedding_eviction_is_caught_despite_the_tag(monkeypatch, tmp_path):
+    """The fail-open direction: sticky under the tagged name."""
+    server = FakeOllama(sticky={"nomic-embed-text:latest"})
+    server.loaded["nomic-embed-text:latest"] = 0
+    assert run_preflight(monkeypatch, tmp_path, server) == 1
+    assert "still resident after an eviction" in latest_report(tmp_path)["error"]
+
+
+def test_canonical_model_name_normalises_the_implicit_tag():
+    from sme_assistant.common.llm_client import canonical_model_name
+
+    assert canonical_model_name("nomic-embed-text:latest") == "nomic-embed-text"
+    assert canonical_model_name("nomic-embed-text") == "nomic-embed-text"
+    assert canonical_model_name("llama3.2:3b") == "llama3.2:3b"
+    assert canonical_model_name(None) == ""
+
+
+def test_the_preflight_applies_the_placement_rather_than_only_observing_it(
+    monkeypatch, tmp_path
+):
+    """Without num_gpu the server picks a device, and the check becomes a
+    report of what Ollama chose."""
+    server = FakeOllama(placement="gpu")
+    run_preflight(monkeypatch, tmp_path, server, placement="cpu")
+    assert server.applied_num_gpu == 0, "cpu placement was never applied"
+    stage = latest_report(tmp_path)["stages"][0]
+    assert stage["options_applied"]["num_gpu"] == 0
+
+
+def test_gpu_placement_is_applied_as_full_offload(monkeypatch, tmp_path):
+    server = FakeOllama(placement="gpu")
+    run_preflight(monkeypatch, tmp_path, server, placement="gpu")
+    assert server.applied_num_gpu == -1
+
+
+def test_cleanup_runs_even_when_a_check_fails(monkeypatch, tmp_path):
+    """1.20 promised nothing is left loaded. A raise after loading previously
+    jumped past the eviction."""
+    class FailsOnVerifier(FakeOllama):
+        def observed_placement(self):
+            observed = super().observed_placement()
+            if ("generate", "qwen2.5:3b") in self.calls:
+                observed["any_on_gpu"] = True
+                observed["vram_bytes"] = {k: 100 for k in self.loaded}
+            return observed
+
+    server = FailsOnVerifier()
+    assert run_preflight(monkeypatch, tmp_path, server, placement="cpu") == 1
+    report = latest_report(tmp_path)
+    assert report["result"] == "fail"
+    assert report["loaded_at_exit"] == [], "a failed preflight left a model loaded"
+    assert report["clean_exit"] is True
+
+
+def test_exit_residency_is_recorded_on_failure(monkeypatch, tmp_path):
+    server = FakeOllama(sticky={"nomic-embed-text:latest"})
+    server.loaded["nomic-embed-text:latest"] = 0
+    run_preflight(monkeypatch, tmp_path, server)
+    report = latest_report(tmp_path)
+    assert "loaded_at_exit" in report
+    assert "clean_exit" in report
+    assert report["clean_exit"] is False
+
+
+def test_a_dirty_exit_fails_even_when_every_model_passed(monkeypatch, tmp_path):
+    class LeavesResidue(FakeOllama):
+        def __init__(self):
+            super().__init__()
+            self.finished = False
+
+        def observed_placement(self):
+            if self.calls.count(("unload", "nomic-embed-text")) >= 2:
+                self.loaded["stray:latest"] = 0
+            return super().observed_placement()
+
+    assert run_preflight(monkeypatch, tmp_path, LeavesResidue()) == 1
+    report = latest_report(tmp_path)
+    assert report["clean_exit"] is False
+    assert "remain loaded at exit" in report["error"]
+
+
+def test_a_wall_time_breach_message_carries_no_magnitude(tmp_path):
+    """Amendment 1.19 said rejected reports contain no timing values, and the
+    message said "off by 0.4213s"."""
+    payload, _, _ = build_index(tmp_path, d_kwargs={"break_wall_identity": True})
+    result = validated(tmp_path, payload)
+    identity = result["checks"]["D_wall_time_is_draft_plus_verification"]
+
+    assert identity["pass"] is False
+    assert identity["breaches"] == 68
+    assert identity["breached_question_ids"], "identifiers should be named"
+    blob = json.dumps(identity)
+    assert "off by" not in blob
+    for finding in result["findings"]:
+        assert "off by" not in finding
+    # No float in the message other than the declared tolerance.
+    assert "0.002" in json.dumps(identity["tolerance_seconds"])
+
+
+def test_the_analyser_matches_stage_models_canonically(tmp_path):
+    """A manifest naming a model without its tag must still match /api/ps."""
+    payload, _, _ = build_index(
+        tmp_path,
+        d_kwargs={"verification_model": "qwen2.5",
+                  "loaded_end": [{"name": "qwen2.5:latest", "size": 100,
+                                  "size_vram": 0}]},
+    )
+    assert "D_stage_model_resident" not in failing(validated(tmp_path, payload))
