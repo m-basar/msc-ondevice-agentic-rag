@@ -3192,3 +3192,113 @@ check fails on a genuine breach and not on a rounding edge.
 | Hardware runs | 6, unchanged |
 | H5 | **still unread** |
 | Tests | 628 |
+
+---
+
+# Amendment 1.22 - 15 August 2026
+
+The first live execution of the standalone preflight, and what it found. No
+latency has been read; `results/analysis` still holds only the two quality
+files. No hardware run is rerun or altered.
+
+## 1.22.1 The observation
+
+`preflight_placement.py --placement gpu`, run at 08:01:50 on the laptop:
+
+| Stage | Result |
+|---|---|
+| `llama3.2:3b` on GPU | confirmed, `size_vram` 2,554,708,622 |
+| `qwen2.5:3b` on GPU | confirmed, `size_vram` 2,159,374,499 |
+| `nomic-embed-text` on CPU | confirmed, `size_vram` 0 |
+| Cleanup | **failed**: all three still listed at exit |
+| `cleanup_errors` | empty |
+
+**All three placement checks passed, including the CPU-pinned embedding model
+on a GPU run.** That is the substantive result and it is the first live
+evidence that `num_gpu` is being applied and observed correctly.
+
+The failed diagnostic is retained unchanged at
+`results/diagnostics/20260815_080159_preflight_gpu.json` and committed with this
+amendment. A guard that fires is evidence, not a mess to tidy away.
+
+## 1.22.2 What this observation does **not** establish
+
+`ollama ps` was empty a few minutes later with no manual intervention. The
+tempting reading is that the unload requests worked and `/api/ps` was simply
+read too soon.
+
+**That reading is not supported by this evidence, and the amendment says so
+rather than adopting it.** Ollama's default retention is five minutes. An empty
+`ollama ps` some minutes afterwards is equally consistent with the models
+expiring on their own while the unload requests did nothing. The two
+explanations were not distinguished, and the run cannot distinguish them.
+
+Worse, the per-stage evictions proved less than they appear to. Each stage
+evicts only its own model, and the sequence shows why that is weak:
+
+| Stage | Loaded when it evicted |
+|---|---|
+| 1, llama | nothing was loaded at all |
+| 2, qwen | only llama, which is not the target |
+| 3, nomic | llama and qwen, neither the target |
+
+None of the three evicted a model that was actually resident. The only real
+test was the final cleanup, and its single immediate observation is exactly the
+measurement that cannot tell a lag from a no-op.
+
+## 1.22.3 The fix, and the instrument that will settle it
+
+`OllamaClient.wait_until_unloaded` polls `/api/ps` until the named models are
+gone. The budget is **pre-declared: a 30 second timeout at 250 ms intervals**,
+stated here rather than tuned until the check passed. It is used after each
+per-model eviction and after final cleanup.
+
+Three properties matter.
+
+**At least one successful empty observation is required.** A window that closes
+having only ever errored returns `cleared: False`, and the caller fails closed.
+
+**Transient `/api/ps` failures are tolerated during the wait and recorded.** A
+momentary refusal is not evidence in either direction, and hiding it would make
+the record less honest rather than more.
+
+**The elapsed time is recorded, and that is the point.** Thirty seconds is
+deliberately well short of Ollama's five-minute retention. On the next run, a
+disappearance inside the budget means the unload was effective; a timeout means
+it was not, and the five-minute expiry is then the only remaining explanation
+for what was seen today. The question 1.22.2 leaves open is answered by the
+next execution rather than by argument.
+
+Cleanup waits for **this project's three models only**. A model loaded by some
+other process is not ours to evict, and failing on it would make the preflight
+depend on whatever else happens to be running. A test asserts a stray model
+does not fail it, and a separate test asserts that one of ours remaining does.
+
+## 1.22.4 Dead code with a known defect, removed
+
+`OllamaClient.preflight` was left in place when the standalone command replaced
+it. It was unused and still compared model names **exactly**, which is the
+defect amendment 1.21 fixed everywhere else. Code that is wrong and unreachable
+is worse than no code, because the next reader cannot tell which is current. It
+is removed, and a test asserts it stays removed.
+
+## 1.22.5 What is not changed
+
+* The six hardware runs. Unchanged, retained, not rerun. Their placement was
+  observed and recorded at the time each ran, and that evidence is unaffected
+  by anything here.
+* H1 to H4, as signed off at `be55077`.
+* `analyse_performance.py`. Untouched by this amendment, and still not run.
+
+## 1.22.6 State
+
+| | |
+|---|---|
+| Live placement checks | **passed**, all three models, first live evidence |
+| Cleanup | polled, 30 s budget at 250 ms, pre-declared |
+| Lag versus no-op | **not distinguished**; the next run decides it |
+| Failed diagnostic | retained and committed unchanged |
+| Dead `preflight()` | removed, absence asserted by test |
+| Hardware runs | 6, unchanged |
+| H5 | **still unread** |
+| Tests | 635 |

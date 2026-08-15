@@ -294,6 +294,86 @@ class OllamaClient:
             ) from exc
         return list(payload.get("models") or [])
 
+    #: Pre-declared, so the wait is a stated rule rather than a number tuned
+    #: until the check passed. Amendment 1.22.
+    UNLOAD_TIMEOUT_SECONDS = 30.0
+    UNLOAD_POLL_INTERVAL_SECONDS = 0.25
+
+    def wait_until_unloaded(
+        self,
+        models,
+        *,
+        timeout: float | None = None,
+        interval: float | None = None,
+        now=None,
+        sleep=None,
+    ) -> dict[str, Any]:
+        """Poll ``/api/ps`` until the named models are gone, or give up.
+
+        An unload is a *request*. Disappearance from ``/api/ps`` is the
+        *observation*, and the two are not simultaneous. Checking once,
+        immediately, conflates "the server has not caught up" with "the server
+        ignored me", and those need different responses.
+
+        **The elapsed time is recorded, and it is the point.** Ollama's default
+        retention is five minutes. If a model disappears within this timeout the
+        unload was effective; if it only goes at around 300 seconds it expired
+        on its own and the unload did nothing. A single immediate check cannot
+        tell those apart, and neither can a poll that does not report how long
+        it waited.
+
+        Transient ``/api/ps`` failures are tolerated *during* the wait and
+        recorded, because a momentary refusal is not evidence either way. If the
+        window closes with no successful empty observation, the result is
+        ``cleared: False`` and the caller fails closed.
+        """
+        import time as _time
+
+        now = now or _time.monotonic
+        sleep = sleep or _time.sleep
+        timeout = self.UNLOAD_TIMEOUT_SECONDS if timeout is None else timeout
+        interval = self.UNLOAD_POLL_INTERVAL_SECONDS if interval is None else interval
+
+        wanted = {canonical_model_name(m) for m in models if m}
+        started = now()
+        observations = 0
+        transient: list[str] = []
+        remaining: list[str] = sorted(wanted)
+
+        while True:
+            try:
+                observed = self.observed_placement()
+                observations += 1
+                resident = {
+                    canonical_model_name(n) for n in observed["models_loaded"]
+                }
+                remaining = sorted(wanted & resident)
+                if not remaining:
+                    # At least one *successful* observation showing them gone.
+                    return {
+                        "cleared": True,
+                        "elapsed_seconds": round(now() - started, 3),
+                        "successful_observations": observations,
+                        "transient_errors": transient,
+                        "remaining": [],
+                        "timeout_seconds": timeout,
+                        "poll_interval_seconds": interval,
+                    }
+            except LLMError as exc:
+                transient.append(str(exc))
+
+            if now() - started >= timeout:
+                return {
+                    "cleared": False,
+                    "elapsed_seconds": round(now() - started, 3),
+                    "successful_observations": observations,
+                    "transient_errors": transient,
+                    "remaining": remaining,
+                    "timeout_seconds": timeout,
+                    "poll_interval_seconds": interval,
+                }
+            sleep(interval)
+
     def observed_placement(self) -> dict[str, Any]:
         """Requested placement is a hope; this is what is actually loaded.
 
@@ -323,24 +403,6 @@ class OllamaClient:
                 isinstance(m.get("size_vram"), (int, float)) for m in loaded
             ),
         }
-
-    def preflight(self, model: str, *, embedding: bool = False) -> dict[str, Any]:
-        """Evict one model, confirm it is gone, and report residency.
-
-        The observe-and-reload half lives in
-        ``scripts/preflight_placement.py``, which drives this for all three
-        models and unloads everything again. Amendment 1.20: nothing calls a
-        preflight automatically, because loading a model immediately before a
-        timed run warms it.
-        """
-        self.unload(model, embedding=embedding)
-        after = self.observed_placement()
-        if model in (after["models_loaded"] or []):
-            raise LLMError(
-                f"{model} is still resident after an eviction, so eviction is "
-                "not taking effect."
-            )
-        return after
 
 
 # --- mock backend -----------------------------------------------------------
@@ -428,9 +490,11 @@ class MockClient:
         return {"models_loaded": [], "any_on_gpu": False, "vram_bytes": {},
                 "sizes": {}, "complete": True}
 
-    def preflight(self, model: str, *, embedding: bool = False) -> dict[str, Any]:
-        return {"models_loaded": [], "any_on_gpu": False, "vram_bytes": {},
-                "sizes": {}, "complete": True}
+    def wait_until_unloaded(self, models, **kwargs) -> dict[str, Any]:
+        return {"cleared": True, "elapsed_seconds": 0.0,
+                "successful_observations": 1, "transient_errors": [],
+                "remaining": [], "timeout_seconds": 0.0,
+                "poll_interval_seconds": 0.0}
 
     def embed(self, text: str, *, model: str | None = None,
               options: dict[str, Any] | None = None) -> list[float]:

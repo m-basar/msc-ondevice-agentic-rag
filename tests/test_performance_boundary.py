@@ -25,7 +25,11 @@ import analyse_performance  # noqa: E402
 import preflight_placement  # noqa: E402
 import run_arms  # noqa: E402
 
-from sme_assistant.common.llm_client import MockClient, OllamaClient  # noqa: E402
+from sme_assistant.common.llm_client import (  # noqa: E402
+    LLMError,
+    MockClient,
+    OllamaClient,
+)
 from sme_assistant.common.config import load_config  # noqa: E402
 from sme_assistant.evaluation.analysis import AnalysisError  # noqa: E402
 
@@ -664,30 +668,51 @@ def test_a_rejected_report_discloses_no_latency(tmp_path, monkeypatch, capsys):
 
 
 class FakeOllama:
-    """A live server, simulated at the /api boundary rather than at _post."""
+    """A live server, simulated at the /api boundary rather than at _post.
 
-    def __init__(self, *, placement="cpu", sticky=(), refuse_embedding=False):
+    It drives the **real** ``wait_until_unloaded`` from ``OllamaClient``, with
+    an injected clock so the polling logic is exercised deterministically and
+    without sleeping. Amendment 1.22.
+    """
+
+    UNLOAD_TIMEOUT_SECONDS = OllamaClient.UNLOAD_TIMEOUT_SECONDS
+    UNLOAD_POLL_INTERVAL_SECONDS = OllamaClient.UNLOAD_POLL_INTERVAL_SECONDS
+
+    def __init__(self, *, placement="cpu", sticky=(), refuse_embedding=False,
+                 unload_delay_polls=0, ps_failures=0):
         self.loaded: dict[str, int] = {}
         self.placement = placement
-        self.sticky = set(sticky)          # models eviction cannot remove
+        self.sticky = {self._tagged(m) for m in sticky}
         self.refuse_embedding = refuse_embedding
+        self.unload_delay_polls = unload_delay_polls
+        self.ps_failures = ps_failures
         self.calls: list[tuple[str, str]] = []
         self.default_model = "llama3.2:3b"
         self.applied_num_gpu = None
+        self._clock = 0.0
+        self._pending: dict[str, int] = {}
+
+    @staticmethod
+    def _tagged(model):
+        model = model or ""
+        return model if ":" in model else f"{model}:latest"
 
     def unload(self, model=None, *, embedding=False):
         self.calls.append(("unload", model))
         if embedding and self.refuse_embedding:
             return {}
-        name = model if ":" in (model or "") else f"{model}:latest"
-        if model not in self.sticky and name not in self.sticky:
+        name = self._tagged(model)
+        if name in self.sticky:
+            return {}
+        if self.unload_delay_polls:
+            self._pending[name] = self.unload_delay_polls
+        else:
             self.loaded.pop(name, None)
-            self.loaded.pop(model, None)
         return {}
 
     def _load(self, model, *, embedding):
-        # Ollama fills in the implicit ":latest" tag, which config.json omits.
-        name = model if ":" in model else f"{model}:latest"
+        name = self._tagged(model)
+        self._pending.pop(name, None)
         vram = 0 if embedding else (
             100 if (self.applied_num_gpu != 0 and self.placement == "gpu") else 0
         )
@@ -703,6 +728,9 @@ class FakeOllama:
         self._load("nomic-embed-text", embedding=True)
 
     def observed_placement(self):
+        if self.ps_failures > 0:
+            self.ps_failures -= 1
+            raise LLMError("simulated /api/ps failure")
         return {
             "models_loaded": list(self.loaded),
             "any_on_gpu": any(v > 0 for v in self.loaded.values()),
@@ -710,6 +738,19 @@ class FakeOllama:
             "sizes": {k: 100 for k in self.loaded},
             "complete": True,
         }
+
+    def _tick(self, interval):
+        self._clock += interval
+        for name in list(self._pending):
+            self._pending[name] -= 1
+            if self._pending[name] <= 0:
+                self.loaded.pop(name, None)
+                del self._pending[name]
+
+    def wait_until_unloaded(self, models, **kwargs):
+        kwargs.setdefault("now", lambda: self._clock)
+        kwargs.setdefault("sleep", self._tick)
+        return OllamaClient.wait_until_unloaded(self, models, **kwargs)
 
 
 def run_preflight(monkeypatch, tmp_path, server, placement="cpu"):
@@ -766,7 +807,8 @@ def test_the_preflight_fails_when_a_model_survives_eviction(monkeypatch, tmp_pat
     assert run_preflight(monkeypatch, tmp_path, server) == 1
     report = latest_report(tmp_path)
     assert report["result"] == "fail"
-    assert "still resident after an eviction" in report["error"]
+    assert "was still resident" in report["error"]
+    assert "of polling" in report["error"]
 
 
 def test_the_preflight_catches_a_server_that_ignores_the_placement(monkeypatch, tmp_path):
@@ -874,7 +916,7 @@ def test_a_failed_embedding_eviction_is_caught_despite_the_tag(monkeypatch, tmp_
     server = FakeOllama(sticky={"nomic-embed-text:latest"})
     server.loaded["nomic-embed-text:latest"] = 0
     assert run_preflight(monkeypatch, tmp_path, server) == 1
-    assert "still resident after an eviction" in latest_report(tmp_path)["error"]
+    assert "was still resident" in latest_report(tmp_path)["error"]
 
 
 def test_canonical_model_name_normalises_the_implicit_tag():
@@ -933,21 +975,108 @@ def test_exit_residency_is_recorded_on_failure(monkeypatch, tmp_path):
     assert report["clean_exit"] is False
 
 
-def test_a_dirty_exit_fails_even_when_every_model_passed(monkeypatch, tmp_path):
-    class LeavesResidue(FakeOllama):
-        def __init__(self):
-            super().__init__()
-            self.finished = False
+def test_a_stray_third_party_model_does_not_fail_the_preflight(monkeypatch, tmp_path):
+    """Cleanup waits for *this project's* three models, not for the machine to
+    be idle.
 
-        def observed_placement(self):
-            if self.calls.count(("unload", "nomic-embed-text")) >= 2:
-                self.loaded["stray:latest"] = 0
-            return super().observed_placement()
+    A model loaded by something else is not ours to evict, and failing on it
+    would make the preflight depend on what else happens to be running.
+    """
+    server = FakeOllama()
+    original = server.observed_placement
 
-    assert run_preflight(monkeypatch, tmp_path, LeavesResidue()) == 1
+    def with_stray():
+        observed = original()
+        observed["models_loaded"] = list(observed["models_loaded"]) + ["other:latest"]
+        return observed
+
+    monkeypatch.setattr(server, "observed_placement", with_stray)
+    assert run_preflight(monkeypatch, tmp_path, server) == 0
+    report = latest_report(tmp_path)
+    assert report["clean_exit"] is True
+    assert report["loaded_at_exit"] == []
+
+
+def test_one_of_our_models_remaining_is_a_dirty_exit(monkeypatch, tmp_path):
+    server = FakeOllama(sticky={"qwen2.5:3b"})
+    assert run_preflight(monkeypatch, tmp_path, server) == 1
     report = latest_report(tmp_path)
     assert report["clean_exit"] is False
-    assert "remain loaded at exit" in report["error"]
+    assert "qwen2.5:3b" in report["loaded_at_exit"]
+
+
+# --- polling, amendment 1.22 -------------------------------------------------
+
+
+def test_a_delayed_disappearance_is_waited_for_not_failed(monkeypatch, tmp_path):
+    """The defect the 08:01:59 diagnostic exposed: checked once, immediately."""
+    server = FakeOllama(unload_delay_polls=4)
+    assert run_preflight(monkeypatch, tmp_path, server) == 0
+    report = latest_report(tmp_path)
+    assert report["result"] == "pass"
+    waited = report["cleanup_wait"]
+    assert waited["cleared"] is True
+    assert waited["elapsed_seconds"] > 0, "it should record how long it waited"
+    assert waited["successful_observations"] >= 1
+
+
+def test_permanent_residue_still_fails_after_the_timeout(monkeypatch, tmp_path):
+    """A poll that never gives up would pass on Ollama's own five-minute
+    expiry instead of on an effective unload."""
+    server = FakeOllama(sticky={"llama3.2:3b", "qwen2.5:3b", "nomic-embed-text"})
+    server.loaded.update({"llama3.2:3b": 0, "qwen2.5:3b": 0,
+                          "nomic-embed-text:latest": 0})
+    assert run_preflight(monkeypatch, tmp_path, server) == 1
+    report = latest_report(tmp_path)
+    waited = report["stages"][0]["unload_wait"] if report["stages"] else None
+    assert report["result"] == "fail"
+    if waited:
+        assert waited["cleared"] is False
+        assert waited["elapsed_seconds"] >= waited["timeout_seconds"]
+
+
+def test_a_transient_api_ps_failure_is_tolerated_during_the_wait(monkeypatch, tmp_path):
+    """A momentary refusal is not evidence either way, so it is recorded and
+    the poll continues."""
+    server = FakeOllama(ps_failures=3)
+    assert run_preflight(monkeypatch, tmp_path, server) == 0
+    report = latest_report(tmp_path)
+    assert report["result"] == "pass"
+    recorded = report["stages"][0]["unload_wait"]["transient_errors"]
+    assert recorded, "the transient failure should be recorded, not hidden"
+    assert all("api/ps" in message for message in recorded)
+
+
+def test_a_wait_that_only_ever_errors_fails_closed():
+    """No successful empty observation means no evidence, and no evidence is
+    not a pass."""
+    class AlwaysFails(FakeOllama):
+        def observed_placement(self):
+            raise LLMError("simulated /api/ps failure")
+
+    server = AlwaysFails()
+    result = server.wait_until_unloaded(["llama3.2:3b"])
+    assert result["cleared"] is False
+    assert result["successful_observations"] == 0
+    assert result["transient_errors"]
+
+
+def test_the_poll_budget_is_predeclared():
+    """A timeout tuned until the check passed would not be a rule."""
+    assert OllamaClient.UNLOAD_TIMEOUT_SECONDS == 30.0
+    assert OllamaClient.UNLOAD_POLL_INTERVAL_SECONDS == 0.25
+
+
+def test_the_dead_client_preflight_is_gone():
+    """It was unused and still compared model names exactly, which is the bug
+    amendment 1.21 fixed everywhere else."""
+    assert not hasattr(OllamaClient, "preflight")
+    source = (Path(__file__).resolve().parents[2] if False else
+              Path(__file__).resolve().parents[1])
+    text = (source / "src" / "sme_assistant" / "common" / "llm_client.py").read_text(
+        encoding="utf-8"
+    )
+    assert "def preflight" not in text
 
 
 def test_a_wall_time_breach_message_carries_no_magnitude(tmp_path):

@@ -87,13 +87,19 @@ def check_model(client: OllamaClient, model: str, *, embedding: bool,
                    "expected_placement": expected}
 
     client.unload(model, embedding=embedding)
-    after_evict = client.observed_placement()
-    stage["loaded_after_eviction"] = after_evict["models_loaded"]
-    if canonical_model_name(model) in resident_names(after_evict):
+    # Amendment 1.22. An unload is a request; disappearance is the
+    # observation, and the two are not simultaneous. Checking once immediately
+    # cannot tell "the server has not caught up" from "the server ignored me".
+    waited = client.wait_until_unloaded([model])
+    stage["unload_wait"] = waited
+    stage["loaded_after_eviction"] = waited["remaining"]
+    if not waited["cleared"]:
         raise LLMError(
-            f"{model} is still resident after an eviction through "
-            f"{stage['endpoint']}. Eviction is not taking effect, so a run "
-            "would measure whatever placement the model already had."
+            f"{model} was still resident {waited['elapsed_seconds']}s after an "
+            f"eviction through {stage['endpoint']}, over "
+            f"{waited['timeout_seconds']}s of polling. Eviction is not taking "
+            "effect, so a run would measure whatever placement the model "
+            "already had."
         )
 
     if embedding:
@@ -191,9 +197,15 @@ def main(argv: list[str] | None = None) -> int:
             except Exception as exc:  # pragma: no cover - network dependent
                 cleanup_errors.append(f"{model}: {exc}")
         try:
-            final = client.observed_placement()
-            report["loaded_at_exit"] = final["models_loaded"]
-            report["clean_exit"] = not final["models_loaded"]
+            # Poll for all three together rather than reading once. The
+            # elapsed figure is what distinguishes an effective unload from
+            # Ollama's own five-minute expiry on the next run.
+            waited = client.wait_until_unloaded([m for m, _, _ in models])
+            report["cleanup_wait"] = waited
+            report["loaded_at_exit"] = waited["remaining"]
+            report["clean_exit"] = waited["cleared"]
+            if waited["transient_errors"]:
+                cleanup_errors.extend(waited["transient_errors"])
         except Exception as exc:  # pragma: no cover - network dependent
             report["loaded_at_exit"] = None
             report["clean_exit"] = False
@@ -203,9 +215,12 @@ def main(argv: list[str] | None = None) -> int:
         # failure in its own right even when every model check passed.
         if report.get("result") == "pass" and not report.get("clean_exit"):
             report["result"] = "fail"
+            waited = report.get("cleanup_wait") or {}
             report["error"] = (
-                f"models remain loaded at exit: {report['loaded_at_exit']}. A "
-                "preflight that leaves a model resident warms the next run."
+                f"models remain loaded at exit: {report['loaded_at_exit']}, "
+                f"after {waited.get('elapsed_seconds')}s of polling against a "
+                f"{waited.get('timeout_seconds')}s budget. A preflight that "
+                "leaves a model resident warms the next run."
             )
             print(f"\n  PREFLIGHT FAILED: {report['error']}", file=sys.stderr)
 
