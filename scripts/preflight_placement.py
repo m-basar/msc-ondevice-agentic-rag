@@ -57,6 +57,14 @@ from sme_assistant.common.llm_client import (  # noqa: E402
 #: A prompt that is not a test question and asserts nothing about the corpus.
 SYNTHETIC_PROMPT = "ping"
 
+#: Retention for the synthetic loads only. Amendment 1.23: without stating it,
+#: "gone within 30 seconds" is only conclusive if the server happens to be on
+#: the five-minute default. Pinning the synthetic load to ten minutes makes the
+#: 30 second budget conclusive whatever the service is configured with: a model
+#: that disappears inside it did so because the unload worked, not because it
+#: expired. Experimental calls never pass this, so no run is affected.
+PREFLIGHT_KEEP_ALIVE = "10m"
+
 
 def resident_names(observed: dict) -> set[str]:
     """Loaded model names, canonicalised. Amendment 1.21."""
@@ -104,7 +112,7 @@ def check_model(client: OllamaClient, model: str, *, embedding: bool,
 
     if embedding:
         # EMBEDDING_OPTIONS already pins num_gpu to 0.
-        client.embed(SYNTHETIC_PROMPT)
+        client.embed(SYNTHETIC_PROMPT, keep_alive=PREFLIGHT_KEEP_ALIVE)
     else:
         # Amendment 1.21. The placement must be *applied*, not merely observed.
         # Without num_gpu the server picks a device and the check becomes a
@@ -113,11 +121,13 @@ def check_model(client: OllamaClient, model: str, *, embedding: bool,
             SYNTHETIC_PROMPT, model=model,
             options={"num_predict": 1,
                      "num_gpu": 0 if placement == "cpu" else -1},
+            keep_alive=PREFLIGHT_KEEP_ALIVE,
         )
     stage["options_applied"] = (
         {"num_gpu": 0} if embedding
         else {"num_gpu": 0 if placement == "cpu" else -1}
     )
+    stage["load_keep_alive"] = PREFLIGHT_KEEP_ALIVE
 
     after_load = client.observed_placement()
     stage["loaded_after_synthetic_call"] = after_load["models_loaded"]
@@ -202,12 +212,21 @@ def main(argv: list[str] | None = None) -> int:
             # Ollama's own five-minute expiry on the next run.
             waited = client.wait_until_unloaded([m for m, _, _ in models])
             report["cleanup_wait"] = waited
-            report["loaded_at_exit"] = waited["remaining"]
+            # Amendment 1.23. Three fields, because one was doing the work of
+            # three and getting it wrong. "loaded_at_exit" was assigned the
+            # *targets* still remaining, so a run with an unrelated model
+            # resident reported an empty list while something was plainly
+            # loaded. The scope decision was right; the field was a lie.
+            report["models_loaded_at_exit"] = waited.get("models_loaded")
+            report["project_models_remaining"] = waited["remaining"]
+            report["project_cleanup_complete"] = waited["cleared"]
             report["clean_exit"] = waited["cleared"]
             if waited["transient_errors"]:
                 cleanup_errors.extend(waited["transient_errors"])
         except Exception as exc:  # pragma: no cover - network dependent
-            report["loaded_at_exit"] = None
+            report["models_loaded_at_exit"] = None
+            report["project_models_remaining"] = None
+            report["project_cleanup_complete"] = False
             report["clean_exit"] = False
             cleanup_errors.append(f"residency unreadable at exit: {exc}")
         report["cleanup_errors"] = cleanup_errors
@@ -217,7 +236,8 @@ def main(argv: list[str] | None = None) -> int:
             report["result"] = "fail"
             waited = report.get("cleanup_wait") or {}
             report["error"] = (
-                f"models remain loaded at exit: {report['loaded_at_exit']}, "
+                "project models remain loaded at exit: "
+                f"{report['project_models_remaining']}, "
                 f"after {waited.get('elapsed_seconds')}s of polling against a "
                 f"{waited.get('timeout_seconds')}s budget. A preflight that "
                 "leaves a model resident warms the next run."

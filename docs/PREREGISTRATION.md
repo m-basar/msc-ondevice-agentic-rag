@@ -3302,3 +3302,67 @@ is removed, and a test asserts it stays removed.
 | Hardware runs | 6, unchanged |
 | H5 | **still unread** |
 | Tests | 635 |
+
+---
+
+# Amendment 1.23 - 15 August 2026
+
+Two corrections to the polling instrument, made before it is rerun. Neither
+touches a hardware run, the failed diagnostic, or any latency. `4a23aac` and
+`results/diagnostics/20260815_080159_preflight_gpu.json` are unaltered.
+
+## 1.23.1 The 30 second budget assumed a retention it never stated
+
+Amendment 1.22 argued that a 30 second timeout is conclusive because it is far
+short of Ollama's five-minute default. The argument depends on the server
+actually being on that default, and nothing in the request said so. A service
+configured with a shorter `OLLAMA_KEEP_ALIVE` would expire the model inside the
+budget, and the poll would then record a disappearance that proves nothing.
+
+**The synthetic loads now state their own retention.** `keep_alive: "10m"` is
+sent **top-level in the request body**, not inside `options`, because Ollama
+reads it from the body and an option would be ignored while looking correct.
+A model that vanishes inside 30 seconds under a stated ten-minute retention did
+so because the unload worked.
+
+**Only the preflight sets it.** Experimental calls pass no `keep_alive` at all,
+so no run is affected by this choice, and a test asserts that both `generate`
+and `embed` omit the field on a normal call. `load_keep_alive` is recorded on
+every stage.
+
+## 1.23.2 A field was doing three jobs and getting one of them wrong
+
+`loaded_at_exit` was assigned the polling result's `remaining`, which contains
+only the three project models. So a preflight finishing with an unrelated model
+resident reported `loaded_at_exit: []` while something was plainly loaded. The
+test written in 1.22 to defend the scope decision asserted that empty list, and
+in doing so asserted a false statement about the machine.
+
+The scope decision stands: cleanup waits for **this project's three models**,
+because a model loaded by another process is not ours to evict. What was wrong
+was the record, not the rule.
+
+Three fields now, each meaning one thing:
+
+| Field | Contents |
+|---|---|
+| `models_loaded_at_exit` | every model observed, including any stray |
+| `project_models_remaining` | only ours, and only those still resident |
+| `project_cleanup_complete` | whether ours went |
+
+`wait_until_unloaded` returns the complete last observed list alongside the
+targets so a caller can report both. The stray-model test now asserts the
+stray **appears** in `models_loaded_at_exit` while
+`project_cleanup_complete` is still true, which is the honest version of what
+it was trying to say.
+
+## 1.23.3 State
+
+| | |
+|---|---|
+| Retention | stated at 10m for synthetic loads, top-level, absent from run calls |
+| Exit reporting | three fields, one meaning each |
+| Failed diagnostic | unaltered |
+| Hardware runs | 6, unchanged |
+| H5 | **still unread** |
+| Tests | 639 |

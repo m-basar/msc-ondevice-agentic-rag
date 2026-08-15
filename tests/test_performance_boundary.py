@@ -689,6 +689,7 @@ class FakeOllama:
         self.calls: list[tuple[str, str]] = []
         self.default_model = "llama3.2:3b"
         self.applied_num_gpu = None
+        self.applied_keep_alive = None
         self._clock = 0.0
         self._pending: dict[str, int] = {}
 
@@ -718,13 +719,15 @@ class FakeOllama:
         )
         self.loaded[name] = vram
 
-    def generate(self, prompt, *, model=None, options=None):
+    def generate(self, prompt, *, model=None, options=None, keep_alive=None):
         self.calls.append(("generate", model))
         self.applied_num_gpu = (options or {}).get("num_gpu")
+        self.applied_keep_alive = keep_alive
         self._load(model or self.default_model, embedding=False)
 
-    def embed(self, text, *, model=None, options=None):
+    def embed(self, text, *, model=None, options=None, keep_alive=None):
         self.calls.append(("embed", model))
+        self.applied_keep_alive = keep_alive
         self._load("nomic-embed-text", embedding=True)
 
     def observed_placement(self):
@@ -961,8 +964,10 @@ def test_cleanup_runs_even_when_a_check_fails(monkeypatch, tmp_path):
     assert run_preflight(monkeypatch, tmp_path, server, placement="cpu") == 1
     report = latest_report(tmp_path)
     assert report["result"] == "fail"
-    assert report["loaded_at_exit"] == [], "a failed preflight left a model loaded"
-    assert report["clean_exit"] is True
+    # The failure happened part way through, and cleanup still ran.
+    assert report["project_models_remaining"] == [], \
+        "a failed preflight left a project model loaded"
+    assert report["project_cleanup_complete"] is True
 
 
 def test_exit_residency_is_recorded_on_failure(monkeypatch, tmp_path):
@@ -970,9 +975,10 @@ def test_exit_residency_is_recorded_on_failure(monkeypatch, tmp_path):
     server.loaded["nomic-embed-text:latest"] = 0
     run_preflight(monkeypatch, tmp_path, server)
     report = latest_report(tmp_path)
-    assert "loaded_at_exit" in report
-    assert "clean_exit" in report
-    assert report["clean_exit"] is False
+    assert "models_loaded_at_exit" in report
+    assert "project_models_remaining" in report
+    assert "project_cleanup_complete" in report
+    assert report["project_cleanup_complete"] is False
 
 
 def test_a_stray_third_party_model_does_not_fail_the_preflight(monkeypatch, tmp_path):
@@ -993,16 +999,19 @@ def test_a_stray_third_party_model_does_not_fail_the_preflight(monkeypatch, tmp_
     monkeypatch.setattr(server, "observed_placement", with_stray)
     assert run_preflight(monkeypatch, tmp_path, server) == 0
     report = latest_report(tmp_path)
-    assert report["clean_exit"] is True
-    assert report["loaded_at_exit"] == []
+    assert report["project_cleanup_complete"] is True
+    assert report["project_models_remaining"] == []
+    # The stray is reported rather than hidden. Amendment 1.23.
+    assert "other:latest" in report["models_loaded_at_exit"]
 
 
 def test_one_of_our_models_remaining_is_a_dirty_exit(monkeypatch, tmp_path):
     server = FakeOllama(sticky={"qwen2.5:3b"})
     assert run_preflight(monkeypatch, tmp_path, server) == 1
     report = latest_report(tmp_path)
-    assert report["clean_exit"] is False
-    assert "qwen2.5:3b" in report["loaded_at_exit"]
+    assert report["project_cleanup_complete"] is False
+    assert "qwen2.5:3b" in report["project_models_remaining"]
+    assert "qwen2.5:3b" in " ".join(report["models_loaded_at_exit"] or [])
 
 
 # --- polling, amendment 1.22 -------------------------------------------------
@@ -1106,3 +1115,65 @@ def test_the_analyser_matches_stage_models_canonically(tmp_path):
                                   "size_vram": 0}]},
     )
     assert "D_stage_model_resident" not in failing(validated(tmp_path, payload))
+
+
+# --- retention is stated, not assumed. Amendment 1.23 ------------------------
+
+
+def test_the_synthetic_load_states_its_retention(monkeypatch, tmp_path):
+    """Without it, "gone within 30 seconds" is only conclusive on a server
+    that happens to be on the five-minute default."""
+    server = FakeOllama()
+    assert run_preflight(monkeypatch, tmp_path, server) == 0
+    assert server.applied_keep_alive == preflight_placement.PREFLIGHT_KEEP_ALIVE
+    for stage in latest_report(tmp_path)["stages"]:
+        assert stage["load_keep_alive"] == "10m"
+
+
+def test_keep_alive_is_top_level_and_not_an_option(monkeypatch):
+    """Ollama reads retention from the request body. Buried in options it would
+    be ignored and the server would stay on its configured default."""
+    client = OllamaClient(load_config())
+    sent: dict = {}
+    monkeypatch.setattr(client, "_post",
+                        lambda endpoint, payload: sent.update(payload)
+                        or {"response": "", "embedding": [0.1]})
+
+    client.generate("ping", options={"num_predict": 1}, keep_alive="10m")
+    assert sent["keep_alive"] == "10m"
+    assert "keep_alive" not in sent["options"]
+
+    sent.clear()
+    client.embed("ping", keep_alive="10m")
+    assert sent["keep_alive"] == "10m"
+    assert "keep_alive" not in sent["options"]
+
+
+def test_experimental_calls_never_set_retention(monkeypatch):
+    """A run must be unaffected by the preflight's retention choice."""
+    client = OllamaClient(load_config())
+    sent: dict = {}
+    monkeypatch.setattr(client, "_post",
+                        lambda endpoint, payload: sent.update(payload)
+                        or {"response": "", "embedding": [0.1]})
+
+    client.generate("what is the mileage rate?")
+    assert "keep_alive" not in sent
+
+    sent.clear()
+    client.embed("what is the mileage rate?")
+    assert "keep_alive" not in sent
+
+
+def test_polling_returns_the_complete_observed_model_list():
+    class WithStray(FakeOllama):
+        def observed_placement(self):
+            observed = super().observed_placement()
+            observed["models_loaded"] = list(observed["models_loaded"]) + ["other:latest"]
+            return observed
+
+    server = WithStray()
+    result = server.wait_until_unloaded(["llama3.2:3b"])
+    assert result["cleared"] is True
+    assert result["remaining"] == []
+    assert "other:latest" in result["models_loaded"]

@@ -103,9 +103,12 @@ class LLMClient(Protocol):
     backend: str
 
     def generate(self, prompt: str, *, model: str | None = None,
-                 options: dict[str, Any] | None = None) -> Generation: ...
+                 options: dict[str, Any] | None = None,
+                 keep_alive: str | int | None = None) -> Generation: ...
 
-    def embed(self, text: str, *, model: str | None = None) -> list[float]: ...
+    def embed(self, text: str, *, model: str | None = None,
+              options: dict[str, Any] | None = None,
+              keep_alive: str | int | None = None) -> list[float]: ...
 
     def embed_batch(self, texts: Sequence[str], *,
                     model: str | None = None) -> list[list[float]]: ...
@@ -163,7 +166,8 @@ class OllamaClient:
             raise LLMError(f"{endpoint} returned invalid JSON: {exc}") from exc
 
     def generate(self, prompt: str, *, model: str | None = None,
-                 options: dict[str, Any] | None = None) -> Generation:
+                 options: dict[str, Any] | None = None,
+                 keep_alive: str | int | None = None) -> Generation:
         chosen = model or self.default_model
         merged = dict(self.config.require("generation"))
         if options:
@@ -186,6 +190,12 @@ class OllamaClient:
         started = time.perf_counter()
         response = self._post("/api/generate", {
             "model": chosen, "prompt": prompt, "stream": False, "options": merged,
+            # Amendment 1.23. Top-level, not an option: Ollama reads retention
+            # from the request body, and burying it in ``options`` would leave
+            # the server on whatever default it was configured with. Set only
+            # for synthetic preflight loads; experimental calls never pass it,
+            # so a run is unaffected.
+            **({"keep_alive": keep_alive} if keep_alive is not None else {}),
         })
         wall = time.perf_counter() - started
         self.call_count += 1
@@ -217,14 +227,16 @@ class OllamaClient:
     EMBEDDING_OPTIONS: dict[str, Any] = {"num_gpu": 0}
 
     def embed(self, text: str, *, model: str | None = None,
-              options: dict[str, Any] | None = None) -> list[float]:
+              options: dict[str, Any] | None = None,
+              keep_alive: str | int | None = None) -> list[float]:
         chosen = model or self.embedding_model
         merged = dict(self.EMBEDDING_OPTIONS)
         if options:
             merged.update(options)
         response = self._post(
             "/api/embeddings",
-            {"model": chosen, "prompt": text, "options": merged},
+            {"model": chosen, "prompt": text, "options": merged,
+             **({"keep_alive": keep_alive} if keep_alive is not None else {})},
         )
         vector = response.get("embedding")
         if not vector:
@@ -339,6 +351,7 @@ class OllamaClient:
         observations = 0
         transient: list[str] = []
         remaining: list[str] = sorted(wanted)
+        last_seen: list[str] | None = None
 
         while True:
             try:
@@ -348,6 +361,7 @@ class OllamaClient:
                     canonical_model_name(n) for n in observed["models_loaded"]
                 }
                 remaining = sorted(wanted & resident)
+                last_seen = list(observed["models_loaded"])
                 if not remaining:
                     # At least one *successful* observation showing them gone.
                     return {
@@ -356,6 +370,10 @@ class OllamaClient:
                         "successful_observations": observations,
                         "transient_errors": transient,
                         "remaining": [],
+                        # Amendment 1.23. The complete list, so a caller can
+                        # report what was actually loaded rather than only the
+                        # subset it was waiting for.
+                        "models_loaded": last_seen,
                         "timeout_seconds": timeout,
                         "poll_interval_seconds": interval,
                     }
@@ -369,6 +387,7 @@ class OllamaClient:
                     "successful_observations": observations,
                     "transient_errors": transient,
                     "remaining": remaining,
+                    "models_loaded": last_seen,
                     "timeout_seconds": timeout,
                     "poll_interval_seconds": interval,
                 }
@@ -493,7 +512,7 @@ class MockClient:
     def wait_until_unloaded(self, models, **kwargs) -> dict[str, Any]:
         return {"cleared": True, "elapsed_seconds": 0.0,
                 "successful_observations": 1, "transient_errors": [],
-                "remaining": [], "timeout_seconds": 0.0,
+                "remaining": [], "models_loaded": [], "timeout_seconds": 0.0,
                 "poll_interval_seconds": 0.0}
 
     def embed(self, text: str, *, model: str | None = None,
