@@ -22,6 +22,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 import analyse_performance  # noqa: E402
+import preflight_placement  # noqa: E402
 import run_arms  # noqa: E402
 
 from sme_assistant.common.llm_client import MockClient, OllamaClient  # noqa: E402
@@ -152,17 +153,20 @@ def write_run(root: Path, name: str, arm: str, *, purpose="performance",
               loaded_start=None, drafts_match=True, retrieval_match=True,
               generation_match=True, duplicate_ids=False,
               drop_wall_seconds=0, zero_wall_seconds=False,
-              drop_verification_seconds=0):
+              drop_verification_seconds=0, break_wall_identity=False,
+              generation_model="llama3.2:3b", verification_model="qwen2.5:3b"):
     directory = root / name
     directory.mkdir(parents=True)
     if loaded_end is None:
-        loaded_end = [{"name": "llama3.2:3b", "size": 100, "size_vram": 0}]
+        loaded_end = [{"name": "llama3.2:3b", "size": 100, "size_vram": 0},
+                      {"name": "qwen2.5:3b", "size": 100, "size_vram": 0}]
     (directory / "manifest.json").write_text(json.dumps({
         "split": split,
         "purpose": purpose,
         "hardware_condition": condition,
         "placement": placement,
-        "arm": {"arm": arm},
+        "arm": {"arm": arm, "generation_model": generation_model,
+                "verification_model": verification_model},
         "provenance": {key: hashes for key in (
             "corpus_sha256", "chunk_set_sha256", "question_set_sha256",
             "registry_sha256", "config_sha256")},
@@ -174,7 +178,11 @@ def write_run(root: Path, name: str, arm: str, *, purpose="performance",
         qid = f"{question_prefix}-{0 if duplicate_ids else n:03d}"
         record = {
             "question_id": qid,
-            "wall_seconds": (0.0 if zero_wall_seconds else 2.0),
+            "wall_seconds": (
+                0.0 if zero_wall_seconds
+                else (5.0 + (1.0 if break_wall_identity else 0.0)) if verifier
+                else 2.0
+            ),
             "answer": f"draft for {qid}",
             "retrieval": {"chunks": [qid]} if retrieval_match else {"chunks": [n]},
             "generation": {
@@ -441,14 +449,15 @@ def test_a_gpu_condition_with_nothing_in_vram_is_caught(tmp_path):
         observed_placement={"any_on_gpu": True, "models_loaded": ["x"]},
     )
     failures = failing(validated(tmp_path, payload))
-    assert "B_gpu_placement_observed" in failures
-    assert "D_gpu_placement_observed" in failures
+    assert "B_stage_model_on_gpu" in failures
+    assert "D_stage_model_on_gpu" in failures
 
 
 def test_an_embedding_model_on_cpu_does_not_fail_a_gpu_run(tmp_path):
     """Embeddings are pinned to the CPU by design, so a zero-VRAM embedding
     model alongside an offloaded generator is correct, not a failure."""
     gpu = [{"name": "llama3.2:3b", "size": 100, "size_vram": 100},
+           {"name": "qwen2.5:3b", "size": 100, "size_vram": 100},
            {"name": "nomic-embed-text:latest", "size": 10, "size_vram": 0}]
     payload, _, _ = build_index(
         tmp_path,
@@ -500,23 +509,69 @@ def test_the_embedding_model_is_evicted_through_the_embedding_endpoint(monkeypat
 # --- amendment 1.19: fail-open paths closed ----------------------------------
 
 
-def test_gpu_placement_is_judged_per_arm_not_aggregated(tmp_path):
-    """B on GPU and D on CPU is two conditions reported as one.
+def test_gpu_placement_is_judged_on_the_model_being_timed(tmp_path):
+    """A leftover Llama on the GPU does not make D a GPU run.
 
-    The aggregated check passed it, because *some* model somewhere held VRAM.
+    D times the *verifier*. If Qwen ran on the CPU while a residual Llama held
+    VRAM, an "any model on GPU" check passed it, and the ratio would compare a
+    GPU draft against a CPU verification.
     """
-    on_gpu = [{"name": "llama3.2:3b", "size": 100, "size_vram": 100}]
-    on_cpu = [{"name": "qwen2.5:3b", "size": 100, "size_vram": 0}]
+    both_gpu = [{"name": "llama3.2:3b", "size": 100, "size_vram": 100},
+                {"name": "qwen2.5:3b", "size": 100, "size_vram": 100}]
+    leftover_only = [{"name": "llama3.2:3b", "size": 100, "size_vram": 100},
+                     {"name": "qwen2.5:3b", "size": 100, "size_vram": 0}]
     payload, _, _ = build_index(
         tmp_path,
-        b_kwargs={"condition": "laptop_gpu", "placement": "gpu", "loaded_end": on_gpu},
-        d_kwargs={"condition": "laptop_gpu", "placement": "gpu", "loaded_end": on_cpu},
+        b_kwargs={"condition": "laptop_gpu", "placement": "gpu",
+                  "loaded_end": both_gpu},
+        d_kwargs={"condition": "laptop_gpu", "placement": "gpu",
+                  "loaded_end": leftover_only},
         hardware_condition="laptop_gpu", requested_placement="gpu",
         observed_placement={"any_on_gpu": True, "models_loaded": ["x"]},
     )
     failures = failing(validated(tmp_path, payload))
-    assert "D_gpu_placement_observed" in failures
-    assert "B_gpu_placement_observed" not in failures
+    assert "D_stage_model_on_gpu" in failures
+    assert "B_stage_model_on_gpu" not in failures
+
+
+def test_the_timed_stage_model_must_be_resident(tmp_path):
+    """D's verifier missing from residency means nothing confirms where the
+    timed work ran."""
+    payload, _, _ = build_index(tmp_path, d_kwargs={
+        "loaded_end": [{"name": "llama3.2:3b", "size": 100, "size_vram": 0}]
+    })
+    assert "D_stage_model_resident" in failing(validated(tmp_path, payload))
+
+
+def test_a_successful_but_empty_residency_fails(tmp_path):
+    """all([]) is True, so an empty model list previously passed as CPU."""
+    payload, _, _ = build_index(tmp_path, d_kwargs={"loaded_end": []})
+    failures = failing(validated(tmp_path, payload))
+    assert "D_residency_not_empty" in failures
+
+
+def test_a_malformed_size_fails_closed(tmp_path):
+    payload, _, _ = build_index(tmp_path, d_kwargs={
+        "loaded_end": [{"name": "qwen2.5:3b", "size": "big", "size_vram": 0}]
+    })
+    assert "D_residency_fully_reported" in failing(validated(tmp_path, payload))
+
+
+def test_d_wall_time_must_equal_draft_plus_verification(tmp_path):
+    """If it does not, D timed something other than a replay of B."""
+    payload, _, _ = build_index(tmp_path, d_kwargs={"break_wall_identity": True})
+    assert "D_wall_time_is_draft_plus_verification" in failing(
+        validated(tmp_path, payload)
+    )
+
+
+def test_the_wall_time_identity_tolerates_only_recorded_rounding(tmp_path):
+    payload, _, _ = build_index(tmp_path)
+    result = validated(tmp_path, payload)
+    identity = result["checks"]["D_wall_time_is_draft_plus_verification"]
+    assert identity["pass"] is True
+    assert identity["compared"] == 68
+    assert identity["tolerance_seconds"] == analyse_performance.WALL_TIME_TOLERANCE
 
 
 def test_a_missing_size_vram_fails_closed(tmp_path):
@@ -605,33 +660,173 @@ def test_a_rejected_report_discloses_no_latency(tmp_path, monkeypatch, capsys):
     assert numeric_timing_keys(written) == [], "rejected report leaked a timing"
 
 
-def test_the_preflight_refuses_when_eviction_does_not_take_effect(monkeypatch):
-    """Every earlier test monkeypatched _post and proved only that the right
-    endpoint was addressed, not that the server acted."""
-    from sme_assistant.common.llm_client import LLMError
+# --- the standalone preflight, amendment 1.20 --------------------------------
 
-    client = OllamaClient(load_config())
-    monkeypatch.setattr(client, "unload", lambda *a, **k: {})
-    monkeypatch.setattr(
-        client, "observed_placement",
-        lambda: {"models_loaded": [client.default_model], "any_on_gpu": False,
-                 "vram_bytes": {}, "complete": True},
+
+class FakeOllama:
+    """A live server, simulated at the /api boundary rather than at _post."""
+
+    def __init__(self, *, placement="cpu", sticky=(), refuse_embedding=False):
+        self.loaded: dict[str, int] = {}
+        self.placement = placement
+        self.sticky = set(sticky)          # models eviction cannot remove
+        self.refuse_embedding = refuse_embedding
+        self.calls: list[tuple[str, str]] = []
+        self.default_model = "llama3.2:3b"
+
+    def unload(self, model=None, *, embedding=False):
+        self.calls.append(("unload", model))
+        if embedding and self.refuse_embedding:
+            return {}
+        if model not in self.sticky:
+            self.loaded.pop(model, None)
+        return {}
+
+    def _load(self, model, *, embedding):
+        vram = 0 if embedding else (100 if self.placement == "gpu" else 0)
+        self.loaded[model] = vram
+
+    def generate(self, prompt, *, model=None, options=None):
+        self.calls.append(("generate", model))
+        self._load(model or self.default_model, embedding=False)
+
+    def embed(self, text, *, model=None, options=None):
+        self.calls.append(("embed", model))
+        self._load("nomic-embed-text", embedding=True)
+
+    def observed_placement(self):
+        return {
+            "models_loaded": list(self.loaded),
+            "any_on_gpu": any(v > 0 for v in self.loaded.values()),
+            "vram_bytes": dict(self.loaded),
+            "sizes": {k: 100 for k in self.loaded},
+            "complete": True,
+        }
+
+
+def run_preflight(monkeypatch, tmp_path, server, placement="cpu"):
+    monkeypatch.setattr(preflight_placement, "OllamaClient", lambda config: server)
+    return preflight_placement.main(
+        ["--placement", placement, "--out", str(tmp_path)]
     )
-    with pytest.raises(LLMError, match="still resident after an eviction"):
-        client.preflight("cpu")
 
 
-def test_the_preflight_refuses_when_the_device_is_not_the_one_requested(monkeypatch):
-    from sme_assistant.common.llm_client import LLMError
+def latest_report(tmp_path):
+    files = sorted(tmp_path.glob("*_preflight_*.json"))
+    return json.loads(files[-1].read_text(encoding="utf-8"))
 
-    client = OllamaClient(load_config())
-    states = iter([
-        {"models_loaded": [], "any_on_gpu": False, "vram_bytes": {}, "complete": True},
-        {"models_loaded": ["llama3.2:3b"], "any_on_gpu": True,
-         "vram_bytes": {"llama3.2:3b": 1}, "complete": True},
-    ])
-    monkeypatch.setattr(client, "unload", lambda *a, **k: {})
-    monkeypatch.setattr(client, "observed_placement", lambda: next(states))
-    monkeypatch.setattr(client, "generate", lambda *a, **k: None)
-    with pytest.raises(LLMError, match="loaded onto gpu"):
-        client.preflight("cpu")
+
+def test_the_preflight_checks_all_three_models(monkeypatch, tmp_path):
+    """Embedding eviction was the reason it was added, and the first version
+    only ever touched Llama."""
+    server = FakeOllama()
+    assert run_preflight(monkeypatch, tmp_path, server) == 0
+
+    report = latest_report(tmp_path)
+    checked = [stage["model"] for stage in report["stages"]]
+    assert checked == ["llama3.2:3b", "qwen2.5:3b", "nomic-embed-text"]
+    assert report["result"] == "pass"
+
+
+def test_the_preflight_exercises_the_embedding_endpoint(monkeypatch, tmp_path):
+    server = FakeOllama()
+    run_preflight(monkeypatch, tmp_path, server)
+    embedding_stage = latest_report(tmp_path)["stages"][-1]
+    assert embedding_stage["endpoint"] == "/api/embeddings"
+    assert embedding_stage["expected_placement"] == "cpu"
+    assert ("embed", None) in server.calls
+
+
+def test_the_preflight_checks_the_verifier_not_only_the_generator(monkeypatch, tmp_path):
+    server = FakeOllama()
+    run_preflight(monkeypatch, tmp_path, server)
+    models = [stage["model"] for stage in latest_report(tmp_path)["stages"]]
+    assert "qwen2.5:3b" in models
+
+
+def test_the_preflight_leaves_nothing_loaded(monkeypatch, tmp_path):
+    """A preflight that leaves a model resident warms the next timed run."""
+    server = FakeOllama()
+    assert run_preflight(monkeypatch, tmp_path, server) == 0
+    assert server.loaded == {}
+    assert latest_report(tmp_path)["clean_exit"] is True
+
+
+def test_the_preflight_fails_when_a_model_survives_eviction(monkeypatch, tmp_path):
+    server = FakeOllama(sticky={"nomic-embed-text"})
+    server.loaded["nomic-embed-text"] = 0
+    assert run_preflight(monkeypatch, tmp_path, server) == 1
+    report = latest_report(tmp_path)
+    assert report["result"] == "fail"
+    assert "still resident after an eviction" in report["error"]
+
+
+def test_the_preflight_fails_when_the_device_is_not_the_one_requested(monkeypatch, tmp_path):
+    server = FakeOllama(placement="gpu")
+    assert run_preflight(monkeypatch, tmp_path, server, placement="cpu") == 1
+    assert "loaded onto gpu" in latest_report(tmp_path)["error"]
+
+
+def test_the_preflight_uses_no_test_questions(monkeypatch, tmp_path):
+    server = FakeOllama()
+    run_preflight(monkeypatch, tmp_path, server)
+    report = latest_report(tmp_path)
+    assert report["uses_test_questions"] is False
+    assert report["synthetic_prompt"] == "ping"
+
+
+def test_nothing_calls_the_preflight_automatically():
+    """It must not warm a subsequent timed run, so the runner does not invoke
+    it. Amendment 1.20."""
+    source = (Path(__file__).resolve().parents[1] / "scripts" / "run_arms.py")
+    text = source.read_text(encoding="utf-8")
+    assert "preflight(" not in text
+    assert "preflight_placement.py" in text, "the runner should point at it"
+
+
+# --- runner rejection records, exercised rather than inferred ----------------
+
+
+def test_the_runner_writes_a_retained_rejection_record(tmp_path):
+    """Tested directly, not only through the client exception."""
+    class FakeConfig:
+        @staticmethod
+        def path(_key):
+            return tmp_path
+
+    record = run_arms.write_rejection(
+        FakeConfig(), split="test", condition="pi5_cpu", stage="placement_D",
+        reason="placement_mismatch", arm="D", requested_placement="cpu",
+        observed_placement="gpu",
+    )
+    payload = json.loads(record.read_text(encoding="utf-8"))
+    assert payload["reason"] == "placement_mismatch"
+    assert payload["arm"] == "D"
+    assert "retained unchanged" in payload["retention"]
+    assert "delete" not in payload["retention"].lower().replace("deleted", "")
+
+
+def test_rejection_records_do_not_overwrite_each_other(tmp_path):
+    class FakeConfig:
+        @staticmethod
+        def path(_key):
+            return tmp_path
+
+    first = run_arms.write_rejection(FakeConfig(), split="test",
+                                     condition="pi5_cpu", stage="eviction",
+                                     reason="eviction_failed")
+    second = run_arms.write_rejection(FakeConfig(), split="test",
+                                      condition="pi5_cpu", stage="eviction",
+                                      reason="eviction_failed")
+    assert first != second
+    assert len(list(tmp_path.glob("REJECTED_*.json"))) == 2
+
+
+def test_no_rejection_record_instructs_deletion():
+    """Amendment 1.19.5. Deleting the evidence of a failed condition is how a
+    failed condition becomes an unrecorded one."""
+    text = (Path(__file__).resolve().parents[1] / "scripts" / "run_arms.py").read_text(
+        encoding="utf-8"
+    )
+    for phrase in ("Delete or re-tag", "delete or re-tag", "re-tag the"):
+        assert phrase not in text

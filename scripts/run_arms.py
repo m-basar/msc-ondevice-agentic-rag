@@ -308,9 +308,11 @@ def main() -> int:
 
         probe = OllamaClient(config)
         embedding_model = config.require("llm.embedding_model")
-        # An embedding model does not serve /api/generate, so it must be
-        # evicted through the embedding endpoint or it stays resident with its
-        # previous placement. Amendment 1.18.
+        # An embedding model is not served by /api/generate, so evicting it
+        # there was the wrong endpoint. Amendment 1.19.8: what the server did
+        # with that request was never observed, so no claim is made that the
+        # eviction definitely failed. The correct endpoint is used now, and
+        # `preflight_placement.py` is what actually settles the question.
         to_evict = [
             (config.require("llm.generation_model"), False),
             (config.require("llm.verification_model"), False),
@@ -336,21 +338,14 @@ def main() -> int:
                 print(f"  Rejection record written to {record.name}")
                 return 1
 
-        try:
-            preflight = probe.preflight(args.placement)
-        except Exception as exc:
-            record = write_rejection(
-                config, split=args.split, condition=args.hardware_condition,
-                stage="preflight", reason="preflight_failed", error=str(exc),
-                note=("A synthetic evict-load-observe cycle failed, so eviction "
-                      "or residency reporting cannot be relied on for this run."),
-            )
-            print(f"\n  PREFLIGHT FAILED: {exc}")
-            print(f"  Rejection record written to {record.name}")
-            return 1
-
-        print(f"  evicted and preflighted: {args.placement} placement confirmed "
-              "on a synthetic prompt")
+        # No preflight here. Amendment 1.20: a preflight loads a model, and
+        # loading one immediately before Arm B turns a cold start into a warm
+        # run, changing the quantity H5 measures. Placement is proven
+        # separately by `scripts/preflight_placement.py`, which is standalone
+        # and unloads everything before it exits.
+        print(f"  evicted loaded models before a {args.placement} run")
+        print("  placement is verified separately: "
+              f"python scripts/preflight_placement.py --placement {args.placement}")
     evaluation = load_evaluation_config()
     kb = load_knowledge_base(config.path("paths.kb_docs"))
     registry = load_conflicts(evaluation.path("conflicts"))

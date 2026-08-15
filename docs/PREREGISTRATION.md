@@ -2979,3 +2979,107 @@ would settle the question. `/api/embeddings` remains valid and supports
 | Live preflight | synthetic, no test questions |
 | H5 | **still unread** |
 | Tests | 604 |
+
+---
+
+# Amendment 1.20 - 15 August 2026
+
+Append-only, written **before any latency analysis**. No performance report
+exists in the repository. The six hardware runs are unchanged, retained, and
+not rerun; every correction below is satisfied by evidence they already
+contain, which was confirmed by inspecting model names and VRAM figures only.
+
+Review of `fb8b292` accepted the six fail-open closures from 1.19 and found six
+more. All six were verified against the code before being accepted.
+
+## 1.20.1 The preflight tested one model, and it was the wrong one
+
+The preflight added in 1.19 called `self.default_model` and nothing else. It
+never touched the verification model and never touched the **embedding** model,
+whose eviction was the entire reason a preflight was added.
+
+## 1.20.2 It warmed the run it was protecting
+
+It loaded a model and left it resident, and the runner called it automatically
+immediately before Arm B. A preflight that ends with the generator in memory
+turns a cold start into a warm one, which changes the quantity H5 measures. The
+guard corrupted the measurement it existed to defend.
+
+## 1.20.3 It could not be exercised without spending a run
+
+Its only real invocation was inside `run_arms.py`, so proving eviction works
+against a live server required starting another performance execution. There is
+no budget for one.
+
+**All three are fixed by making it a standalone command.**
+`scripts/preflight_placement.py` checks the generation, verification and
+embedding models in turn: evict, confirm gone, load with a synthetic prompt that
+is not a test question, confirm the device, evict again. Generation and
+verification follow the requested placement; the embedding model is always
+expected on the CPU, because the project pins it there. **Everything is
+unloaded before exit**, and a model left loaded is itself a failure. Nothing
+calls it automatically, and a test asserts that `run_arms.py` contains no
+preflight call.
+
+## 1.20.4 GPU placement did not check the model being timed
+
+The check asked whether any model on the arm held VRAM. Arm D times the
+**verifier**. A residual Llama holding VRAM while Qwen ran on the CPU satisfied
+it, and the ratio would then compare a GPU draft against a CPU verification
+while both were labelled the same condition.
+
+Placement is now judged on each arm's **timed stage model**, taken from the
+manifest: `generation_model` for B, `verification_model` for D. That model must
+be resident, must report numeric `size` and `size_vram`, and under GPU placement
+must hold VRAM itself. Under CPU placement every loaded model must report zero.
+
+## 1.20.5 An empty residency passed as CPU
+
+`all([])` is `True`, so a successful `/api/ps` response listing no models
+produced `complete: True` with `any_on_gpu: False`, which read as confirmed CPU
+placement. An arm that finished with nothing resident now fails
+`{arm}_residency_not_empty`.
+
+## 1.20.6 The wall-time identity was never checked
+
+`VerifiedAnswer.wall_seconds` is defined as the reused draft's wall time plus
+the verification's, and both are stored rounded to three decimals. On a sound
+replay, `D.wall_seconds == B.wall_seconds + D.verification_seconds` therefore
+holds for **every** question, and a breach means D timed something other than a
+replay of B.
+
+This is now checked per question. **The tolerance is 0.002 seconds, derived from
+three half-ULP roundings at three decimal places**, not chosen by looking at any
+observation. All 68 questions must be comparable and within it.
+
+## 1.20.7 The eviction claim, hedged in the remaining places
+
+Code comments still asserted that the embedding eviction "never actually"
+worked. As 1.19.8 established, that was never demonstrated. The comments now
+say what is defensible: the wrong endpoint was addressed and the outcome was
+never checked. `preflight_placement.py` is what settles it, and running it is a
+standalone action requiring no run.
+
+The corresponding sentences in amendments 1.17 and 1.18 are **left as written**.
+Editing an earlier entry in an append-only log rewrites history even when the
+edit is a correction, and the correction lives here and in 1.19.8.
+
+## 1.20.8 What is not changed
+
+* No hardware run is rerun, re-tagged, deleted or modified.
+* No latency analysis has been run. `results/analysis` holds only the two
+  quality files.
+* H1 to H4 stand as signed off at `be55077`.
+
+## 1.20.9 State
+
+| | |
+|---|---|
+| Preflight | standalone, all three models, cleans up, never auto-invoked |
+| GPU placement | per arm, on the timed stage model |
+| Empty residency | fails |
+| Wall-time identity | per question, 0.002s tolerance derived from rounding |
+| Rejection records | tested directly, retention wording enforced by test |
+| Hardware runs | 6, unchanged |
+| H5 | **still unread** |
+| Tests | 618 |

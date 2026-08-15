@@ -55,6 +55,20 @@ PROVENANCE_KEYS = (
 )
 CONDITION_PLACEMENT = {"laptop_gpu": "gpu", "laptop_cpu": "cpu", "pi5_cpu": "cpu"}
 
+#: Which model each arm's *timed stage* actually runs on.
+#: B times a draft, so its stage model is the generator. D replays that draft
+#: and times a verification, so its stage model is the verifier. Checking "some
+#: model held VRAM" would pass a D run where a leftover Llama sat on the GPU
+#: while Qwen, the model being timed, ran on the CPU. Amendment 1.20.
+STAGE_MODEL_KEY = {"B": "generation_model", "D": "verification_model"}
+
+#: ``RunWriter`` stores wall_seconds and verification_seconds rounded to three
+#: decimals, and ``VerifiedAnswer.wall_seconds`` is defined as the reused
+#: draft's wall time plus the verification's. The identity is therefore exact
+#: by construction and can only be disturbed by three half-ULP roundings at
+#: 3 dp. The tolerance is derived from that, not fitted to any observation.
+WALL_TIME_TOLERANCE = 0.002
+
 
 def performance_run(directory: Path) -> tuple[dict, list[dict], dict]:
     """Load a run, refusing anything not declared performance-only."""
@@ -236,22 +250,35 @@ def validate(runs: dict[str, tuple[dict, list[dict], dict]], index_meta: dict) -
           "cannot be confirmed")
 
     if requested:
-        # Amendment 1.19. Placement is judged **per arm**. Aggregating across
-        # both would pass a run where B sat on the GPU and D on the CPU, which
-        # is two conditions reported as one and exactly the comparison H5 must
-        # not make.
-        for arm, models in sorted(end_evidence.items()):
+        # Placement is judged per arm and, within an arm, on the model whose
+        # work is being timed. Amendment 1.20.
+        for arm, (manifest, _, _) in sorted(runs.items()):
+            models = end_evidence.get(arm) or {}
+
+            check(f"{arm}_residency_not_empty", bool(models),
+                  "no model was resident at the end of this arm, so nothing "
+                  "confirms where it ran")
             if not models:
                 continue
+
             unreported = [
                 name for name, block in models.items()
                 if not isinstance(block.get("size_vram"), (int, float))
+                or not isinstance(block.get("size"), (int, float))
             ]
             check(f"{arm}_residency_fully_reported", not unreported,
-                  f"{unreported} reported no numeric size_vram, so placement "
-                  "cannot be confirmed")
+                  f"{unreported} reported no numeric size or size_vram, so "
+                  "placement cannot be confirmed")
             if unreported:
                 continue
+
+            stage_model = (manifest.get("arm") or {}).get(
+                STAGE_MODEL_KEY.get(arm, "generation_model")
+            )
+            check(f"{arm}_stage_model_resident", stage_model in models,
+                  f"the timed stage model {stage_model!r} is not among the "
+                  f"resident models {sorted(models)}",
+                  stage_model=stage_model)
 
             if requested == "cpu":
                 held = [f"{name} held {block['size_vram']} bytes"
@@ -259,12 +286,13 @@ def validate(runs: dict[str, tuple[dict, list[dict], dict]], index_meta: dict) -
                         if block["size_vram"] > 0]
                 check(f"{arm}_cpu_placement_holds_for_every_model", not held,
                       "; ".join(held))
-            else:
-                on_gpu = [name for name, block in models.items()
-                          if block["size_vram"] > 0]
-                check(f"{arm}_gpu_placement_observed", bool(on_gpu),
-                      "no model held VRAM on an arm requesting gpu placement",
-                      models_on_gpu=on_gpu)
+            elif stage_model in models:
+                # Independently, per arm, on the model actually being timed.
+                on_gpu = models[stage_model]["size_vram"] > 0
+                check(f"{arm}_stage_model_on_gpu", on_gpu,
+                      f"{stage_model} held no VRAM on an arm requesting gpu "
+                      "placement, so the timed stage ran on the CPU",
+                      size_vram=models[stage_model]["size_vram"])
 
     if observed:
         seen = "gpu" if observed.get("any_on_gpu") else "cpu"
@@ -296,6 +324,39 @@ def validate(runs: dict[str, tuple[dict, list[dict], dict]], index_meta: dict) -
               len(verification) == EXPECTED_QUESTIONS,
               f"{len(verification)} positive numeric verification_seconds, "
               f"expected {EXPECTED_QUESTIONS}")
+
+    # --- D's wall time must be B's draft plus D's verification ---------------
+    # VerifiedAnswer.wall_seconds is defined as the reused draft's wall time
+    # plus the verification's, so on a sound replay this identity holds for
+    # every question. If it does not, D timed something other than a replay of
+    # B, and the ratio would answer a different question. Amendment 1.20.
+    if set(runs) == set(EXPECTED_ARMS):
+        b_by_id = {r["question_id"]: r for r in runs["B"][1]}
+        breaches: list[str] = []
+        compared = 0
+        for record in runs["D"][1]:
+            baseline = b_by_id.get(record["question_id"])
+            if baseline is None:
+                continue
+            parts = (baseline.get("wall_seconds"),
+                     record.get("verification_seconds"),
+                     record.get("wall_seconds"))
+            if not all(isinstance(v, (int, float)) for v in parts):
+                breaches.append(f"{record['question_id']}: non-numeric timing")
+                continue
+            compared += 1
+            drift = abs(parts[2] - (parts[0] + parts[1]))
+            if drift > WALL_TIME_TOLERANCE:
+                breaches.append(f"{record['question_id']}: off by {drift:.4f}s")
+        check("D_wall_time_is_draft_plus_verification",
+              not breaches and compared == EXPECTED_QUESTIONS,
+              (f"{len(breaches)} of {EXPECTED_QUESTIONS} questions breach the "
+               f"{WALL_TIME_TOLERANCE}s rounding tolerance"
+               + (f"; first: {breaches[0]}" if breaches else "")
+               + (f"; only {compared} comparable" if compared != EXPECTED_QUESTIONS
+                  else "")),
+              compared=compared, breaches=len(breaches),
+              tolerance_seconds=WALL_TIME_TOLERANCE)
 
     # --- draft provenance ---------------------------------------------------
     if "D" in runs:

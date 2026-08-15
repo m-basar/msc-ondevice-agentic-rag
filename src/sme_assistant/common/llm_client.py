@@ -234,12 +234,13 @@ class OllamaClient:
         is the failure this repository has already documented once. Posting
         ``keep_alive: 0`` is the documented way to unload.
 
-        ``embedding`` selects the endpoint. Amendment 1.18: an embedding model
-        does not serve ``/api/generate``, so evicting ``nomic-embed-text``
-        through it either errors or silently does nothing, leaving the model
-        resident with its previous placement. That is the one model whose
-        placement this project pins explicitly, so getting its eviction wrong
-        defeats the pinning.
+        ``embedding`` selects the endpoint. An embedding model is not served by
+        ``/api/generate``, so addressing it there was simply wrong. Amendment
+        1.19.8: what the server did with that request was never observed, so it
+        is not claimed that the eviction definitely failed, only that the wrong
+        endpoint was used and the outcome was never checked. That model is the
+        one whose placement this project pins explicitly, which is why
+        ``scripts/preflight_placement.py`` exercises it against a live server.
         """
         chosen = model or (self.embedding_model if embedding else self.default_model)
         if embedding:
@@ -304,56 +305,23 @@ class OllamaClient:
             ),
         }
 
-    def preflight(self, placement: str) -> dict[str, Any]:
-        """Prove eviction and residency reporting work, before a run relies on them.
+    def preflight(self, model: str, *, embedding: bool = False) -> dict[str, Any]:
+        """Evict one model, confirm it is gone, and report residency.
 
-        Amendment 1.19. Every earlier test monkeypatched ``_post``, so they
-        proved the right endpoint was addressed and nothing about whether the
-        server acted on it. This performs one synthetic cycle against the live
-        server: evict, confirm the model is gone, generate a one-token prompt
-        that is **not a test question**, then read residency back and check the
-        device is the one requested.
-
-        Raises ``LLMError`` on any failure. A run whose eviction silently did
-        nothing measures the previous placement, and that is exactly the defect
-        this project has already hit once.
+        The observe-and-reload half lives in
+        ``scripts/preflight_placement.py``, which drives this for all three
+        models and unloads everything again. Amendment 1.20: nothing calls a
+        preflight automatically, because loading a model immediately before a
+        timed run warms it.
         """
-        model = self.default_model
-        self.unload(model)
-        after_evict = self.observed_placement()
-        if model in (after_evict["models_loaded"] or []):
+        self.unload(model, embedding=embedding)
+        after = self.observed_placement()
+        if model in (after["models_loaded"] or []):
             raise LLMError(
-                f"preflight: {model} is still resident after an eviction, so "
-                "eviction is not taking effect and the run would measure the "
-                "previous placement."
+                f"{model} is still resident after an eviction, so eviction is "
+                "not taking effect."
             )
-
-        self.generate("ping", options={"num_predict": 1})
-        after_load = self.observed_placement()
-        if not after_load["complete"]:
-            raise LLMError(
-                "preflight: /api/ps reported a model without a numeric "
-                "size_vram, so placement cannot be confirmed."
-            )
-        seen = "gpu" if after_load["any_on_gpu"] else "cpu"
-        if seen != placement:
-            raise LLMError(
-                f"preflight: requested {placement} placement but a synthetic "
-                f"generation loaded onto {seen}. Loaded: "
-                f"{after_load['models_loaded']}, vram {after_load['vram_bytes']}."
-            )
-        return {"after_eviction": after_evict, "after_synthetic_load": after_load,
-                "placement_confirmed": placement}
-
-    def describe_endpoint(self) -> dict[str, Any]:
-        info = ollama_info(self.base_url)
-        return {
-            "backend": self.backend,
-            "base_url": self.base_url,
-            "version": info.get("version"),
-            "reachable": info.get("reachable", False),
-            "model_store_fingerprint": info.get("model_store_fingerprint"),
-        }
+        return after
 
 
 # --- mock backend -----------------------------------------------------------
@@ -441,8 +409,9 @@ class MockClient:
         return {"models_loaded": [], "any_on_gpu": False, "vram_bytes": {},
                 "sizes": {}, "complete": True}
 
-    def preflight(self, placement: str) -> dict[str, Any]:
-        return {"mock": True, "placement_confirmed": placement}
+    def preflight(self, model: str, *, embedding: bool = False) -> dict[str, Any]:
+        return {"models_loaded": [], "any_on_gpu": False, "vram_bytes": {},
+                "sizes": {}, "complete": True}
 
     def embed(self, text: str, *, model: str | None = None,
               options: dict[str, Any] | None = None) -> list[float]:
