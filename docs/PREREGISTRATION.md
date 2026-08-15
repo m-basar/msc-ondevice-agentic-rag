@@ -253,7 +253,15 @@ size cited is the number of families.
 
 ### Held-out evaluation, not cross-validation
 
-The nine reported families form a **fixed held-out set**, scored once, with
+> **Corrected editorially, 15 August 2026.** This section was written before
+> amendment 1.5 and its family counts and H2 direction criterion were left
+> stale. Where it disagrees with 1.5.3, **1.5.3 governs**: 15 reported families,
+> H2 pooled over 8, direction required in 6 of 8. H1's criterion of 3 of 4
+> supersession families is unaffected, there being still 4 of them. No
+> threshold is changed by this correction; the stale text is brought into line
+> with the rule that was already in force before any arm was run.
+
+The fifteen reported families form a **fixed held-out set**, scored once, with
 results macro-averaged by family. This was called "leave-one-family-out
 cross-validation", which was wrong: nothing is trained on the remaining folds,
 so there is no model being validated. The name implied a resampling procedure
@@ -296,8 +304,10 @@ when both hold:
 
 1. the paired mean difference exceeds **0.25** on the three-point conflict scale
    (that is, better than a quarter step per family on average), and
-2. the direction holds in at least **4 of the 5** `current_current` families for
-   H2, or **3 of the 4** supersession families for H1.
+2. the direction holds in at least **6 of the 8** pooled `current_current`
+   families for H2 (amendment 1.5.3, which supersedes the "4 of the 5" written
+   here before the subtypes were pooled), or **3 of the 4** supersession
+   families for H1.
 
 A difference meeting one criterion but not the other is reported as
 **suggestive**. A difference meeting neither is reported as **not supported**,
@@ -2151,7 +2161,8 @@ negotiated later.
 
 # Amendment 1.14 - 14 August 2026
 
-Manual scoring of the test split is complete: 272 items, one reviewer, blind.
+Manual scoring of the test split is complete: 272 items, one reviewer under
+partial blinding, in the sense recorded by amendment 1.13.
 This amendment records what the scoring shows about itself. The rule in 1.14.4
 is fixed **before** the re-pass it governs is run.
 
@@ -2314,13 +2325,15 @@ Their positions:
 
 | | span | shape |
 |---|---|---|
-| In the **first** pass's order | 227 to 271 | a contiguous tail |
+| In the **first** pass's order | 227 to 271 | confined to the tail |
 | In the **second** pass's order | 65 to 221 | scattered |
 
 All ten fall in the last 17% of the first pass. In the re-pass, which used a
 different seeded order, the same ten are spread across the middle. The
 clustering is therefore a property of *position in the first pass*, not of the
-items, which is the definition of fatigue and exactly the prediction made in
+items. That is **consistent with positional fatigue or criterion drift**; the
+positional evidence identifies a pattern and does not establish which mechanism
+produced it. It is the prediction made in
 1.14.2 and 1.14.3 before this measurement existed.
 
 **This is the finding the re-ordering was for.** Had the re-pass run in the
@@ -2329,7 +2342,7 @@ under-marked the same items, they would have agreed, and the agreement rate
 would have certified a reliability the instrument does not have. The
 decorrelation is what made the drift visible.
 
-### The other nine are a difference of criterion, not fatigue
+### The other nine show no position effect at all
 
 Nine items were marked as declining by the first pass and not by the second.
 They are scattered in **both** orders: positions 30 to 257 in the first, 9 to
@@ -2437,3 +2450,72 @@ sensitivity check rather than resolved by preference.
 | Unreconciled | CONF-04-Q2, `asserts_conflict` only |
 | In H2c's denominator | no |
 | Tests | 527 |
+
+---
+
+# Amendment 1.15 - 15 August 2026
+
+Written **before** any hardware execution, and committed before one is run.
+
+## 1.15.1 Why this needs saying at all
+
+Section 6 states that the test split is evaluated **once**. RQ4 and H5 require
+latency on a Raspberry Pi 5 and on the laptop CPU, which means executing arms B
+and D over the test questions again. That is a second execution of the test
+split, and a second execution that produced answers nobody had declared the
+status of in advance would be indistinguishable from a second attempt at the
+result.
+
+So the status is declared first:
+
+> **The frozen laptop quality run remains the sole evidential source for H1 to
+> H4. The subsequent hardware executions are performance-only, are not manually
+> scored, do not enter any answer-quality comparison, and cannot replace or
+> augment the frozen quality results.**
+
+## 1.15.2 What the hardware runs may and may not produce
+
+**May.** Wall-clock latency, prefill and decode token rates, load time, peak CPU
+temperature, throttle state, and the H5 ratio of D to B on the Pi 5.
+
+**May not.** Any conflict-handling score, answer-correctness score, abstention
+figure, false-conflict count, citation metric or arm ranking on quality. Their
+answers are not scored, not reviewed, and not pooled with the frozen run.
+
+If a hardware execution produces an answer that differs from the frozen one -
+which it may, since throttling and platform-sensitive ranking are both recorded
+phenomena - that difference is a **finding about determinism across platforms**
+and is reported as such under RQ4. It is not a correction to the quality result
+and does not license rescoring.
+
+## 1.15.3 Enforced rather than intended
+
+`RunWriter` names a directory `{stamp}_{arm}_{split}{label}`. An untagged
+quality run therefore ends in `_test`, and any tagged run does not.
+`evaluation.analysis.quality_run_directories` selects on that suffix and then
+re-checks the manifest, so a performance execution cannot be drawn into a
+hypothesis about answer quality even if the analysis is pointed at the whole
+results tree. `tests/test_analysis.py` asserts both halves.
+
+Hardware runs are therefore tagged. The tag is not cosmetic; it is the boundary.
+
+## 1.15.4 What is not licensed
+
+* No rerun of the four quality arms.
+* No rescoring of any item, including CONF-04-Q2.
+* No change to the verifier, the prompt, the retrieval settings, the corpus, the
+  question set or the rubrics.
+* No prompt revisions. `PROMPT_REVISIONS_REMAINING = 0` and that is unchanged.
+
+The quality experiment is finished. This amendment covers timing and nothing
+else.
+
+## 1.15.5 State
+
+| | |
+|---|---|
+| Evidential source for H1 to H4 | the frozen laptop quality run, alone |
+| Hardware executions | performance-only, tagged, not scored |
+| H5 | pending until those runs exist |
+| Enforcement | `quality_run_directories`, suffix plus manifest |
+| Quality experiment | closed |

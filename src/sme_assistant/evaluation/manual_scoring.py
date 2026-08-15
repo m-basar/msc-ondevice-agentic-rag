@@ -897,7 +897,8 @@ def positional_drift_report(
     This is what the re-ordering was for, and it is the only way to tell the two
     competing explanations apart. If a set of disagreements clusters at the end
     of one pass's sequence and scatters in the other's, the cause is that pass's
-    position, which is fatigue. If it scatters in both, position is not the
+    position, which is consistent with fatigue or with criterion drift over
+    the sequence. If it scatters in both, position is not the
     cause and the disagreement is a real difference of criterion.
 
     Written as a function rather than left as the shell command that first
@@ -923,7 +924,8 @@ def positional_drift_report(
             "positions_in_first_pass": in_one,
             "positions_in_second_pass": in_two,
             # A contiguous tail in one order and a spread in the other is the
-            # signature of fatigue in that pass.
+            # signature of a position effect in that pass, not proof of its
+            # mechanism.
             "first_pass_span": [in_one[0], in_one[-1]],
             "second_pass_span": [in_two[0], in_two[-1]],
             "confined_to_first_pass_tail": in_one[0] > total * 0.75,

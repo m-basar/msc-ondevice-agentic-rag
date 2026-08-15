@@ -1,0 +1,801 @@
+{
+  "schema_version": "1.0",
+  "items": 272,
+  "hypotheses": {
+    "H1": {
+      "statement": "A < B ~ C ~ D on the supersession families",
+      "levels": {
+        "by_question": {
+          "A": 1.1666666666666667,
+          "B": 1.4166666666666667,
+          "C": 1.5833333333333333,
+          "D": 1.25
+        },
+        "by_family": {
+          "CONF-02": {
+            "A": 0.0,
+            "B": 1.3333333333333333,
+            "C": 1.3333333333333333,
+            "D": 0.6666666666666666
+          },
+          "CONF-03": {
+            "A": 2.0,
+            "B": 1.6666666666666667,
+            "C": 2.0,
+            "D": 1.6666666666666667
+          },
+          "CONF-04": {
+            "A": 1.0,
+            "B": 1.3333333333333333,
+            "C": 1.0,
+            "D": 1.0
+          },
+          "CONF-10": {
+            "A": 1.6666666666666667,
+            "B": 1.3333333333333333,
+            "C": 2.0,
+            "D": 1.6666666666666667
+          }
+        },
+        "families": 4,
+        "questions": 48
+      },
+      "superiority_leg": {
+        "claim": "A scores below B, C and D",
+        "contrasts": {
+          "B_vs_A": {
+            "treatment": "B",
+            "baseline": "A",
+            "families": [
+              "CONF-02",
+              "CONF-03",
+              "CONF-04",
+              "CONF-10"
+            ],
+            "per_family": {
+              "CONF-02": 1.3333333333333333,
+              "CONF-03": -0.33333333333333326,
+              "CONF-04": 0.33333333333333326,
+              "CONF-10": -0.3333333333333335
+            },
+            "treatment_mean": 1.4166666666666665,
+            "baseline_mean": 1.1666666666666667,
+            "paired_mean_difference": 0.24999999999999994,
+            "better": 2,
+            "tied": 0,
+            "worse": 2,
+            "confounded": false,
+            "note": ""
+          },
+          "C_vs_A": {
+            "treatment": "C",
+            "baseline": "A",
+            "families": [
+              "CONF-02",
+              "CONF-03",
+              "CONF-04",
+              "CONF-10"
+            ],
+            "per_family": {
+              "CONF-02": 1.3333333333333333,
+              "CONF-03": 0.0,
+              "CONF-04": 0.0,
+              "CONF-10": 0.33333333333333326
+            },
+            "treatment_mean": 1.5833333333333333,
+            "baseline_mean": 1.1666666666666667,
+            "paired_mean_difference": 0.41666666666666663,
+            "better": 2,
+            "tied": 2,
+            "worse": 0,
+            "confounded": false,
+            "note": ""
+          },
+          "D_vs_A": {
+            "treatment": "D",
+            "baseline": "A",
+            "families": [
+              "CONF-02",
+              "CONF-03",
+              "CONF-04",
+              "CONF-10"
+            ],
+            "per_family": {
+              "CONF-02": 0.6666666666666666,
+              "CONF-03": -0.33333333333333326,
+              "CONF-04": 0.0,
+              "CONF-10": 0.0
+            },
+            "treatment_mean": 1.25,
+            "baseline_mean": 1.1666666666666667,
+            "paired_mean_difference": 0.08333333333333334,
+            "better": 1,
+            "tied": 2,
+            "worse": 1,
+            "confounded": false,
+            "note": ""
+          }
+        },
+        "decisions": {
+          "B_vs_A": {
+            "verdict": "not supported",
+            "paired_mean_difference": 0.24999999999999994,
+            "effect_threshold": 0.25,
+            "effect_criterion_met": false,
+            "direction": "2/4",
+            "direction_required": "3/4",
+            "direction_criterion_met": false,
+            "confounded": false
+          },
+          "C_vs_A": {
+            "verdict": "suggestive",
+            "paired_mean_difference": 0.41666666666666663,
+            "effect_threshold": 0.25,
+            "effect_criterion_met": true,
+            "direction": "2/4",
+            "direction_required": "3/4",
+            "direction_criterion_met": false,
+            "confounded": false
+          },
+          "D_vs_A": {
+            "verdict": "not supported",
+            "paired_mean_difference": 0.08333333333333334,
+            "effect_threshold": 0.25,
+            "effect_criterion_met": false,
+            "direction": "1/4",
+            "direction_required": "3/4",
+            "direction_criterion_met": false,
+            "confounded": false
+          }
+        }
+      },
+      "equivalence_leg": {
+        "claim": "B, C and D do not differ meaningfully",
+        "contrasts": {
+          "C_vs_B": {
+            "treatment": "C",
+            "baseline": "B",
+            "families": [
+              "CONF-02",
+              "CONF-03",
+              "CONF-04",
+              "CONF-10"
+            ],
+            "per_family": {
+              "CONF-02": 0.0,
+              "CONF-03": 0.33333333333333326,
+              "CONF-04": -0.33333333333333326,
+              "CONF-10": 0.6666666666666667
+            },
+            "treatment_mean": 1.5833333333333333,
+            "baseline_mean": 1.4166666666666665,
+            "paired_mean_difference": 0.16666666666666669,
+            "better": 2,
+            "tied": 1,
+            "worse": 1,
+            "confounded": false,
+            "note": ""
+          },
+          "D_vs_B": {
+            "treatment": "D",
+            "baseline": "B",
+            "families": [
+              "CONF-02",
+              "CONF-03",
+              "CONF-04",
+              "CONF-10"
+            ],
+            "per_family": {
+              "CONF-02": -0.6666666666666666,
+              "CONF-03": 0.0,
+              "CONF-04": -0.33333333333333326,
+              "CONF-10": 0.3333333333333335
+            },
+            "treatment_mean": 1.25,
+            "baseline_mean": 1.4166666666666665,
+            "paired_mean_difference": -0.1666666666666666,
+            "better": 1,
+            "tied": 1,
+            "worse": 2,
+            "confounded": false,
+            "note": ""
+          },
+          "D_vs_C": {
+            "treatment": "D",
+            "baseline": "C",
+            "families": [
+              "CONF-02",
+              "CONF-03",
+              "CONF-04",
+              "CONF-10"
+            ],
+            "per_family": {
+              "CONF-02": -0.6666666666666666,
+              "CONF-03": -0.33333333333333326,
+              "CONF-04": 0.0,
+              "CONF-10": -0.33333333333333326
+            },
+            "treatment_mean": 1.25,
+            "baseline_mean": 1.5833333333333333,
+            "paired_mean_difference": -0.33333333333333326,
+            "better": 0,
+            "tied": 1,
+            "worse": 3,
+            "confounded": true,
+            "note": "Changes retrieval mode and verification together; reported as the practical comparison against the metadata filter, not as an ablation isolating verification."
+          }
+        },
+        "decisions": {
+          "C_vs_B": {
+            "verdict": "equivalent",
+            "paired_mean_difference": 0.16666666666666669,
+            "magnitude": 0.16666666666666669,
+            "threshold": 0.25,
+            "higher_arm": "C",
+            "higher_in_families": "2/4",
+            "tied_families": 1,
+            "confounded": false,
+            "reading": "Difference within 0.25 on the three-point scale; the arms are not distinguished by this measurement."
+          },
+          "D_vs_B": {
+            "verdict": "equivalent",
+            "paired_mean_difference": -0.1666666666666666,
+            "magnitude": 0.1666666666666666,
+            "threshold": 0.25,
+            "higher_arm": "B",
+            "higher_in_families": "2/4",
+            "tied_families": 1,
+            "confounded": false,
+            "reading": "Difference within 0.25 on the three-point scale; the arms are not distinguished by this measurement."
+          },
+          "D_vs_C": {
+            "verdict": "not equivalent",
+            "paired_mean_difference": -0.33333333333333326,
+            "magnitude": 0.33333333333333326,
+            "threshold": 0.25,
+            "higher_arm": "C",
+            "higher_in_families": "3/4",
+            "tied_families": 1,
+            "confounded": true,
+            "reading": "The difference exceeds 0.25 in C's favour, with C higher in 3 of 4 families and 1 tied. Equivalence is refuted. This contrast changes two variables at once, so the difference cannot be attributed to either alone. It was still observed, and the confound limits attribution rather than erasing it."
+          }
+        }
+      },
+      "verdict": "not supported",
+      "reading": "Both legs fail. A is not below B by the declared margin: the difference is exactly 0.250, which does not exceed 0.25, and the direction holds in 2 of 4 families against the 3 of 4 required. And B, C and D are not equivalent: D_vs_C differs by 0.3333 in C's favour. B, C and D are therefore not described as equivalent.",
+      "leave_one_family_out": {
+        "B_vs_A": {
+          "full": 0.24999999999999994,
+          "folds": {
+            "CONF-02": -0.11111111111111116,
+            "CONF-03": 0.44444444444444436,
+            "CONF-04": 0.22222222222222218,
+            "CONF-10": 0.4444444444444444
+          },
+          "min": -0.11111111111111116,
+          "max": 0.4444444444444444,
+          "range": 0.5555555555555556,
+          "most_influential_family": "CONF-02"
+        },
+        "D_vs_B": {
+          "full": -0.1666666666666666,
+          "folds": {
+            "CONF-02": 7.401486830834377e-17,
+            "CONF-03": -0.22222222222222213,
+            "CONF-04": -0.11111111111111105,
+            "CONF-10": -0.3333333333333333
+          },
+          "min": -0.3333333333333333,
+          "max": 7.401486830834377e-17,
+          "range": 0.33333333333333337,
+          "most_influential_family": "CONF-10"
+        },
+        "D_vs_C": {
+          "full": -0.33333333333333326,
+          "folds": {
+            "CONF-02": -0.22222222222222218,
+            "CONF-03": -0.3333333333333333,
+            "CONF-04": -0.44444444444444436,
+            "CONF-10": -0.3333333333333333
+          },
+          "min": -0.44444444444444436,
+          "max": -0.22222222222222218,
+          "range": 0.22222222222222218,
+          "most_influential_family": "CONF-04"
+        }
+      }
+    },
+    "H2": {
+      "statement": "A ~ B ~ C < D on the eight pooled live-disagreement families",
+      "confirmatory_contrast": "D_vs_B",
+      "levels": {
+        "by_question": {
+          "A": 0.2916666666666667,
+          "B": 0.3333333333333333,
+          "C": 0.2916666666666667,
+          "D": 0.25
+        },
+        "by_family": {
+          "CONF-06": {
+            "A": 0.0,
+            "B": 0.0,
+            "C": 0.0,
+            "D": 0.0
+          },
+          "CONF-08": {
+            "A": 0.0,
+            "B": 0.0,
+            "C": 0.0,
+            "D": 0.0
+          },
+          "CONF-11": {
+            "A": 0.3333333333333333,
+            "B": 0.3333333333333333,
+            "C": 0.3333333333333333,
+            "D": 0.3333333333333333
+          },
+          "CONF-12": {
+            "A": 0.0,
+            "B": 0.3333333333333333,
+            "C": 0.0,
+            "D": 0.0
+          },
+          "CONF-13": {
+            "A": 0.0,
+            "B": 0.0,
+            "C": 0.0,
+            "D": 0.0
+          },
+          "CONF-14": {
+            "A": 0.6666666666666666,
+            "B": 0.6666666666666666,
+            "C": 0.6666666666666666,
+            "D": 0.3333333333333333
+          },
+          "CONF-15": {
+            "A": 0.6666666666666666,
+            "B": 0.6666666666666666,
+            "C": 0.6666666666666666,
+            "D": 0.6666666666666666
+          },
+          "CONF-16": {
+            "A": 0.6666666666666666,
+            "B": 0.6666666666666666,
+            "C": 0.6666666666666666,
+            "D": 0.6666666666666666
+          }
+        },
+        "families": 8,
+        "questions": 96
+      },
+      "contrasts": {
+        "D_vs_B": {
+          "treatment": "D",
+          "baseline": "B",
+          "families": [
+            "CONF-06",
+            "CONF-08",
+            "CONF-11",
+            "CONF-12",
+            "CONF-13",
+            "CONF-14",
+            "CONF-15",
+            "CONF-16"
+          ],
+          "per_family": {
+            "CONF-06": 0.0,
+            "CONF-08": 0.0,
+            "CONF-11": 0.0,
+            "CONF-12": -0.3333333333333333,
+            "CONF-13": 0.0,
+            "CONF-14": -0.3333333333333333,
+            "CONF-15": 0.0,
+            "CONF-16": 0.0
+          },
+          "treatment_mean": 0.25,
+          "baseline_mean": 0.3333333333333333,
+          "paired_mean_difference": -0.08333333333333333,
+          "better": 0,
+          "tied": 6,
+          "worse": 2,
+          "confounded": false,
+          "note": ""
+        },
+        "D_vs_A": {
+          "treatment": "D",
+          "baseline": "A",
+          "families": [
+            "CONF-06",
+            "CONF-08",
+            "CONF-11",
+            "CONF-12",
+            "CONF-13",
+            "CONF-14",
+            "CONF-15",
+            "CONF-16"
+          ],
+          "per_family": {
+            "CONF-06": 0.0,
+            "CONF-08": 0.0,
+            "CONF-11": 0.0,
+            "CONF-12": 0.0,
+            "CONF-13": 0.0,
+            "CONF-14": -0.3333333333333333,
+            "CONF-15": 0.0,
+            "CONF-16": 0.0
+          },
+          "treatment_mean": 0.25,
+          "baseline_mean": 0.29166666666666663,
+          "paired_mean_difference": -0.041666666666666664,
+          "better": 0,
+          "tied": 7,
+          "worse": 1,
+          "confounded": false,
+          "note": ""
+        },
+        "D_vs_C": {
+          "treatment": "D",
+          "baseline": "C",
+          "families": [
+            "CONF-06",
+            "CONF-08",
+            "CONF-11",
+            "CONF-12",
+            "CONF-13",
+            "CONF-14",
+            "CONF-15",
+            "CONF-16"
+          ],
+          "per_family": {
+            "CONF-06": 0.0,
+            "CONF-08": 0.0,
+            "CONF-11": 0.0,
+            "CONF-12": 0.0,
+            "CONF-13": 0.0,
+            "CONF-14": -0.3333333333333333,
+            "CONF-15": 0.0,
+            "CONF-16": 0.0
+          },
+          "treatment_mean": 0.25,
+          "baseline_mean": 0.29166666666666663,
+          "paired_mean_difference": -0.041666666666666664,
+          "better": 0,
+          "tied": 7,
+          "worse": 1,
+          "confounded": true,
+          "note": "Changes retrieval mode and verification together; reported as the practical comparison against the metadata filter, not as an ablation isolating verification."
+        },
+        "B_vs_A": {
+          "treatment": "B",
+          "baseline": "A",
+          "families": [
+            "CONF-06",
+            "CONF-08",
+            "CONF-11",
+            "CONF-12",
+            "CONF-13",
+            "CONF-14",
+            "CONF-15",
+            "CONF-16"
+          ],
+          "per_family": {
+            "CONF-06": 0.0,
+            "CONF-08": 0.0,
+            "CONF-11": 0.0,
+            "CONF-12": 0.3333333333333333,
+            "CONF-13": 0.0,
+            "CONF-14": 0.0,
+            "CONF-15": 0.0,
+            "CONF-16": 0.0
+          },
+          "treatment_mean": 0.3333333333333333,
+          "baseline_mean": 0.29166666666666663,
+          "paired_mean_difference": 0.041666666666666664,
+          "better": 1,
+          "tied": 7,
+          "worse": 0,
+          "confounded": false,
+          "note": ""
+        }
+      },
+      "decisions": {
+        "D_vs_B": {
+          "verdict": "not supported",
+          "paired_mean_difference": -0.08333333333333333,
+          "effect_threshold": 0.25,
+          "effect_criterion_met": false,
+          "direction": "0/8",
+          "direction_required": "6/8",
+          "direction_criterion_met": false,
+          "confounded": false
+        },
+        "D_vs_A": {
+          "verdict": "not supported",
+          "paired_mean_difference": -0.041666666666666664,
+          "effect_threshold": 0.25,
+          "effect_criterion_met": false,
+          "direction": "0/8",
+          "direction_required": "6/8",
+          "direction_criterion_met": false,
+          "confounded": false
+        },
+        "D_vs_C": {
+          "verdict": "not supported",
+          "paired_mean_difference": -0.041666666666666664,
+          "effect_threshold": 0.25,
+          "effect_criterion_met": false,
+          "direction": "0/8",
+          "direction_required": "6/8",
+          "direction_criterion_met": false,
+          "confounded": true
+        },
+        "B_vs_A": {
+          "verdict": "not supported",
+          "paired_mean_difference": 0.041666666666666664,
+          "effect_threshold": 0.25,
+          "effect_criterion_met": false,
+          "direction": "1/8",
+          "direction_required": "6/8",
+          "direction_criterion_met": false,
+          "confounded": false
+        }
+      },
+      "by_subtype": {
+        "mutually_exclusive": {
+          "by_question": {
+            "A": 0.0,
+            "B": 0.0,
+            "C": 0.0,
+            "D": 0.0
+          },
+          "by_family": {
+            "CONF-06": {
+              "A": 0.0,
+              "B": 0.0,
+              "C": 0.0,
+              "D": 0.0
+            },
+            "CONF-08": {
+              "A": 0.0,
+              "B": 0.0,
+              "C": 0.0,
+              "D": 0.0
+            },
+            "CONF-13": {
+              "A": 0.0,
+              "B": 0.0,
+              "C": 0.0,
+              "D": 0.0
+            }
+          },
+          "families": 3,
+          "questions": 36
+        },
+        "stricter_looser": {
+          "by_question": {
+            "A": 0.4666666666666667,
+            "B": 0.5333333333333333,
+            "C": 0.4666666666666667,
+            "D": 0.4
+          },
+          "by_family": {
+            "CONF-11": {
+              "A": 0.3333333333333333,
+              "B": 0.3333333333333333,
+              "C": 0.3333333333333333,
+              "D": 0.3333333333333333
+            },
+            "CONF-12": {
+              "A": 0.0,
+              "B": 0.3333333333333333,
+              "C": 0.0,
+              "D": 0.0
+            },
+            "CONF-14": {
+              "A": 0.6666666666666666,
+              "B": 0.6666666666666666,
+              "C": 0.6666666666666666,
+              "D": 0.3333333333333333
+            },
+            "CONF-15": {
+              "A": 0.6666666666666666,
+              "B": 0.6666666666666666,
+              "C": 0.6666666666666666,
+              "D": 0.6666666666666666
+            },
+            "CONF-16": {
+              "A": 0.6666666666666666,
+              "B": 0.6666666666666666,
+              "C": 0.6666666666666666,
+              "D": 0.6666666666666666
+            }
+          },
+          "families": 5,
+          "questions": 60
+        }
+      },
+      "leave_one_family_out": {
+        "D_vs_B": {
+          "full": -0.08333333333333333,
+          "folds": {
+            "CONF-06": -0.09523809523809523,
+            "CONF-08": -0.09523809523809523,
+            "CONF-11": -0.09523809523809523,
+            "CONF-12": -0.047619047619047616,
+            "CONF-13": -0.09523809523809523,
+            "CONF-14": -0.047619047619047616,
+            "CONF-15": -0.09523809523809523,
+            "CONF-16": -0.09523809523809523
+          },
+          "min": -0.09523809523809523,
+          "max": -0.047619047619047616,
+          "range": 0.047619047619047616,
+          "most_influential_family": "CONF-12"
+        }
+      },
+      "sensitivity_reading": "Removing any single family leaves the paired difference negative, with a spread of 0.0476 across the eight folds. This shows the point estimate is stable and that no one family is driving it. It is not evidence for the null: with eight families the study could not have detected a small true effect, and a stable estimate of a small negative number is not a demonstration that the true difference is zero."
+    },
+    "H2c": {
+      "statement": "false-conflict rate(D) > false-conflict rate(B) on the controls",
+      "control_families": [
+        "CONF-07",
+        "CONF-09",
+        "CONF-17"
+      ],
+      "false_conflict_rate": {
+        "A": {
+          "hits": 0,
+          "questions": 9,
+          "rate": 0.0,
+          "groups": 3,
+          "groups_all_hit": 0,
+          "groups_any_hit": 0
+        },
+        "B": {
+          "hits": 0,
+          "questions": 9,
+          "rate": 0.0,
+          "groups": 3,
+          "groups_all_hit": 0,
+          "groups_any_hit": 0
+        },
+        "C": {
+          "hits": 0,
+          "questions": 9,
+          "rate": 0.0,
+          "groups": 3,
+          "groups_all_hit": 0,
+          "groups_any_hit": 0
+        },
+        "D": {
+          "hits": 0,
+          "questions": 9,
+          "rate": 0.0,
+          "groups": 3,
+          "groups_all_hit": 0,
+          "groups_any_hit": 0
+        }
+      },
+      "families_with_any_false_conflict": {
+        "A": "0/3",
+        "B": "0/3",
+        "C": "0/3",
+        "D": "0/3"
+      },
+      "questions_with_a_false_conflict": {
+        "A": "0/9",
+        "B": "0/9",
+        "C": "0/9",
+        "D": "0/9"
+      },
+      "verdict": "not supported",
+      "reading": "The directional prediction is falsified: D did not over-detect relative to B. Both are at zero, on families and on questions.",
+      "power_limitation": "Zero events observed in every arm across 3 control families and 9 questions per arm. This is a floor, not a measurement: the design could not have detected moderate over-detection. The pre-registration states that a null H2c is a genuinely strong result and should be reported as such, and that holds, but it is reported with this limitation attached rather than as a demonstration that over-detection does not occur."
+    },
+    "H3": {
+      "statement": "citation support < citation validity, in every arm",
+      "by_arm": {
+        "A": {
+          "citation_validity": 0.9666666666666667,
+          "citation_support": 0.5666666666666667,
+          "support_below_validity": true,
+          "eligible_n": 30
+        },
+        "B": {
+          "citation_validity": 0.9642857142857143,
+          "citation_support": 0.6309535714285713,
+          "support_below_validity": true,
+          "eligible_n": 28
+        },
+        "C": {
+          "citation_validity": 1.0,
+          "citation_support": 0.42857142857142855,
+          "support_below_validity": true,
+          "eligible_n": 28
+        },
+        "D": {
+          "citation_validity": 0.9523809523809523,
+          "citation_support": 0.6984142857142858,
+          "support_below_validity": true,
+          "eligible_n": 21
+        }
+      },
+      "verdict": "supported",
+      "note": "Citation support is a lower bound by construction, per section 4. eligible_n is the number of answers making a checkable claim, and it differs by arm because an arm that abstains more often has fewer answers to check. Validity and support are computed over the same eligible set within each arm, so the within-arm comparison H3 makes is like for like; comparing citation figures *across* arms is not, and is not done here."
+    },
+    "H4": {
+      "statement": "D abstains appropriately more often than A, B and C",
+      "gap_topics": 5,
+      "appropriate_abstention": {
+        "A": {
+          "hits": 8,
+          "questions": 10,
+          "rate": 0.8,
+          "groups": 5,
+          "groups_all_hit": 3,
+          "groups_any_hit": 5
+        },
+        "B": {
+          "hits": 10,
+          "questions": 10,
+          "rate": 1.0,
+          "groups": 5,
+          "groups_all_hit": 5,
+          "groups_any_hit": 5
+        },
+        "C": {
+          "hits": 9,
+          "questions": 10,
+          "rate": 0.9,
+          "groups": 5,
+          "groups_all_hit": 4,
+          "groups_any_hit": 5
+        },
+        "D": {
+          "hits": 10,
+          "questions": 10,
+          "rate": 1.0,
+          "groups": 5,
+          "groups_all_hit": 5,
+          "groups_any_hit": 5
+        }
+      },
+      "abstained_field_source": "second pass, per amendment 1.14.4 rule 1",
+      "verdict": "not supported",
+      "reading": "D exceeds ['A', 'C'] and does not exceed ['B']. D ties B at 5/5 gap topics, both at ceiling. A and C are descriptively lower and that difference is reported, but H4 as stated requires D to exceed all three and it does not."
+    },
+    "H5": {
+      "statement": "latency(D) is between 1.5x and 2.5x latency(B) on the Pi 5",
+      "verdict": "pending",
+      "note": "Requires the performance-only hardware executions, which are not part of the frozen laptop quality run and have not been run."
+    }
+  },
+  "sensitivity_conf04": {
+    "divergent_items": [
+      27,
+      221
+    ],
+    "field": "asserts_conflict",
+    "in_H2c_denominator": false,
+    "variants": {
+      "as_recorded": {
+        "asserts_conflict_in_CONF_04": 1,
+        "of_questions": 12
+      },
+      "both_true": {
+        "asserts_conflict_in_CONF_04": 2,
+        "of_questions": 12
+      },
+      "both_false": {
+        "asserts_conflict_in_CONF_04": 0,
+        "of_questions": 12
+      }
+    },
+    "effect_on_hypotheses": "None. CONF-04 is a version_supersession family, so it is in H1's denominator and not in H2c's, and H1 is scored on the three-point rubric rather than on asserts_conflict. The divergence moves only the descriptive false-conflict count outside the controls."
+  },
+  "blinding": {
+    "self_reported_unblinding": 0,
+    "items_asked": 266,
+    "note": "Not evidence that the blinding held; see amendments 1.13.4 and 1.14.5. Thirteen items were structurally identifiable regardless."
+  }
+}
