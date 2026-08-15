@@ -2385,3 +2385,55 @@ that rule was written.
 | Reported value of `abstained` | second pass |
 | Key | still sealed; `unseal` now permitted |
 | Tests | 526 |
+
+---
+
+## 1.14.9 A reporting correction made after unblinding, and why it is not a post-hoc choice
+
+The key was opened after both passes were complete. On unsealing, the tool
+printed a warning that **7 groups of identical answers had been scored
+differently**. That figure was computed from the first pass's `abstained`
+values.
+
+It is wrong, in the sense that it does not describe the reported data. Six of
+those seven groups diverge only on `abstained`, and 1.14.4 rule 1 already makes
+the second pass the reported value of that field, where all six are consistent.
+Counting them again overstates the remaining inconsistency by a factor of seven.
+
+`consistency_report` now takes the re-pass values, and the remaining figure is:
+
+> **57 of 58 groups consistent. One divergence: CONF-04-Q2, items 27 and 221.**
+
+Identical answer text, identical rubric score of 1, differing only on
+`asserts_conflict`.
+
+**This is a change to reporting code made after unblinding, and that is stated
+plainly rather than buried.** Three things make it defensible:
+
+1. It applies a rule fixed in 1.14.4 **before** the re-pass ran and long before
+   the key was opened. No new decision is made here.
+2. It changes no judgement. Both logs are byte-identical to what was recorded
+   blind, and the first pass's 52 of 58 figure remains available by omitting
+   the argument.
+3. It was found by the tool warning about its own data, not by inspecting a
+   result.
+
+### The one that remains
+
+CONF-04 is a `version_supersession` family, so it is in H1's denominator and
+**not** in H2c's, which is the three compatible controls CONF-07, CONF-09 and
+CONF-17. The divergence therefore does not touch the false-conflict rate that
+H2c is stated over.
+
+It cannot be reconciled by judgement: the reviewer is unblinded, and a
+judgement made now is not the judgement the procedure called for. It is
+reported as an unreconciled inconsistency, and any descriptive figure that
+depends on `asserts_conflict` for CONF-04 is reported both ways as a
+sensitivity check rather than resolved by preference.
+
+| | |
+|---|---|
+| Groups consistent on the reported values | **57 / 58** |
+| Unreconciled | CONF-04-Q2, `asserts_conflict` only |
+| In H2c's denominator | no |
+| Tests | 527 |

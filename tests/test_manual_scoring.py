@@ -641,6 +641,33 @@ def test_identical_answers_scored_differently_are_reported(sheet, tmp_path):
     assert report["consistent"] == 0
 
 
+def test_the_repass_settles_divergences_the_first_pass_left(sheet, tmp_path):
+    """Amendment 1.14.4 rule 1 makes the second pass the reported value.
+
+    A report built on the first pass counts divergences the re-pass has already
+    settled, which overstates the remaining inconsistency. Omitting the
+    argument still reports the first pass against itself, which is the figure
+    the amendment cites.
+    """
+    items = load_sheet(sheet)
+    log = tmp_path / "judgements.jsonl"
+    append_judgement(log, Judgement(item=1, question_id="TEST-001", score=2,
+                                    abstained=True))
+    append_judgement(log, Judgement(item=2, question_id="TEST-001", score=2,
+                                    abstained=False))
+    first = load_judgements(log)
+    assert len(consistency_report(items, first)["divergent"]) == 1
+
+    repass = tmp_path / "abstention.jsonl"
+    for number in (1, 2):
+        append_abstention(repass, AbstentionJudgement(item=number,
+                                                      question_id="TEST-001",
+                                                      abstained=True))
+    settled = consistency_report(items, first, load_abstention(repass))
+    assert settled["divergent"] == []
+    assert settled["consistent"] == 1
+
+
 def test_agreeing_duplicates_are_not_reported(sheet, tmp_path):
     items = load_sheet(sheet)
     log = tmp_path / "judgements.jsonl"

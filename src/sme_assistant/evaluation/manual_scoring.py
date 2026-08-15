@@ -960,7 +960,9 @@ def positional_drift_report(
 
 
 def consistency_report(
-    items: Iterable[ReviewItem], judgements: Mapping[int, Judgement]
+    items: Iterable[ReviewItem],
+    judgements: Mapping[int, Judgement],
+    abstention: Mapping[int, AbstentionJudgement] | None = None,
 ) -> dict[str, Any]:
     """Where identical text on the same question received different judgements.
 
@@ -974,6 +976,14 @@ def consistency_report(
     intact: every item was judged on its own, and the disagreements are then
     visible, countable and reconcilable on the record instead of silently
     averaged into the result. Nothing here reveals which arm produced anything.
+
+    ``abstention`` supplies the re-pass values. Amendment 1.14.4 rule 1 makes
+    the second pass the reported value of ``abstained``, so a report that used
+    the first pass's would count divergences the re-pass has already settled
+    and overstate the remaining inconsistency several times over. Passing them
+    applies a rule that was fixed before unblinding; it is not a judgement made
+    after it. Omitting the argument still reports the first pass against
+    itself, which is the 52 of 58 figure cited in 1.14.6.
     """
     groups: dict[tuple[str, str], list[ReviewItem]] = {}
     for item in items:
@@ -991,8 +1001,13 @@ def consistency_report(
         if len(decided) < len(members):
             incomplete += 1
             continue
+        def abstained_for(j: Judgement) -> bool:
+            if abstention is not None and j.item in abstention:
+                return abstention[j.item].abstained
+            return j.abstained
+
         signatures = {
-            (j.score, j.asserts_conflict, j.abstained) for j in decided
+            (j.score, j.asserts_conflict, abstained_for(j)) for j in decided
         }
         if len(signatures) == 1:
             consistent += 1
@@ -1006,7 +1021,7 @@ def consistency_report(
                     "item": j.item,
                     "score": j.score,
                     "asserts_conflict": j.asserts_conflict,
-                    "abstained": j.abstained,
+                    "abstained": abstained_for(j),
                 }
                 for j in sorted(decided, key=lambda j: j.item)
             ],

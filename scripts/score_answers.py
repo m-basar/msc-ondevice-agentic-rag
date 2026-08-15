@@ -498,7 +498,11 @@ def command_status(args: argparse.Namespace) -> int:
 def command_consistency(args: argparse.Namespace) -> int:
     items = load_sheet(Path(args.sheet))
     judgements = load_judgements(Path(args.judgements))
-    report = consistency_report(items, judgements)
+    # The re-pass values are the reported ones under 1.14.4 rule 1. Reporting
+    # against the first pass would count divergences that are already settled.
+    report = consistency_report(
+        items, judgements, load_abstention(Path(args.abstention_log)) or None
+    )
 
     print(f"  duplicate groups         {report['duplicate_groups']}")
     print(f"  fully scored             {report['fully_scored_groups']}")
@@ -558,7 +562,7 @@ def command_unseal(args: argparse.Namespace) -> int:
         )
         return 1
 
-    report = consistency_report(items, judgements)
+    report = consistency_report(items, judgements, second or None)
     if report["divergent"]:
         print(
             f"Note: {len(report['divergent'])} groups of identical answers were "
