@@ -9,8 +9,8 @@ more than one extra generation.
 Three things this script gets right that an obvious version does not.
 
 **Arm D is two stages, not one.** D replays B's draft and then verifies it, so
-``record["generation"]`` on a D record describes the *reused draft*, generated
-earlier on another machine. Reading only that field reports B's prefill, decode,
+``record["generation"]`` on a D record describes the *reused draft*, produced by
+a different model in the immediately preceding arm of the same invocation. Reading only that field reports B's prefill, decode,
 load, temperature and throttle state and labels them D. The verifier's own
 figures are in ``verification_generation``, and the two are reported separately
 as well as summed. The wall-clock total is still the right quantity for H5,
@@ -48,6 +48,12 @@ from sme_assistant.evaluation.run_writer import read_run  # noqa: E402
 H5_LOWER, H5_UPPER = 1.5, 2.5
 H5_CONDITION = "pi5_cpu"
 EXPECTED_QUESTIONS = 68
+EXPECTED_ARMS = frozenset({"B", "D"})
+PROVENANCE_KEYS = (
+    "corpus_sha256", "chunk_set_sha256", "question_set_sha256",
+    "registry_sha256", "config_sha256",
+)
+CONDITION_PLACEMENT = {"laptop_gpu": "gpu", "laptop_cpu": "cpu", "pi5_cpu": "cpu"}
 
 
 def performance_run(directory: Path) -> tuple[dict, list[dict], dict]:
@@ -75,81 +81,211 @@ def performance_run(directory: Path) -> tuple[dict, list[dict], dict]:
     return manifest, answers, summary
 
 
-def validate(runs: dict[str, tuple[dict, list[dict], dict]], index_meta: dict) -> dict:
-    """Independent checks, before any number is computed.
+def loaded_models(environment: dict | None) -> list[dict]:
+    """Per-model residency evidence from a captured environment block."""
+    return list(((environment or {}).get("ollama") or {}).get("loaded") or [])
 
-    None of these is hypothetical. A run of the wrong arm, over the wrong
-    questions, against a different corpus, on a device other than the one
-    requested, or with D generating fresh drafts instead of replaying B's,
-    would all produce a plausible ratio that means something other than H5.
+
+def placement_of(models: list[dict]) -> dict:
+    """Per-model offload, derived from ``size`` and ``size_vram``.
+
+    A single "any_on_gpu" boolean is not enough. A partially offloaded model,
+    or an embedding model that should be pinned to the CPU while the generator
+    is on the GPU, are different situations and only per-model figures
+    distinguish them.
     """
-    findings: list[str] = []
+    out: dict = {}
+    for model in models:
+        name = model.get("name") or model.get("model")
+        size, vram = model.get("size"), model.get("size_vram")
+        fraction = (
+            (vram / size) if isinstance(size, (int, float)) and size
+            and isinstance(vram, (int, float)) else None
+        )
+        out[name] = {"size": size, "size_vram": vram, "offload_fraction": fraction}
+    return out
+
+
+def validate(runs: dict[str, tuple[dict, list[dict], dict]], index_meta: dict) -> dict:
+    """Every check, before any timing value is read.
+
+    Amendment 1.18. Each check is named and recorded pass or fail, so a
+    rejection says which property failed rather than that something did. The
+    six hardware runs were already complete when this was written, and it was
+    written before any latency value was examined; the checks are therefore
+    properties of a sound run rather than a description of these ones.
+
+    Missing evidence **fails closed**. An absent ``/api/ps`` observation is not
+    a run that happened to be on the right device, it is a run whose device is
+    unknown, and an unknown device is not a hardware condition.
+    """
+    checks: dict[str, dict] = {}
     detail: dict = {}
 
-    for arm, (manifest, answers, _) in sorted(runs.items()):
-        declared = manifest.get("arm", {}).get("arm")
-        if declared != arm:
-            findings.append(
-                f"index lists {arm} but the manifest says arm {declared!r}"
-            )
-        if manifest.get("split") != "test":
-            findings.append(f"{arm}: split is {manifest.get('split')!r}, not test")
-        if len(answers) != EXPECTED_QUESTIONS:
-            findings.append(
-                f"{arm}: {len(answers)} answers, expected {EXPECTED_QUESTIONS}"
-            )
+    def check(name: str, ok: bool, message: str = "", **extra) -> None:
+        checks[name] = {"pass": bool(ok), **({"message": message} if message else {}),
+                        **extra}
 
-    question_sets = {
-        arm: [r["question_id"] for r in answers]
-        for arm, (_, answers, _) in runs.items()
-    }
-    if len(runs) > 1:
-        reference_arm, reference = next(iter(sorted(question_sets.items())))
-        for arm, ids in sorted(question_sets.items()):
-            if sorted(ids) != sorted(reference):
-                findings.append(
-                    f"{arm} answered a different question set from {reference_arm}"
-                )
-    detail["question_ids_match"] = not any("question set" in f for f in findings)
+    # --- shape of the index -------------------------------------------------
+    check("arms_exactly_b_and_d", set(runs) == set(EXPECTED_ARMS),
+          f"expected arms {sorted(EXPECTED_ARMS)}, got {sorted(runs)}")
 
-    provenance_keys = ("corpus_sha256", "chunk_set_sha256", "question_set_sha256",
-                       "registry_sha256", "config_sha256")
-    hashes = {
-        arm: {k: (manifest.get("provenance") or {}).get(k) for k in provenance_keys}
-        for arm, (manifest, _, _) in runs.items()
-    }
-    if len({json.dumps(h, sort_keys=True) for h in hashes.values()}) > 1:
-        findings.append("the runs disagree on their provenance hashes")
-    detail["provenance"] = hashes
-
+    # --- per-run properties -------------------------------------------------
+    condition = index_meta.get("hardware_condition")
     requested = index_meta.get("requested_placement")
-    observed = index_meta.get("observed_placement") or {}
-    if requested and observed:
+
+    for arm, (manifest, answers, _) in sorted(runs.items()):
+        declared = (manifest.get("arm") or {}).get("arm")
+        check(f"{arm}_manifest_declares_its_arm", declared == arm,
+              f"index says {arm}, manifest says {declared!r}")
+        check(f"{arm}_purpose_is_performance",
+              manifest.get("purpose") == "performance",
+              f"purpose={manifest.get('purpose')!r}")
+        check(f"{arm}_split_is_test", manifest.get("split") == "test",
+              f"split={manifest.get('split')!r}")
+        check(f"{arm}_condition_matches_index",
+              manifest.get("hardware_condition") == condition,
+              f"manifest {manifest.get('hardware_condition')!r} against index "
+              f"{condition!r}")
+        check(f"{arm}_placement_matches_index",
+              manifest.get("placement") == requested,
+              f"manifest {manifest.get('placement')!r} against index {requested!r}")
+
+        ids = [r.get("question_id") for r in answers]
+        check(f"{arm}_question_count", len(answers) == EXPECTED_QUESTIONS,
+              f"{len(answers)} answers, expected {EXPECTED_QUESTIONS}")
+        check(f"{arm}_question_ids_unique", len(set(ids)) == len(ids),
+              f"{len(ids) - len(set(ids))} duplicate identifiers")
+
+        provenance = manifest.get("provenance") or {}
+        missing = [k for k in PROVENANCE_KEYS if not provenance.get(k)]
+        check(f"{arm}_provenance_non_empty", not missing, f"missing {missing}")
+
+        generation = sum(1 for r in answers if r.get("generation"))
+        verifier = sum(1 for r in answers if r.get("verification_generation"))
+        check(f"{arm}_generation_records_complete",
+              generation == len(answers),
+              f"{generation} generation blocks over {len(answers)} answers")
+        if arm == "D":
+            check("D_verifier_records_complete", verifier == len(answers),
+                  f"{verifier} verifier blocks over {len(answers)} answers")
+        else:
+            check(f"{arm}_has_no_verifier_stage", verifier == 0,
+                  f"{verifier} verifier blocks on an unverified arm")
+
+        scored = [r.get("question_id") for r in answers if "scoring" in r]
+        check(f"{arm}_no_scoring_fields", not scored,
+              f"{len(scored)} records carry answer scoring")
+
+    # --- cross-arm identity -------------------------------------------------
+    if set(runs) == set(EXPECTED_ARMS):
+        b_manifest, b_answers, _ = runs["B"]
+        d_manifest, d_answers, _ = runs["D"]
+        b = {r["question_id"]: r for r in b_answers}
+        d = {r["question_id"]: r for r in d_answers}
+        common = sorted(set(b) & set(d))
+
+        check("question_ids_match", set(b) == set(d),
+              f"{len(set(b) ^ set(d))} identifiers differ")
+        check("matched_question_count", len(common) == EXPECTED_QUESTIONS,
+              f"{len(common)} matched, expected {EXPECTED_QUESTIONS}")
+
+        replayed = sum(1 for q in common if d[q].get("draft_answer") == b[q].get("answer"))
+        check("draft_replay_exact", replayed == len(common),
+              f"{replayed}/{len(common)} of D's drafts equal B's answers",
+              matched=replayed, of=len(common))
+
+        same_generation = sum(1 for q in common if d[q].get("generation") == b[q].get("generation"))
+        check("generation_records_match", same_generation == len(common),
+              f"{same_generation}/{len(common)} generation blocks identical")
+
+        same_retrieval = sum(1 for q in common if d[q].get("retrieval") == b[q].get("retrieval"))
+        check("retrieval_records_match", same_retrieval == len(common),
+              f"{same_retrieval}/{len(common)} retrieval blocks identical")
+
+        b_hashes = {k: (b_manifest.get("provenance") or {}).get(k) for k in PROVENANCE_KEYS}
+        d_hashes = {k: (d_manifest.get("provenance") or {}).get(k) for k in PROVENANCE_KEYS}
+        check("provenance_equal", b_hashes == d_hashes,
+              "the two runs disagree on their provenance hashes")
+        detail["provenance"] = {"B": b_hashes, "D": d_hashes}
+
+    # --- placement, fail closed --------------------------------------------
+    check("condition_is_known", condition in CONDITION_PLACEMENT,
+          f"unknown hardware condition {condition!r}")
+    check("condition_implies_requested_placement",
+          CONDITION_PLACEMENT.get(condition) == requested,
+          f"{condition} implies {CONDITION_PLACEMENT.get(condition)!r}, index "
+          f"requested {requested!r}")
+
+    observed = index_meta.get("observed_placement")
+    check("placement_observed_at_run_time", bool(observed),
+          "no /api/ps evidence in the run index; the device is unknown")
+
+    per_model: dict = {}
+    for arm, (manifest, _, summary) in sorted(runs.items()):
+        per_model[arm] = {
+            "at_start": placement_of(loaded_models(manifest.get("environment"))),
+            "at_end": placement_of(loaded_models(summary.get("environment_at_end"))),
+        }
+    detail["per_model_placement"] = per_model
+
+    end_evidence = {arm: per_model[arm]["at_end"] for arm in per_model}
+    check("per_model_evidence_present",
+          all(bool(v) for v in end_evidence.values()),
+          "a run finished with no loaded-model evidence, so its residency "
+          "cannot be confirmed")
+
+    if requested and all(end_evidence.values()):
+        offending: list[str] = []
+        for arm, models in end_evidence.items():
+            for name, block in models.items():
+                vram = block.get("size_vram")
+                if requested == "cpu" and isinstance(vram, (int, float)) and vram > 0:
+                    offending.append(f"{arm}:{name} held {vram} bytes of VRAM")
+        if requested == "cpu":
+            check("cpu_placement_holds_for_every_model", not offending,
+                  "; ".join(offending))
+        else:
+            on_gpu = [
+                f"{arm}:{name}" for arm, models in end_evidence.items()
+                for name, block in models.items()
+                if isinstance(block.get("size_vram"), (int, float))
+                and block["size_vram"] > 0
+            ]
+            check("gpu_placement_observed_for_at_least_one_model", bool(on_gpu),
+                  "no model held VRAM on a run requesting gpu placement",
+                  models_on_gpu=on_gpu)
+
+    if observed:
         seen = "gpu" if observed.get("any_on_gpu") else "cpu"
-        detail["placement"] = {"requested": requested, "observed": seen}
-        if seen != requested:
-            findings.append(
-                f"placement was {seen} but {requested} was requested"
-            )
+        detail["placement"] = {"requested": requested, "observed": seen,
+                               "vram_bytes": observed.get("vram_bytes")}
+        check("observed_placement_matches_request", seen == requested,
+              f"requested {requested}, observed {seen}")
     else:
         detail["placement"] = {"requested": requested, "observed": None}
-        findings.append("placement was not observed at run time")
 
+    # --- draft provenance ---------------------------------------------------
     if "D" in runs:
         summary = runs["D"][2]
-        reused = summary.get("drafts_reused_from") or summary.get(
-            "drafts_replayed_from"
-        )
+        reused = summary.get("drafts_reused_from") or summary.get("drafts_replayed_from")
         detail["arm_d_replayed_drafts_from"] = reused
-        if not reused:
-            findings.append(
-                "arm D did not replay arm B's drafts, so B versus D is not the "
-                "same comparison as the frozen run"
-            )
+        check("arm_d_replayed_b_drafts", bool(reused),
+              "arm D generated its own drafts, so B versus D is not the "
+              "comparison the frozen run made")
 
-    detail["findings"] = findings
-    detail["valid"] = not findings
-    return detail
+    failed = sorted(name for name, result in checks.items() if not result["pass"])
+    return {
+        "schema_version": "1.1",
+        "checks": checks,
+        "checks_run": len(checks),
+        "checks_failed": failed,
+        "findings": [
+            f"{name}: {checks[name].get('message', 'failed')}" for name in failed
+        ],
+        "valid": not failed,
+        **detail,
+    }
 
 
 def _series(values):

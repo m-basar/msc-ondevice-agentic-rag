@@ -225,16 +225,28 @@ class OllamaClient:
 
     # --- placement control, for performance runs ---------------------------
 
-    def unload(self, model: str | None = None) -> dict[str, Any]:
+    def unload(self, model: str | None = None, *, embedding: bool = False) -> dict[str, Any]:
         """Evict a model from memory so the next call reloads it where asked.
 
         Ollama keeps a model resident after a call, and a resident model keeps
         the placement it was loaded with. Switching a run from GPU to CPU
         without an eviction therefore measures the *previous* placement, which
-        is the failure this repository has already documented once. Posting an
-        empty prompt with ``keep_alive: 0`` is the documented way to unload.
+        is the failure this repository has already documented once. Posting
+        ``keep_alive: 0`` is the documented way to unload.
+
+        ``embedding`` selects the endpoint. Amendment 1.18: an embedding model
+        does not serve ``/api/generate``, so evicting ``nomic-embed-text``
+        through it either errors or silently does nothing, leaving the model
+        resident with its previous placement. That is the one model whose
+        placement this project pins explicitly, so getting its eviction wrong
+        defeats the pinning.
         """
-        chosen = model or self.default_model
+        chosen = model or (self.embedding_model if embedding else self.default_model)
+        if embedding:
+            return self._post(
+                "/api/embeddings",
+                {"model": chosen, "prompt": "", "keep_alive": 0},
+            )
         return self._post(
             "/api/generate", {"model": chosen, "prompt": "", "keep_alive": 0}
         )
@@ -353,8 +365,9 @@ class MockClient:
 
     EMBEDDING_OPTIONS: dict[str, Any] = {"num_gpu": 0}
 
-    def unload(self, model: str | None = None) -> dict[str, Any]:
-        return {"mock": True, "unloaded": model or self.default_model}
+    def unload(self, model: str | None = None, *, embedding: bool = False) -> dict[str, Any]:
+        chosen = model or (self.embedding_model if embedding else self.default_model)
+        return {"mock": True, "unloaded": chosen, "embedding": embedding}
 
     def residency(self) -> list[dict[str, Any]]:
         return []

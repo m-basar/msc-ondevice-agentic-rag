@@ -32,6 +32,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -269,6 +270,7 @@ def main() -> int:
         config._data.setdefault("generation", {}).update(config_overrides)
 
     observed_placement = None
+    placement_observations: dict[str, dict] = {}
     if args.performance_only and not args.mock:
         # Ollama keeps a model resident, and a resident model keeps the
         # placement it was loaded with. Without an eviction a cpu run started
@@ -276,11 +278,18 @@ def main() -> int:
         from sme_assistant.common.llm_client import OllamaClient  # noqa: E402
 
         probe = OllamaClient(config)
-        for model in {config.require("llm.generation_model"),
-                      config.require("llm.verification_model"),
-                      config.require("llm.embedding_model")}:
+        embedding_model = config.require("llm.embedding_model")
+        # An embedding model does not serve /api/generate, so it must be
+        # evicted through the embedding endpoint or it stays resident with its
+        # previous placement. Amendment 1.18.
+        to_evict = [
+            (config.require("llm.generation_model"), False),
+            (config.require("llm.verification_model"), False),
+            (embedding_model, True),
+        ]
+        for model, is_embedding in to_evict:
             try:
-                probe.unload(model)
+                probe.unload(model, embedding=is_embedding)
             except Exception as exc:  # pragma: no cover - network dependent
                 print(f"  could not evict {model}: {exc}")
         print(f"  evicted loaded models before a {args.placement} run")
@@ -366,20 +375,49 @@ def main() -> int:
             ),
         )
         print(f"    -> {directories[name].name}\n")
-        if args.performance_only and not args.mock and observed_placement is None:
+        if args.performance_only and not args.mock:
+            # After **every** arm. Checking only the first would miss a device
+            # change between B and D, which is exactly when it could happen:
+            # D loads the verifier model that B never touched. Amendment 1.18.
             from sme_assistant.common.llm_client import OllamaClient  # noqa: E402
 
-            observed_placement = OllamaClient(config).observed_placement()
+            seen = OllamaClient(config).observed_placement()
+            placement_observations[name] = seen
+            observed_placement = seen
             wanted_gpu = args.placement == "gpu"
-            if observed_placement["any_on_gpu"] != wanted_gpu:
+            if seen["any_on_gpu"] != wanted_gpu:
+                record = {
+                    "rejected_at": datetime.now(timezone.utc).isoformat(),
+                    "reason": "placement_mismatch",
+                    "arm": name,
+                    "requested_placement": args.placement,
+                    "observed_placement": "gpu" if seen["any_on_gpu"] else "cpu",
+                    "hardware_condition": args.hardware_condition,
+                    "models_loaded": seen["models_loaded"],
+                    "vram_bytes": seen["vram_bytes"],
+                    "run_directory": str(directories[name].relative_to(ROOT).as_posix()),
+                    "observations_so_far": placement_observations,
+                    "note": (
+                        "The run is retained but its condition is not what it "
+                        "claims and it must not be reported. Delete or re-tag "
+                        "the directory before any analysis."
+                    ),
+                }
+                rejection = Path(config.path("paths.results")) / (
+                    f"REJECTED_{args.split}_performance_"
+                    f"{args.hardware_condition}_{name}.json"
+                )
+                rejection.write_text(json.dumps(record, indent=2),
+                                     encoding="utf-8", newline="\n")
                 print("\n  PLACEMENT MISMATCH\n"
+                      f"    arm      : {name}\n"
                       f"    requested: {args.placement}\n"
-                      f"    observed : {'gpu' if observed_placement['any_on_gpu'] else 'cpu'}\n"
-                      f"    loaded   : {observed_placement['models_loaded']}\n"
-                      "  The run is recorded but its condition is not what it "
-                      "claims. Do not report it.")
+                      f"    observed : {record['observed_placement']}\n"
+                      f"    loaded   : {seen['models_loaded']}\n"
+                      f"  Rejection record written to {rejection.name}\n"
+                      "  The run is recorded but must not be reported.")
                 return 1
-            print(f"    placement confirmed: {args.placement}")
+            print(f"    placement confirmed for arm {name}: {args.placement}")
 
     # A performance run writes its own index. Overwriting latest_test.json
     # would repoint the name that every earlier note and script uses for the
@@ -404,6 +442,7 @@ def main() -> int:
             "hardware_condition": args.hardware_condition,
             "requested_placement": args.placement,
             "observed_placement": observed_placement,
+            "observed_placement_by_arm": placement_observations,
             "split": args.split,
         }
     manifest.write_text(json.dumps(index_payload, indent=2), encoding="utf-8")

@@ -2683,8 +2683,8 @@ independently.
 ## 1.17.3 The timing report described Arm D wrongly
 
 Arm D replays Arm B's draft and then verifies it. `record["generation"]` on a D
-record therefore describes **the reused draft**, generated earlier on another
-machine by a different model. The analyser read only that field, so D's prefill,
+record therefore describes **the reused draft**, produced by a different model
+in the immediately preceding arm. The analyser read only that field, so D's prefill,
 decode, load time, temperature and throttle state were Arm B's numbers under
 Arm D's name. The verifier's own figures sat unread in
 `verification_generation`.
@@ -2748,3 +2748,120 @@ and a defect found afterwards costs the result.
 | H5 | scored only on `pi5_cpu` |
 | Hardware execution | still not run |
 | Tests | 576 |
+
+---
+
+# Amendment 1.18 - 15 August 2026
+
+**Written after the six hardware executions were complete, and before
+`analyse_performance.py` was run or any latency value examined.** That ordering
+is the point of this amendment, and it is verifiable: the runs are committed at
+`eede351` (laptop GPU and CPU) and `d4e9a90` (Pi 5 CPU), and no analysis output
+for any of them exists in the repository at the time of writing.
+
+**The six runs are retained and will not be rerun.** They passed an
+outcome-blind forensic validation before any timing was read: 68 unique matching
+question identifiers per condition, byte-exact replay of Arm B's drafts into Arm
+D on all 68, identical generation and retrieval records across arms, equal
+provenance hashes, and observed placement matching the request on every
+condition. Nothing below changes a run. It changes what the analyser will accept.
+
+## 1.18.1 Why harden after the runs rather than before
+
+Amendment 1.17 hardened the runner and rewrote the reporting, and 23 tests
+covered it. What it did not do is make the *acceptance* criteria exhaustive.
+Several properties were validated informally, by a script written by hand and
+read once, rather than by the analyser that will produce the reported figure.
+
+Doing this now, with the runs complete and the numbers unread, is the only
+window in which the acceptance criteria can be tightened without the tightening
+being a response to a result. After H5 is read, any change to what counts as an
+acceptable run is contaminated by knowing the answer. The runs cannot be
+influenced by this amendment because they already exist; the amendment cannot be
+influenced by the runs because their timings have not been looked at.
+
+## 1.18.2 What the analyser now enforces
+
+Every check is named, recorded pass or fail, and written into the report, so a
+rejection says which property failed.
+
+| Check | Rejects |
+|---|---|
+| `arms_exactly_b_and_d` | an index that is not a B/D pair |
+| `{arm}_manifest_declares_its_arm` | a directory whose manifest disagrees with the index |
+| `{arm}_purpose_is_performance` | a quality run |
+| `{arm}_split_is_test` | a development run |
+| `{arm}_condition_matches_index` | a manifest condition differing from the index |
+| `{arm}_placement_matches_index` | a manifest placement differing from the index |
+| `{arm}_question_count` | anything other than 68 answers |
+| `{arm}_question_ids_unique` | duplicate identifiers |
+| `question_ids_match` | arms answering different questions |
+| `{arm}_provenance_non_empty` | a missing or blank hash |
+| `provenance_equal` | arms disagreeing on corpus, chunks, questions, registry or config |
+| `{arm}_generation_records_complete` | a missing generation block |
+| `D_verifier_records_complete` | a missing verifier block on the verified arm |
+| `{arm}_has_no_verifier_stage` | a verifier block on an unverified arm |
+| `{arm}_no_scoring_fields` | any answer scoring, which 1.15 forbids |
+| `draft_replay_exact` | any question where D's draft is not byte-identical to B's answer |
+| `generation_records_match` | a differing generation block |
+| `retrieval_records_match` | a differing retrieval block |
+| `condition_is_known` | a hardware condition not in `config.json` |
+| `condition_implies_requested_placement` | `pi5_cpu` requested as `gpu`, and equivalents |
+| `placement_observed_at_run_time` | **missing `/api/ps` evidence** |
+| `per_model_evidence_present` | a run finishing with no residency evidence |
+| `cpu_placement_holds_for_every_model` | any model holding VRAM under a CPU condition |
+| `gpu_placement_observed_for_at_least_one_model` | a GPU condition with nothing offloaded |
+| `observed_placement_matches_request` | observed device differing from requested |
+| `arm_d_replayed_b_drafts` | D generating its own drafts |
+
+**Placement fails closed.** An absent `/api/ps` observation is not a run that
+happened to be on the right device; it is a run whose device is unknown, and an
+unknown device is not a hardware condition. Placement is now derived per model
+from `size` and `size_vram` rather than from a single boolean, so a partially
+offloaded model is distinguishable from a fully resident one, and the
+CPU-pinned embedding model sitting at zero VRAM alongside an offloaded generator
+is correctly read as the intended state rather than as a failure.
+
+## 1.18.3 Runner corrections for any future run
+
+* **Placement is checked after every arm**, not only the first. Checking once
+  would miss a device change between B and D, which is precisely when it could
+  occur: D loads the verifier model that B never touched.
+* **The embedding model is evicted through the embedding endpoint.** 1.17
+  evicted all three models through `/api/generate`. An embedding model does not
+  serve that endpoint, so `nomic-embed-text` was never actually evicted and
+  retained its previous placement - defeating the CPU pinning that the same
+  amendment introduced.
+* **A placement mismatch writes a machine-readable rejection record** naming the
+  arm, the requested and observed placement, the loaded models with their VRAM,
+  and the run directory, rather than only printing to a terminal that will be
+  closed.
+
+None of these affects the six completed runs, whose placement was confirmed at
+run time and re-derived independently from their own manifests.
+
+## 1.18.4 A correction to amendment 1.17
+
+1.17.3 said Arm D's reused draft was "generated earlier on another machine". It
+was not. B and D ran **sequentially in the same invocation** on the same
+machine, which is what lets D replay B's drafts at all. The substantive point
+stands - `record["generation"]` on a D record describes a draft produced by a
+different model in the preceding arm, so reading it as D's own metrics reports
+the wrong model - but the machine claim was wrong and is withdrawn.
+
+## 1.18.5 What is not changed
+
+* No hardware run is rerun, re-tagged or deleted.
+* H1 to H4 are untouched, and remain as signed off at `be55077`.
+* No latency value has been read. `analyse_performance.py` has not been executed
+  against any of the three indices.
+
+## 1.18.6 State
+
+| | |
+|---|---|
+| Hardware runs | 6, complete, retained at `eede351` and `d4e9a90` |
+| Forensic validation | passed, outcome-blind |
+| Analyser checks | 26 named, all enforced, placement fails closed |
+| H5 | **still unread** |
+| Tests | 594 |
