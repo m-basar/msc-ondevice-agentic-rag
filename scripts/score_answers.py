@@ -58,6 +58,7 @@ from sme_assistant.evaluation.manual_scoring import (  # noqa: E402
     open_session,
     parse_abstention_input,
     parse_score_input,
+    positional_drift_report,
     progress,
     render_abstention_item,
     render_item,
@@ -429,6 +430,40 @@ def command_agreement(args: argparse.Namespace) -> int:
     return 0
 
 
+def command_drift(args: argparse.Namespace) -> int:
+    """Was a disagreement caused by position in one pass, or by criterion?"""
+    items = load_sheet(Path(args.sheet))
+    first = load_judgements(Path(args.judgements))
+    second = load_abstention(Path(args.abstention_log))
+    if not second:
+        print("No abstention re-pass recorded yet.", file=sys.stderr)
+        return 1
+
+    report = positional_drift_report(items, first, second, order_seed=args.order_seed)
+    for label, key in (("second pass says declined, first did not", "second_pass_only"),
+                       ("first pass says declined, second did not", "first_pass_only")):
+        block = report[key]
+        print(f"\n  {label}: {block['n']}")
+        if not block["n"]:
+            continue
+        print(f"    positions in pass 1   {block['first_pass_span'][0]} to "
+              f"{block['first_pass_span'][1]}"
+              + ("   CONFINED TO THE TAIL" if block["confined_to_first_pass_tail"] else ""))
+        print(f"    positions in pass 2   {block['second_pass_span'][0]} to "
+              f"{block['second_pass_span'][1]}"
+              + ("   CONFINED TO THE TAIL" if block["confined_to_second_pass_tail"] else ""))
+
+    print("\n  internal consistency on repeated answers")
+    for name, block in report["internal_consistency"].items():
+        print(f"    {name:<12} {block['consistent']}/{block['groups']} consistent")
+
+    if args.output:
+        Path(args.output).parent.mkdir(parents=True, exist_ok=True)
+        Path(args.output).write_text(json.dumps(report, indent=2), encoding="utf-8")
+        print(f"\n  written to {args.output}")
+    return 0
+
+
 def command_status(args: argparse.Namespace) -> int:
     items = load_sheet(Path(args.sheet))
     judgements = load_judgements(Path(args.judgements))
@@ -571,6 +606,13 @@ def main(argv: list[str] | None = None) -> int:
     )
     agreement.add_argument("--output", metavar="PATH")
     agreement.set_defaults(func=command_agreement)
+
+    drift = sub.add_parser(
+        "drift", help="was a disagreement caused by position, or by criterion"
+    )
+    drift.add_argument("--order-seed", type=int, default=ABSTENTION_ORDER_SEED)
+    drift.add_argument("--output", metavar="PATH")
+    drift.set_defaults(func=command_drift)
 
     status = sub.add_parser("status", help="how far through the pass you are")
     status.set_defaults(func=command_status)

@@ -51,6 +51,7 @@ from sme_assistant.evaluation.manual_scoring import (
     open_session,
     parse_abstention_input,
     parse_score_input,
+    positional_drift_report,
     progress,
     render_abstention_item,
     render_item,
@@ -571,6 +572,51 @@ def test_unseal_refuses_until_the_repass_is_done_too(tmp_path, sheet, monkeypatc
                  "--abstention-log", str(repass),
                  "unseal", "--i-have-finished-scoring"]) == 0
     assert "system_C" in capsys.readouterr().out
+
+
+def test_drift_report_tells_fatigue_apart_from_a_difference_of_criterion(tmp_path):
+    """The whole reason the re-pass runs in a different order.
+
+    Disagreements confined to the tail of one pass and scattered in the other's
+    are that pass running out of attention. Scattered in both, they are a real
+    difference of criterion, and no amount of care would have removed them.
+    """
+    records = [sheet_line(n, f"TEST-{n:03d}", f"answer {n}") for n in range(1, 21)]
+    path = write_sheet(tmp_path / "review.jsonl", records)
+    items = load_sheet(path)
+
+    first, second = {}, {}
+    for item in items:
+        # The first pass stops marking after item 15: fatigue by position.
+        first[item.item] = Judgement(item=item.item, question_id=item.question_id,
+                                     score=2, abstained=item.item <= 15)
+        second[item.item] = AbstentionJudgement(item=item.item,
+                                                question_id=item.question_id,
+                                                abstained=True)
+
+    report = positional_drift_report(items, first, second, order_seed=11)
+    block = report["second_pass_only"]
+    assert block["n"] == 5
+    assert block["first_pass_span"] == [16, 20]
+    assert block["confined_to_first_pass_tail"] is True
+    assert block["confined_to_second_pass_tail"] is False
+
+
+def test_drift_report_counts_each_pass_against_itself(sheet, tmp_path):
+    items = load_sheet(sheet)
+    first, second = {}, {}
+    for item in items:
+        first[item.item] = Judgement(item=item.item, question_id=item.question_id,
+                                     score=2, abstained=item.item == 1)
+        second[item.item] = AbstentionJudgement(item=item.item,
+                                                question_id=item.question_id,
+                                                abstained=True)
+
+    internal = positional_drift_report(items, first, second)["internal_consistency"]
+    # Items 1 and 2 are the same answer to the same question; the first pass
+    # marked one and not the other, the second marked both.
+    assert internal["first_pass"]["divergent"] == 1
+    assert internal["second_pass"]["divergent"] == 0
 
 
 # --- consistency ------------------------------------------------------------

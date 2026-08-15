@@ -1,0 +1,126 @@
+{
+  "compared": 272,
+  "first_pass_only": [],
+  "second_pass_only": [],
+  "agreed": 253,
+  "disagreed": 19,
+  "agreement_rate": 0.9301470588235294,
+  "missed_by_first_pass": 10,
+  "missed_by_second_pass": 9,
+  "disagreements": [
+    {
+      "item": 30,
+      "question_id": "GAP-flexible-Q1",
+      "first_pass": true,
+      "second_pass": false
+    },
+    {
+      "item": 34,
+      "question_id": "SYN-damaged-order-end-to-end",
+      "first_pass": true,
+      "second_pass": false
+    },
+    {
+      "item": 69,
+      "question_id": "GAP-flexible-Q1",
+      "first_pass": true,
+      "second_pass": false
+    },
+    {
+      "item": 103,
+      "question_id": "SYN-damaged-order-end-to-end",
+      "first_pass": true,
+      "second_pass": false
+    },
+    {
+      "item": 118,
+      "question_id": "SYN-damaged-order-end-to-end",
+      "first_pass": true,
+      "second_pass": false
+    },
+    {
+      "item": 122,
+      "question_id": "CONF-06-Q1",
+      "first_pass": true,
+      "second_pass": false
+    },
+    {
+      "item": 142,
+      "question_id": "CONF-12-Q2",
+      "first_pass": true,
+      "second_pass": false
+    },
+    {
+      "item": 191,
+      "question_id": "CONF-12-Q3",
+      "first_pass": true,
+      "second_pass": false
+    },
+    {
+      "item": 227,
+      "question_id": "GAP-share-Q1",
+      "first_pass": false,
+      "second_pass": true
+    },
+    {
+      "item": 228,
+      "question_id": "GAP-share-Q2",
+      "first_pass": false,
+      "second_pass": true
+    },
+    {
+      "item": 242,
+      "question_id": "PART-grievance-Q1",
+      "first_pass": false,
+      "second_pass": true
+    },
+    {
+      "item": 244,
+      "question_id": "GAP-share-Q1",
+      "first_pass": false,
+      "second_pass": true
+    },
+    {
+      "item": 257,
+      "question_id": "CONF-17-Q3",
+      "first_pass": true,
+      "second_pass": false
+    },
+    {
+      "item": 261,
+      "question_id": "GAP-staff-Q2",
+      "first_pass": false,
+      "second_pass": true
+    },
+    {
+      "item": 262,
+      "question_id": "GAP-flexible-Q1",
+      "first_pass": false,
+      "second_pass": true
+    },
+    {
+      "item": 263,
+      "question_id": "CONF-17-Q2",
+      "first_pass": false,
+      "second_pass": true
+    },
+    {
+      "item": 264,
+      "question_id": "GAP-redundancy-Q1",
+      "first_pass": false,
+      "second_pass": true
+    },
+    {
+      "item": 269,
+      "question_id": "GAP-flexible-Q2",
+      "first_pass": false,
+      "second_pass": true
+    },
+    {
+      "item": 271,
+      "question_id": "GAP-maternity-Q2",
+      "first_pass": false,
+      "second_pass": true
+    }
+  ]
+}

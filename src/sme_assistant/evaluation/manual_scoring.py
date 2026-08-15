@@ -884,6 +884,81 @@ def abstention_agreement(
     }
 
 
+def positional_drift_report(
+    items: Sequence[ReviewItem],
+    first: Mapping[int, Judgement],
+    second: Mapping[int, AbstentionJudgement],
+    *,
+    order_seed: int = ABSTENTION_ORDER_SEED,
+) -> dict[str, Any]:
+    """Locate each disagreement in *both* passes' orders, and check each pass
+    against itself on the repeated answers.
+
+    This is what the re-ordering was for, and it is the only way to tell the two
+    competing explanations apart. If a set of disagreements clusters at the end
+    of one pass's sequence and scatters in the other's, the cause is that pass's
+    position, which is fatigue. If it scatters in both, position is not the
+    cause and the disagreement is a real difference of criterion.
+
+    Written as a function rather than left as the shell command that first
+    produced the figures, so the numbers quoted in amendment 1.14.7 can be
+    regenerated rather than trusted.
+    """
+    order_one = {item.item: n for n, item in enumerate(items, start=1)}
+    order_two = {
+        item.item: n
+        for n, item in enumerate(abstention_order(items, seed=order_seed), start=1)
+    }
+    shared = sorted(set(first) & set(second))
+
+    def locate(numbers: Sequence[int]) -> dict[str, Any]:
+        if not numbers:
+            return {"n": 0}
+        in_one = sorted(order_one[n] for n in numbers)
+        in_two = sorted(order_two[n] for n in numbers)
+        total = len(items)
+        return {
+            "n": len(numbers),
+            "items": sorted(numbers),
+            "positions_in_first_pass": in_one,
+            "positions_in_second_pass": in_two,
+            # A contiguous tail in one order and a spread in the other is the
+            # signature of fatigue in that pass.
+            "first_pass_span": [in_one[0], in_one[-1]],
+            "second_pass_span": [in_two[0], in_two[-1]],
+            "confined_to_first_pass_tail": in_one[0] > total * 0.75,
+            "confined_to_second_pass_tail": in_two[0] > total * 0.75,
+        }
+
+    groups: dict[tuple[str, str], list[int]] = {}
+    for item in items:
+        groups.setdefault(item.duplicate_key, []).append(item.item)
+    dupes = {k: sorted(v) for k, v in groups.items() if len(v) > 1}
+
+    def internal(source: Mapping[int, Any]) -> dict[str, Any]:
+        divergent = [
+            nums for nums in dupes.values()
+            if len({source[n].abstained for n in nums if n in source}) > 1
+        ]
+        return {
+            "groups": len(dupes),
+            "consistent": len(dupes) - len(divergent),
+            "divergent": len(divergent),
+        }
+
+    return {
+        "compared": len(shared),
+        "second_pass_only": locate([n for n in shared
+                                    if second[n].abstained and not first[n].abstained]),
+        "first_pass_only": locate([n for n in shared
+                                   if first[n].abstained and not second[n].abstained]),
+        "internal_consistency": {
+            "first_pass": internal(first),
+            "second_pass": internal(second),
+        },
+    }
+
+
 def consistency_report(
     items: Iterable[ReviewItem], judgements: Mapping[int, Judgement]
 ) -> dict[str, Any]:

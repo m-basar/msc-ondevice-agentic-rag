@@ -1,0 +1,110 @@
+{
+  "compared": 272,
+  "second_pass_only": {
+    "n": 10,
+    "items": [
+      227,
+      228,
+      242,
+      244,
+      261,
+      262,
+      263,
+      264,
+      269,
+      271
+    ],
+    "positions_in_first_pass": [
+      227,
+      228,
+      242,
+      244,
+      261,
+      262,
+      263,
+      264,
+      269,
+      271
+    ],
+    "positions_in_second_pass": [
+      65,
+      74,
+      76,
+      87,
+      155,
+      175,
+      176,
+      180,
+      210,
+      221
+    ],
+    "first_pass_span": [
+      227,
+      271
+    ],
+    "second_pass_span": [
+      65,
+      221
+    ],
+    "confined_to_first_pass_tail": true,
+    "confined_to_second_pass_tail": false
+  },
+  "first_pass_only": {
+    "n": 9,
+    "items": [
+      30,
+      34,
+      69,
+      103,
+      118,
+      122,
+      142,
+      191,
+      257
+    ],
+    "positions_in_first_pass": [
+      30,
+      34,
+      69,
+      103,
+      118,
+      122,
+      142,
+      191,
+      257
+    ],
+    "positions_in_second_pass": [
+      9,
+      85,
+      88,
+      96,
+      97,
+      99,
+      101,
+      166,
+      237
+    ],
+    "first_pass_span": [
+      30,
+      257
+    ],
+    "second_pass_span": [
+      9,
+      237
+    ],
+    "confined_to_first_pass_tail": false,
+    "confined_to_second_pass_tail": false
+  },
+  "internal_consistency": {
+    "first_pass": {
+      "groups": 58,
+      "consistent": 52,
+      "divergent": 6
+    },
+    "second_pass": {
+      "groups": 58,
+      "consistent": 58,
+      "divergent": 0
+    }
+  }
+}
