@@ -235,26 +235,36 @@ def validate(runs: dict[str, tuple[dict, list[dict], dict]], index_meta: dict) -
           "a run finished with no loaded-model evidence, so its residency "
           "cannot be confirmed")
 
-    if requested and all(end_evidence.values()):
-        offending: list[str] = []
-        for arm, models in end_evidence.items():
-            for name, block in models.items():
-                vram = block.get("size_vram")
-                if requested == "cpu" and isinstance(vram, (int, float)) and vram > 0:
-                    offending.append(f"{arm}:{name} held {vram} bytes of VRAM")
-        if requested == "cpu":
-            check("cpu_placement_holds_for_every_model", not offending,
-                  "; ".join(offending))
-        else:
-            on_gpu = [
-                f"{arm}:{name}" for arm, models in end_evidence.items()
-                for name, block in models.items()
-                if isinstance(block.get("size_vram"), (int, float))
-                and block["size_vram"] > 0
+    if requested:
+        # Amendment 1.19. Placement is judged **per arm**. Aggregating across
+        # both would pass a run where B sat on the GPU and D on the CPU, which
+        # is two conditions reported as one and exactly the comparison H5 must
+        # not make.
+        for arm, models in sorted(end_evidence.items()):
+            if not models:
+                continue
+            unreported = [
+                name for name, block in models.items()
+                if not isinstance(block.get("size_vram"), (int, float))
             ]
-            check("gpu_placement_observed_for_at_least_one_model", bool(on_gpu),
-                  "no model held VRAM on a run requesting gpu placement",
-                  models_on_gpu=on_gpu)
+            check(f"{arm}_residency_fully_reported", not unreported,
+                  f"{unreported} reported no numeric size_vram, so placement "
+                  "cannot be confirmed")
+            if unreported:
+                continue
+
+            if requested == "cpu":
+                held = [f"{name} held {block['size_vram']} bytes"
+                        for name, block in models.items()
+                        if block["size_vram"] > 0]
+                check(f"{arm}_cpu_placement_holds_for_every_model", not held,
+                      "; ".join(held))
+            else:
+                on_gpu = [name for name, block in models.items()
+                          if block["size_vram"] > 0]
+                check(f"{arm}_gpu_placement_observed", bool(on_gpu),
+                      "no model held VRAM on an arm requesting gpu placement",
+                      models_on_gpu=on_gpu)
 
     if observed:
         seen = "gpu" if observed.get("any_on_gpu") else "cpu"
@@ -264,6 +274,28 @@ def validate(runs: dict[str, tuple[dict, list[dict], dict]], index_meta: dict) -
               f"requested {requested}, observed {seen}")
     else:
         detail["placement"] = {"requested": requested, "observed": None}
+
+    # --- timing completeness ------------------------------------------------
+    # Amendment 1.19. ``_series`` silently drops non-numeric values, so a run
+    # missing half its timings would average the half that survived and report
+    # it as the arm's latency. A mean over an unknown denominator is not a
+    # measurement.
+    def positive_numbers(records, field):
+        values = [r.get(field) for r in records]
+        return [v for v in values if isinstance(v, (int, float))
+                and not isinstance(v, bool) and v > 0]
+
+    for arm, (_, answers, _) in sorted(runs.items()):
+        wall = positive_numbers(answers, "wall_seconds")
+        check(f"{arm}_wall_seconds_complete", len(wall) == EXPECTED_QUESTIONS,
+              f"{len(wall)} positive numeric wall_seconds over {len(answers)} "
+              f"answers, expected {EXPECTED_QUESTIONS}")
+    if "D" in runs:
+        verification = positive_numbers(runs["D"][1], "verification_seconds")
+        check("D_verification_seconds_complete",
+              len(verification) == EXPECTED_QUESTIONS,
+              f"{len(verification)} positive numeric verification_seconds, "
+              f"expected {EXPECTED_QUESTIONS}")
 
     # --- draft provenance ---------------------------------------------------
     if "D" in runs:
@@ -368,23 +400,44 @@ def main(argv: list[str] | None = None) -> int:
 
     runs = {arm: performance_run(ROOT / rel) for arm, rel in sorted(index.items())}
 
+    # Amendment 1.19. Validation runs first and timings are not computed until
+    # it passes. The previous version built the whole report, timings included,
+    # and only then checked the verdict, so a rejected run still had its latency
+    # calculated and written into the rejection file. A rejected run's timing is
+    # not a smaller result; it is a number nobody is entitled to see, and the
+    # only way to be sure it is not disclosed is not to compute it.
+    validation = validate(runs, index_meta)
+    if not validation["valid"]:
+        rejection = {
+            "schema_version": "1.1",
+            "index": args.index,
+            "hardware_condition": index_meta.get("hardware_condition"),
+            "rejected": True,
+            "validation": validation,
+            "note": (
+                "No timing was computed. This file deliberately contains no "
+                "latency, no per-arm figures and no H5 field. The run "
+                "directories are retained unchanged; see amendment 1.19."
+            ),
+        }
+        out = Path(args.out)
+        out.mkdir(parents=True, exist_ok=True)
+        target = out / f"performance_{Path(args.index).stem}_REJECTED.json"
+        target.write_text(json.dumps(rejection, indent=2), encoding="utf-8",
+                          newline="\n")
+        print("Refusing to report. Validation failed:", file=sys.stderr)
+        for finding in validation["findings"]:
+            print(f"  - {finding}", file=sys.stderr)
+        print(f"\n  rejection record written to {target}", file=sys.stderr)
+        print("  no latency was computed", file=sys.stderr)
+        return 1
+
     report: dict = {
         "index": args.index,
         "hardware_condition": index_meta.get("hardware_condition"),
-        "validation": validate(runs, index_meta),
+        "validation": validation,
         "arms": {arm: timings(*runs[arm]) for arm in sorted(runs)},
     }
-
-    if not report["validation"]["valid"]:
-        print("Refusing to report. Validation failed:", file=sys.stderr)
-        for finding in report["validation"]["findings"]:
-            print(f"  - {finding}", file=sys.stderr)
-        out = Path(args.out)
-        out.mkdir(parents=True, exist_ok=True)
-        (out / f"performance_{Path(args.index).stem}_REJECTED.json").write_text(
-            json.dumps(report, indent=2), encoding="utf-8", newline="\n"
-        )
-        return 1
 
     condition = report["hardware_condition"]
     if {"B", "D"} <= set(report["arms"]):

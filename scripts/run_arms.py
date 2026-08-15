@@ -83,6 +83,35 @@ def arm_definition(name: str, config) -> ArmDefinition:
     )
 
 
+def write_rejection(config, *, split, condition, stage, reason, **detail) -> Path:
+    """Retain a machine-readable record of why a run must not be reported.
+
+    Amendment 1.19. Uniquely named, so a second failure never overwrites the
+    first, and never instructing anyone to delete anything: the run directory
+    stays exactly as written and is excluded by this record, not by removal.
+    Deleting the evidence of a failed condition is how a failed condition
+    becomes an unrecorded one.
+    """
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")
+    target = Path(config.path("paths.results")) / (
+        f"REJECTED_{split}_performance_{condition}_{stage}_{stamp}.json"
+    )
+    target.write_text(json.dumps({
+        "rejected_at": datetime.now(timezone.utc).isoformat(),
+        "stage": stage,
+        "reason": reason,
+        "hardware_condition": condition,
+        "split": split,
+        **detail,
+        "retention": (
+            "Every run directory written by this invocation is retained "
+            "unchanged. Nothing is deleted or re-tagged. This record excludes "
+            "the affected run from analysis; the files remain as evidence."
+        ),
+    }, indent=2), encoding="utf-8", newline="\n")
+    return target
+
+
 def run_arm(name, questions, *, retriever, generator, verifier, config, kb, index,
             question_set, registry, split, tag, root=None, drafts=None,
             drafts_source=None, performance_only=False,
@@ -290,9 +319,38 @@ def main() -> int:
         for model, is_embedding in to_evict:
             try:
                 probe.unload(model, embedding=is_embedding)
-            except Exception as exc:  # pragma: no cover - network dependent
-                print(f"  could not evict {model}: {exc}")
-        print(f"  evicted loaded models before a {args.placement} run")
+            except Exception as exc:
+                # Amendment 1.19. Printing and continuing then announced
+                # "evicted loaded models", which was a claim the run had just
+                # failed to establish. A model that was not evicted keeps its
+                # previous placement, so the condition is not the one named.
+                record = write_rejection(
+                    config, split=args.split,
+                    condition=args.hardware_condition, stage="eviction",
+                    reason="eviction_failed", model=model,
+                    embedding_endpoint=is_embedding, error=str(exc),
+                    note=("The requested placement cannot be established while "
+                          "a model remains resident from a previous run."),
+                )
+                print(f"\n  EVICTION FAILED for {model}: {exc}")
+                print(f"  Rejection record written to {record.name}")
+                return 1
+
+        try:
+            preflight = probe.preflight(args.placement)
+        except Exception as exc:
+            record = write_rejection(
+                config, split=args.split, condition=args.hardware_condition,
+                stage="preflight", reason="preflight_failed", error=str(exc),
+                note=("A synthetic evict-load-observe cycle failed, so eviction "
+                      "or residency reporting cannot be relied on for this run."),
+            )
+            print(f"\n  PREFLIGHT FAILED: {exc}")
+            print(f"  Rejection record written to {record.name}")
+            return 1
+
+        print(f"  evicted and preflighted: {args.placement} placement confirmed "
+              "on a synthetic prompt")
     evaluation = load_evaluation_config()
     kb = load_knowledge_base(config.path("paths.kb_docs"))
     registry = load_conflicts(evaluation.path("conflicts"))
@@ -381,41 +439,51 @@ def main() -> int:
             # D loads the verifier model that B never touched. Amendment 1.18.
             from sme_assistant.common.llm_client import OllamaClient  # noqa: E402
 
-            seen = OllamaClient(config).observed_placement()
+            try:
+                seen = OllamaClient(config).observed_placement()
+            except Exception as exc:
+                # /api/ps unreachable is not evidence of CPU placement.
+                record = write_rejection(
+                    config, split=args.split,
+                    condition=args.hardware_condition, stage=f"residency_{name}",
+                    reason="residency_unreadable", arm=name, error=str(exc),
+                    run_directory=str(directories[name].relative_to(ROOT).as_posix()),
+                    note=("Residency could not be read, so the device this arm "
+                          "ran on is unknown."),
+                )
+                print(f"\n  RESIDENCY UNREADABLE after arm {name}: {exc}")
+                print(f"  Rejection record written to {record.name}")
+                return 1
+
             placement_observations[name] = seen
             observed_placement = seen
             wanted_gpu = args.placement == "gpu"
-            if seen["any_on_gpu"] != wanted_gpu:
-                record = {
-                    "rejected_at": datetime.now(timezone.utc).isoformat(),
-                    "reason": "placement_mismatch",
-                    "arm": name,
-                    "requested_placement": args.placement,
-                    "observed_placement": "gpu" if seen["any_on_gpu"] else "cpu",
-                    "hardware_condition": args.hardware_condition,
-                    "models_loaded": seen["models_loaded"],
-                    "vram_bytes": seen["vram_bytes"],
-                    "run_directory": str(directories[name].relative_to(ROOT).as_posix()),
-                    "observations_so_far": placement_observations,
-                    "note": (
-                        "The run is retained but its condition is not what it "
-                        "claims and it must not be reported. Delete or re-tag "
-                        "the directory before any analysis."
-                    ),
-                }
-                rejection = Path(config.path("paths.results")) / (
-                    f"REJECTED_{args.split}_performance_"
-                    f"{args.hardware_condition}_{name}.json"
+            if not seen.get("complete", False) or seen["any_on_gpu"] != wanted_gpu:
+                record = write_rejection(
+                    config, split=args.split,
+                    condition=args.hardware_condition, stage=f"placement_{name}",
+                    reason=("residency_incomplete" if not seen.get("complete", False)
+                            else "placement_mismatch"),
+                    arm=name,
+                    requested_placement=args.placement,
+                    observed_placement=("gpu" if seen["any_on_gpu"] else "cpu"),
+                    models_loaded=seen["models_loaded"],
+                    vram_bytes=seen["vram_bytes"],
+                    sizes=seen.get("sizes"),
+                    residency_complete=seen.get("complete"),
+                    run_directory=str(directories[name].relative_to(ROOT).as_posix()),
+                    observations_so_far=placement_observations,
+                    note=("The run is retained unchanged and excluded from "
+                          "analysis by this record."),
                 )
-                rejection.write_text(json.dumps(record, indent=2),
-                                     encoding="utf-8", newline="\n")
-                print("\n  PLACEMENT MISMATCH\n"
+                print("\n  PLACEMENT NOT CONFIRMED\n"
                       f"    arm      : {name}\n"
                       f"    requested: {args.placement}\n"
-                      f"    observed : {record['observed_placement']}\n"
+                      f"    observed : {'gpu' if seen['any_on_gpu'] else 'cpu'}\n"
+                      f"    complete : {seen.get('complete')}\n"
                       f"    loaded   : {seen['models_loaded']}\n"
-                      f"  Rejection record written to {rejection.name}\n"
-                      "  The run is recorded but must not be reported.")
+                      f"  Rejection record written to {record.name}\n"
+                      "  The run is retained and must not be reported.")
                 return 1
             print(f"    placement confirmed for arm {name}: {args.placement}")
 

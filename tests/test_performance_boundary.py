@@ -139,7 +139,7 @@ def test_the_client_can_evict_and_observe_placement():
     client = MockClient(load_config())
     assert client.unload()["mock"] is True
     observed = client.observed_placement()
-    assert set(observed) == {"models_loaded", "any_on_gpu", "vram_bytes"}
+    assert {"models_loaded", "any_on_gpu", "vram_bytes", "complete"} <= set(observed)
 
 
 # --- the timing analyser -----------------------------------------------------
@@ -150,7 +150,9 @@ def write_run(root: Path, name: str, arm: str, *, purpose="performance",
               question_prefix="Q", reused=None, hashes="same",
               condition="pi5_cpu", placement="cpu", loaded_end=None,
               loaded_start=None, drafts_match=True, retrieval_match=True,
-              generation_match=True, duplicate_ids=False):
+              generation_match=True, duplicate_ids=False,
+              drop_wall_seconds=0, zero_wall_seconds=False,
+              drop_verification_seconds=0):
     directory = root / name
     directory.mkdir(parents=True)
     if loaded_end is None:
@@ -172,7 +174,7 @@ def write_run(root: Path, name: str, arm: str, *, purpose="performance",
         qid = f"{question_prefix}-{0 if duplicate_ids else n:03d}"
         record = {
             "question_id": qid,
-            "wall_seconds": 2.0,
+            "wall_seconds": (0.0 if zero_wall_seconds else 2.0),
             "answer": f"draft for {qid}",
             "retrieval": {"chunks": [qid]} if retrieval_match else {"chunks": [n]},
             "generation": {
@@ -188,7 +190,8 @@ def write_run(root: Path, name: str, arm: str, *, purpose="performance",
             record["draft_answer"] = (
                 f"draft for {qid}" if drafts_match else "something else"
             )
-            record["verification_seconds"] = 3.0
+            if n >= drop_verification_seconds:
+                record["verification_seconds"] = 3.0
             record["verification_generation"] = {
                 "model": "qwen2.5:3b",
                 "eval_tokens_per_second": 8.0,
@@ -197,6 +200,8 @@ def write_run(root: Path, name: str, arm: str, *, purpose="performance",
                 "cpu_temp_c": 75.0,
                 "throttled": True,
             }
+        if n < drop_wall_seconds:
+            record.pop("wall_seconds")
         if scoring:
             record["scoring"] = {"citation_support": 1.0}
         lines.append(json.dumps(record))
@@ -424,7 +429,7 @@ def test_a_cpu_condition_with_a_model_in_vram_is_caught(tmp_path):
     payload, _, _ = build_index(tmp_path, d_kwargs={
         "loaded_end": [{"name": "qwen2.5:3b", "size": 100, "size_vram": 100}]
     })
-    assert "cpu_placement_holds_for_every_model" in failing(validated(tmp_path, payload))
+    assert "D_cpu_placement_holds_for_every_model" in failing(validated(tmp_path, payload))
 
 
 def test_a_gpu_condition_with_nothing_in_vram_is_caught(tmp_path):
@@ -435,9 +440,9 @@ def test_a_gpu_condition_with_nothing_in_vram_is_caught(tmp_path):
         hardware_condition="laptop_gpu", requested_placement="gpu",
         observed_placement={"any_on_gpu": True, "models_loaded": ["x"]},
     )
-    assert "gpu_placement_observed_for_at_least_one_model" in failing(
-        validated(tmp_path, payload)
-    )
+    failures = failing(validated(tmp_path, payload))
+    assert "B_gpu_placement_observed" in failures
+    assert "D_gpu_placement_observed" in failures
 
 
 def test_an_embedding_model_on_cpu_does_not_fail_a_gpu_run(tmp_path):
@@ -490,3 +495,143 @@ def test_the_embedding_model_is_evicted_through_the_embedding_endpoint(monkeypat
     assert calls[0][0] == "/api/embeddings"
     assert calls[0][1]["keep_alive"] == 0
     assert calls[1][0] == "/api/generate"
+
+
+# --- amendment 1.19: fail-open paths closed ----------------------------------
+
+
+def test_gpu_placement_is_judged_per_arm_not_aggregated(tmp_path):
+    """B on GPU and D on CPU is two conditions reported as one.
+
+    The aggregated check passed it, because *some* model somewhere held VRAM.
+    """
+    on_gpu = [{"name": "llama3.2:3b", "size": 100, "size_vram": 100}]
+    on_cpu = [{"name": "qwen2.5:3b", "size": 100, "size_vram": 0}]
+    payload, _, _ = build_index(
+        tmp_path,
+        b_kwargs={"condition": "laptop_gpu", "placement": "gpu", "loaded_end": on_gpu},
+        d_kwargs={"condition": "laptop_gpu", "placement": "gpu", "loaded_end": on_cpu},
+        hardware_condition="laptop_gpu", requested_placement="gpu",
+        observed_placement={"any_on_gpu": True, "models_loaded": ["x"]},
+    )
+    failures = failing(validated(tmp_path, payload))
+    assert "D_gpu_placement_observed" in failures
+    assert "B_gpu_placement_observed" not in failures
+
+
+def test_a_missing_size_vram_fails_closed(tmp_path):
+    """Absent residency is not evidence of CPU placement."""
+    payload, _, _ = build_index(tmp_path, d_kwargs={
+        "loaded_end": [{"name": "qwen2.5:3b", "size": 100}]
+    })
+    assert "D_residency_fully_reported" in failing(validated(tmp_path, payload))
+
+
+def test_a_non_numeric_size_vram_fails_closed(tmp_path):
+    payload, _, _ = build_index(tmp_path, d_kwargs={
+        "loaded_end": [{"name": "qwen2.5:3b", "size": 100, "size_vram": "unknown"}]
+    })
+    assert "D_residency_fully_reported" in failing(validated(tmp_path, payload))
+
+
+def test_missing_wall_seconds_is_caught(tmp_path):
+    payload, _, _ = build_index(tmp_path, b_kwargs={"drop_wall_seconds": 3})
+    assert "B_wall_seconds_complete" in failing(validated(tmp_path, payload))
+
+
+def test_non_positive_wall_seconds_is_caught(tmp_path):
+    payload, _, _ = build_index(tmp_path, b_kwargs={"zero_wall_seconds": True})
+    assert "B_wall_seconds_complete" in failing(validated(tmp_path, payload))
+
+
+def test_missing_verification_seconds_is_caught(tmp_path):
+    payload, _, _ = build_index(tmp_path, d_kwargs={"drop_verification_seconds": 5})
+    assert "D_verification_seconds_complete" in failing(validated(tmp_path, payload))
+
+
+def test_api_ps_failure_raises_rather_than_reporting_nothing_loaded(monkeypatch):
+    """Returning [] made an unreachable endpoint look like CPU placement."""
+    from sme_assistant.common.llm_client import LLMError
+
+    client = OllamaClient(load_config())
+
+    def boom(*args, **kwargs):
+        raise OSError("connection refused")
+
+    monkeypatch.setattr("urllib.request.urlopen", boom)
+    with pytest.raises(LLMError, match="Residency is unknown"):
+        client.residency()
+
+
+def test_a_rejected_report_discloses_no_latency(tmp_path, monkeypatch, capsys):
+    """A rejected run's timing is not a smaller result. It is not computed."""
+    payload, _, _ = build_index(tmp_path, d_kwargs={"reused": None})
+    index_path = tmp_path / "latest_test_performance_pi5_cpu.json"
+    index_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    monkeypatch.setattr(analyse_performance, "ROOT", tmp_path)
+    monkeypatch.setattr(
+        analyse_performance, "load_config",
+        lambda: type("C", (), {"path": staticmethod(lambda _k: tmp_path)})(),
+    )
+    monkeypatch.setattr(analyse_performance, "timings",
+                        lambda *a, **k: pytest.fail("timings must not be computed"))
+
+    out = tmp_path / "analysis"
+    code = analyse_performance.main(["--index", index_path.name, "--out", str(out)])
+    assert code == 1
+
+    written = json.loads((out / "performance_latest_test_performance_pi5_cpu_REJECTED.json")
+                         .read_text(encoding="utf-8"))
+    assert written["rejected"] is True
+    # Structural, not substring: check *names* legitimately mention
+    # wall_seconds. What must be absent is any computed timing.
+    assert "arms" not in written, "rejected report carries per-arm timings"
+    assert "H5" not in written, "rejected report carries an H5 verdict"
+
+    def numeric_timing_keys(node, path=""):
+        found = []
+        if isinstance(node, dict):
+            for key, value in node.items():
+                if key in {"ratio", "mean", "median", "mean_wall_seconds",
+                           "eval_tokens_per_second", "prompt_tokens_per_second"}:
+                    found.append(f"{path}.{key}")
+                found.extend(numeric_timing_keys(value, f"{path}.{key}"))
+        elif isinstance(node, list):
+            for n, value in enumerate(node):
+                found.extend(numeric_timing_keys(value, f"{path}[{n}]"))
+        return found
+
+    assert numeric_timing_keys(written) == [], "rejected report leaked a timing"
+
+
+def test_the_preflight_refuses_when_eviction_does_not_take_effect(monkeypatch):
+    """Every earlier test monkeypatched _post and proved only that the right
+    endpoint was addressed, not that the server acted."""
+    from sme_assistant.common.llm_client import LLMError
+
+    client = OllamaClient(load_config())
+    monkeypatch.setattr(client, "unload", lambda *a, **k: {})
+    monkeypatch.setattr(
+        client, "observed_placement",
+        lambda: {"models_loaded": [client.default_model], "any_on_gpu": False,
+                 "vram_bytes": {}, "complete": True},
+    )
+    with pytest.raises(LLMError, match="still resident after an eviction"):
+        client.preflight("cpu")
+
+
+def test_the_preflight_refuses_when_the_device_is_not_the_one_requested(monkeypatch):
+    from sme_assistant.common.llm_client import LLMError
+
+    client = OllamaClient(load_config())
+    states = iter([
+        {"models_loaded": [], "any_on_gpu": False, "vram_bytes": {}, "complete": True},
+        {"models_loaded": ["llama3.2:3b"], "any_on_gpu": True,
+         "vram_bytes": {"llama3.2:3b": 1}, "complete": True},
+    ])
+    monkeypatch.setattr(client, "unload", lambda *a, **k: {})
+    monkeypatch.setattr(client, "observed_placement", lambda: next(states))
+    monkeypatch.setattr(client, "generate", lambda *a, **k: None)
+    with pytest.raises(LLMError, match="loaded onto gpu"):
+        client.preflight("cpu")

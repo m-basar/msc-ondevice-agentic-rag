@@ -263,22 +263,87 @@ class OllamaClient:
         try:
             with urllib.request.urlopen(request, timeout=self.timeout) as response:
                 payload = json.loads(response.read().decode("utf-8"))
-        except (TimeoutError, urllib.error.URLError, OSError, json.JSONDecodeError):
-            return []
+        except (TimeoutError, urllib.error.URLError, OSError, json.JSONDecodeError) as exc:
+            # Amendment 1.19. Returning [] here conflated "nothing is loaded"
+            # with "I could not ask", and the caller read the empty list as
+            # evidence of CPU placement. An unanswered question is not an
+            # answer of no.
+            raise LLMError(
+                f"/api/ps failed against {self.base_url}: {exc}. Residency is "
+                "unknown, which is not the same as nothing being resident."
+            ) from exc
         return list(payload.get("models") or [])
 
     def observed_placement(self) -> dict[str, Any]:
-        """Requested placement is a hope; this is what is actually loaded."""
+        """Requested placement is a hope; this is what is actually loaded.
+
+        Raises ``LLMError`` if ``/api/ps`` cannot be reached. Amendment 1.19:
+        the caller must not be able to mistake an unreachable endpoint for a
+        CPU-resident model.
+
+        ``size_vram`` is carried through verbatim, including when it is absent,
+        so a downstream check can distinguish zero VRAM from unreported VRAM.
+        """
         loaded = self.residency()
-        on_gpu = [m for m in loaded if (m.get("size_vram") or 0) > 0]
+        on_gpu = [
+            m for m in loaded
+            if isinstance(m.get("size_vram"), (int, float)) and m["size_vram"] > 0
+        ]
         return {
             "models_loaded": [m.get("name") or m.get("model") for m in loaded],
             "any_on_gpu": bool(on_gpu),
             "vram_bytes": {
-                (m.get("name") or m.get("model")): m.get("size_vram", 0)
+                (m.get("name") or m.get("model")): m.get("size_vram")
                 for m in loaded
             },
+            "sizes": {
+                (m.get("name") or m.get("model")): m.get("size") for m in loaded
+            },
+            "complete": all(
+                isinstance(m.get("size_vram"), (int, float)) for m in loaded
+            ),
         }
+
+    def preflight(self, placement: str) -> dict[str, Any]:
+        """Prove eviction and residency reporting work, before a run relies on them.
+
+        Amendment 1.19. Every earlier test monkeypatched ``_post``, so they
+        proved the right endpoint was addressed and nothing about whether the
+        server acted on it. This performs one synthetic cycle against the live
+        server: evict, confirm the model is gone, generate a one-token prompt
+        that is **not a test question**, then read residency back and check the
+        device is the one requested.
+
+        Raises ``LLMError`` on any failure. A run whose eviction silently did
+        nothing measures the previous placement, and that is exactly the defect
+        this project has already hit once.
+        """
+        model = self.default_model
+        self.unload(model)
+        after_evict = self.observed_placement()
+        if model in (after_evict["models_loaded"] or []):
+            raise LLMError(
+                f"preflight: {model} is still resident after an eviction, so "
+                "eviction is not taking effect and the run would measure the "
+                "previous placement."
+            )
+
+        self.generate("ping", options={"num_predict": 1})
+        after_load = self.observed_placement()
+        if not after_load["complete"]:
+            raise LLMError(
+                "preflight: /api/ps reported a model without a numeric "
+                "size_vram, so placement cannot be confirmed."
+            )
+        seen = "gpu" if after_load["any_on_gpu"] else "cpu"
+        if seen != placement:
+            raise LLMError(
+                f"preflight: requested {placement} placement but a synthetic "
+                f"generation loaded onto {seen}. Loaded: "
+                f"{after_load['models_loaded']}, vram {after_load['vram_bytes']}."
+            )
+        return {"after_eviction": after_evict, "after_synthetic_load": after_load,
+                "placement_confirmed": placement}
 
     def describe_endpoint(self) -> dict[str, Any]:
         info = ollama_info(self.base_url)
@@ -373,7 +438,11 @@ class MockClient:
         return []
 
     def observed_placement(self) -> dict[str, Any]:
-        return {"models_loaded": [], "any_on_gpu": False, "vram_bytes": {}}
+        return {"models_loaded": [], "any_on_gpu": False, "vram_bytes": {},
+                "sizes": {}, "complete": True}
+
+    def preflight(self, placement: str) -> dict[str, Any]:
+        return {"mock": True, "placement_confirmed": placement}
 
     def embed(self, text: str, *, model: str | None = None,
               options: dict[str, Any] | None = None) -> list[float]:

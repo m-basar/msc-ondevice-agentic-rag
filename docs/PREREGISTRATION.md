@@ -2683,8 +2683,8 @@ independently.
 ## 1.17.3 The timing report described Arm D wrongly
 
 Arm D replays Arm B's draft and then verifies it. `record["generation"]` on a D
-record therefore describes **the reused draft**, produced by a different model
-in the immediately preceding arm. The analyser read only that field, so D's prefill,
+record therefore describes **the reused draft**, generated earlier on another
+machine by a different model. The analyser read only that field, so D's prefill,
 decode, load time, temperature and throttle state were Arm B's numbers under
 Arm D's name. The verifier's own figures sat unread in
 `verification_generation`.
@@ -2865,3 +2865,117 @@ the wrong model - but the machine claim was wrong and is withdrawn.
 | Analyser checks | 26 named, all enforced, placement fails closed |
 | H5 | **still unread** |
 | Tests | 594 |
+
+---
+
+# Amendment 1.19 - 15 August 2026
+
+Append-only, and written **before `analyse_performance.py` was run against any
+index**. No latency value has been read at any point. The six hardware runs at
+`eede351` and `d4e9a90` are unchanged, are not rerun, and remain retained.
+
+Review of `719268c` found seven paths that failed **open**: they let an unproven
+condition pass as a proven one. Every one was verified against the code before
+being accepted, and all seven were real.
+
+## 1.19.1 A rejected run had its latency computed
+
+`main` built the report, timings included, and only then consulted the verdict,
+so a run that failed validation still had its latency calculated and written
+into `_REJECTED.json`.
+
+Validation now runs first and **timings are not computed until it passes**. A
+rejected report contains no per-arm block, no ratio and no H5 field, and says
+so. A rejected run's timing is not a smaller result; it is a number nobody is
+entitled to see, and the only reliable way not to disclose it is not to compute
+it. A test replaces `timings` with a function that fails the test if called.
+
+## 1.19.2 GPU placement was aggregated across arms
+
+The check asked whether *any* model on *either* arm held VRAM. Arm B on the GPU
+with Arm D on the CPU satisfied it, which is two hardware conditions reported as
+one, on the single contrast H5 is stated over.
+
+Placement is now judged **per arm**: `B_gpu_placement_observed` and
+`D_gpu_placement_observed` are separate checks, as are the CPU equivalents.
+
+## 1.19.3 Missing residency read as CPU placement
+
+Two routes. In the analyser, `isinstance(vram, (int, float))` guarded the
+comparison, so a model reporting no `size_vram`, or a non-numeric one, was
+skipped and the arm passed as CPU. In the client, `/api/ps` failures returned an
+empty list, which the runner read as "nothing on the GPU".
+
+Both now fail closed. `residency` raises rather than returning `[]`, because an
+unanswered question is not an answer of no. The analyser adds
+`{arm}_residency_fully_reported`, which fails when any model lacks a numeric
+`size_vram`, and the runner aborts with a retained record when residency cannot
+be read.
+
+## 1.19.4 Eviction failures were printed and ignored
+
+The runner caught the exception, printed it, continued, and then announced
+"evicted loaded models before a cpu run" - a claim it had just failed to
+establish. A model that was not evicted keeps its previous placement.
+
+Eviction failure now writes a rejection record and aborts.
+
+## 1.19.5 The rejection record told you to destroy the evidence
+
+It said to "delete or re-tag" the failed directory, which contradicts the
+retention principle stated two amendments earlier. Every instruction of that
+kind is removed. A failed run is **retained unchanged** and excluded by the
+record, not by removal. Deleting the evidence of a failed condition is how a
+failed condition becomes an unrecorded one. Rejection records are also uniquely
+named now, so a second failure cannot overwrite the first.
+
+## 1.19.6 Timing completeness was never checked
+
+`_series` silently drops non-numeric values, so a run missing half its timings
+would have averaged the surviving half and reported it as the arm's latency. A
+mean over an unknown denominator is not a measurement.
+
+Both arms must now show **68 positive numeric `wall_seconds`**, and Arm D **68
+positive numeric `verification_seconds`**, before anything is averaged.
+
+## 1.19.7 No test proved eviction actually worked
+
+Every endpoint test monkeypatched `_post`. They proved the right endpoint was
+addressed and nothing about whether the server acted on it.
+
+`OllamaClient.preflight` performs one synthetic cycle against the live server
+before a performance run: evict, confirm the model is gone, generate a
+one-token prompt that is **not a test question**, read residency back, and check
+the device is the one requested. Any failure aborts with a retained record.
+
+## 1.19.8 Two corrections to earlier amendments
+
+**Amendment 1.17.3's original wording is restored.** It had been edited in
+place to fix the claim that Arm B's drafts were "generated earlier on another
+machine". Editing an earlier entry in an append-only log rewrites history, even
+when the edit is a correction. The original text stands as written, and the
+correction lives here and in 1.18.4: B and D ran sequentially in the same
+invocation on the same machine.
+
+**Amendment 1.18 overstated the embedding defect.** It said the eviction "never
+worked". That was not demonstrated: no test or observation established what the
+server did with the request. What is defensible, and what is claimed instead, is
+that **the wrong endpoint was used and success was never checked** - an
+embedding model was sent to `/api/generate`, and nothing verified the outcome
+either way. The correct endpoint is now used, and 1.19.7 adds the check that
+would settle the question. `/api/embeddings` remains valid and supports
+`keep_alive`, though Ollama now recommends `/api/embed`.
+
+## 1.19.9 State
+
+| | |
+|---|---|
+| Hardware runs | 6, unchanged, retained, not rerun |
+| Fail-open paths found | 7, all verified against the code |
+| Rejected reports | contain no timing, asserted by test |
+| Placement | per arm, fails closed on missing or malformed evidence |
+| Eviction and residency failures | abort with a retained, uniquely named record |
+| Timing completeness | 68 positive values per arm required before averaging |
+| Live preflight | synthetic, no test questions |
+| H5 | **still unread** |
+| Tests | 604 |
