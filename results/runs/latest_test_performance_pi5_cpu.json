@@ -1,0 +1,20 @@
+{
+  "B": "results/runs/20260815_030131_B_test_perf_pi5",
+  "D": "results/runs/20260815_040341_D_test_perf_pi5",
+  "_performance": {
+    "hardware_condition": "pi5_cpu",
+    "requested_placement": "cpu",
+    "observed_placement": {
+      "models_loaded": [
+        "llama3.2:3b",
+        "nomic-embed-text:latest"
+      ],
+      "any_on_gpu": false,
+      "vram_bytes": {
+        "llama3.2:3b": 0,
+        "nomic-embed-text:latest": 0
+      }
+    },
+    "split": "test"
+  }
+}
