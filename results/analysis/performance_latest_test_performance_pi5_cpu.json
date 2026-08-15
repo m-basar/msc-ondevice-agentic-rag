@@ -1,0 +1,759 @@
+{
+  "index": "latest_test_performance_pi5_cpu.json",
+  "hardware_condition": "pi5_cpu",
+  "validation": {
+    "schema_version": "1.1",
+    "checks": {
+      "arms_exactly_b_and_d": {
+        "pass": true,
+        "message": "expected arms ['B', 'D'], got ['B', 'D']"
+      },
+      "B_manifest_declares_its_arm": {
+        "pass": true,
+        "message": "index says B, manifest says 'B'"
+      },
+      "B_purpose_is_performance": {
+        "pass": true,
+        "message": "purpose='performance'"
+      },
+      "B_split_is_test": {
+        "pass": true,
+        "message": "split='test'"
+      },
+      "B_condition_matches_index": {
+        "pass": true,
+        "message": "manifest 'pi5_cpu' against index 'pi5_cpu'"
+      },
+      "B_placement_matches_index": {
+        "pass": true,
+        "message": "manifest 'cpu' against index 'cpu'"
+      },
+      "B_question_count": {
+        "pass": true,
+        "message": "68 answers, expected 68"
+      },
+      "B_question_ids_unique": {
+        "pass": true,
+        "message": "0 duplicate identifiers"
+      },
+      "B_provenance_non_empty": {
+        "pass": true,
+        "message": "missing []"
+      },
+      "B_generation_records_complete": {
+        "pass": true,
+        "message": "68 generation blocks over 68 answers"
+      },
+      "B_has_no_verifier_stage": {
+        "pass": true,
+        "message": "0 verifier blocks on an unverified arm"
+      },
+      "B_no_scoring_fields": {
+        "pass": true,
+        "message": "0 records carry answer scoring"
+      },
+      "D_manifest_declares_its_arm": {
+        "pass": true,
+        "message": "index says D, manifest says 'D'"
+      },
+      "D_purpose_is_performance": {
+        "pass": true,
+        "message": "purpose='performance'"
+      },
+      "D_split_is_test": {
+        "pass": true,
+        "message": "split='test'"
+      },
+      "D_condition_matches_index": {
+        "pass": true,
+        "message": "manifest 'pi5_cpu' against index 'pi5_cpu'"
+      },
+      "D_placement_matches_index": {
+        "pass": true,
+        "message": "manifest 'cpu' against index 'cpu'"
+      },
+      "D_question_count": {
+        "pass": true,
+        "message": "68 answers, expected 68"
+      },
+      "D_question_ids_unique": {
+        "pass": true,
+        "message": "0 duplicate identifiers"
+      },
+      "D_provenance_non_empty": {
+        "pass": true,
+        "message": "missing []"
+      },
+      "D_generation_records_complete": {
+        "pass": true,
+        "message": "68 generation blocks over 68 answers"
+      },
+      "D_verifier_records_complete": {
+        "pass": true,
+        "message": "68 verifier blocks over 68 answers"
+      },
+      "D_no_scoring_fields": {
+        "pass": true,
+        "message": "0 records carry answer scoring"
+      },
+      "question_ids_match": {
+        "pass": true,
+        "message": "0 identifiers differ"
+      },
+      "matched_question_count": {
+        "pass": true,
+        "message": "68 matched, expected 68"
+      },
+      "draft_replay_exact": {
+        "pass": true,
+        "message": "68/68 of D's drafts equal B's answers",
+        "matched": 68,
+        "of": 68
+      },
+      "generation_records_match": {
+        "pass": true,
+        "message": "68/68 generation blocks identical"
+      },
+      "retrieval_records_match": {
+        "pass": true,
+        "message": "68/68 retrieval blocks identical"
+      },
+      "provenance_equal": {
+        "pass": true,
+        "message": "the two runs disagree on their provenance hashes"
+      },
+      "condition_is_known": {
+        "pass": true,
+        "message": "unknown hardware condition 'pi5_cpu'"
+      },
+      "condition_implies_requested_placement": {
+        "pass": true,
+        "message": "pi5_cpu implies 'cpu', index requested 'cpu'"
+      },
+      "placement_observed_at_run_time": {
+        "pass": true,
+        "message": "no /api/ps evidence in the run index; the device is unknown"
+      },
+      "per_model_evidence_present": {
+        "pass": true,
+        "message": "a run finished with no loaded-model evidence, so its residency cannot be confirmed"
+      },
+      "B_residency_not_empty": {
+        "pass": true,
+        "message": "no model was resident at the end of this arm, so nothing confirms where it ran"
+      },
+      "B_residency_fully_reported": {
+        "pass": true,
+        "message": "[] reported no numeric size or size_vram, so placement cannot be confirmed"
+      },
+      "B_stage_model_resident": {
+        "pass": true,
+        "message": "the timed stage model 'llama3.2:3b' is not among the resident models ['llama3.2:3b', 'nomic-embed-text']",
+        "stage_model": "llama3.2:3b"
+      },
+      "B_cpu_placement_holds_for_every_model": {
+        "pass": true
+      },
+      "D_residency_not_empty": {
+        "pass": true,
+        "message": "no model was resident at the end of this arm, so nothing confirms where it ran"
+      },
+      "D_residency_fully_reported": {
+        "pass": true,
+        "message": "[] reported no numeric size or size_vram, so placement cannot be confirmed"
+      },
+      "D_stage_model_resident": {
+        "pass": true,
+        "message": "the timed stage model 'qwen2.5:3b' is not among the resident models ['qwen2.5:3b']",
+        "stage_model": "qwen2.5:3b"
+      },
+      "D_cpu_placement_holds_for_every_model": {
+        "pass": true
+      },
+      "observed_placement_matches_request": {
+        "pass": true,
+        "message": "requested cpu, observed cpu"
+      },
+      "B_wall_seconds_complete": {
+        "pass": true,
+        "message": "68 positive numeric wall_seconds over 68 answers, expected 68"
+      },
+      "D_wall_seconds_complete": {
+        "pass": true,
+        "message": "68 positive numeric wall_seconds over 68 answers, expected 68"
+      },
+      "D_verification_seconds_complete": {
+        "pass": true,
+        "message": "68 positive numeric verification_seconds, expected 68"
+      },
+      "D_wall_time_is_draft_plus_verification": {
+        "pass": true,
+        "message": "0 of 68 questions fall outside the rounding tolerance",
+        "compared": 68,
+        "breaches": 0,
+        "breached_question_ids": [],
+        "unmeasurable_question_ids": [],
+        "tolerance_seconds": 0.002
+      },
+      "arm_d_replayed_b_drafts": {
+        "pass": true,
+        "message": "arm D generated its own drafts, so B versus D is not the comparison the frozen run made"
+      }
+    },
+    "checks_run": 47,
+    "checks_failed": [],
+    "findings": [],
+    "valid": true,
+    "provenance": {
+      "B": {
+        "corpus_sha256": "63a92324d734beb689a06c0344fc62fd4e1fe118f407ea5df132f2b4095d1c2d",
+        "chunk_set_sha256": "2c92533c2f868c286a1f43ed92ac619da9436909da2339215321195d5c1402f2",
+        "question_set_sha256": "51259ead600bafca40d30a0fae7be9f674c53d8546fd80f03724f295fb2c9ce1",
+        "registry_sha256": "1946eadf3767659d9c507ac3885e642058090b542ac83faf540c9946d5b98c92",
+        "config_sha256": "ea93d6c8fb3204bf9d5c09c407e2b82e7bbb7879b5f182e765fe74e6d6957d0c"
+      },
+      "D": {
+        "corpus_sha256": "63a92324d734beb689a06c0344fc62fd4e1fe118f407ea5df132f2b4095d1c2d",
+        "chunk_set_sha256": "2c92533c2f868c286a1f43ed92ac619da9436909da2339215321195d5c1402f2",
+        "question_set_sha256": "51259ead600bafca40d30a0fae7be9f674c53d8546fd80f03724f295fb2c9ce1",
+        "registry_sha256": "1946eadf3767659d9c507ac3885e642058090b542ac83faf540c9946d5b98c92",
+        "config_sha256": "ea93d6c8fb3204bf9d5c09c407e2b82e7bbb7879b5f182e765fe74e6d6957d0c"
+      }
+    },
+    "per_model_placement": {
+      "B": {
+        "at_start": {},
+        "at_end": {
+          "llama3.2:3b": {
+            "size": 2884726946,
+            "size_vram": 0,
+            "offload_fraction": 0.0
+          },
+          "nomic-embed-text": {
+            "size": 376449269,
+            "size_vram": 0,
+            "offload_fraction": 0.0
+          }
+        }
+      },
+      "D": {
+        "at_start": {
+          "llama3.2:3b": {
+            "size": 2884726946,
+            "size_vram": 0,
+            "offload_fraction": 0.0
+          },
+          "nomic-embed-text": {
+            "size": 376449269,
+            "size_vram": 0,
+            "offload_fraction": 0.0
+          }
+        },
+        "at_end": {
+          "qwen2.5:3b": {
+            "size": 2419421346,
+            "size_vram": 0,
+            "offload_fraction": 0.0
+          }
+        }
+      }
+    },
+    "placement": {
+      "requested": "cpu",
+      "observed": "cpu",
+      "vram_bytes": {
+        "llama3.2:3b": 0,
+        "nomic-embed-text:latest": 0
+      }
+    },
+    "arm_d_replayed_drafts_from": "B"
+  },
+  "arms": {
+    "B": {
+      "questions": 68,
+      "wall_seconds": {
+        "n": 68,
+        "mean": 54.83641176470588,
+        "median": 55.6085,
+        "min": 18.126,
+        "max": 79.188
+      },
+      "verification_seconds": {
+        "n": 0
+      },
+      "draft_stage": {
+        "records": 68,
+        "model": "llama3.2:3b",
+        "prompt_tokens_per_second": {
+          "n": 68,
+          "mean": 24.846029411764707,
+          "median": 22.674999999999997,
+          "min": 16.55,
+          "max": 73.73
+        },
+        "eval_tokens_per_second": {
+          "n": 68,
+          "mean": 3.2811764705882354,
+          "median": 3.2699999999999996,
+          "min": 2.97,
+          "max": 3.7
+        },
+        "load_seconds": {
+          "n": 68,
+          "mean": 0.9023794117647059,
+          "median": 0.8390500000000001,
+          "min": 0.6382,
+          "max": 8.5821
+        },
+        "cpu_temp_c": {
+          "n": 68,
+          "mean": 87.12941176470588,
+          "median": 87.55,
+          "min": 83.7,
+          "max": 90.3
+        },
+        "throttled_true": 64,
+        "throttled_false": 4,
+        "throttled_unknown": 0
+      },
+      "verifier_stage": {
+        "records": 0,
+        "model": null,
+        "prompt_tokens_per_second": {
+          "n": 0
+        },
+        "eval_tokens_per_second": {
+          "n": 0
+        },
+        "load_seconds": {
+          "n": 0
+        },
+        "cpu_temp_c": {
+          "n": 0
+        },
+        "throttled_true": 0,
+        "throttled_false": 0,
+        "throttled_unknown": 0
+      },
+      "has_verifier_stage": false,
+      "environment_start": {
+        "host": {
+          "hostname": "agi-pi",
+          "system": "Linux",
+          "release": "6.12.62+rpt-rpi-2712",
+          "machine": "aarch64",
+          "processor": null,
+          "cpu_count": 4,
+          "python": "3.13.5",
+          "memory_total_gb": 15.83,
+          "memory_available_gb": 14.55,
+          "cpu_temperature_c": 63.9,
+          "throttle": {
+            "raw": "0x0",
+            "now": {
+              "under_voltage": false,
+              "arm_frequency_capped": false,
+              "throttled": false,
+              "soft_temp_limit": false
+            },
+            "since_boot": {
+              "under_voltage": false,
+              "arm_frequency_capped": false,
+              "throttled": false,
+              "soft_temp_limit": false
+            }
+          },
+          "power_profile": null,
+          "gpus": []
+        },
+        "ollama": {
+          "base_url": "http://localhost:11434",
+          "reachable": true,
+          "version": "0.32.6",
+          "models": [
+            {
+              "name": "gemma:2b",
+              "digest": "b50d6c999e59",
+              "size": 1678456656
+            },
+            {
+              "name": "llama3.2:1b",
+              "digest": "baf6a787fdff",
+              "size": 1321098329
+            },
+            {
+              "name": "llama3.2:3b",
+              "digest": "a80c4f17acd5",
+              "size": 2019393189
+            },
+            {
+              "name": "nomic-embed-text:latest",
+              "digest": "0a109f422b47",
+              "size": 274302450
+            },
+            {
+              "name": "phi3:mini",
+              "digest": "4f2222927938",
+              "size": 2176178913
+            },
+            {
+              "name": "qwen2.5:3b",
+              "digest": "357c53fb659c",
+              "size": 1929912432
+            }
+          ],
+          "model_store_fingerprint": "e39bc25c0edd",
+          "loaded": []
+        },
+        "gpu_offload_fraction": null
+      },
+      "environment_end": {
+        "host": {
+          "hostname": "agi-pi",
+          "system": "Linux",
+          "release": "6.12.62+rpt-rpi-2712",
+          "machine": "aarch64",
+          "processor": null,
+          "cpu_count": 4,
+          "python": "3.13.5",
+          "memory_total_gb": 15.83,
+          "memory_available_gb": 6.01,
+          "cpu_temperature_c": 87.0,
+          "throttle": {
+            "raw": "0xe0006",
+            "now": {
+              "under_voltage": false,
+              "arm_frequency_capped": true,
+              "throttled": true,
+              "soft_temp_limit": false
+            },
+            "since_boot": {
+              "under_voltage": false,
+              "arm_frequency_capped": true,
+              "throttled": true,
+              "soft_temp_limit": true
+            }
+          },
+          "power_profile": null,
+          "gpus": []
+        },
+        "ollama": {
+          "base_url": "http://localhost:11434",
+          "reachable": true,
+          "version": "0.32.6",
+          "models": [
+            {
+              "name": "gemma:2b",
+              "digest": "b50d6c999e59",
+              "size": 1678456656
+            },
+            {
+              "name": "llama3.2:1b",
+              "digest": "baf6a787fdff",
+              "size": 1321098329
+            },
+            {
+              "name": "llama3.2:3b",
+              "digest": "a80c4f17acd5",
+              "size": 2019393189
+            },
+            {
+              "name": "nomic-embed-text:latest",
+              "digest": "0a109f422b47",
+              "size": 274302450
+            },
+            {
+              "name": "phi3:mini",
+              "digest": "4f2222927938",
+              "size": 2176178913
+            },
+            {
+              "name": "qwen2.5:3b",
+              "digest": "357c53fb659c",
+              "size": 1929912432
+            }
+          ],
+          "model_store_fingerprint": "e39bc25c0edd",
+          "loaded": [
+            {
+              "name": "llama3.2:3b",
+              "size": 2884726946,
+              "size_vram": 0,
+              "context_length": 4096
+            },
+            {
+              "name": "nomic-embed-text:latest",
+              "size": 376449269,
+              "size_vram": 0,
+              "context_length": 2048
+            }
+          ]
+        },
+        "gpu_offload_fraction": 0.0
+      },
+      "elapsed_seconds": 3730.08
+    },
+    "D": {
+      "questions": 68,
+      "wall_seconds": {
+        "n": 68,
+        "mean": 174.16882352941175,
+        "median": 173.7385,
+        "min": 121.95,
+        "max": 265.306
+      },
+      "verification_seconds": {
+        "n": 68,
+        "mean": 119.33239705882353,
+        "median": 116.25200000000001,
+        "min": 84.755,
+        "max": 204.689
+      },
+      "draft_stage": {
+        "records": 68,
+        "model": "llama3.2:3b",
+        "prompt_tokens_per_second": {
+          "n": 68,
+          "mean": 24.846029411764707,
+          "median": 22.674999999999997,
+          "min": 16.55,
+          "max": 73.73
+        },
+        "eval_tokens_per_second": {
+          "n": 68,
+          "mean": 3.2811764705882354,
+          "median": 3.2699999999999996,
+          "min": 2.97,
+          "max": 3.7
+        },
+        "load_seconds": {
+          "n": 68,
+          "mean": 0.9023794117647059,
+          "median": 0.8390500000000001,
+          "min": 0.6382,
+          "max": 8.5821
+        },
+        "cpu_temp_c": {
+          "n": 68,
+          "mean": 87.12941176470588,
+          "median": 87.55,
+          "min": 83.7,
+          "max": 90.3
+        },
+        "throttled_true": 64,
+        "throttled_false": 4,
+        "throttled_unknown": 0
+      },
+      "verifier_stage": {
+        "records": 68,
+        "model": "qwen2.5:3b",
+        "prompt_tokens_per_second": {
+          "n": 68,
+          "mean": 31.138823529411763,
+          "median": 31.11,
+          "min": 16.3,
+          "max": 36.93
+        },
+        "eval_tokens_per_second": {
+          "n": 68,
+          "mean": 3.235,
+          "median": 3.24,
+          "min": 3.11,
+          "max": 3.36
+        },
+        "load_seconds": {
+          "n": 68,
+          "mean": 0.8202367647058824,
+          "median": 0.68485,
+          "min": 0.6511,
+          "max": 9.9351
+        },
+        "cpu_temp_c": {
+          "n": 68,
+          "mean": 88.20514705882353,
+          "median": 88.1,
+          "min": 86.45,
+          "max": 89.75
+        },
+        "throttled_true": 68,
+        "throttled_false": 0,
+        "throttled_unknown": 0
+      },
+      "has_verifier_stage": true,
+      "environment_start": {
+        "host": {
+          "hostname": "agi-pi",
+          "system": "Linux",
+          "release": "6.12.62+rpt-rpi-2712",
+          "machine": "aarch64",
+          "processor": null,
+          "cpu_count": 4,
+          "python": "3.13.5",
+          "memory_total_gb": 15.83,
+          "memory_available_gb": 6.01,
+          "cpu_temperature_c": 85.9,
+          "throttle": {
+            "raw": "0xe0006",
+            "now": {
+              "under_voltage": false,
+              "arm_frequency_capped": true,
+              "throttled": true,
+              "soft_temp_limit": false
+            },
+            "since_boot": {
+              "under_voltage": false,
+              "arm_frequency_capped": true,
+              "throttled": true,
+              "soft_temp_limit": true
+            }
+          },
+          "power_profile": null,
+          "gpus": []
+        },
+        "ollama": {
+          "base_url": "http://localhost:11434",
+          "reachable": true,
+          "version": "0.32.6",
+          "models": [
+            {
+              "name": "gemma:2b",
+              "digest": "b50d6c999e59",
+              "size": 1678456656
+            },
+            {
+              "name": "llama3.2:1b",
+              "digest": "baf6a787fdff",
+              "size": 1321098329
+            },
+            {
+              "name": "llama3.2:3b",
+              "digest": "a80c4f17acd5",
+              "size": 2019393189
+            },
+            {
+              "name": "nomic-embed-text:latest",
+              "digest": "0a109f422b47",
+              "size": 274302450
+            },
+            {
+              "name": "phi3:mini",
+              "digest": "4f2222927938",
+              "size": 2176178913
+            },
+            {
+              "name": "qwen2.5:3b",
+              "digest": "357c53fb659c",
+              "size": 1929912432
+            }
+          ],
+          "model_store_fingerprint": "e39bc25c0edd",
+          "loaded": [
+            {
+              "name": "llama3.2:3b",
+              "size": 2884726946,
+              "size_vram": 0,
+              "context_length": 4096
+            },
+            {
+              "name": "nomic-embed-text:latest",
+              "size": 376449269,
+              "size_vram": 0,
+              "context_length": 2048
+            }
+          ]
+        },
+        "gpu_offload_fraction": 0.0
+      },
+      "environment_end": {
+        "host": {
+          "hostname": "agi-pi",
+          "system": "Linux",
+          "release": "6.12.62+rpt-rpi-2712",
+          "machine": "aarch64",
+          "processor": null,
+          "cpu_count": 4,
+          "python": "3.13.5",
+          "memory_total_gb": 15.83,
+          "memory_available_gb": 10.09,
+          "cpu_temperature_c": 89.2,
+          "throttle": {
+            "raw": "0xe0006",
+            "now": {
+              "under_voltage": false,
+              "arm_frequency_capped": true,
+              "throttled": true,
+              "soft_temp_limit": false
+            },
+            "since_boot": {
+              "under_voltage": false,
+              "arm_frequency_capped": true,
+              "throttled": true,
+              "soft_temp_limit": true
+            }
+          },
+          "power_profile": null,
+          "gpus": []
+        },
+        "ollama": {
+          "base_url": "http://localhost:11434",
+          "reachable": true,
+          "version": "0.32.6",
+          "models": [
+            {
+              "name": "gemma:2b",
+              "digest": "b50d6c999e59",
+              "size": 1678456656
+            },
+            {
+              "name": "llama3.2:1b",
+              "digest": "baf6a787fdff",
+              "size": 1321098329
+            },
+            {
+              "name": "llama3.2:3b",
+              "digest": "a80c4f17acd5",
+              "size": 2019393189
+            },
+            {
+              "name": "nomic-embed-text:latest",
+              "digest": "0a109f422b47",
+              "size": 274302450
+            },
+            {
+              "name": "phi3:mini",
+              "digest": "4f2222927938",
+              "size": 2176178913
+            },
+            {
+              "name": "qwen2.5:3b",
+              "digest": "357c53fb659c",
+              "size": 1929912432
+            }
+          ],
+          "model_store_fingerprint": "e39bc25c0edd",
+          "loaded": [
+            {
+              "name": "qwen2.5:3b",
+              "size": 2419421346,
+              "size_vram": 0,
+              "context_length": 4096
+            }
+          ]
+        },
+        "gpu_offload_fraction": 0.0
+      },
+      "elapsed_seconds": 8115.73
+    }
+  },
+  "H5": {
+    "statement": "latency(D) is between 1.5x and 2.5x latency(B) on pi5_cpu",
+    "condition": "pi5_cpu",
+    "mean_wall_seconds": {
+      "B": 54.83641176470588,
+      "D": 174.16882352941175
+    },
+    "ratio": 3.176152813877426,
+    "reading": "Wall clock is draft plus verification, which is what a user waits for. Above the range indicates the verifier is doing more work than one extra generation; below it indicates it is not verifying much. This says nothing about answer quality.",
+    "verdict": "not supported"
+  }
+}

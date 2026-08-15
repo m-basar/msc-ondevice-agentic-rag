@@ -1,0 +1,720 @@
+{
+  "index": "latest_test_performance_laptop_cpu.json",
+  "hardware_condition": "laptop_cpu",
+  "validation": {
+    "schema_version": "1.1",
+    "checks": {
+      "arms_exactly_b_and_d": {
+        "pass": true,
+        "message": "expected arms ['B', 'D'], got ['B', 'D']"
+      },
+      "B_manifest_declares_its_arm": {
+        "pass": true,
+        "message": "index says B, manifest says 'B'"
+      },
+      "B_purpose_is_performance": {
+        "pass": true,
+        "message": "purpose='performance'"
+      },
+      "B_split_is_test": {
+        "pass": true,
+        "message": "split='test'"
+      },
+      "B_condition_matches_index": {
+        "pass": true,
+        "message": "manifest 'laptop_cpu' against index 'laptop_cpu'"
+      },
+      "B_placement_matches_index": {
+        "pass": true,
+        "message": "manifest 'cpu' against index 'cpu'"
+      },
+      "B_question_count": {
+        "pass": true,
+        "message": "68 answers, expected 68"
+      },
+      "B_question_ids_unique": {
+        "pass": true,
+        "message": "0 duplicate identifiers"
+      },
+      "B_provenance_non_empty": {
+        "pass": true,
+        "message": "missing []"
+      },
+      "B_generation_records_complete": {
+        "pass": true,
+        "message": "68 generation blocks over 68 answers"
+      },
+      "B_has_no_verifier_stage": {
+        "pass": true,
+        "message": "0 verifier blocks on an unverified arm"
+      },
+      "B_no_scoring_fields": {
+        "pass": true,
+        "message": "0 records carry answer scoring"
+      },
+      "D_manifest_declares_its_arm": {
+        "pass": true,
+        "message": "index says D, manifest says 'D'"
+      },
+      "D_purpose_is_performance": {
+        "pass": true,
+        "message": "purpose='performance'"
+      },
+      "D_split_is_test": {
+        "pass": true,
+        "message": "split='test'"
+      },
+      "D_condition_matches_index": {
+        "pass": true,
+        "message": "manifest 'laptop_cpu' against index 'laptop_cpu'"
+      },
+      "D_placement_matches_index": {
+        "pass": true,
+        "message": "manifest 'cpu' against index 'cpu'"
+      },
+      "D_question_count": {
+        "pass": true,
+        "message": "68 answers, expected 68"
+      },
+      "D_question_ids_unique": {
+        "pass": true,
+        "message": "0 duplicate identifiers"
+      },
+      "D_provenance_non_empty": {
+        "pass": true,
+        "message": "missing []"
+      },
+      "D_generation_records_complete": {
+        "pass": true,
+        "message": "68 generation blocks over 68 answers"
+      },
+      "D_verifier_records_complete": {
+        "pass": true,
+        "message": "68 verifier blocks over 68 answers"
+      },
+      "D_no_scoring_fields": {
+        "pass": true,
+        "message": "0 records carry answer scoring"
+      },
+      "question_ids_match": {
+        "pass": true,
+        "message": "0 identifiers differ"
+      },
+      "matched_question_count": {
+        "pass": true,
+        "message": "68 matched, expected 68"
+      },
+      "draft_replay_exact": {
+        "pass": true,
+        "message": "68/68 of D's drafts equal B's answers",
+        "matched": 68,
+        "of": 68
+      },
+      "generation_records_match": {
+        "pass": true,
+        "message": "68/68 generation blocks identical"
+      },
+      "retrieval_records_match": {
+        "pass": true,
+        "message": "68/68 retrieval blocks identical"
+      },
+      "provenance_equal": {
+        "pass": true,
+        "message": "the two runs disagree on their provenance hashes"
+      },
+      "condition_is_known": {
+        "pass": true,
+        "message": "unknown hardware condition 'laptop_cpu'"
+      },
+      "condition_implies_requested_placement": {
+        "pass": true,
+        "message": "laptop_cpu implies 'cpu', index requested 'cpu'"
+      },
+      "placement_observed_at_run_time": {
+        "pass": true,
+        "message": "no /api/ps evidence in the run index; the device is unknown"
+      },
+      "per_model_evidence_present": {
+        "pass": true,
+        "message": "a run finished with no loaded-model evidence, so its residency cannot be confirmed"
+      },
+      "B_residency_not_empty": {
+        "pass": true,
+        "message": "no model was resident at the end of this arm, so nothing confirms where it ran"
+      },
+      "B_residency_fully_reported": {
+        "pass": true,
+        "message": "[] reported no numeric size or size_vram, so placement cannot be confirmed"
+      },
+      "B_stage_model_resident": {
+        "pass": true,
+        "message": "the timed stage model 'llama3.2:3b' is not among the resident models ['llama3.2:3b', 'nomic-embed-text']",
+        "stage_model": "llama3.2:3b"
+      },
+      "B_cpu_placement_holds_for_every_model": {
+        "pass": true
+      },
+      "D_residency_not_empty": {
+        "pass": true,
+        "message": "no model was resident at the end of this arm, so nothing confirms where it ran"
+      },
+      "D_residency_fully_reported": {
+        "pass": true,
+        "message": "[] reported no numeric size or size_vram, so placement cannot be confirmed"
+      },
+      "D_stage_model_resident": {
+        "pass": true,
+        "message": "the timed stage model 'qwen2.5:3b' is not among the resident models ['qwen2.5:3b']",
+        "stage_model": "qwen2.5:3b"
+      },
+      "D_cpu_placement_holds_for_every_model": {
+        "pass": true
+      },
+      "observed_placement_matches_request": {
+        "pass": true,
+        "message": "requested cpu, observed cpu"
+      },
+      "B_wall_seconds_complete": {
+        "pass": true,
+        "message": "68 positive numeric wall_seconds over 68 answers, expected 68"
+      },
+      "D_wall_seconds_complete": {
+        "pass": true,
+        "message": "68 positive numeric wall_seconds over 68 answers, expected 68"
+      },
+      "D_verification_seconds_complete": {
+        "pass": true,
+        "message": "68 positive numeric verification_seconds, expected 68"
+      },
+      "D_wall_time_is_draft_plus_verification": {
+        "pass": true,
+        "message": "0 of 68 questions fall outside the rounding tolerance",
+        "compared": 68,
+        "breaches": 0,
+        "breached_question_ids": [],
+        "unmeasurable_question_ids": [],
+        "tolerance_seconds": 0.002
+      },
+      "arm_d_replayed_b_drafts": {
+        "pass": true,
+        "message": "arm D generated its own drafts, so B versus D is not the comparison the frozen run made"
+      }
+    },
+    "checks_run": 47,
+    "checks_failed": [],
+    "findings": [],
+    "valid": true,
+    "provenance": {
+      "B": {
+        "corpus_sha256": "63a92324d734beb689a06c0344fc62fd4e1fe118f407ea5df132f2b4095d1c2d",
+        "chunk_set_sha256": "2c92533c2f868c286a1f43ed92ac619da9436909da2339215321195d5c1402f2",
+        "question_set_sha256": "51259ead600bafca40d30a0fae7be9f674c53d8546fd80f03724f295fb2c9ce1",
+        "registry_sha256": "1946eadf3767659d9c507ac3885e642058090b542ac83faf540c9946d5b98c92",
+        "config_sha256": "ea93d6c8fb3204bf9d5c09c407e2b82e7bbb7879b5f182e765fe74e6d6957d0c"
+      },
+      "D": {
+        "corpus_sha256": "63a92324d734beb689a06c0344fc62fd4e1fe118f407ea5df132f2b4095d1c2d",
+        "chunk_set_sha256": "2c92533c2f868c286a1f43ed92ac619da9436909da2339215321195d5c1402f2",
+        "question_set_sha256": "51259ead600bafca40d30a0fae7be9f674c53d8546fd80f03724f295fb2c9ce1",
+        "registry_sha256": "1946eadf3767659d9c507ac3885e642058090b542ac83faf540c9946d5b98c92",
+        "config_sha256": "ea93d6c8fb3204bf9d5c09c407e2b82e7bbb7879b5f182e765fe74e6d6957d0c"
+      }
+    },
+    "per_model_placement": {
+      "B": {
+        "at_start": {},
+        "at_end": {
+          "llama3.2:3b": {
+            "size": 2561524365,
+            "size_vram": 0,
+            "offload_fraction": 0.0
+          },
+          "nomic-embed-text": {
+            "size": 376449269,
+            "size_vram": 0,
+            "offload_fraction": 0.0
+          }
+        }
+      },
+      "D": {
+        "at_start": {
+          "llama3.2:3b": {
+            "size": 2561524365,
+            "size_vram": 0,
+            "offload_fraction": 0.0
+          },
+          "nomic-embed-text": {
+            "size": 376449269,
+            "size_vram": 0,
+            "offload_fraction": 0.0
+          }
+        },
+        "at_end": {
+          "qwen2.5:3b": {
+            "size": 2164166490,
+            "size_vram": 0,
+            "offload_fraction": 0.0
+          }
+        }
+      }
+    },
+    "placement": {
+      "requested": "cpu",
+      "observed": "cpu",
+      "vram_bytes": {
+        "llama3.2:3b": 0,
+        "nomic-embed-text:latest": 0
+      }
+    },
+    "arm_d_replayed_drafts_from": "B"
+  },
+  "arms": {
+    "B": {
+      "questions": 68,
+      "wall_seconds": {
+        "n": 68,
+        "mean": 6.638632352941176,
+        "median": 6.506,
+        "min": 2.731,
+        "max": 11.445
+      },
+      "verification_seconds": {
+        "n": 0
+      },
+      "draft_stage": {
+        "records": 68,
+        "model": "llama3.2:3b",
+        "prompt_tokens_per_second": {
+          "n": 68,
+          "mean": 229.4889705882353,
+          "median": 201.35500000000002,
+          "min": 143.06,
+          "max": 678.36
+        },
+        "eval_tokens_per_second": {
+          "n": 68,
+          "mean": 22.54720588235294,
+          "median": 22.494999999999997,
+          "min": 20.16,
+          "max": 24.42
+        },
+        "load_seconds": {
+          "n": 68,
+          "mean": 0.27583970588235296,
+          "median": 0.23704999999999998,
+          "min": 0.2168,
+          "max": 2.7906
+        },
+        "cpu_temp_c": {
+          "n": 0
+        },
+        "throttled_true": 0,
+        "throttled_false": 0,
+        "throttled_unknown": 68
+      },
+      "verifier_stage": {
+        "records": 0,
+        "model": null,
+        "prompt_tokens_per_second": {
+          "n": 0
+        },
+        "eval_tokens_per_second": {
+          "n": 0
+        },
+        "load_seconds": {
+          "n": 0
+        },
+        "cpu_temp_c": {
+          "n": 0
+        },
+        "throttled_true": 0,
+        "throttled_false": 0,
+        "throttled_unknown": 0
+      },
+      "has_verifier_stage": false,
+      "environment_start": {
+        "host": {
+          "hostname": "Basar",
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "processor": "AMD64 Family 25 Model 116 Stepping 1, AuthenticAMD",
+          "cpu_count": 16,
+          "python": "3.13.5",
+          "memory_total_gb": 15.29,
+          "memory_available_gb": 6.37,
+          "cpu_temperature_c": null,
+          "throttle": null,
+          "power_profile": "Balanced",
+          "gpus": [
+            {
+              "name": "NVIDIA GeForce RTX 4050 Laptop GPU",
+              "memory_total_mb": 6141,
+              "memory_used_mb": 810,
+              "temperature_c": 54
+            }
+          ]
+        },
+        "ollama": {
+          "base_url": "http://localhost:11434",
+          "reachable": true,
+          "version": "0.32.6",
+          "models": [
+            {
+              "name": "gemma:2b",
+              "digest": "b50d6c999e59",
+              "size": 1678456656
+            },
+            {
+              "name": "llama3.2:1b",
+              "digest": "baf6a787fdff",
+              "size": 1321098329
+            },
+            {
+              "name": "llama3.2:3b",
+              "digest": "a80c4f17acd5",
+              "size": 2019393189
+            },
+            {
+              "name": "nomic-embed-text:latest",
+              "digest": "0a109f422b47",
+              "size": 274302450
+            },
+            {
+              "name": "phi3:mini",
+              "digest": "4f2222927938",
+              "size": 2176178913
+            },
+            {
+              "name": "qwen2.5:3b",
+              "digest": "357c53fb659c",
+              "size": 1929912432
+            }
+          ],
+          "model_store_fingerprint": "e39bc25c0edd",
+          "loaded": []
+        },
+        "gpu_offload_fraction": null
+      },
+      "environment_end": {
+        "host": {
+          "hostname": "Basar",
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "processor": "AMD64 Family 25 Model 116 Stepping 1, AuthenticAMD",
+          "cpu_count": 16,
+          "python": "3.13.5",
+          "memory_total_gb": 15.29,
+          "memory_available_gb": 0.53,
+          "cpu_temperature_c": null,
+          "throttle": null,
+          "power_profile": "Balanced",
+          "gpus": [
+            {
+              "name": "NVIDIA GeForce RTX 4050 Laptop GPU",
+              "memory_total_mb": 6141,
+              "memory_used_mb": 828,
+              "temperature_c": 60
+            }
+          ]
+        },
+        "ollama": {
+          "base_url": "http://localhost:11434",
+          "reachable": true,
+          "version": "0.32.6",
+          "models": [
+            {
+              "name": "gemma:2b",
+              "digest": "b50d6c999e59",
+              "size": 1678456656
+            },
+            {
+              "name": "llama3.2:1b",
+              "digest": "baf6a787fdff",
+              "size": 1321098329
+            },
+            {
+              "name": "llama3.2:3b",
+              "digest": "a80c4f17acd5",
+              "size": 2019393189
+            },
+            {
+              "name": "nomic-embed-text:latest",
+              "digest": "0a109f422b47",
+              "size": 274302450
+            },
+            {
+              "name": "phi3:mini",
+              "digest": "4f2222927938",
+              "size": 2176178913
+            },
+            {
+              "name": "qwen2.5:3b",
+              "digest": "357c53fb659c",
+              "size": 1929912432
+            }
+          ],
+          "model_store_fingerprint": "e39bc25c0edd",
+          "loaded": [
+            {
+              "name": "llama3.2:3b",
+              "size": 2561524365,
+              "size_vram": 0,
+              "context_length": 4096
+            },
+            {
+              "name": "nomic-embed-text:latest",
+              "size": 376449269,
+              "size_vram": 0,
+              "context_length": 2048
+            }
+          ]
+        },
+        "gpu_offload_fraction": 0.0
+      },
+      "elapsed_seconds": 452.7
+    },
+    "D": {
+      "questions": 68,
+      "wall_seconds": {
+        "n": 68,
+        "mean": 20.87904411764706,
+        "median": 20.0845,
+        "min": 15.027,
+        "max": 38.576
+      },
+      "verification_seconds": {
+        "n": 68,
+        "mean": 14.240529411764706,
+        "median": 13.508,
+        "min": 10.208,
+        "max": 27.131
+      },
+      "draft_stage": {
+        "records": 68,
+        "model": "llama3.2:3b",
+        "prompt_tokens_per_second": {
+          "n": 68,
+          "mean": 229.4889705882353,
+          "median": 201.35500000000002,
+          "min": 143.06,
+          "max": 678.36
+        },
+        "eval_tokens_per_second": {
+          "n": 68,
+          "mean": 22.54720588235294,
+          "median": 22.494999999999997,
+          "min": 20.16,
+          "max": 24.42
+        },
+        "load_seconds": {
+          "n": 68,
+          "mean": 0.27583970588235296,
+          "median": 0.23704999999999998,
+          "min": 0.2168,
+          "max": 2.7906
+        },
+        "cpu_temp_c": {
+          "n": 0
+        },
+        "throttled_true": 0,
+        "throttled_false": 0,
+        "throttled_unknown": 68
+      },
+      "verifier_stage": {
+        "records": 68,
+        "model": "qwen2.5:3b",
+        "prompt_tokens_per_second": {
+          "n": 68,
+          "mean": 328.85264705882355,
+          "median": 328.125,
+          "min": 153.33,
+          "max": 381.34
+        },
+        "eval_tokens_per_second": {
+          "n": 68,
+          "mean": 22.123823529411766,
+          "median": 22.195,
+          "min": 20.59,
+          "max": 22.97
+        },
+        "load_seconds": {
+          "n": 68,
+          "mean": 0.2111720588235294,
+          "median": 0.15855,
+          "min": 0.1467,
+          "max": 3.5224
+        },
+        "cpu_temp_c": {
+          "n": 0
+        },
+        "throttled_true": 0,
+        "throttled_false": 0,
+        "throttled_unknown": 68
+      },
+      "has_verifier_stage": true,
+      "environment_start": {
+        "host": {
+          "hostname": "Basar",
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "processor": "AMD64 Family 25 Model 116 Stepping 1, AuthenticAMD",
+          "cpu_count": 16,
+          "python": "3.13.5",
+          "memory_total_gb": 15.29,
+          "memory_available_gb": 0.52,
+          "cpu_temperature_c": null,
+          "throttle": null,
+          "power_profile": "Balanced",
+          "gpus": [
+            {
+              "name": "NVIDIA GeForce RTX 4050 Laptop GPU",
+              "memory_total_mb": 6141,
+              "memory_used_mb": 828,
+              "temperature_c": 60
+            }
+          ]
+        },
+        "ollama": {
+          "base_url": "http://localhost:11434",
+          "reachable": true,
+          "version": "0.32.6",
+          "models": [
+            {
+              "name": "gemma:2b",
+              "digest": "b50d6c999e59",
+              "size": 1678456656
+            },
+            {
+              "name": "llama3.2:1b",
+              "digest": "baf6a787fdff",
+              "size": 1321098329
+            },
+            {
+              "name": "llama3.2:3b",
+              "digest": "a80c4f17acd5",
+              "size": 2019393189
+            },
+            {
+              "name": "nomic-embed-text:latest",
+              "digest": "0a109f422b47",
+              "size": 274302450
+            },
+            {
+              "name": "phi3:mini",
+              "digest": "4f2222927938",
+              "size": 2176178913
+            },
+            {
+              "name": "qwen2.5:3b",
+              "digest": "357c53fb659c",
+              "size": 1929912432
+            }
+          ],
+          "model_store_fingerprint": "e39bc25c0edd",
+          "loaded": [
+            {
+              "name": "llama3.2:3b",
+              "size": 2561524365,
+              "size_vram": 0,
+              "context_length": 4096
+            },
+            {
+              "name": "nomic-embed-text:latest",
+              "size": 376449269,
+              "size_vram": 0,
+              "context_length": 2048
+            }
+          ]
+        },
+        "gpu_offload_fraction": 0.0
+      },
+      "environment_end": {
+        "host": {
+          "hostname": "Basar",
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "processor": "AMD64 Family 25 Model 116 Stepping 1, AuthenticAMD",
+          "cpu_count": 16,
+          "python": "3.13.5",
+          "memory_total_gb": 15.29,
+          "memory_available_gb": 5.52,
+          "cpu_temperature_c": null,
+          "throttle": null,
+          "power_profile": "Balanced",
+          "gpus": [
+            {
+              "name": "NVIDIA GeForce RTX 4050 Laptop GPU",
+              "memory_total_mb": 6141,
+              "memory_used_mb": 704,
+              "temperature_c": 61
+            }
+          ]
+        },
+        "ollama": {
+          "base_url": "http://localhost:11434",
+          "reachable": true,
+          "version": "0.32.6",
+          "models": [
+            {
+              "name": "gemma:2b",
+              "digest": "b50d6c999e59",
+              "size": 1678456656
+            },
+            {
+              "name": "llama3.2:1b",
+              "digest": "baf6a787fdff",
+              "size": 1321098329
+            },
+            {
+              "name": "llama3.2:3b",
+              "digest": "a80c4f17acd5",
+              "size": 2019393189
+            },
+            {
+              "name": "nomic-embed-text:latest",
+              "digest": "0a109f422b47",
+              "size": 274302450
+            },
+            {
+              "name": "phi3:mini",
+              "digest": "4f2222927938",
+              "size": 2176178913
+            },
+            {
+              "name": "qwen2.5:3b",
+              "digest": "357c53fb659c",
+              "size": 1929912432
+            }
+          ],
+          "model_store_fingerprint": "e39bc25c0edd",
+          "loaded": [
+            {
+              "name": "qwen2.5:3b",
+              "size": 2164166490,
+              "size_vram": 0,
+              "context_length": 4096
+            }
+          ]
+        },
+        "gpu_offload_fraction": 0.0
+      },
+      "elapsed_seconds": 969.82
+    }
+  },
+  "H5": {
+    "statement": "latency(D) is between 1.5x and 2.5x latency(B) on pi5_cpu",
+    "condition": "laptop_cpu",
+    "mean_wall_seconds": {
+      "B": 6.638632352941176,
+      "D": 20.87904411764706
+    },
+    "ratio": 3.145082150602423,
+    "reading": "Wall clock is draft plus verification, which is what a user waits for. Above the range indicates the verifier is doing more work than one extra generation; below it indicates it is not verifying much. This says nothing about answer quality.",
+    "verdict": "not applicable",
+    "verdict_basis": "H5 is stated over pi5_cpu; this index is laptop_cpu. Reported as a descriptive RQ4 figure only."
+  }
+}
