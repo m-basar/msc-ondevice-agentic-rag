@@ -149,8 +149,8 @@
           }
         }
       },
-      "equivalence_leg": {
-        "claim": "B, C and D do not differ meaningfully",
+      "within_margin_leg": {
+        "claim": "B, C and D differ by no more than the pre-specified 0.25 margin",
         "contrasts": {
           "C_vs_B": {
             "treatment": "C",
@@ -227,7 +227,8 @@
         },
         "decisions": {
           "C_vs_B": {
-            "verdict": "equivalent",
+            "verdict": "within margin",
+            "basis": "Operational comparison against the pre-specified 0.25 margin. Not a statistical equivalence test; no interval is computed and no claim of equality is made.",
             "paired_mean_difference": 0.16666666666666669,
             "magnitude": 0.16666666666666669,
             "threshold": 0.25,
@@ -235,10 +236,11 @@
             "higher_in_families": "2/4",
             "tied_families": 1,
             "confounded": false,
-            "reading": "Difference within 0.25 on the three-point scale; the arms are not distinguished by this measurement."
+            "reading": "Difference within the pre-specified 0.25 margin on the three-point scale. The arms are not distinguished by this measurement, which is not the same as having been shown to be equal."
           },
           "D_vs_B": {
-            "verdict": "equivalent",
+            "verdict": "within margin",
+            "basis": "Operational comparison against the pre-specified 0.25 margin. Not a statistical equivalence test; no interval is computed and no claim of equality is made.",
             "paired_mean_difference": -0.1666666666666666,
             "magnitude": 0.1666666666666666,
             "threshold": 0.25,
@@ -246,10 +248,11 @@
             "higher_in_families": "2/4",
             "tied_families": 1,
             "confounded": false,
-            "reading": "Difference within 0.25 on the three-point scale; the arms are not distinguished by this measurement."
+            "reading": "Difference within the pre-specified 0.25 margin on the three-point scale. The arms are not distinguished by this measurement, which is not the same as having been shown to be equal."
           },
           "D_vs_C": {
-            "verdict": "not equivalent",
+            "verdict": "outside margin",
+            "basis": "Operational comparison against the pre-specified 0.25 margin. Not a statistical equivalence test; no interval is computed and no claim of equality is made.",
             "paired_mean_difference": -0.33333333333333326,
             "magnitude": 0.33333333333333326,
             "threshold": 0.25,
@@ -257,12 +260,12 @@
             "higher_in_families": "3/4",
             "tied_families": 1,
             "confounded": true,
-            "reading": "The difference exceeds 0.25 in C's favour, with C higher in 3 of 4 families and 1 tied. Equivalence is refuted. This contrast changes two variables at once, so the difference cannot be attributed to either alone. It was still observed, and the confound limits attribution rather than erasing it."
+            "reading": "The difference is outside the pre-specified 0.25 margin, in C's favour, with C higher in 3 of 4 families and 1 tied. This contrast changes two variables at once, so the difference cannot be attributed to either alone. It was still observed, and the confound limits attribution rather than erasing it."
           }
         }
       },
       "verdict": "not supported",
-      "reading": "Both legs fail. A is not below B by the declared margin: the difference is exactly 0.250, which does not exceed 0.25, and the direction holds in 2 of 4 families against the 3 of 4 required. And B, C and D are not equivalent: D_vs_C differs by 0.3333 in C's favour. B, C and D are therefore not described as equivalent.",
+      "reading": "Both legs fail. A is not below B by the declared margin: the difference is exactly 0.250, which does not exceed 0.25, and the direction holds in 2 of 4 families against the 3 of 4 required. And B, C and D are not all within the 0.25 margin: D_vs_C differs by 0.3333 in C's favour. B, C and D are therefore not described as equivalent, and no equivalence test was performed.",
       "leave_one_family_out": {
         "B_vs_A": {
           "full": 0.24999999999999994,
@@ -614,6 +617,8 @@
           "questions": 60
         }
       },
+      "verdict": "not supported",
+      "verdict_basis": "Inherited from D_vs_B, the pre-registered confirmatory contrast for H2 (section 2). The other contrasts are descriptive.",
       "leave_one_family_out": {
         "D_vs_B": {
           "full": -0.08333333333333333,
@@ -689,39 +694,133 @@
         "D": "0/9"
       },
       "verdict": "not supported",
+      "verdict_unit": "control families with any false conflict",
       "reading": "The directional prediction is falsified: D did not over-detect relative to B. Both are at zero, on families and on questions.",
       "power_limitation": "Zero events observed in every arm across 3 control families and 9 questions per arm. This is a floor, not a measurement: the design could not have detected moderate over-detection. The pre-registration states that a null H2c is a genuinely strong result and should be reported as such, and that holds, but it is reported with this limitation attached rather than as a demonstration that over-detection does not occur."
     },
     "H3": {
       "statement": "citation support < citation validity, in every arm",
-      "by_arm": {
-        "A": {
-          "citation_validity": 0.9666666666666667,
-          "citation_support": 0.5666666666666667,
-          "support_below_validity": true,
-          "eligible_n": 30
-        },
-        "B": {
-          "citation_validity": 0.9642857142857143,
-          "citation_support": 0.6309535714285713,
-          "support_below_validity": true,
-          "eligible_n": 28
-        },
-        "C": {
-          "citation_validity": 1.0,
-          "citation_support": 0.42857142857142855,
-          "support_below_validity": true,
-          "eligible_n": 28
-        },
-        "D": {
-          "citation_validity": 0.9523809523809523,
-          "citation_support": 0.6984142857142858,
-          "support_below_validity": true,
-          "eligible_n": 21
+      "primary": {
+        "basis": "scripts/summarise_arms.py convention, established before unsealing: restricted to claim-making answers, because an abstention cites nothing by design. Group level is the unit for inference.",
+        "by_arm": {
+          "A": {
+            "answers": 68,
+            "claim_making": 68,
+            "abstentions_excluded": 0,
+            "citation_validity": {
+              "question_level": 0.8382,
+              "group_level": 0.8333,
+              "groups": 32
+            },
+            "citation_support": {
+              "question_level": 0.5667,
+              "group_level": 0.6667,
+              "groups": 15
+            },
+            "citation_completeness": {
+              "question_level": 0.75,
+              "group_level": 0.7176,
+              "groups": 18
+            },
+            "support_below_validity_group_level": true
+          },
+          "B": {
+            "answers": 68,
+            "claim_making": 68,
+            "abstentions_excluded": 0,
+            "citation_validity": {
+              "question_level": 0.8235,
+              "group_level": 0.8177,
+              "groups": 32
+            },
+            "citation_support": {
+              "question_level": 0.631,
+              "group_level": 0.6766,
+              "groups": 14
+            },
+            "citation_completeness": {
+              "question_level": 0.6936,
+              "group_level": 0.6748,
+              "groups": 17
+            },
+            "support_below_validity_group_level": true
+          },
+          "C": {
+            "answers": 68,
+            "claim_making": 68,
+            "abstentions_excluded": 0,
+            "citation_validity": {
+              "question_level": 0.8382,
+              "group_level": 0.8333,
+              "groups": 32
+            },
+            "citation_support": {
+              "question_level": 0.4286,
+              "group_level": 0.4561,
+              "groups": 19
+            },
+            "citation_completeness": {
+              "question_level": 0.5805,
+              "group_level": 0.6404,
+              "groups": 21
+            },
+            "support_below_validity_group_level": true
+          },
+          "D": {
+            "answers": 68,
+            "claim_making": 55,
+            "abstentions_excluded": 13,
+            "citation_validity": {
+              "question_level": 0.8,
+              "group_level": 0.7989,
+              "groups": 29
+            },
+            "citation_support": {
+              "question_level": 0.6984,
+              "group_level": 0.6528,
+              "groups": 12
+            },
+            "citation_completeness": {
+              "question_level": 0.7019,
+              "group_level": 0.6875,
+              "groups": 14
+            },
+            "support_below_validity_group_level": true
+          }
+        }
+      },
+      "sensitivity_common_eligibility": {
+        "basis": "Answers where citation support is defined, so validity and support share a denominator. A narrower question, reported so the choice of denominator is visible. Not the headline figure.",
+        "by_arm": {
+          "A": {
+            "citation_validity": 0.9666666666666667,
+            "citation_support": 0.5666666666666667,
+            "support_below_validity": true,
+            "eligible_n": 30
+          },
+          "B": {
+            "citation_validity": 0.9642857142857143,
+            "citation_support": 0.6309535714285713,
+            "support_below_validity": true,
+            "eligible_n": 28
+          },
+          "C": {
+            "citation_validity": 1.0,
+            "citation_support": 0.42857142857142855,
+            "support_below_validity": true,
+            "eligible_n": 28
+          },
+          "D": {
+            "citation_validity": 0.9523809523809523,
+            "citation_support": 0.6984142857142858,
+            "support_below_validity": true,
+            "eligible_n": 21
+          }
         }
       },
       "verdict": "supported",
-      "note": "Citation support is a lower bound by construction, per section 4. eligible_n is the number of answers making a checkable claim, and it differs by arm because an arm that abstains more often has fewer answers to check. Validity and support are computed over the same eligible set within each arm, so the within-arm comparison H3 makes is like for like; comparing citation figures *across* arms is not, and is not done here."
+      "verdict_basis": "group level, primary convention, all four arms",
+      "note": "Citation support is a lower bound by construction, per section 4. The verdict is the same under both calculations."
     },
     "H4": {
       "statement": "D abstains appropriately more often than A, B and C",
@@ -762,6 +861,7 @@
       },
       "abstained_field_source": "second pass, per amendment 1.14.4 rule 1",
       "verdict": "not supported",
+      "verdict_unit": "gap topics abstained on throughout",
       "reading": "D exceeds ['A', 'C'] and does not exceed ['B']. D ties B at 5/5 gap topics, both at ceiling. A and C are descriptively lower and that difference is reported, but H4 as stated requires D to exceed all three and it does not."
     },
     "H5": {

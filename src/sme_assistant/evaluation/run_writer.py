@@ -102,7 +102,21 @@ class RunWriter:
         question_set: Any = None,
         registry: Any = None,
         root: Path | None = None,
+        purpose: str = "quality",
+        hardware_condition: str | None = None,
+        placement: str | None = None,
     ) -> None:
+        # ``purpose`` is written into the manifest so a performance run
+        # identifies itself in its own provenance, not only in its directory
+        # name. Amendment 1.16: a name can be changed by hand and a manifest is
+        # the thing the analysis actually reads.
+        if purpose not in {"quality", "performance"}:
+            raise ValueError(
+                f"purpose must be 'quality' or 'performance', not {purpose!r}"
+            )
+        self.purpose = purpose
+        self.hardware_condition = hardware_condition
+        self.placement = placement
         self.config = config or load_config()
         self.question_set = question_set
         self.registry = registry
@@ -154,6 +168,12 @@ class RunWriter:
             "run_id": self.directory.name,
             "started_at": self.started.isoformat(),
             "split": self.split,
+            # Quality or performance. Amendment 1.15 permits hardware runs for
+            # timing only, and this is the field the analysis checks before it
+            # will use a run for anything about answers.
+            "purpose": self.purpose,
+            "hardware_condition": self.hardware_condition,
+            "placement": self.placement,
             "arm": self.arm.to_dict(),
             "provenance": {
                 "config_sha256": self.config.fingerprint(),

@@ -2519,3 +2519,112 @@ else.
 | H5 | pending until those runs exist |
 | Enforcement | `quality_run_directories`, suffix plus manifest |
 | Quality experiment | closed |
+
+---
+
+# Amendment 1.16 - 15 August 2026
+
+An analysis and boundary correction, made **before** any hardware execution.
+**No H1 to H4 verdict changes.** Every correction below was found by review of
+the code and the output, not by looking at a result and preferring a different
+one.
+
+## 1.16.1 Amendment 1.15 claimed an enforcement that did not exist
+
+1.15.3 said the tag was the boundary. It was not.
+`quality_run_directories` admitted any untagged `*_test` directory whose
+manifest said `split == "test"`, and a performance run satisfies both
+conditions: it *is* a run on the test split, and nothing obliged it to carry a
+tag. An untagged hardware run would have been drawn straight into the quality
+analysis.
+
+**Corrected.** The four frozen quality runs are now named in a closed list,
+`FROZEN_QUALITY_RUNS`, and nothing else is admitted whatever it is called. A
+missing member is an error rather than a smaller analysis, because three arms
+still produce numbers and they are not the pre-registered ones. The manifest is
+still re-checked for `split` and now for `purpose`, so a renamed directory
+cannot impersonate one of the four. `tests/test_analysis.py` asserts that an
+**untagged** extra test run is refused.
+
+## 1.16.2 Four analysis corrections
+
+**H2 had no verdict.** The confirmatory D versus B decision was recorded but
+never assigned to the hypothesis, so a reader had to know which contrast was
+confirmatory to work out the answer. H2 now inherits it explicitly, and states
+that it does: **not supported**.
+
+**H3 used a denominator invented after unsealing.** `scripts/summarise_arms.py`
+established the convention long before the key was opened: restrict to
+claim-making answers, because an abstention cites nothing by design, then
+report each metric at question and group level with the group as the unit for
+inference. The analysis instead conditioned validity on the answers where
+citation *support* happens to be defined, a narrower set, which moved every
+validity figure.
+
+The verdict is `supported` under both. That is not a defence, and is the reason
+the change is reverted rather than kept: a denominator chosen after unblinding
+is not made acceptable by leaving the answer unchanged.
+
+| Arm | Validity, group | Support, group | Claim-making n |
+|---|---:|---:|---:|
+| A | 0.8333 | 0.6667 | 68 |
+| B | 0.8177 | 0.6766 | 68 |
+| C | 0.8333 | 0.4561 | 68 |
+| D | 0.7989 | 0.6528 | 55 |
+
+The common-eligibility calculation is retained and reported as a **labelled
+sensitivity analysis**, so the choice of denominator is visible rather than
+assumed.
+
+**H2c and H4 decided on question counts.** Section 5 makes the group the unit.
+H2c now compares control families carrying any false conflict, H4 compares gap
+topics abstained on throughout. Both verdicts are unchanged: H2c **not
+supported** at 0 of 3 families in every arm, H4 **not supported** with D and B
+both at 5 of 5 topics while A reaches 3 and C reaches 4.
+
+**"Equivalent" claimed something never tested.** No confidence interval is
+computed anywhere in this study and no equivalence test is performed. The H1
+second leg is an operational comparison against the pre-specified 0.25 margin,
+and is now reported as **within margin** or **outside margin**, with the basis
+stated on every decision. B, C and D are not described as equivalent.
+
+## 1.16.3 The hardware boundary, made executable
+
+`run_arms.py --performance-only` now exists and refuses to start without a tag,
+an explicit `--placement` of `gpu` or `cpu`, and a named
+`--hardware-condition`. It accepts arms B and D only, since those are the two
+H5 is stated over.
+
+| Risk | What now prevents it |
+|---|---|
+| A hardware run producing quality figures | `score_answer` is not called in performance mode, so no citation metric exists in the record to be picked up later |
+| A performance run passing as a quality run | `purpose: performance` in the manifest, plus the closed list |
+| `latest_test.json` being repointed | performance runs write `latest_test_performance_<condition>.json` |
+| An unrecorded device | `--placement` is required, applied as `num_gpu`, and recorded in the manifest |
+| Mixing machines in one ratio | `analyse_performance.py` refuses an index spanning two hardware conditions |
+| The quality summariser being used on timing data | `analyse_performance.py` is separate and refuses any run not marked `purpose: performance` |
+
+`analyse_performance.py` reports mean and median wall clock, prefill and decode
+token rates, load time, CPU temperature and throttle counts, and the H5 ratio of
+D to B. It cannot report answer quality, and it will not open a quality run.
+
+## 1.16.4 What did not change
+
+* No arm was rerun. No item was rescored. CONF-04-Q2 stands unreconciled.
+* The corpus, question set, registry, verifier, prompt, retrieval settings,
+  review sheet, key and both judgement logs are untouched.
+* Every H1 to H4 verdict is the same as at `c60d15e`.
+
+## 1.16.5 State
+
+| | |
+|---|---|
+| H1 | not supported, both legs |
+| H2 | not supported, inherited from D vs B |
+| H2c | not supported, 0 of 3 families every arm, floor-limited |
+| H3 | supported, established convention, sensitivity reported |
+| H4 | not supported, D ties B at 5 of 5 topics |
+| H5 | pending, hardware not yet run |
+| Quality runs | closed list of four, enforced |
+| Hardware runs | permitted, performance-only, not yet executed |
+| Tests | 553 |

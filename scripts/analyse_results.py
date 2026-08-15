@@ -34,8 +34,10 @@ from sme_assistant.evaluation.analysis import (  # noqa: E402
     SUPERSESSION,
     AnalysisError,
     contrast,
+    citation_metrics,
+    common_eligibility_variant,
     decide,
-    decide_equivalence,
+    decide_within_margin,
     family_table,
     join,
     leave_one_family_out,
@@ -104,15 +106,17 @@ def main(argv: list[str] | None = None) -> int:
     table = family_table(sup)
     need, _ = DIRECTION_REQUIRED["H1"]
     # H1 makes two different kinds of claim and they need two different rules.
-    # "A < B" is superiority. "B ~ C ~ D" is equivalence, and running it through
-    # the superiority rule reports a large difference against the contribution
-    # as "direction 0/4, not supported", which reads as no difference found.
+    # "A < B" is superiority. "B ~ C ~ D" is a claim that the arms sit within
+    # the pre-specified margin, and running that through the superiority rule
+    # reports a large difference against the contribution as "direction 0/4,
+    # not supported", which reads as no difference found. The margin comparison
+    # is operational: no equivalence test is performed anywhere in this study.
     h1 = {
         "statement": "A < B ~ C ~ D on the supersession families",
         "levels": both_levels(sup),
         "superiority_leg": {"claim": "A scores below B, C and D",
                             "contrasts": {}, "decisions": {}},
-        "equivalence_leg": {"claim": "B, C and D do not differ meaningfully",
+        "within_margin_leg": {"claim": "B, C and D differ by no more than the pre-specified 0.25 margin", 
                             "contrasts": {}, "decisions": {}},
     }
     for treatment, baseline in (("B", "A"), ("C", "A"), ("D", "A")):
@@ -123,35 +127,36 @@ def main(argv: list[str] | None = None) -> int:
         )
     for treatment, baseline in (("C", "B"), ("D", "B"), ("D", "C")):
         c = contrast(table, treatment, baseline)
-        h1["equivalence_leg"]["contrasts"][f"{treatment}_vs_{baseline}"] = c.to_dict()
-        h1["equivalence_leg"]["decisions"][f"{treatment}_vs_{baseline}"] = (
-            decide_equivalence(c)
+        h1["within_margin_leg"]["contrasts"][f"{treatment}_vs_{baseline}"] = c.to_dict()
+        h1["within_margin_leg"]["decisions"][f"{treatment}_vs_{baseline}"] = (
+            decide_within_margin(c)
         )
 
     superiority_ok = all(
         d["verdict"] == "supported"
         for d in h1["superiority_leg"]["decisions"].values()
     )
-    not_equivalent = [
-        name for name, d in h1["equivalence_leg"]["decisions"].items()
-        if d["verdict"] != "equivalent"
+    outside_margin = [
+        name for name, d in h1["within_margin_leg"]["decisions"].items()
+        if d["verdict"] != "within margin"
     ]
     h1["verdict"] = (
-        "supported" if superiority_ok and not not_equivalent else "not supported"
+        "supported" if superiority_ok and not outside_margin else "not supported"
     )
     h1["reading"] = (
         "Both legs fail. A is not below B by the declared margin: the difference "
         "is exactly 0.250, which does not exceed 0.25, and the direction holds "
         "in 2 of 4 families against the 3 of 4 required. And B, C and D are not "
-        "equivalent: "
+        "all within the 0.25 margin: "
         + "; ".join(
             f"{name} differs by "
-            f"{h1['equivalence_leg']['decisions'][name]['magnitude']:.4f} in "
-            f"{h1['equivalence_leg']['decisions'][name]['higher_arm']}'s favour"
-            for name in not_equivalent
+            f"{h1['within_margin_leg']['decisions'][name]['magnitude']:.4f} in "
+            f"{h1['within_margin_leg']['decisions'][name]['higher_arm']}'s favour"
+            for name in outside_margin
         )
-        + ". B, C and D are therefore not described as equivalent."
-    ) if not superiority_ok and not_equivalent else "See per-leg decisions."
+        + ". B, C and D are therefore not described as equivalent, and no "
+        "equivalence test was performed."
+    ) if not superiority_ok and outside_margin else "See per-leg decisions."
     h1["leave_one_family_out"] = {
         "B_vs_A": leave_one_family_out(table, "B", "A"),
         "D_vs_B": leave_one_family_out(table, "D", "B"),
@@ -183,6 +188,15 @@ def main(argv: list[str] | None = None) -> int:
         h2["decisions"][f"{treatment}_vs_{baseline}"] = decide(
             c, direction_required=need2
         )
+    # The confirmatory contrast decides H2. Storing only the per-contrast
+    # decisions left the hypothesis itself without a verdict, so a reader had to
+    # know which contrast was confirmatory to work out the answer.
+    h2["verdict"] = h2["decisions"][h2["confirmatory_contrast"]]["verdict"]
+    h2["verdict_basis"] = (
+        f"Inherited from {h2['confirmatory_contrast']}, the pre-registered "
+        "confirmatory contrast for H2 (section 2). The other contrasts are "
+        "descriptive."
+    )
     h2["leave_one_family_out"] = {"D_vs_B": leave_one_family_out(table2, "D", "B")}
     h2["sensitivity_reading"] = (
         "Removing any single family leaves the paired difference negative, with "
@@ -210,11 +224,16 @@ def main(argv: list[str] | None = None) -> int:
         "questions_with_a_false_conflict": {
             arm: f"{v['hits']}/{v['questions']}" for arm, v in false_conflict.items()
         },
+        # Section 5 makes the family the decision unit. Comparing question
+        # counts would let an arm with more questions in a family carry the
+        # verdict.
         "verdict": (
             "not supported"
-            if false_conflict["D"]["hits"] <= false_conflict["B"]["hits"]
+            if false_conflict["D"]["groups_any_hit"]
+            <= false_conflict["B"]["groups_any_hit"]
             else "supported"
         ),
+        "verdict_unit": "control families with any false conflict",
         "reading": (
             "The directional prediction is falsified: D did not over-detect "
             "relative to B. Both are at zero, on families and on questions."
@@ -232,46 +251,57 @@ def main(argv: list[str] | None = None) -> int:
     }
 
     # --- H3 -----------------------------------------------------------------
-    have_metrics = [r for r in rows if r.citation_support is not None]
-    h3 = {}
-    for arm in sorted({r.arm for r in have_metrics}):
-        subset = [r for r in have_metrics if r.arm == arm]
-        validity = sum(1 for r in subset if r.has_valid_citation_ids) / len(subset)
-        support = sum(r.citation_support for r in subset) / len(subset)
-        h3[arm] = {
-            "citation_validity": validity,
-            "citation_support": support,
-            "support_below_validity": support < validity,
-            "eligible_n": len(subset),
-        }
+    # The convention from summarise_arms.py, which predates unsealing: claim-
+    # making answers only, both levels, group level for inference. An earlier
+    # version of this script used a different denominator chosen after the key
+    # was opened. It did not change the verdict, which is not a defence.
+    established = citation_metrics(test_runs())
     report["hypotheses"]["H3"] = {
         "statement": "citation support < citation validity, in every arm",
-        "by_arm": h3,
+        "primary": {
+            "basis": (
+                "scripts/summarise_arms.py convention, established before "
+                "unsealing: restricted to claim-making answers, because an "
+                "abstention cites nothing by design. Group level is the unit "
+                "for inference."
+            ),
+            "by_arm": established,
+        },
+        "sensitivity_common_eligibility": {
+            "basis": (
+                "Answers where citation support is defined, so validity and "
+                "support share a denominator. A narrower question, reported so "
+                "the choice of denominator is visible. Not the headline figure."
+            ),
+            "by_arm": common_eligibility_variant(rows),
+        },
         "verdict": (
-            "supported" if h3 and all(v["support_below_validity"] for v in h3.values())
+            "supported"
+            if all(v["support_below_validity_group_level"] for v in established.values())
             else "not supported"
         ),
+        "verdict_basis": "group level, primary convention, all four arms",
         "note": (
             "Citation support is a lower bound by construction, per section 4. "
-            "eligible_n is the number of answers making a checkable claim, and "
-            "it differs by arm because an arm that abstains more often has fewer "
-            "answers to check. Validity and support are computed over the same "
-            "eligible set within each arm, so the within-arm comparison H3 makes "
-            "is like for like; comparing citation figures *across* arms is not, "
-            "and is not done here."
+            "The verdict is the same under both calculations."
         ),
     }
 
     # --- H4 -----------------------------------------------------------------
     gaps = select(rows, GAPS)
     abstention = rate_by_arm(gaps, "abstained")
-    beats = [a for a in ("A", "B", "C") if abstention["D"]["hits"] > abstention[a]["hits"]]
+    # Gap topics, not questions. Section 5 again.
+    beats = [
+        a for a in ("A", "B", "C")
+        if abstention["D"]["groups_all_hit"] > abstention[a]["groups_all_hit"]
+    ]
     report["hypotheses"]["H4"] = {
         "statement": "D abstains appropriately more often than A, B and C",
         "gap_topics": len({r.group_id for r in gaps}),
         "appropriate_abstention": abstention,
         "abstained_field_source": "second pass, per amendment 1.14.4 rule 1",
         "verdict": "supported" if len(beats) == 3 else "not supported",
+        "verdict_unit": "gap topics abstained on throughout",
         "reading": (
             f"D exceeds {beats or 'no arm'} and does not exceed "
             f"{[a for a in ('A','B','C') if a not in beats]}. D ties B at "
@@ -367,8 +397,8 @@ def main(argv: list[str] | None = None) -> int:
             print("    superiority leg, A below the rest:")
             for label, decision in block["superiority_leg"]["decisions"].items():
                 show_superiority(label, decision)
-            print("    equivalence leg, B ~ C ~ D:")
-            for label, decision in block["equivalence_leg"]["decisions"].items():
+            print("    within-margin leg, B ~ C ~ D (operational, not a statistical test):")
+            for label, decision in block["within_margin_leg"]["decisions"].items():
                 show_equivalence(label, decision)
             print(f"    OVERALL -> predicted A < B ~ C ~ D pattern "
                   f"{block['verdict']}")

@@ -22,9 +22,10 @@ import pytest
 from sme_assistant.evaluation.analysis import (
     AnalysisError,
     Joined,
+    FROZEN_QUALITY_RUNS,
     contrast,
     decide,
-    decide_equivalence,
+    decide_within_margin,
     family_table,
     join,
     leave_one_family_out,
@@ -256,28 +257,22 @@ def make_run_dir(root: Path, name: str, *, split: str) -> Path:
 
 
 def test_performance_runs_cannot_enter_the_quality_analysis(tmp_path):
-    """Amendment 1.15 declares the boundary; this is what enforces it.
+    """Amendment 1.15 declares the boundary; amendment 1.16 enforces it.
 
-    A tagged run directory does not end in ``_test``, so pointing the analysis
-    at the whole results tree still cannot pull a performance execution into a
-    hypothesis about answer quality.
+    A tagged performance run and a development run both sit in the same tree
+    and neither is admitted. The stronger case, an *untagged* performance run,
+    is covered separately below.
     """
-    make_run_dir(tmp_path, "20260814_054606_B_test", split="test")
+    for name in FROZEN_QUALITY_RUNS:
+        make_run_dir(tmp_path, name, split="test")
     make_run_dir(tmp_path, "20260816_101010_B_test_pi5perf", split="test")
     make_run_dir(tmp_path, "20260813_102840_B_dev", split="dev")
 
     found = [p.name for p in quality_run_directories(tmp_path)]
-    assert found == ["20260814_054606_B_test"]
+    assert found == list(FROZEN_QUALITY_RUNS)
 
 
-def test_a_renamed_directory_is_still_checked_against_its_manifest(tmp_path):
-    """A directory can be renamed by hand; a manifest cannot be renamed by
-    accident."""
-    make_run_dir(tmp_path, "20260813_102840_B_test", split="dev")
-    assert quality_run_directories(tmp_path) == []
-
-
-# --- equivalence is not superiority ------------------------------------------
+# --- the margin comparison is not superiority ------------------------------------------
 
 
 def test_a_difference_against_the_treatment_is_not_reported_as_no_difference():
@@ -302,9 +297,9 @@ def test_a_difference_against_the_treatment_is_not_reported_as_no_difference():
     assert superiority["direction"] == "0/4"
     assert superiority["verdict"] == "not supported"
 
-    # What the equivalence rule says.
-    equivalence = decide_equivalence(result)
-    assert equivalence["verdict"] == "not equivalent"
+    # What the margin rule says.
+    equivalence = decide_within_margin(result)
+    assert equivalence["verdict"] == "outside margin"
     assert equivalence["higher_arm"] == "C"
     assert equivalence["higher_in_families"] == "3/4"
     assert equivalence["tied_families"] == 1
@@ -315,17 +310,17 @@ def test_confounding_limits_attribution_without_erasing_the_difference():
     """A limit on causal attribution must not be used to make an inconvenient
     observation disappear."""
     table = {f"F{i}": {"C": 1.0, "D": 0.0} for i in range(4)}
-    decision = decide_equivalence(contrast(table, "D", "C"))
+    decision = decide_within_margin(contrast(table, "D", "C"))
     assert decision["confounded"] is True
-    assert decision["verdict"] == "not equivalent"
+    assert decision["verdict"] == "outside margin"
     assert "cannot be attributed to either alone" in decision["reading"]
     assert "rather than erasing it" in decision["reading"]
 
 
 def test_a_small_difference_is_equivalent():
     table = {f"F{i}": {"B": 1.0, "D": 1.1} for i in range(4)}
-    decision = decide_equivalence(contrast(table, "D", "B"))
-    assert decision["verdict"] == "equivalent"
+    decision = decide_within_margin(contrast(table, "D", "B"))
+    assert decision["verdict"] == "within margin"
     assert decision["magnitude"] == pytest.approx(0.1)
 
 
@@ -333,7 +328,7 @@ def test_a_difference_exactly_at_the_threshold_still_counts_as_equivalent():
     """Equivalence is refuted only by *exceeding* the margin, matching the
     superiority rule's use of the same 0.25."""
     table = {f"F{i}": {"B": 0.0, "D": 0.25} for i in range(4)}
-    assert decide_equivalence(contrast(table, "D", "B"))["verdict"] == "equivalent"
+    assert decide_within_margin(contrast(table, "D", "B"))["verdict"] == "within margin"
 
 
 def test_family_level_hit_counts_answer_different_questions():
@@ -353,3 +348,89 @@ def test_family_level_hit_counts_answer_different_questions():
     assert result["groups_all_hit"] == 0
     assert result["groups_any_hit"] == 1
     assert result["hits"] == 1 and result["questions"] == 3
+
+
+# --- the hardware boundary, amendment 1.16 -----------------------------------
+
+
+def test_an_untagged_extra_test_run_cannot_enter_the_quality_analysis(tmp_path):
+    """The hole amendment 1.15 left open.
+
+    The first implementation accepted any untagged ``*_test`` directory whose
+    manifest said ``split == "test"``. A performance run satisfies both, so the
+    enforcement 1.15.3 claimed did not exist. A closed list cannot be satisfied
+    by a run created afterwards, tagged or not.
+    """
+    for name in FROZEN_QUALITY_RUNS:
+        make_run_dir(tmp_path, name, split="test")
+    make_run_dir(tmp_path, "20260816_101010_B_test", split="test")   # untagged
+    make_run_dir(tmp_path, "20260816_101011_D_test_pi5", split="test")  # tagged
+
+    found = [p.name for p in quality_run_directories(tmp_path)]
+    assert found == list(FROZEN_QUALITY_RUNS)
+
+
+def test_a_frozen_run_marked_performance_is_refused(tmp_path):
+    for name in FROZEN_QUALITY_RUNS:
+        make_run_dir(tmp_path, name, split="test")
+    manifest = tmp_path / FROZEN_QUALITY_RUNS[0] / "manifest.json"
+    payload = json.loads(manifest.read_text(encoding="utf-8"))
+    payload["purpose"] = "performance"
+    manifest.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(AnalysisError, match="purpose=performance"):
+        quality_run_directories(tmp_path)
+
+
+def test_a_missing_frozen_run_is_an_error_not_a_smaller_analysis(tmp_path):
+    """Three arms would still produce numbers, and they would not be the
+    pre-registered ones."""
+    for name in FROZEN_QUALITY_RUNS[:3]:
+        make_run_dir(tmp_path, name, split="test")
+    with pytest.raises(AnalysisError, match="missing"):
+        quality_run_directories(tmp_path)
+
+
+def test_a_renamed_directory_cannot_impersonate_a_frozen_run(tmp_path):
+    for name in FROZEN_QUALITY_RUNS:
+        make_run_dir(tmp_path, name, split="dev")
+    with pytest.raises(AnalysisError, match="split="):
+        quality_run_directories(tmp_path)
+
+
+def test_two_runs_supplying_the_same_arm_and_question_are_refused(tmp_path):
+    """A duplicate run would overwrite the automatic metrics silently while the
+    manual scores stayed with the frozen run."""
+    sheet, key, judgements, abstention, qs = build_inputs(
+        tmp_path, abstained_first=True, abstained_second=True
+    )
+    runs = []
+    for name in ("run_one", "run_two"):
+        directory = tmp_path / name
+        directory.mkdir()
+        (directory / "manifest.json").write_text(
+            json.dumps({"split": "test", "arm": {"arm": "D"}}), encoding="utf-8"
+        )
+        (directory / "answers.jsonl").write_text(
+            json.dumps({"question_id": "GAP-1-Q1", "wall_seconds": 1.0}) + "\n",
+            encoding="utf-8",
+        )
+        runs.append(directory)
+
+    with pytest.raises(AnalysisError, match="Two runs supply"):
+        join(sheet=sheet, key=key, judgements=judgements, abstention=abstention,
+             question_set=qs, runs=runs)
+
+
+# --- margin language is operational, not statistical -------------------------
+
+
+def test_the_margin_verdict_does_not_claim_equivalence():
+    """No interval is computed anywhere in this study, so nothing here may say
+    the arms were shown to be the same."""
+    table = {f"F{i}": {"B": 1.0, "D": 1.1} for i in range(4)}
+    decision = decide_within_margin(contrast(table, "D", "B"))
+    assert decision["verdict"] == "within margin"
+    assert "equivalen" not in decision["reading"].lower()
+    assert "not a statistical equivalence test" in decision["basis"].lower()
+    assert "not the same as having been shown to be equal" in decision["reading"]

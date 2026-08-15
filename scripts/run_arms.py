@@ -84,7 +84,8 @@ def arm_definition(name: str, config) -> ArmDefinition:
 
 def run_arm(name, questions, *, retriever, generator, verifier, config, kb, index,
             question_set, registry, split, tag, root=None, drafts=None,
-            drafts_source=None) -> Path:
+            drafts_source=None, performance_only=False,
+            hardware_condition=None, placement=None) -> Path:
     """Run one arm. ``drafts`` lets D reuse B's exact answers.
 
     B versus D is the confirmatory contrast, and it only isolates verification
@@ -95,9 +96,16 @@ def run_arm(name, questions, *, retriever, generator, verifier, config, kb, inde
     """
     spec = ARMS[name]
     produced: dict[str, object] = {}
+    # Amendment 1.15 forbids a hardware run producing any quality figure, and
+    # amendment 1.16 makes that structural rather than a rule to remember:
+    # score_answer is not called at all, so there is no citation metric in the
+    # record to be picked up by accident later.
     writer = RunWriter(
         arm_definition(name, config), split=split, tag=tag, config=config,
         kb=kb, index=index, question_set=question_set, registry=registry, root=root,
+        purpose="performance" if performance_only else "quality",
+        hardware_condition=hardware_condition,
+        placement=placement,
     )
 
     for position, question in enumerate(questions, start=1):
@@ -124,7 +132,10 @@ def run_arm(name, questions, *, retriever, generator, verifier, config, kb, inde
             group_id=question.group_id,
             family_id=question.family_id,
             category=question.category,
-            scoring=score_answer(served, chunk_text_map(retrieval)).to_dict(),
+            scoring=(
+                None if performance_only
+                else score_answer(served, chunk_text_map(retrieval)).to_dict()
+            ),
             extra={"expected_behaviour": question.expected_behaviour,
                    "risk_level": question.risk_level},
         )
@@ -152,6 +163,22 @@ def main() -> int:
     parser.add_argument("--arms", nargs="+", default=list(ARMS), choices=list(ARMS))
     parser.add_argument("--mock", action="store_true")
     parser.add_argument("--tag", default="")
+    parser.add_argument(
+        "--performance-only", action="store_true",
+        help="Timing run under amendment 1.15. No answer scoring, arms B and D "
+             "only, a tag and an explicit placement are required, and the run "
+             "index is written separately so it cannot be mistaken for the "
+             "frozen quality run.",
+    )
+    parser.add_argument(
+        "--placement", choices=["gpu", "cpu"],
+        help="Where generation runs. Required with --performance-only, because "
+             "a latency figure whose device is unrecorded measures nothing.",
+    )
+    parser.add_argument(
+        "--hardware-condition", choices=["laptop_gpu", "laptop_cpu", "pi5_cpu"],
+        help="Named condition from config.json. Required with --performance-only.",
+    )
     parser.add_argument("--i-have-frozen-everything", action="store_true",
                         help="required to run the test split")
     parser.add_argument("--d-without-b", action="store_true",
@@ -160,6 +187,42 @@ def main() -> int:
                         help="replay a recorded Arm B run's drafts instead of "
                              "regenerating them, for a controlled re-run")
     args = parser.parse_args()
+
+    # Amendment 1.16. Every one of these is a way a performance run could end
+    # up indistinguishable from the frozen quality run, so each is refused up
+    # front rather than checked later.
+    if args.performance_only:
+        problems = []
+        if not args.tag:
+            problems.append(
+                "--tag is required: an untagged run on the test split is named "
+                "exactly like a quality run"
+            )
+        if not args.placement:
+            problems.append("--placement is required (gpu or cpu)")
+        if not args.hardware_condition:
+            problems.append("--hardware-condition is required")
+        if set(args.arms) - {"B", "D"}:
+            problems.append(
+                "only arms B and D are in scope for H5; "
+                f"got {sorted(args.arms)}"
+            )
+        if problems:
+            parser.error(
+                "performance-only run refused:\n  - " + "\n  - ".join(problems)
+            )
+    elif args.placement or args.hardware_condition:
+        parser.error(
+            "--placement and --hardware-condition apply only to "
+            "--performance-only runs"
+        )
+
+    config_overrides: dict[str, object] = {}
+    if args.placement:
+        # num_gpu 0 keeps every layer on the CPU. Recorded as well as applied,
+        # because a latency number whose device was assumed rather than set is
+        # not a measurement of that device.
+        config_overrides["num_gpu"] = 0 if args.placement == "cpu" else -1
 
     if args.split == "test" and args.d_without_b:
         raise SystemExit(
@@ -175,6 +238,11 @@ def main() -> int:
         )
 
     config = load_config()
+    if config_overrides:
+        # Applied to the generation block, which OllamaClient starts from and
+        # which RunWriter records verbatim in the manifest, so the device the
+        # run actually used is in its own provenance.
+        config._data.setdefault("generation", {}).update(config_overrides)
     evaluation = load_evaluation_config()
     kb = load_knowledge_base(config.path("paths.kb_docs"))
     registry = load_conflicts(evaluation.path("conflicts"))
@@ -245,6 +313,9 @@ def main() -> int:
             verifier=verifier, config=config, kb=kb, index=index,
             question_set=question_set, registry=registry, split=args.split,
             tag=args.tag or ("mock" if args.mock else ""), drafts=reuse,
+            performance_only=args.performance_only,
+            hardware_condition=args.hardware_condition,
+            placement=args.placement,
             # Repository-relative with forward slashes. Recorded verbatim,
             # a Windows path is unreadable on the Pi - the same portability
             # bug that once broke the run index across the two machines.
@@ -255,9 +326,18 @@ def main() -> int:
         )
         print(f"    -> {directories[name].name}\n")
 
-    manifest = Path(config.path("paths.results")) / (
-        f"latest_{args.split}{'_mock' if args.mock else ''}.json"
-    )
+    # A performance run writes its own index. Overwriting latest_test.json
+    # would repoint the name that every earlier note and script uses for the
+    # frozen quality run, which is how a timing execution silently becomes the
+    # reported one. Amendment 1.16.
+    if args.performance_only:
+        manifest = Path(config.path("paths.results")) / (
+            f"latest_{args.split}_performance_{args.hardware_condition}.json"
+        )
+    else:
+        manifest = Path(config.path("paths.results")) / (
+            f"latest_{args.split}{'_mock' if args.mock else ''}.json"
+        )
     # Repository-relative, so a run index written on Windows can be read on the
     # Pi. Absolute paths made the two machines unable to share a run index.
     manifest.write_text(json.dumps(
@@ -265,7 +345,12 @@ def main() -> int:
          for name, path in directories.items()}, indent=2
     ), encoding="utf-8")
     print(f"Run index written to {manifest}")
-    print("\nNext: python scripts/summarise_arms.py --split " + args.split)
+    if args.performance_only:
+        print("\nPerformance-only run. No answers were scored and none may be.")
+        print("Next: python scripts/analyse_performance.py "
+              f"--index {manifest.name}")
+    else:
+        print("\nNext: python scripts/summarise_arms.py --split " + args.split)
     return 0
 
 

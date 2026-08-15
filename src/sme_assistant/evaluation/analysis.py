@@ -92,30 +92,60 @@ class Joined:
         return {k: getattr(self, k) for k in self.__dataclass_fields__}
 
 
+#: The four frozen quality runs, by directory name. Amendment 1.16.
+#:
+#: Naming them is the difference between a rule and a hope. The first version
+#: of this function accepted any untagged ``*_test`` directory whose manifest
+#: said ``split == "test"``, and a performance run satisfies both: it is a run
+#: on the test split, and nothing stops it being written without a tag. So the
+#: enforcement amendment 1.15.3 claimed did not exist. A closed list cannot be
+#: satisfied by a run created later, whatever it is called.
+FROZEN_QUALITY_RUNS: tuple[str, ...] = (
+    "20260814_054606_A_test",
+    "20260814_054754_B_test",
+    "20260814_054908_C_test",
+    "20260814_055018_D_test",
+)
+
+
 def quality_run_directories(root: Path | str) -> list[Path]:
-    """The frozen quality runs, and nothing else.
+    """The four frozen quality runs, by name, and nothing else.
 
     Amendment 1.15 declares the laptop quality run the sole evidential source
-    for H1 to H4, and the later hardware executions performance-only. That
-    boundary is enforced here rather than remembered: ``RunWriter`` names a
-    directory ``{stamp}_{arm}_{split}{label}``, so an untagged quality run ends
-    in ``_test`` and any tagged run does not. A performance run therefore cannot
-    be picked up by the analysis even if someone points it at the whole results
-    tree.
+    for H1 to H4. This is what makes that true rather than intended.
 
-    The check is on the manifest as well as the name, because a directory can
-    be renamed and a manifest cannot be renamed by accident.
+    Three checks, and the first is the one that matters. The directory must be
+    on the closed list; its manifest must still say ``split == "test"``, so a
+    renamed directory cannot impersonate one; and it must not be marked
+    ``purpose: performance``, which catches the case where a frozen run is
+    somehow re-executed in performance mode.
+
+    Refusing to find one of the four is an error rather than a silent shortfall.
+    An analysis quietly computed over three arms would still produce numbers.
     """
     found: list[Path] = []
-    for directory in sorted(Path(root).glob("*_test")):
-        if not directory.is_dir():
-            continue
+    for name in FROZEN_QUALITY_RUNS:
+        directory = Path(root) / name
         manifest_path = directory / "manifest.json"
-        if not manifest_path.exists():
-            continue
+        if not directory.is_dir() or not manifest_path.exists():
+            raise AnalysisError(
+                f"Frozen quality run {name} is missing from {root}. The reported "
+                "results are defined over exactly these four runs, so an analysis "
+                "without one of them is not the pre-registered analysis."
+            )
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-        if manifest.get("split") == "test":
-            found.append(directory)
+        if manifest.get("split") != "test":
+            raise AnalysisError(
+                f"{name} is on the frozen quality list but its manifest says "
+                f"split={manifest.get('split')!r}. The directory has been "
+                "replaced."
+            )
+        if manifest.get("purpose") == "performance":
+            raise AnalysisError(
+                f"{name} is marked purpose=performance and cannot be used for "
+                "answer quality. See amendment 1.15."
+            )
+        found.append(directory)
     return found
 
 
@@ -156,12 +186,25 @@ def join(
             "complete pass. Run `score_answers.py status`."
         )
 
+    # Keyed on (arm, question). A second run of the same arm would overwrite
+    # the first silently, and the analysis would report metrics from a run
+    # nobody intended to include while the manual scores still came from the
+    # frozen one. Refusing is the only safe behaviour: there is no way to tell
+    # from here which of the two was meant.
     automatic: dict[tuple[str, str], dict[str, Any]] = {}
     for directory in runs:
         manifest, answers = read_run(directory)
         arm = manifest["arm"]["arm"]
         for record in answers:
-            automatic[(arm, record["question_id"])] = record
+            slot = (arm, record["question_id"])
+            if slot in automatic:
+                raise AnalysisError(
+                    f"Two runs supply arm {arm} question {record['question_id']}. "
+                    f"{Path(directory).name} collides with an earlier run. The "
+                    "automatic metrics would take whichever was read last while "
+                    "the manual scores stayed with the frozen run."
+                )
+            automatic[slot] = record
 
     joined: list[Joined] = []
     for item in items:
@@ -335,10 +378,17 @@ def decide(
     }
 
 
-def decide_equivalence(
+def decide_within_margin(
     result: Contrast, *, threshold: float = EFFECT_THRESHOLD
 ) -> dict[str, Any]:
-    """The verdict for an *equivalence* claim, which is not a superiority one.
+    """Is the difference inside the pre-specified margin, or outside it?
+
+    **This is operational, not statistical.** It is not an equivalence test:
+    no confidence interval is computed, no TOST is performed, and "within the
+    margin" does not mean the arms have been shown to be the same. It means the
+    observed paired difference does not exceed the 0.25 the pre-registration
+    fixed in advance as the size worth reporting. The earlier wording said
+    "equivalent", which claims something the procedure never established.
 
     H1 has two legs. "A < B" is a superiority claim and ``decide`` handles it.
     "B ~ C ~ D" is a claim that three arms do not differ meaningfully, and
@@ -366,15 +416,16 @@ def decide_equivalence(
     else:
         higher, consistent = None, 0
 
-    equivalent = magnitude <= threshold
+    within = magnitude <= threshold
     reading = (
-        f"Difference within {threshold} on the three-point scale; the arms are "
-        "not distinguished by this measurement."
-        if equivalent
+        f"Difference within the pre-specified {threshold} margin on the "
+        "three-point scale. The arms are not distinguished by this measurement, "
+        "which is not the same as having been shown to be equal."
+        if within
         else (
-            f"The difference exceeds {threshold} in {higher}'s favour, with "
-            f"{higher} higher in {consistent} of {len(result.families)} families "
-            f"and {result.tied} tied. Equivalence is refuted."
+            f"The difference is outside the pre-specified {threshold} margin, in "
+            f"{higher}'s favour, with {higher} higher in {consistent} of "
+            f"{len(result.families)} families and {result.tied} tied."
             + (
                 " This contrast changes two variables at once, so the difference "
                 "cannot be attributed to either alone. It was still observed, and "
@@ -385,7 +436,12 @@ def decide_equivalence(
         )
     )
     return {
-        "verdict": "equivalent" if equivalent else "not equivalent",
+        "verdict": "within margin" if within else "outside margin",
+        "basis": (
+            "Operational comparison against the pre-specified 0.25 margin. Not "
+            "a statistical equivalence test; no interval is computed and no "
+            "claim of equality is made."
+        ),
         "paired_mean_difference": difference,
         "magnitude": magnitude,
         "threshold": threshold,
@@ -426,6 +482,88 @@ def leave_one_family_out(
 
 
 # --- rate metrics ------------------------------------------------------------
+
+
+def citation_metrics(runs: Sequence[Path | str]) -> dict[str, dict[str, Any]]:
+    """Citation figures on the convention that already existed in this project.
+
+    ``scripts/summarise_arms.py`` established it before unsealing: restrict to
+    answers that make a claim, since an abstention cites nothing by design and
+    counting it measures refusal while calling the result citation validity;
+    then report each metric at question and group level through
+    ``aggregate``, with the group level as the unit for inference.
+
+    An earlier version of this module invented a different denominator, taking
+    the answers where ``citation_support`` happens to be defined and applying it
+    to validity as well. That is a narrower set, it moved every validity figure,
+    and it was chosen *after* the key was opened. The verdict on H3 is the same
+    either way, which is exactly why the change had to be undone rather than
+    kept: a denominator picked post-hoc is not made acceptable by not changing
+    the answer.
+
+    The common-eligibility variant is retained by ``common_eligibility_variant``
+    and reported as a labelled sensitivity analysis, not as the figure.
+    """
+    from .aggregate import aggregate
+    from ..verify.schema import ABSTENTION_TEXT
+
+    def makes_a_claim(record: Mapping[str, Any]) -> bool:
+        verification = record.get("verification") or {}
+        if "served_abstention" in verification:
+            return not verification["served_abstention"]
+        return str(record.get("answer") or "").strip() != ABSTENTION_TEXT
+
+    out: dict[str, dict[str, Any]] = {}
+    for directory in runs:
+        manifest, answers = read_run(directory)
+        arm = manifest["arm"]["arm"]
+        claiming = [r for r in answers if makes_a_claim(r)]
+        block: dict[str, Any] = {
+            "answers": len(answers),
+            "claim_making": len(claiming),
+            "abstentions_excluded": len(answers) - len(claiming),
+        }
+        for key, label in (
+            ("has_valid_citation_ids", "citation_validity"),
+            ("scoring.citation_support", "citation_support"),
+            ("scoring.citation_completeness", "citation_completeness"),
+        ):
+            result = aggregate(claiming, key)
+            block[label] = {
+                "question_level": result.question_level,
+                "group_level": result.group_level,
+                "groups": result.group_count,
+            }
+        block["support_below_validity_group_level"] = (
+            block["citation_support"]["group_level"]
+            < block["citation_validity"]["group_level"]
+        )
+        out[arm] = block
+    return out
+
+
+def common_eligibility_variant(rows: Iterable[Joined]) -> dict[str, dict[str, Any]]:
+    """Validity and support over the answers where both are defined.
+
+    A sensitivity analysis, and labelled as one. It answers a narrower question
+    than ``citation_metrics``: among answers whose citations could be checked
+    for content, how often were the identifiers also real? Reported so the
+    choice of denominator is visible rather than assumed, and never as the
+    headline figure.
+    """
+    rows = [r for r in rows if r.citation_support is not None]
+    out: dict[str, dict[str, Any]] = {}
+    for arm in sorted({r.arm for r in rows}):
+        subset = [r for r in rows if r.arm == arm]
+        validity = sum(1 for r in subset if r.has_valid_citation_ids) / len(subset)
+        support = sum(r.citation_support for r in subset) / len(subset)
+        out[arm] = {
+            "citation_validity": validity,
+            "citation_support": support,
+            "support_below_validity": support < validity,
+            "eligible_n": len(subset),
+        }
+    return out
 
 
 def rate_by_arm(
