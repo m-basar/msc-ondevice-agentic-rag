@@ -198,15 +198,39 @@ def main() -> int:
                 "--tag is required: an untagged run on the test split is named "
                 "exactly like a quality run"
             )
+        if args.split != "test":
+            problems.append(
+                f"--split must be 'test', not {args.split!r}. H5 and RQ4 are "
+                "stated over the test questions, and --split defaults to dev, "
+                "so a timing run would silently measure the wrong set"
+            )
+        if args.mock:
+            problems.append(
+                "--mock cannot be combined with a performance run: mock "
+                "timings measure the harness, not the model"
+            )
+        if set(args.arms) != {"B", "D"}:
+            problems.append(
+                "arms must be exactly B and D. H5 is a ratio of the two, and a "
+                f"run of one of them cannot produce it; got {sorted(args.arms)}"
+            )
         if not args.placement:
             problems.append("--placement is required (gpu or cpu)")
         if not args.hardware_condition:
             problems.append("--hardware-condition is required")
-        if set(args.arms) - {"B", "D"}:
-            problems.append(
-                "only arms B and D are in scope for H5; "
-                f"got {sorted(args.arms)}"
-            )
+
+        # A condition names a machine and a device together. Accepting
+        # pi5_cpu with GPU placement would record a Pi CPU-only result
+        # produced on a GPU, which is a false provenance block rather than a
+        # mistake in the numbers.
+        expected = {"laptop_gpu": "gpu", "laptop_cpu": "cpu", "pi5_cpu": "cpu"}
+        if args.hardware_condition and args.placement:
+            wanted = expected.get(args.hardware_condition)
+            if wanted and wanted != args.placement:
+                problems.append(
+                    f"--hardware-condition {args.hardware_condition} requires "
+                    f"--placement {wanted}, not {args.placement}"
+                )
         if problems:
             parser.error(
                 "performance-only run refused:\n  - " + "\n  - ".join(problems)
@@ -243,6 +267,23 @@ def main() -> int:
         # which RunWriter records verbatim in the manifest, so the device the
         # run actually used is in its own provenance.
         config._data.setdefault("generation", {}).update(config_overrides)
+
+    observed_placement = None
+    if args.performance_only and not args.mock:
+        # Ollama keeps a model resident, and a resident model keeps the
+        # placement it was loaded with. Without an eviction a cpu run started
+        # after a gpu run measures the gpu. Amendment 1.17.
+        from sme_assistant.common.llm_client import OllamaClient  # noqa: E402
+
+        probe = OllamaClient(config)
+        for model in {config.require("llm.generation_model"),
+                      config.require("llm.verification_model"),
+                      config.require("llm.embedding_model")}:
+            try:
+                probe.unload(model)
+            except Exception as exc:  # pragma: no cover - network dependent
+                print(f"  could not evict {model}: {exc}")
+        print(f"  evicted loaded models before a {args.placement} run")
     evaluation = load_evaluation_config()
     kb = load_knowledge_base(config.path("paths.kb_docs"))
     registry = load_conflicts(evaluation.path("conflicts"))
@@ -325,6 +366,20 @@ def main() -> int:
             ),
         )
         print(f"    -> {directories[name].name}\n")
+        if args.performance_only and not args.mock and observed_placement is None:
+            from sme_assistant.common.llm_client import OllamaClient  # noqa: E402
+
+            observed_placement = OllamaClient(config).observed_placement()
+            wanted_gpu = args.placement == "gpu"
+            if observed_placement["any_on_gpu"] != wanted_gpu:
+                print("\n  PLACEMENT MISMATCH\n"
+                      f"    requested: {args.placement}\n"
+                      f"    observed : {'gpu' if observed_placement['any_on_gpu'] else 'cpu'}\n"
+                      f"    loaded   : {observed_placement['models_loaded']}\n"
+                      "  The run is recorded but its condition is not what it "
+                      "claims. Do not report it.")
+                return 1
+            print(f"    placement confirmed: {args.placement}")
 
     # A performance run writes its own index. Overwriting latest_test.json
     # would repoint the name that every earlier note and script uses for the
@@ -340,10 +395,18 @@ def main() -> int:
         )
     # Repository-relative, so a run index written on Windows can be read on the
     # Pi. Absolute paths made the two machines unable to share a run index.
-    manifest.write_text(json.dumps(
-        {name: str(Path(path).relative_to(ROOT).as_posix())
-         for name, path in directories.items()}, indent=2
-    ), encoding="utf-8")
+    index_payload: dict[str, object] = {
+        name: str(Path(path).relative_to(ROOT).as_posix())
+        for name, path in directories.items()
+    }
+    if args.performance_only:
+        index_payload["_performance"] = {
+            "hardware_condition": args.hardware_condition,
+            "requested_placement": args.placement,
+            "observed_placement": observed_placement,
+            "split": args.split,
+        }
+    manifest.write_text(json.dumps(index_payload, indent=2), encoding="utf-8")
     print(f"Run index written to {manifest}")
     if args.performance_only:
         print("\nPerformance-only run. No answers were scored and none may be.")

@@ -190,9 +190,23 @@ class OllamaClient:
             throttled=(throttle or {}).get("now", {}).get("throttled") if throttle else None,
         )
 
-    def embed(self, text: str, *, model: str | None = None) -> list[float]:
+    #: Embeddings stay on the CPU. The project has always described them that
+    #: way, but until amendment 1.17 the embedding call posted no options at
+    #: all, so the device was whatever Ollama chose. On a performance run that
+    #: is not a detail: a "CPU-only" condition whose query embedding was
+    #: silently offloaded to the GPU is not the condition it claims to be.
+    EMBEDDING_OPTIONS: dict[str, Any] = {"num_gpu": 0}
+
+    def embed(self, text: str, *, model: str | None = None,
+              options: dict[str, Any] | None = None) -> list[float]:
         chosen = model or self.embedding_model
-        response = self._post("/api/embeddings", {"model": chosen, "prompt": text})
+        merged = dict(self.EMBEDDING_OPTIONS)
+        if options:
+            merged.update(options)
+        response = self._post(
+            "/api/embeddings",
+            {"model": chosen, "prompt": text, "options": merged},
+        )
         vector = response.get("embedding")
         if not vector:
             raise LLMError(f"embeddings returned nothing usable: {sorted(response)}")
@@ -200,13 +214,59 @@ class OllamaClient:
         return [float(v) for v in vector]
 
     def embed_batch(self, texts: Sequence[str], *,
-                    model: str | None = None) -> list[list[float]]:
+                    model: str | None = None,
+                    options: dict[str, Any] | None = None) -> list[list[float]]:
         """Ollama has no batch embedding endpoint, so this is a sequential loop.
 
         Kept as a method anyway so callers do not have to care, and so a future
         backend with real batching can be swapped in without touching them.
         """
-        return [self.embed(text, model=model) for text in texts]
+        return [self.embed(text, model=model, options=options) for text in texts]
+
+    # --- placement control, for performance runs ---------------------------
+
+    def unload(self, model: str | None = None) -> dict[str, Any]:
+        """Evict a model from memory so the next call reloads it where asked.
+
+        Ollama keeps a model resident after a call, and a resident model keeps
+        the placement it was loaded with. Switching a run from GPU to CPU
+        without an eviction therefore measures the *previous* placement, which
+        is the failure this repository has already documented once. Posting an
+        empty prompt with ``keep_alive: 0`` is the documented way to unload.
+        """
+        chosen = model or self.default_model
+        return self._post(
+            "/api/generate", {"model": chosen, "prompt": "", "keep_alive": 0}
+        )
+
+    def residency(self) -> list[dict[str, Any]]:
+        """What Ollama currently has loaded, and where.
+
+        ``/api/ps`` reports ``size`` and ``size_vram`` per loaded model. A model
+        with non-zero ``size_vram`` is on the GPU whatever the request asked
+        for, so this is the check that turns a requested placement into an
+        observed one.
+        """
+        request = urllib.request.Request(f"{self.base_url}/api/ps")
+        try:
+            with urllib.request.urlopen(request, timeout=self.timeout) as response:
+                payload = json.loads(response.read().decode("utf-8"))
+        except (TimeoutError, urllib.error.URLError, OSError, json.JSONDecodeError):
+            return []
+        return list(payload.get("models") or [])
+
+    def observed_placement(self) -> dict[str, Any]:
+        """Requested placement is a hope; this is what is actually loaded."""
+        loaded = self.residency()
+        on_gpu = [m for m in loaded if (m.get("size_vram") or 0) > 0]
+        return {
+            "models_loaded": [m.get("name") or m.get("model") for m in loaded],
+            "any_on_gpu": bool(on_gpu),
+            "vram_bytes": {
+                (m.get("name") or m.get("model")): m.get("size_vram", 0)
+                for m in loaded
+            },
+        }
 
     def describe_endpoint(self) -> dict[str, Any]:
         info = ollama_info(self.base_url)
@@ -291,12 +351,25 @@ class MockClient:
             options=dict(merged),
         )
 
-    def embed(self, text: str, *, model: str | None = None) -> list[float]:
+    EMBEDDING_OPTIONS: dict[str, Any] = {"num_gpu": 0}
+
+    def unload(self, model: str | None = None) -> dict[str, Any]:
+        return {"mock": True, "unloaded": model or self.default_model}
+
+    def residency(self) -> list[dict[str, Any]]:
+        return []
+
+    def observed_placement(self) -> dict[str, Any]:
+        return {"models_loaded": [], "any_on_gpu": False, "vram_bytes": {}}
+
+    def embed(self, text: str, *, model: str | None = None,
+              options: dict[str, Any] | None = None) -> list[float]:
         self.call_count += 1
         return _hashing_vector(text)
 
     def embed_batch(self, texts: Sequence[str], *,
-                    model: str | None = None) -> list[list[float]]:
+                    model: str | None = None,
+                    options: dict[str, Any] | None = None) -> list[list[float]]:
         return [self.embed(text, model=model) for text in texts]
 
     def describe_endpoint(self) -> dict[str, Any]:

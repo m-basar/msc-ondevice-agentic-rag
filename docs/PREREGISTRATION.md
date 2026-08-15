@@ -2628,3 +2628,123 @@ D to B. It cannot report answer quality, and it will not open a quality run.
 | Quality runs | closed list of four, enforced |
 | Hardware runs | permitted, performance-only, not yet executed |
 | Tests | 553 |
+
+---
+
+# Amendment 1.17 - 15 August 2026
+
+The pre-execution correction for the hardware runs. Written and committed
+**before** any hardware execution. No H1 to H4 verdict changes; nothing in this
+amendment touches the quality analysis, which was signed off at `be55077`.
+
+Three gaps were found by review of the code, not by looking at a timing result.
+There are no timing results.
+
+## 1.17.1 The runner gate was too weak to be the boundary
+
+`--performance-only` refused an untagged run and demanded a placement, and
+stopped there.
+
+* **It defaulted to the development split.** `--split` defaults to `dev`, so
+  the natural invocation would have measured 41 development questions while
+  reporting an H5 figure stated over the 68 test questions.
+* **It permitted a subset.** `set(args.arms) - {"B", "D"}` is satisfied by
+  running B alone. H5 is a ratio of two arms and one arm cannot produce it.
+* **It accepted contradictory conditions.** `--hardware-condition pi5_cpu` with
+  `--placement gpu` was allowed. That is not a wrong number; it is a false
+  provenance block, and worse than a missing one.
+* **It permitted `--mock`.** Mock timings measure the harness.
+
+All four are refused up front. The condition to placement mapping is explicit:
+`laptop_gpu` requires `gpu`, `laptop_cpu` and `pi5_cpu` require `cpu`.
+
+## 1.17.2 Placement was requested but never enforced or observed
+
+**Embeddings went without options.** `OllamaClient.embed` posted
+`{"model", "prompt"}` and no `options` block at all, so the query embedding ran
+wherever Ollama chose. The project has always described embeddings as CPU-only
+and the code did not implement it. A "CPU-only" condition whose query embedding
+was silently offloaded is not the condition it names. `EMBEDDING_OPTIONS` now
+pins `num_gpu: 0` on every embedding call, and a test asserts the posted
+payload.
+
+**Models were never evicted.** Ollama keeps a model resident after a call and a
+resident model keeps the placement it was loaded with. A CPU run started after a
+GPU run therefore measures the GPU. This repository has already documented
+Ollama's placement persistence once. `OllamaClient.unload` now evicts the
+generation, verification and embedding models before a performance run starts.
+
+**Residency was never checked.** `observed_placement` reads `/api/ps` and
+reports `size_vram` per loaded model, so requested placement becomes observed
+placement. A mismatch **aborts the run** rather than annotating it, and the
+observed value is written into the run index for the analyser to re-check
+independently.
+
+## 1.17.3 The timing report described Arm D wrongly
+
+Arm D replays Arm B's draft and then verifies it. `record["generation"]` on a D
+record therefore describes **the reused draft**, generated earlier on another
+machine by a different model. The analyser read only that field, so D's prefill,
+decode, load time, temperature and throttle state were Arm B's numbers under
+Arm D's name. The verifier's own figures sat unread in
+`verification_generation`.
+
+Corrected. `draft_stage` and `verifier_stage` are reported separately, with the
+model named in each. Wall clock remains the quantity for H5, because draft plus
+verification is what a user waits for, and that construction was already sound.
+
+Two smaller defects in the same file:
+
+* **`summary.json`'s end environment was ignored.** A Pi that began at 60
+  degrees and finished throttled at 85 was not one machine throughout, which is
+  why the environment is captured twice. Both ends are now reported.
+* **Unknown throttling was counted as false.** `throttled` is `None` where the
+  platform does not expose the counter, and folding that into "not throttled"
+  turns missing instrumentation into a clean thermal record. The three states
+  are now counted separately.
+
+## 1.17.4 H5 is stated over the Pi 5 and is now scored only there
+
+The analyser would have issued an H5 verdict for a laptop index. H5 names the
+platform, and prefill dominance differs between them. A laptop ratio is now
+reported as a descriptive RQ4 figure with `verdict: not applicable` and the
+reason attached.
+
+## 1.17.5 Independent validation before any number is reported
+
+The analyser no longer trusts the index. Before computing anything it checks
+that each run's manifest declares the arm the index claims, that the split is
+`test`, that each arm answered **68** questions, that the two arms answered the
+**same** question identifiers, that the provenance hashes agree across arms,
+that observed placement matches requested placement, and that **Arm D replayed
+Arm B's drafts**. Any failure refuses the report and writes a `_REJECTED` file
+instead.
+
+That last check matters most. Without the replay, B versus D on the Pi is not
+the comparison the frozen run made, and the ratio would answer a different
+question while looking identical.
+
+## 1.17.6 Tested before execution, not during it
+
+`tests/test_performance_boundary.py` covers the runner gate and the analyser
+directly: 23 tests over split, arms, mock, tag, condition and placement
+consistency, CPU-pinned embeddings, eviction and residency, draft against
+verifier stage separation, unknown throttling, both environments, and every
+validation failure above.
+
+None of this has run against a Pi. That is the point of testing it now: a defect
+found mid-run on a machine at several minutes per question costs an evening,
+and a defect found afterwards costs the result.
+
+## 1.17.7 State
+
+| | |
+|---|---|
+| H1 to H4 | unchanged, signed off at `be55077` |
+| Runner gate | test split, exactly B and D, no mock, condition matches placement |
+| Embeddings | pinned to CPU, asserted by test |
+| Placement | evicted, requested, observed, mismatch aborts |
+| Arm D metrics | draft and verifier stages reported separately |
+| H5 | scored only on `pi5_cpu` |
+| Hardware execution | still not run |
+| Tests | 576 |
