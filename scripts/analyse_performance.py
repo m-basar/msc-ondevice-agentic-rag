@@ -447,7 +447,7 @@ def stage(records: list[dict], key: str) -> dict:
     }
 
 
-def timings(answers: list[dict], manifest: dict, summary: dict) -> dict:
+def timings(*, answers: list[dict], manifest: dict, summary: dict) -> dict:
     draft = stage(answers, "generation")
     verifier = stage(answers, "verification_generation")
     return {
@@ -526,7 +526,13 @@ def main(argv: list[str] | None = None) -> int:
         "index": args.index,
         "hardware_condition": index_meta.get("hardware_condition"),
         "validation": validation,
-        "arms": {arm: timings(*runs[arm]) for arm in sorted(runs)},
+        # performance_run returns (manifest, answers, summary); timings takes
+        # (answers, manifest, summary). Unpacking with * silently transposed
+        # them. Amendment 1.24 names it by argument rather than by position.
+        "arms": {
+            arm: timings(answers=answers, manifest=manifest, summary=summary)
+            for arm, (manifest, answers, summary) in sorted(runs.items())
+        },
     }
 
     condition = report["hardware_condition"]

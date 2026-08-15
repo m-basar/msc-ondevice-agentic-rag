@@ -267,7 +267,7 @@ def test_arm_d_metrics_separate_the_draft_from_the_verifier(tmp_path):
     """
     directory = write_run(tmp_path, "d", "D", verifier=True, reused="b")
     manifest, answers, summary = analyse_performance.performance_run(directory)
-    block = analyse_performance.timings(answers, manifest, summary)
+    block = analyse_performance.timings(answers=answers, manifest=manifest, summary=summary)
 
     assert block["draft_stage"]["model"] == "llama3.2:3b"
     assert block["verifier_stage"]["model"] == "qwen2.5:3b"
@@ -280,7 +280,7 @@ def test_unknown_throttling_is_not_counted_as_not_throttled(tmp_path):
     """Missing instrumentation must not read as a clean thermal record."""
     directory = write_run(tmp_path, "d", "D", verifier=True, reused="b")
     manifest, answers, summary = analyse_performance.performance_run(directory)
-    block = analyse_performance.timings(answers, manifest, summary)
+    block = analyse_performance.timings(answers=answers, manifest=manifest, summary=summary)
 
     draft = block["draft_stage"]
     assert draft["throttled_unknown"] == 68
@@ -294,7 +294,7 @@ def test_both_environments_are_reported(tmp_path):
     started = [{"name": "llama3.2:3b", "size": 100, "size_vram": 0}]
     directory = write_run(tmp_path, "b", "B", loaded_start=started)
     manifest, answers, summary = analyse_performance.performance_run(directory)
-    block = analyse_performance.timings(answers, manifest, summary)
+    block = analyse_performance.timings(answers=answers, manifest=manifest, summary=summary)
     assert analyse_performance.loaded_models(block["environment_start"]) == started
     assert analyse_performance.loaded_models(block["environment_end"])
 
@@ -1177,3 +1177,83 @@ def test_polling_returns_the_complete_observed_model_list():
     assert result["cleared"] is True
     assert result["remaining"] == []
     assert "other:latest" in result["models_loaded"]
+
+
+# --- the success path, end to end. Amendment 1.24 ----------------------------
+
+
+def test_a_valid_index_produces_a_report_end_to_end(tmp_path, monkeypatch):
+    """The gap that let an argument-order bug reach a live run.
+
+    Every earlier test of ``main`` exercised the *rejection* path, which
+    returns before timings are computed. Nothing ran it through to a report, so
+    ``timings(*runs[arm])`` transposing manifest and answers was invisible
+    until the real index was analysed.
+    """
+    payload, _, _ = build_index(tmp_path)
+    index_path = tmp_path / "latest_test_performance_pi5_cpu.json"
+    index_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    monkeypatch.setattr(analyse_performance, "ROOT", tmp_path)
+    monkeypatch.setattr(
+        analyse_performance, "load_config",
+        lambda: type("C", (), {"path": staticmethod(lambda _k: tmp_path)})(),
+    )
+
+    out = tmp_path / "analysis"
+    assert analyse_performance.main(
+        ["--index", index_path.name, "--out", str(out)]
+    ) == 0
+
+    report = json.loads(
+        (out / "performance_latest_test_performance_pi5_cpu.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert report["validation"]["valid"] is True
+    assert set(report["arms"]) == {"B", "D"}
+    # The transposition would have made these empty or wrong.
+    assert report["arms"]["B"]["questions"] == 68
+    assert report["arms"]["D"]["draft_stage"]["model"] == "llama3.2:3b"
+    assert report["arms"]["D"]["verifier_stage"]["model"] == "qwen2.5:3b"
+    assert report["arms"]["D"]["has_verifier_stage"] is True
+    assert report["H5"]["verdict"] in {"supported", "not supported"}
+
+
+def test_a_laptop_index_gets_no_h5_verdict_end_to_end(tmp_path, monkeypatch):
+    """H5 names the Pi. A laptop ratio is descriptive under RQ4."""
+    payload, _, _ = build_index(
+        tmp_path,
+        b_kwargs={"condition": "laptop_cpu"},
+        d_kwargs={"condition": "laptop_cpu"},
+        hardware_condition="laptop_cpu",
+    )
+    index_path = tmp_path / "latest_test_performance_laptop_cpu.json"
+    index_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    monkeypatch.setattr(analyse_performance, "ROOT", tmp_path)
+    monkeypatch.setattr(
+        analyse_performance, "load_config",
+        lambda: type("C", (), {"path": staticmethod(lambda _k: tmp_path)})(),
+    )
+
+    out = tmp_path / "analysis"
+    assert analyse_performance.main(
+        ["--index", index_path.name, "--out", str(out)]
+    ) == 0
+    report = json.loads(
+        (out / "performance_latest_test_performance_laptop_cpu.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert report["H5"]["verdict"] == "not applicable"
+    assert "pi5_cpu" in report["H5"]["verdict_basis"]
+
+
+def test_timings_cannot_be_called_positionally():
+    """Keyword-only, so the transposition cannot recur."""
+    import inspect
+
+    signature = inspect.signature(analyse_performance.timings)
+    assert all(p.kind is inspect.Parameter.KEYWORD_ONLY
+               for p in signature.parameters.values())

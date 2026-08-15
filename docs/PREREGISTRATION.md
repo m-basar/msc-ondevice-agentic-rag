@@ -3366,3 +3366,70 @@ it was trying to say.
 | Hardware runs | 6, unchanged |
 | H5 | **still unread** |
 | Tests | 639 |
+
+---
+
+# Amendment 1.24 - 15 August 2026
+
+Two entries: the live preflight answered the question 1.22 left open, and the
+first real invocation of the analyser hit a defect no test had covered. No
+latency has been read. `results/analysis` still holds only the two quality
+files.
+
+## 1.24.1 The unload API works. The question is closed by measurement
+
+`preflight_placement.py --placement gpu` at 08:37:23, retained at
+`results/diagnostics/20260815_083738_preflight_gpu.json`:
+
+| | |
+|---|---|
+| Placement, all three models | confirmed, `llama` and `qwen` on GPU, `nomic-embed-text` on CPU |
+| Per-model unload | cleared in 0.025 s, 0.001 s and 0.045 s |
+| Final cleanup | cleared in **10.36 s** over **40 successful observations** |
+| Retention in force | `keep_alive: "10m"`, stated in the request |
+| Exit | nothing loaded, no cleanup errors |
+
+Amendment 1.22.2 declined to conclude that the earlier failure was a race,
+because an empty `ollama ps` some minutes later was equally consistent with
+natural expiry. That ambiguity is now removed. Under a **stated ten-minute
+retention**, the models disappeared in 10.36 seconds. Expiry cannot explain
+that, so the unload requests are effective and the 08:01:59 failure was a
+premature single observation, exactly as the polling implementation assumed.
+
+The failed diagnostic and the successful one are both retained. The pair is the
+evidence.
+
+## 1.24.2 The analyser transposed two arguments, and no test covered the path
+
+The first real invocation raised `AttributeError: 'str' object has no attribute
+'get'`. `performance_run` returns `(manifest, answers, summary)`; `timings`
+takes `(answers, manifest, summary)`; `main` called `timings(*runs[arm])`. The
+manifest was iterated as though it were the answer list, yielding its keys.
+
+**No test caught it because every earlier test of `main` exercised the
+rejection path**, which returns before timings are computed. The success path
+had unit tests on `timings` itself, called correctly, and integration tests that
+never reached it. That is the gap, not the transposition.
+
+Three changes:
+
+* Arguments are passed **by name** at the call site.
+* `timings` is **keyword-only**, so position cannot transpose them again, and a
+  test asserts the signature.
+* Two end-to-end tests run `main` through to a written report: one Pi index
+  reaching an H5 verdict, one laptop index correctly reaching `not applicable`.
+
+Nothing about the stored runs changed. The bug was in reading them, it raised
+rather than producing a wrong number, and it was found on the first real
+invocation because that was the first time the success path ran at all.
+
+## 1.24.3 State
+
+| | |
+|---|---|
+| Unload API | **confirmed effective**, 10.36 s under a 10 m retention |
+| 1.22.2's open question | closed by measurement |
+| Analyser success path | fixed, keyword-only, end-to-end tested |
+| Hardware runs | 6, unchanged |
+| H5 | **still unread** |
+| Tests | 642 |
