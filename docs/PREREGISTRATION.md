@@ -3433,3 +3433,126 @@ invocation because that was the first time the success path ran at all.
 | Hardware runs | 6, unchanged |
 | H5 | **still unread** |
 | Tests | 642 |
+
+---
+
+# Amendment 1.25 - 19 August 2026
+
+**Written before either figure exists.** Two of the five primary metrics in
+section 4 were never aggregated. This amendment records the defect, fixes the
+aggregation rule in advance, and commits to reporting both results whichever way
+they fall. No question, judgement, run or verdict is altered by anything here.
+
+## 1.25.1 Two preregistered primary metrics were never computed
+
+Section 4 names five primary metrics. Three reach the reported results:
+conflict handling through H1 and H2, false-conflict rate through H2c, and
+appropriate abstention through H4. Two do not.
+
+| Metric | Section 4 definition | Where the per-item data already sit | Aggregated |
+|---|---|---|---|
+| **Answer correctness** | Manual, blinded, three-point, against `required_claims` and `forbidden_claims`. Applies to factual, partial and synthesis questions. | `Joined.score`, in `results/analysis/joined.jsonl` | **no** |
+| **Superseded citation rate** | Fraction of answers citing a withdrawn document as authority. Applies to supersession families. | `Joined.cited_superseded`, same file | **no** |
+
+Both were scored. Answer correctness is the same three-point rubric the reviewer
+applied to all 272 items under the blinding of amendment 1.13, and its
+reliability is the same 58 of 58 groups reported in 1.14.1. `cited_superseded`
+is read from the run record by `analysis.join` and has been written to
+`joined.jsonl` since the file first existed.
+
+**The failure is in the aggregation layer only.** `analysis.py` defines
+`CORRECTNESS` at line 58 and `scripts/analyse_results.py` imports it at line 30
+and never refers to it again. An unused import is the whole of the evidence:
+the denominator was declared, and the block that would have used it was never
+written. `cited_superseded` is captured per item and summed nowhere.
+
+## 1.25.2 Why this is a defect and not a choice
+
+Recorded plainly, because the distinction is the only thing that makes the fix
+admissible.
+
+* **Both metrics were preregistered**, on 8 August, in the table this amendment
+  quotes. Neither is being introduced now because a result was wanted from it.
+* **The raw per-item data were frozen before the key was opened.** Both fields
+  come from the sealed judgement log and the four frozen quality runs. Nothing
+  is being measured now; something already measured is being counted.
+* **The omission was found at write-up**, by reading section 4 against
+  `hypotheses.json` and finding two rows with no output, not by inspecting a
+  number and preferring a different analysis.
+* **No question, score, flag, run or existing verdict changes.** H1 to H5 stand
+  exactly as signed off at `be55077` and `7a9a778`.
+
+Leaving them out would be selective reporting against this study's own
+protocol. Computing them without committing the code, the tests and the
+generated output would be worse, because the figures would not be reproducible
+from the repository.
+
+## 1.25.3 The aggregation rule, fixed before the numbers exist
+
+No new statistical machinery. Both aggregations reuse the helpers already
+committed and tested for H1 to H4, so that neither can be tuned by choosing a
+different calculation.
+
+**Answer correctness.**
+
+1. Denominator: `select(rows, CORRECTNESS)`, that is the questions whose
+   `expected_behaviour` is `answer_directly` or `answer_and_flag_gap`. On the
+   test split that is **13 questions in 12 groups per arm**, 52 items in total.
+   The set is a property of the frozen question set and is not chosen here.
+2. Scale: the three-point rubric as recorded, 2 correct, 1 partial, 0 wrong.
+3. Unit: **the group**, per section 5. Reported through `both_levels`, giving
+   the per-group table and the per-question mean, exactly as H1 and H2 report
+   their levels. Eleven of the twelve groups are single questions, so the two
+   levels will be close; both are reported so that is visible rather than
+   assumed.
+
+**Superseded citation rate.**
+
+1. Denominator: `select(rows, SUPERSESSION)`, the four `version_supersession`
+   families, **12 questions in 4 families per arm**.
+2. An answer counts as a hit when `cited_superseded > 0`, that is when it cited
+   at least one withdrawn document. Section 4 defines the metric over answers,
+   so the count is per answer and not per citation.
+3. Unit: reported through `rate_by_arm`, which gives the question-level rate
+   with the family count stated alongside, plus families with any hit and
+   families where every question hit. The family-level figure is families with
+   **any** false citation, matching the correction amendment 1.16.2 made to H2c
+   for the same reason: a family reported as clean because only two of its three
+   questions failed would be misleading.
+
+**Neither metric receives a verdict.** Both are descriptive primary metrics, not
+hypotheses. Section 3 states no prediction over either, so the section 5
+decision rule does not apply and is not applied. Attaching a threshold to them
+now would be inventing a test after the data, which is the exact freedom this
+document exists to remove. Superseded citation rate is the direct measurement
+that motivates H1; H1 remains the hypothesis, decided as already reported.
+
+**The CONF-04 sensitivity does not reach either metric.** It is confined to
+`asserts_conflict`, and neither aggregation reads that field.
+
+## 1.25.4 Committed in both directions
+
+Declared before the figures are generated, so it cannot be renegotiated after:
+
+* **Both results are reported in the dissertation whichever way they fall**,
+  including an answer correctness figure that favours a baseline over the
+  contribution, and including a superseded citation rate that does not separate
+  Arm A from the rest.
+* The aggregation code, its tests and the regenerated `hypotheses.json` are
+  committed together.
+* `hypotheses.json` is regenerated by the same script from the same read-only
+  inputs. Every existing H1 to H5 figure must come back byte-identical; only the
+  new section may differ. If any existing figure moves, that is a defect in this
+  change and the change is withdrawn, not the earlier result.
+
+## 1.25.5 State
+
+| | |
+|---|---|
+| Metrics affected | answer correctness, superseded citation rate |
+| Nature of the defect | aggregation code, `CORRECTNESS` imported and unused |
+| Per-item data | already frozen, unchanged |
+| Rule | fixed above, before computation |
+| Verdicts attached | **none**; both are descriptive |
+| H1 to H5 | unchanged, must regenerate byte-identical |
+| Questions, scores, runs | unchanged |
