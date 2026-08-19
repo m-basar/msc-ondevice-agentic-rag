@@ -21,6 +21,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
+from statistics import mean
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
@@ -41,6 +42,7 @@ from sme_assistant.evaluation.analysis import (  # noqa: E402
     family_table,
     join,
     leave_one_family_out,
+    primary_metrics,
     question_table,
     quality_run_directories,
     rate_by_arm,
@@ -363,6 +365,13 @@ def main(argv: list[str] | None = None) -> int:
         ),
     }
 
+    # --- primary metrics carrying no hypothesis ------------------------------
+    # Amendment 1.25. Section 4 names five primary metrics. Three reach the
+    # hypotheses above; these two were scored, frozen and then never counted.
+    # The rule lives in analysis.primary_metrics, where it is tested, and
+    # neither metric takes a verdict.
+    report["primary_metrics"] = primary_metrics(rows)
+
     (out / "hypotheses.json").write_text(
         json.dumps(report, indent=2), encoding="utf-8", newline="\n"
     )
@@ -408,6 +417,25 @@ def main(argv: list[str] | None = None) -> int:
         else:
             print(f"    -> {block['verdict']}")
         print()
+
+    primary = report["primary_metrics"]
+    print("  Primary metrics carrying no hypothesis (descriptive, amendment 1.25):")
+    accuracy = primary["answer_correctness"]
+    print(f"    answer correctness, {accuracy['questions_per_arm']} questions in "
+          f"{accuracy['groups']} groups per arm, three-point scale:")
+    for arm, value in sorted(accuracy["by_question"].items()):
+        group_value = mean(
+            [t[arm] for t in accuracy["by_group"].values() if arm in t]
+        )
+        print(f"      {arm}  question {value:.4f}   group {group_value:.4f}")
+    superseded = primary["superseded_citation_rate"]
+    print(f"    superseded citation rate, {superseded['families']} "
+          "supersession families per arm:")
+    for arm, value in sorted(superseded["by_arm"].items()):
+        print(f"      {arm}  {value['hits']}/{value['questions']} answers "
+              f"({value['rate']:.4f})   families with any "
+              f"{value['groups_any_hit']}/{value['groups']}")
+    print()
 
     print(f"  written to {out}")
     return 0

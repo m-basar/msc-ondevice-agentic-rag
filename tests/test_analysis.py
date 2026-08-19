@@ -29,6 +29,7 @@ from sme_assistant.evaluation.analysis import (
     family_table,
     join,
     leave_one_family_out,
+    primary_metrics,
     question_table,
     quality_run_directories,
     rate_by_arm,
@@ -39,12 +40,12 @@ from sme_assistant.evaluation.question_set import Question, QuestionSet
 
 
 def row(arm, group, score, *, behaviour="prefer_stricter_and_escalate",
-        qid=None, abstained=False, conflict=False, item=1):
+        qid=None, abstained=False, conflict=False, item=1, superseded=0):
     return Joined(
         item=item, arm=arm, question_id=qid or f"{group}-Q1", group_id=group,
         category="conflict", expected_behaviour=behaviour, score=score,
         asserts_conflict=conflict, abstained=abstained, uncertain=False,
-        arm_identified=False,
+        arm_identified=False, cited_superseded=superseded,
     )
 
 
@@ -434,3 +435,120 @@ def test_the_margin_verdict_does_not_claim_equivalence():
     assert "equivalen" not in decision["reading"].lower()
     assert "not a statistical equivalence test" in decision["basis"].lower()
     assert "not the same as having been shown to be equal" in decision["reading"]
+
+
+# --- the two primary metrics that carry no hypothesis, amendment 1.25 --------
+
+
+def correctness_and_supersession_rows():
+    """A minimal set spanning both denominators plus material in neither."""
+    rows = []
+    for arm in ("A", "D"):
+        # Correctness: two behaviours, one of them a two-question group.
+        rows.append(row(arm, "FACT-1", 2, behaviour="answer_directly"))
+        rows.append(row(arm, "FACT-2", 0, behaviour="answer_directly"))
+        rows.append(row(arm, "PART-1", 2, behaviour="answer_and_flag_gap",
+                        qid="PART-1-Q1"))
+        rows.append(row(arm, "PART-1", 0, behaviour="answer_and_flag_gap",
+                        qid="PART-1-Q2"))
+        # Supersession, scored on the rubric and carrying withdrawn citations.
+        rows.append(row(arm, "CONF-02", 1, behaviour="cite_current_only",
+                        superseded=3 if arm == "A" else 0))
+        rows.append(row(arm, "CONF-03", 1, behaviour="cite_current_only",
+                        superseded=1 if arm == "A" else 0))
+        # In neither denominator, and must not leak into either.
+        rows.append(row(arm, "GAP-1", 2, behaviour="abstain"))
+        rows.append(row(arm, "CONF-11", 1))
+    return rows
+
+
+def test_neither_primary_metric_carries_a_verdict():
+    """Section 3 states no prediction over either, so the section 5 rule does
+    not apply. A threshold bolted on later would be a test invented after the
+    data, which is what the pre-registration exists to prevent.
+
+    The check is over keys rather than over the serialised text, because the
+    prose in this block has to be free to say the word "verdict" in order to
+    state that there is not one.
+    """
+    report = primary_metrics(correctness_and_supersession_rows())
+
+    def keys(node):
+        if isinstance(node, dict):
+            for key, value in node.items():
+                yield key
+                yield from keys(value)
+
+    found = {k for k in keys(report)}
+    for banned in ("verdict", "threshold", "direction", "direction_required",
+                   "effect_criterion_met", "decision", "decisions"):
+        assert banned not in found, banned
+    assert "no verdict, no threshold, no direction criterion" in report["basis"]
+
+
+def test_answer_correctness_uses_only_its_two_behaviours():
+    """Abstention and conflict questions are scored on the same three-point
+    scale, so a denominator taken from the score field rather than the
+    behaviour would silently swallow them."""
+    report = primary_metrics(correctness_and_supersession_rows())
+    accuracy = report["answer_correctness"]
+    assert accuracy["questions_per_arm"] == 4
+    assert accuracy["groups"] == 3
+    assert set(accuracy["by_group"]) == {"FACT-1", "FACT-2", "PART-1"}
+    # A: 2, 0, 2, 0 over questions; the two-question group averages to 1.
+    assert accuracy["by_question"]["A"] == pytest.approx(1.0)
+    assert accuracy["by_group"]["PART-1"]["A"] == pytest.approx(1.0)
+
+
+def test_correctness_is_reported_at_both_levels_because_they_differ():
+    """Eleven of the twelve real groups are single questions, so the two levels
+    nearly coincide. Reporting both is what makes that visible rather than
+    assumed."""
+    rows = [
+        row("A", "FACT-1", 2, behaviour="answer_directly"),
+        row("A", "PART-1", 0, behaviour="answer_and_flag_gap", qid="PART-1-Q1"),
+        row("A", "PART-1", 0, behaviour="answer_and_flag_gap", qid="PART-1-Q2"),
+    ]
+    accuracy = primary_metrics(rows + [
+        row("A", "CONF-02", 1, behaviour="cite_current_only"),
+    ])["answer_correctness"]
+    # Question level 2/3 = 0.667; group level (2 + 0) / 2 = 1.0.
+    assert accuracy["by_question"]["A"] == pytest.approx(2 / 3)
+    group_mean = sum(t["A"] for t in accuracy["by_group"].values()) / 2
+    assert group_mean == pytest.approx(1.0)
+
+
+def test_a_superseded_citation_counts_the_answer_once_not_the_citations():
+    """Section 4 states the metric over answers. Counting citations would let
+    one badly cited answer outweigh three clean ones."""
+    report = primary_metrics(correctness_and_supersession_rows())
+    superseded = report["superseded_citation_rate"]["by_arm"]
+    # Arm A cited withdrawn documents in both answers, three times in one.
+    assert superseded["A"]["hits"] == 2
+    assert superseded["A"]["questions"] == 2
+    assert superseded["A"]["rate"] == pytest.approx(1.0)
+    assert superseded["D"]["hits"] == 0
+
+
+def test_the_family_figure_is_families_with_any_false_citation():
+    """A family reported as clean because only two of its three questions cited
+    a withdrawn document would be misleading. This is the correction amendment
+    1.16.2 made to H2c, applied here for the same reason."""
+    rows = [
+        row("A", "CONF-02", 1, behaviour="cite_current_only", qid="CONF-02-Q1",
+            superseded=1),
+        row("A", "CONF-02", 1, behaviour="cite_current_only", qid="CONF-02-Q2",
+            superseded=0),
+        row("A", "FACT-1", 2, behaviour="answer_directly"),
+    ]
+    superseded = primary_metrics(rows)["superseded_citation_rate"]["by_arm"]["A"]
+    assert superseded["groups_any_hit"] == 1
+    assert superseded["groups_all_hit"] == 0
+
+
+def test_a_missing_denominator_is_an_error_not_an_empty_metric():
+    """An empty table printed as a result reads as a measurement of zero."""
+    with pytest.raises(AnalysisError, match="answer-correctness"):
+        primary_metrics([row("A", "CONF-02", 1, behaviour="cite_current_only")])
+    with pytest.raises(AnalysisError, match="supersession"):
+        primary_metrics([row("A", "FACT-1", 2, behaviour="answer_directly")])

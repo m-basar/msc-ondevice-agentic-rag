@@ -897,5 +897,137 @@
     "self_reported_unblinding": 0,
     "items_asked": 266,
     "note": "Not evidence that the blinding held; see amendments 1.13.4 and 1.14.5. Thirteen items were structurally identifiable regardless."
+  },
+  "primary_metrics": {
+    "basis": "Section 4 primary metrics that carry no hypothesis. Descriptive: no verdict, no threshold, no direction criterion. The rule was fixed in amendment 1.25.3 before either figure was computed.",
+    "answer_correctness": {
+      "definition": "Manual, blinded, three-point rubric against required_claims and forbidden_claims. 2 correct, 1 partial, 0 wrong.",
+      "denominator": "expected_behaviour in ('answer_directly', 'answer_and_flag_gap')",
+      "unit": "group, per section 5; question level reported alongside",
+      "by_question": {
+        "A": 1.6153846153846154,
+        "B": 1.5384615384615385,
+        "C": 1.4615384615384615,
+        "D": 1.0769230769230769
+      },
+      "by_group": {
+        "FACT-account-hold": {
+          "A": 2.0,
+          "B": 2.0,
+          "C": 2.0,
+          "D": 0.0
+        },
+        "FACT-contractor-insurance": {
+          "A": 2.0,
+          "B": 2.0,
+          "C": 2.0,
+          "D": 2.0
+        },
+        "FACT-damaged-report-window": {
+          "A": 2.0,
+          "B": 2.0,
+          "C": 2.0,
+          "D": 2.0
+        },
+        "FACT-forklift-authorisation": {
+          "A": 2.0,
+          "B": 2.0,
+          "C": 2.0,
+          "D": 2.0
+        },
+        "FACT-forklift-preuse": {
+          "A": 2.0,
+          "B": 2.0,
+          "C": 2.0,
+          "D": 0.0
+        },
+        "FACT-payment-terms": {
+          "A": 2.0,
+          "B": 2.0,
+          "C": 2.0,
+          "D": 2.0
+        },
+        "FACT-refund-method": {
+          "A": 2.0,
+          "B": 2.0,
+          "C": 2.0,
+          "D": 2.0
+        },
+        "FACT-written-warning-duration": {
+          "A": 2.0,
+          "B": 2.0,
+          "C": 2.0,
+          "D": 0.0
+        },
+        "SYN-damaged-order-end-to-end": {
+          "A": 1.0,
+          "B": 1.0,
+          "C": 1.0,
+          "D": 1.0
+        },
+        "SYN-faulty-warranty-return": {
+          "A": 1.0,
+          "B": 0.0,
+          "C": 0.0,
+          "D": 0.0
+        },
+        "SYN-new-trade-customer": {
+          "A": 1.0,
+          "B": 1.0,
+          "C": 1.0,
+          "D": 1.0
+        },
+        "grievance procedure": {
+          "A": 1.0,
+          "B": 1.0,
+          "C": 0.5,
+          "D": 1.0
+        }
+      },
+      "groups": 12,
+      "questions_per_arm": 13,
+      "reliability": "Same rubric, reviewer and session as the conflict metric: 58 of 58 duplicate groups agreed, amendment 1.14.1, under the partial blinding of amendment 1.13."
+    },
+    "superseded_citation_rate": {
+      "definition": "Fraction of answers citing at least one withdrawn document as authority. Counted per answer, not per citation, because section 4 states the metric over answers.",
+      "denominator": "expected_behaviour in ('cite_current_only',)",
+      "unit": "question-level rate with the family count stated; the family-level figure is families with any false citation, matching the correction amendment 1.16.2 made to H2c",
+      "by_arm": {
+        "A": {
+          "hits": 6,
+          "questions": 12,
+          "rate": 0.5,
+          "groups": 4,
+          "groups_all_hit": 2,
+          "groups_any_hit": 2
+        },
+        "B": {
+          "hits": 2,
+          "questions": 12,
+          "rate": 0.16666666666666666,
+          "groups": 4,
+          "groups_all_hit": 0,
+          "groups_any_hit": 2
+        },
+        "C": {
+          "hits": 0,
+          "questions": 12,
+          "rate": 0.0,
+          "groups": 4,
+          "groups_all_hit": 0,
+          "groups_any_hit": 0
+        },
+        "D": {
+          "hits": 1,
+          "questions": 12,
+          "rate": 0.08333333333333333,
+          "groups": 4,
+          "groups_all_hit": 0,
+          "groups_any_hit": 1
+        }
+      },
+      "families": 4,
+      "relation_to_H1": "This is the measurement that motivates H1. H1 remains the hypothesis and is decided under the section 5 rule; nothing here revisits it."
+    }
   }
 }

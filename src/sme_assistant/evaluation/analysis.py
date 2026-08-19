@@ -566,6 +566,86 @@ def common_eligibility_variant(rows: Iterable[Joined]) -> dict[str, dict[str, An
     return out
 
 
+def primary_metrics(rows: Iterable[Joined]) -> dict[str, Any]:
+    """The two section 4 primary metrics that carry no hypothesis.
+
+    Amendment 1.25. Answer correctness and superseded citation rate were both
+    preregistered, both scored, and both frozen into ``joined.jsonl`` before the
+    key was opened. Neither was ever aggregated: ``CORRECTNESS`` was imported by
+    the analysis script and never referred to again, and ``cited_superseded``
+    was written per item and summed nowhere. That is a defect in this layer, not
+    a decision about what to report, and leaving it standing would be selective
+    reporting against the study's own protocol.
+
+    **Neither metric takes a verdict.** Section 3 states no prediction over
+    either, so the section 5 decision rule does not apply. Attaching a threshold
+    now would be inventing a test after the data, which is the freedom the
+    pre-registration exists to remove. Superseded citation rate is the
+    measurement that motivates H1; H1 remains the hypothesis and is decided
+    elsewhere.
+
+    Both aggregations reuse the helpers already tested for H1 to H4, so no
+    calculation is chosen here either.
+    """
+    rows = list(rows)
+    correctness = select(rows, CORRECTNESS)
+    if not correctness:
+        raise AnalysisError(
+            "no answer-correctness questions found; expected the questions "
+            "whose expected_behaviour is answer_directly or answer_and_flag_gap"
+        )
+    superseded = select(rows, SUPERSESSION)
+    if not superseded:
+        raise AnalysisError(
+            "no supersession questions found; expected the questions whose "
+            "expected_behaviour is cite_current_only"
+        )
+    return {
+        "basis": (
+            "Section 4 primary metrics that carry no hypothesis. Descriptive: "
+            "no verdict, no threshold, no direction criterion. The rule was "
+            "fixed in amendment 1.25.3 before either figure was computed."
+        ),
+        "answer_correctness": {
+            "definition": (
+                "Manual, blinded, three-point rubric against required_claims "
+                "and forbidden_claims. 2 correct, 1 partial, 0 wrong."
+            ),
+            "denominator": f"expected_behaviour in {CORRECTNESS!r}",
+            "unit": "group, per section 5; question level reported alongside",
+            "by_question": question_table(correctness),
+            "by_group": family_table(correctness),
+            "groups": len({r.group_id for r in correctness}),
+            "questions_per_arm": len(correctness) // len({r.arm for r in correctness}),
+            "reliability": (
+                "Same rubric, reviewer and session as the conflict metric: 58 "
+                "of 58 duplicate groups agreed, amendment 1.14.1, under the "
+                "partial blinding of amendment 1.13."
+            ),
+        },
+        "superseded_citation_rate": {
+            "definition": (
+                "Fraction of answers citing at least one withdrawn document as "
+                "authority. Counted per answer, not per citation, because "
+                "section 4 states the metric over answers."
+            ),
+            "denominator": f"expected_behaviour in {SUPERSESSION!r}",
+            "unit": (
+                "question-level rate with the family count stated; the "
+                "family-level figure is families with any false citation, "
+                "matching the correction amendment 1.16.2 made to H2c"
+            ),
+            "by_arm": rate_by_arm(superseded, "cited_superseded"),
+            "families": len({r.group_id for r in superseded}),
+            "relation_to_H1": (
+                "This is the measurement that motivates H1. H1 remains the "
+                "hypothesis and is decided under the section 5 rule; nothing "
+                "here revisits it."
+            ),
+        },
+    }
+
+
 def rate_by_arm(
     rows: Iterable[Joined], field_name: str
 ) -> dict[str, dict[str, Any]]:
