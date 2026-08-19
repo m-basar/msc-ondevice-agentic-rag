@@ -1,0 +1,107 @@
+# Chapter 3 reconciliation note
+
+**19 August 2026.** Chapter 4 was written against `docs/PREREGISTRATION.md` and
+the committed analysis outputs. `Methodology_DRAFT.rtf`, dated 16 July, describes
+an earlier design that the experiment did not follow. This note lists every
+claim that no longer matches, so Chapter 3 can be rewritten before Chapter 5.
+
+Nothing here is a defect in the experiment. The draft simply predates
+amendments 1.1 to 1.25, and the design moved a long way under them.
+
+## Serious: the draft rules out the method that was used
+
+**Grading.** Section 3.5 states that grading is automatic against gold keys,
+and gives two reasons for rejecting manual judging: infeasibility at scale, and
+the circularity of using a language model to judge language-model output. The
+study's **primary** metrics are manual, blinded and three-point: conflict
+handling and answer correctness both. Automatic citation metrics are secondary.
+The reasoning in the draft is sound against *model-based* judging, which the
+study also does not use, but as written it excludes the reviewer-based scoring
+that produced the headline results.
+
+Chapter 3 must instead describe: the three-point rubric, the blinding procedure
+(`evaluation.run_writer.write_review_sheet`), the intra-rater reliability
+measurement, the abstention re-pass, and the single-reviewer limitation.
+
+**Research questions.** The draft answers the RQ1 to RQ4 of
+`RESEARCH_FRAMEWORK.md` (model comparison, hallucination reduction, calibration,
+edge feasibility). The pre-registration states a different RQ1 to RQ4
+(verifiable citations, conflicting evidence beyond metadata, abstention,
+latency and thermal cost on the Pi). Chapter 4 answers the second set. One set
+has to go, and it cannot be the one the experiment was run against.
+
+**Pre-registration absent.** The draft does not mention the pre-registration,
+the decision rule of section 5, the tuning and reported split enforced in code,
+the stopping rules, or the 25 amendments. These are the strongest
+methodological features of the project and currently appear nowhere in the
+dissertation.
+
+## Design described but not built
+
+**Two arms, not four.** Section 3.3 describes a verified arm and a baseline arm
+differing in query analysis, refusal gate, verification and flagging. The
+experiment ran four arms, A to D, differing in retrieval mode and evidence
+format as well as verification, forming a tree rooted at B. Arm C, the
+metadata-filter baseline, is the arm that makes the result honest and has no
+counterpart in the draft at all.
+
+**Confidence flagging.** Section 3.3 describes a weighted score (support 0.60,
+retrieval 0.25, coverage 0.15), a contradiction penalty of 0.4, thresholds of
+0.70 and 0.45 mapping to HIGH, MEDIUM and LOW, and an answer-relevance cap.
+**None of these values appears anywhere in the source.** They survive in
+`config.json` as a dead block. What the runs used is the categorical policy in
+`verification.confidence`: a verdict maps to a confidence level directly. The
+whole paragraph needs rewriting against the code.
+
+**Calibration experiment.** Section 3.5 describes Experiment 3 as expected
+calibration error over ten bins with reliability diagrams. No calibration
+analysis exists in `results/`. RQ3 as executed is abstention, tested by H4.
+
+**Model comparison.** Section 3.3 names three candidate generation models and
+section 3.5 makes comparing them Experiment 1. No model comparison appears in
+the reported results. `llama3.2:3b` generates in every arm; `qwen2.5:3b`
+verifies in Arm D only, and was chosen by the diagnostic protocol of amendment
+1.10, not by a comparison experiment. `config.json` lists five candidates, and
+`phi3:mini` rather than Phi-3.5-mini.
+
+**Refusal gate.** Section 3.3 says the system refuses when the best retrieval
+similarity falls below 0.32. The threshold is 0.30 and, per amendment 1.3.2, it
+refuses nothing: the answerable and unanswerable score distributions overlap
+completely, so no threshold separates them. Abstention is the verification
+layer's job, which is what H4 was stated to test. The draft describes a gate
+that does not fire.
+
+**Abstention text.** Section 3.3 attributes the refusal sentence to the
+generator. Amendment 1.7.6 moved it to a fixed template written in source and
+applied by the verification layer. That change is also what defeated the
+blinding on thirteen items (amendment 1.13), so it has to be described
+correctly for the limitation to make sense.
+
+## Figures to update
+
+| Section | Draft says | Actual |
+|---|---|---|
+| 3.4 | 32 documents | **38** documents, 141 chunks |
+| 3.4 | 8 categories, counts given | recount against `results/corpus_manifest.json`, which is itself stale at 138 chunks |
+| 3.5 | 60 questions: 30 answerable, 15 partial, 15 unanswerable | **109** questions in 53 groups; reported test split **68** in **32** groups |
+| 3.5 | three categories | conflict, factual, partial, synthesis, unanswerable |
+| 3.3 | top four chunks | `top_k: 6` |
+| 3.3 | similarity threshold 0.32 | `min_similarity: 0.30` |
+| 3.3 | thirty automated tests | **648** |
+| 3.5 | Pi 5 and laptop | three conditions: `laptop_gpu`, `laptop_cpu`, `pi5_cpu`, placement enforced and observed |
+
+## Missing entirely
+
+The conflict families are the substance of the study and do not appear in the
+draft. Chapter 3 needs: the four conflict types (`version_supersession`,
+`mutually_exclusive`, `stricter_looser`, `compatible`), the 15 reported and 8
+tuning families, why `compatible` families exist as negative controls, the five
+deliberate gap topics, and the family as the unit of analysis.
+
+## What survives unchanged
+
+Section 3.2 on Design Science Research, including the advance commitment to
+report a negative result, which the study then honoured. Section 3.6 on ethics.
+The chunking parameters (180 words, one-sentence overlap). The choice of Ollama
+and local-only inference. The architectural motivation for verification. These
+can be carried over with light editing.
