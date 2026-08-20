@@ -117,6 +117,53 @@ python -m venv .venv
 pip install -e ".[dev,plots]"
 ```
 
+## Running the dashboard
+
+A browser interface over the implemented components and the committed
+experimental records, built **after** the evaluation. It contributes no evidence
+to any hypothesis and writes nothing into any frozen run directory. See
+pre-registration amendment 1.27 and Appendix C.
+
+It needs no dependency beyond what the artefact already has: the server is
+Python's standard-library `http.server`, and no asset is fetched from the
+network at page load.
+
+```bash
+cd final_v1
+source .venv/bin/activate            # Windows: .\.venv\Scripts\Activate.ps1
+python scripts/dashboard.py          # http://127.0.0.1:8765
+```
+
+Options: `--port 8080` to change the port, `--host 0.0.0.0` to make it reachable
+on the local network. It binds to localhost by default, because it serves
+internal documents and has no authentication.
+
+Two modes, chosen on opening and never shown together.
+
+| | Frozen Study Replay | Live Assistant |
+|---|---|---|
+| Answers come from | the four committed quality runs | this device, now |
+| Arms | A, B, C and D side by side | D only |
+| Needs Ollama | **no** | yes |
+| Scored | during the experiment | **never** |
+
+**Frozen Study Replay works on a machine with no models installed.** Live
+Assistant needs Ollama running with the two models pulled:
+
+```bash
+ollama serve
+ollama pull llama3.2:3b
+ollama pull qwen2.5:3b
+```
+
+Start-up prints the readiness of each mode. Where live mode is unavailable the
+reason is shown on the page and the question box is disabled rather than
+accepting input it cannot serve.
+
+On the Raspberry Pi 5, expect roughly three minutes per live answer: the
+measured mean is 174 seconds. Frozen replay is instant on any machine, which is
+what makes it the sensible choice for a demonstration.
+
 ## Regenerating everything reported
 
 ```bash
@@ -128,6 +175,7 @@ python scripts/make_figures.py                      # Chapter 4 figures
 python scripts/make_architecture_figures.py         # Chapter 3 figures
 python scripts/make_corpus_doc.py > docs/CORPUS.md  # corpus provenance
 python scripts/make_amendment_table.py > docs/dissertation/appendix_amendments.md
+python scripts/dashboard.py                          # the demonstrator, see above
 ```
 
 The four frozen quality runs are a closed list in

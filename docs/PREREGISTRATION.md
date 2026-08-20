@@ -3799,3 +3799,87 @@ rule, because it is quoted as though it had been enforced.
 | Figure parameters | sourced from the reports, no literals |
 | Section 4 "lower bound" shorthand | left as registered, discrepancy reported |
 | Tests | 655 |
+
+---
+
+# Amendment 1.27 - 20 August 2026
+
+**Written before the dashboard exists.** A user-facing demonstrator is being
+built over the implemented components and the frozen records. It contributes no
+evidence to any hypothesis, and this amendment fixes the boundary that makes
+that true in code rather than in intention.
+
+## 1.27.1 Why this needs an amendment at all
+
+Nothing in the dashboard changes a result. That is precisely why it is a risk.
+A demonstrator built after the evaluation, over the same components, writing
+records that look like run records, is the easiest possible route for
+unevaluated output to end up somewhere an analysis reads it. Amendment 1.16.1
+records what happened the last time this document declared a boundary without
+enforcing one: `quality_run_directories` admitted any untagged `*_test`
+directory, so the tag that 1.15.3 called the boundary was not the boundary.
+
+The lesson is not to be careful. It is that a boundary asserted in prose is not
+a boundary.
+
+## 1.27.2 Two modes, and the distinction is the point
+
+**Live Assistant.** Runs Arm D only, as the deployed system would, on any
+question typed. It invokes the models and produces output that has never been
+scored and never will be. It checks model availability before accepting a
+question, so a failure is a refusal rather than a misleading blank.
+
+**Frozen Study Replay.** Reads the committed records of the four frozen quality
+runs and shows all four arms side by side on the 68 test questions. It never
+invokes Ollama, and must remain fully usable on a machine where Ollama is not
+installed.
+
+The four arms are never run live. A live four-arm comparison would produce
+output that looks exactly like the reported experiment and is not it, which is
+the one confusion this design exists to prevent.
+
+Each mode carries a banner naming what is on screen: **"Live demonstration, not
+part of the reported evaluation"** or **"Frozen experimental replay"**. The two
+are never shown together and their outputs are never merged in a single view.
+
+## 1.27.3 The enforcement
+
+1. **Live output is written to `results/demo/`, never to `results/runs/`.** The
+   frozen run directories are not written to by the dashboard under any mode.
+2. **Any record the dashboard writes carries `purpose: demonstration`** in its
+   manifest, alongside the existing `purpose: performance` and the absence that
+   marks a quality run.
+3. **A test asserts a demonstration record cannot enter the quality analysis.**
+   `quality_run_directories` already admits only the closed `FROZEN_QUALITY_RUNS`
+   list; the test pins that a demo directory placed in `results/runs/` is still
+   refused, so the guarantee does not rest on the dashboard writing elsewhere.
+4. **Replay is read-only.** The replay reader opens frozen files for reading and
+   writes nothing, and a test asserts the frozen inputs are unmodified after a
+   replay session.
+5. **The dashboard is not imported by any analysis or evaluation module.** The
+   dependency runs one way, and `tests/test_no_oracle_leakage.py` already
+   establishes the pattern for asserting an import boundary.
+
+## 1.27.4 What this does not license
+
+* No hypothesis verdict changes, and none is revisited in the light of anything
+  the dashboard shows.
+* No arm is rerun, rescored or retuned. The frozen runs, the manual judgements,
+  the abstention passes, the question set, the gold answers, the prompts, the
+  models and the retrieval settings are all untouched.
+* Nothing the dashboard produces is cited as a result. Screenshots in the
+  dissertation illustrate an interface; they are not evidence about the system's
+  quality, and the chapter says so.
+* The dashboard is **not** added to Figure 3.1, which shows the evaluated
+  pipeline. It is described in its own subsection as built afterwards.
+
+## 1.27.5 State
+
+| | |
+|---|---|
+| Dashboard | not yet built at the time of writing |
+| Live mode | Arm D only, writes to `results/demo/` |
+| Replay mode | four arms, frozen records, no Ollama, read-only |
+| Live four-arm comparison | **not permitted** |
+| Evidence contributed to H1 to H5 | **none** |
+| Frozen runs, judgements, question set, models | unchanged |

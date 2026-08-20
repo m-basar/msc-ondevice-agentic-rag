@@ -205,6 +205,33 @@ contribution claimed in Chapter 1, and measuring it is proposed as further work
 in Chapter 7. Describing an unmeasured mechanism as calibrated would be the
 least defensible claim the dissertation could make.
 
+### 3.4.6 Post-evaluation dashboard demonstrator
+
+A browser-based dashboard provides a user-facing interface over the components
+described above. Four properties define its status and are stated here so that
+nothing later in the dissertation has to be read as a claim about it.
+
+It was **developed after the experiment was complete and frozen**. It is **not
+part of the four-arm evaluated pipeline** and does not appear in Figure 3.1,
+which shows what was evaluated. It **contributed no evidence to H1 to H5**, none
+of which is revisited in the light of anything it displays. What it provides is
+an interface over the implemented components and the committed experimental
+records, for demonstration and inspection.
+
+It runs in two deliberately separated modes. **Frozen Study Replay** reads the
+committed records of the four quality runs and shows all four arms answering the
+same test question side by side; it invokes no model and runs on a machine with
+no Ollama installed. **Live Assistant** runs Arm D alone on a newly typed
+question, checking model availability before accepting one. The four arms are
+never run live, because a live four-arm comparison would look exactly like the
+reported experiment without being it. Each mode carries a banner naming what is
+on screen, and their outputs are never combined in one view. The boundary is
+enforced rather than intended: pre-registration amendment 1.27 fixes the rules,
+and tests assert that a demonstration record cannot enter the quality analysis,
+that the demonstrator holds no write path at all, and that a replay session
+leaves every frozen file byte-identical. Appendix C describes the interface and
+its operation in full.
+
 ## 3.5 The knowledge base
 
 ### 3.5.1 Composition and provenance
