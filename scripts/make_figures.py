@@ -35,6 +35,7 @@ every figure has a companion table in the chapter.
 
 from __future__ import annotations
 
+import argparse
 import json
 import re
 import sys
@@ -464,7 +465,16 @@ def figure_latency_overhead(performance: dict) -> Path:
     return save(fig, "fig_4_4_latency_overhead.png")
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
+    """``--out`` writes elsewhere; see make_architecture_figures.main."""
+    global FIGURES
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--out", default=str(FIGURES),
+                        help="where to write the figures (default: the "
+                             "committed docs/dissertation/figures)")
+    args = parser.parse_args(argv)  # None means sys.argv[1:], which is the point
+    FIGURES = Path(args.out)
+
     style()
     report = load_hypotheses()
     performance = load_performance()
@@ -481,8 +491,8 @@ def main() -> int:
                 "metadata is what makes two regenerations comparable; "
                 "amendment 1.30.7."
             )
-        print(f"  wrote {path.relative_to(ROOT)}")
-    print(f"  wrote {figure_provenance.write_environment(FIGURES).relative_to(ROOT)}")
+        print(f"  wrote {path}")
+    print(f"  wrote {figure_provenance.write_environment(FIGURES)}")
     return 0
 
 

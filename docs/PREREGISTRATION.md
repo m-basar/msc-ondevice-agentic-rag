@@ -4252,6 +4252,11 @@ figures; all eight figures are regenerated once and two consecutive runs are
 verified byte-identical. The rendered pixels are compared against the committed
 images to confirm that nothing but metadata changed.
 
+That comparison holds **on one machine**. Constant metadata does not make the
+rendering independent of FreeType and the font stack, and 1.30.11 records what
+happened when this was asserted across two. The recorded environment is what
+makes the difference explicable rather than arguable.
+
 ## 1.30.8 Volatile counts are removed from the prose
 
 Chapter 3 stated a test count. It rises with every correction, so a number
@@ -4291,13 +4296,62 @@ untouched, as is the separate transfer archive above the repository root.
 * The demonstrator contributes no evidence, as declared in 1.27 and enforced in
   1.28 and here.
 
-## 1.30.11 State
+## 1.30.11 The same defect again, in this amendment's own test
+
+1.30.1 states that a rule describing what the code was supposed to do is worth
+less than no rule. The test written for 1.30.7 carried this docstring:
+
+> Run on a scratch copy of the output directory so a failure cannot leave the
+> committed images half-rewritten.
+
+**It did not do that.** It invoked `make_architecture_figures.py`, which had no
+way to write anywhere but the committed figure directory, and it invoked it
+twice. Run on the author's machine, where matplotlib is 3.11.1 against the
+3.10.9 that drew the committed images, it overwrote four committed figures and
+then failed on the comparison it had just invalidated. A sentence claiming an
+isolation that the code could not perform, inside the amendment written to stop
+exactly that, on the same day.
+
+The images were restored from the commit and the working tree is clean. Two
+things are corrected.
+
+**The isolation is real.** Both figure scripts now take `--out`, matching
+`analyse_results.py`, and the test writes to a temporary directory. It then
+asserts that the committed directory is unchanged, which is the assertion the
+docstring made and the code did not.
+
+**The cross-machine claim is withdrawn as stated and re-made conditionally.**
+`FIGURE_ENVIRONMENT.json` says in as many words that a regeneration elsewhere
+may differ in pixels, and the test asserted byte identity unconditionally. The
+artefact and the test contradicted each other and the test was wrong. What was
+observed is now on record: regenerating under matplotlib 3.11.1 instead of
+3.10.9 changed 22 of the 182 lines of `fig_3_2_experimental_arms.svg`, **every
+one of them a `<text>` element and every difference a glyph coordinate**. No
+path, no colour, no dimension: both PNGs came out at exactly the committed pixel
+dimensions, differing on about 4.5 per cent of pixels, all of it text.
+
+So the rule is:
+
+* **Machine-local determinism is asserted unconditionally.** The same scripts,
+  on one machine, twice, byte for byte. That is the whole of what "reproducible"
+  means here without qualification, and it is what makes a regeneration
+  checkable at all.
+* **Byte identity against the committed images is asserted only where the
+  recorded matplotlib and FreeType match.** There, a difference is a real
+  divergence between the images and the code that draws them, and the test
+  fails. Elsewhere it skips and names the two versions, because a red failure a
+  reader must learn to ignore is worse than no test.
+* **The committed images should be drawn on the machine that owns the
+  repository**, so that this check is live rather than skipped for the person
+  who would actually regenerate them.
+
+## 1.30.12 State
 
 | | |
 |---|---|
 | Status | review correction, no experimental change |
-| Corrected | 1.28's two false claims, 1.29's internal contradiction, 1.26's reproducibility claim |
-| Withdrawn | rule 2 of 1.29.3; the 45-question headline; the 33-question restricted total |
-| New enforcement | replay fail-closed, POST at the handler, validated diagnostic source, generated Appendix D |
+| Corrected | 1.28's two false claims, 1.29's internal contradiction, 1.26's reproducibility claim, and this amendment's own unenforced test docstring |
+| Withdrawn | rule 2 of 1.29.3; the 45-question headline; the 33-question restricted total; unconditional cross-machine byte identity for figures |
+| New enforcement | replay fail-closed, POST at the handler, validated diagnostic source, generated Appendix D, `--out` isolation for both figure scripts |
 | Frozen runs, judgements, question set, models | unchanged |
 | H1 to H5 | unchanged, byte-identical |

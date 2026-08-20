@@ -25,6 +25,7 @@ reused anywhere the prose does not follow.
 
 from __future__ import annotations
 
+import argparse
 import json
 import sys
 from pathlib import Path
@@ -283,7 +284,23 @@ def figure_arms() -> list[Path]:
     return save(fig, "fig_3_2_experimental_arms")
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
+    """``--out`` writes elsewhere, so that a check can regenerate safely.
+
+    Amendment 1.30.12. A test that regenerated into the committed directory
+    overwrote four committed figures on a machine whose font metrics differ,
+    while its own docstring said it ran on a scratch copy. Giving the script an
+    output directory is what makes that claim true rather than intended, and it
+    matches ``analyse_results.py``, which already takes ``--out``.
+    """
+    global FIGURES
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--out", default=str(FIGURES),
+                        help="where to write the figures (default: the "
+                             "committed docs/dissertation/figures)")
+    args = parser.parse_args(argv)  # None means sys.argv[1:], which is the point
+    FIGURES = Path(args.out)
+
     style()
     config = json.loads((ROOT / "config.json").read_text(encoding="utf-8"))
     index = json.loads((ROOT / "data" / "index.json").read_text(encoding="utf-8"))
@@ -294,7 +311,7 @@ def main() -> int:
     written = figure_architecture(config, len(index["chunks"]), documents)
     written += figure_arms()
     for path in written:
-        print(f"  wrote {path.relative_to(ROOT)}")
+        print(f"  wrote {path}")
     return 0
 
 

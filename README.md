@@ -187,6 +187,12 @@ font versions installed; the ones that drew the committed images are recorded in
 extra in `pyproject.toml`. Run `python scripts/figure_provenance.py` to print the
 versions on the current machine before regenerating.
 
+Both figure scripts take `--out` and write nowhere else, so a check can
+regenerate into a temporary directory without touching what is committed. The
+test suite uses it; a version that did not exist is how four committed figures
+came to be overwritten by a test whose docstring said it used a scratch copy
+(amendment 1.30.11).
+
 The four frozen quality runs are a closed list in
 `sme_assistant.evaluation.analysis.FROZEN_QUALITY_RUNS`. No run created later
 can enter the quality analysis, and performance runs are refused by it outright.

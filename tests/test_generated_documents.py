@@ -162,29 +162,115 @@ def test_the_figure_environment_is_recorded_and_matches_the_pinned_versions():
     assert f'numpy=={recorded["numpy"]}' in pinned
 
 
+def _current_environment() -> dict[str, str]:
+    import figure_provenance
+
+    return figure_provenance.environment()
+
+
+def _recorded_environment() -> dict[str, str] | None:
+    path = FIGURES / "FIGURE_ENVIRONMENT.json"
+    if not path.exists():
+        return None
+    return json.loads(path.read_text(encoding="utf-8"))["versions"]
+
+
 @needs_matplotlib
-def test_two_consecutive_figure_runs_produce_identical_bytes():
-    """The whole of what "reproducible" is allowed to mean here. Run on a
-    scratch copy of the output directory so a failure cannot leave the
-    committed images half-rewritten."""
+def test_two_consecutive_figure_runs_produce_identical_bytes(tmp_path):
+    """The whole of what "reproducible" is allowed to mean without qualification.
+
+    Amendment 1.30.12. The first version of this test regenerated into the
+    committed directory while its own docstring said it used a scratch copy, and
+    on a machine with different font metrics it overwrote four committed figures.
+    That is the defect 1.30.1 is about, committed inside the amendment that
+    exists to correct it. ``--out`` now makes the isolation real.
+
+    What is asserted here is machine-local determinism: the same script, on this
+    machine, twice, byte for byte. Cross-machine identity is asserted separately
+    below and only where the environment matches, because it is not a property
+    this design has.
+    """
     import hashlib
 
     if not (ROOT / "results" / "analysis" / "hypotheses.json").exists():
         pytest.skip("analysis outputs are not present")
 
-    def digest() -> dict[str, str]:
+    def digest(directory: Path) -> dict[str, str]:
         return {p.name: hashlib.sha256(p.read_bytes()).hexdigest()
-                for p in sorted(FIGURES.iterdir()) if p.is_file()}
+                for p in sorted(directory.iterdir()) if p.is_file()}
 
-    before = digest()
-    if not before:
-        pytest.skip("figures are not present")
-    first = run("make_architecture_figures.py")
-    assert first.returncode == 0, first.stderr
-    after_one = digest()
-    second = run("make_architecture_figures.py")
-    assert second.returncode == 0, second.stderr
-    assert digest() == after_one, "two runs of the same script differ"
-    assert after_one == before, (
-        "regenerating changed a committed figure; the committed images and the "
-        "code that draws them have diverged")
+    committed_before = digest(FIGURES) if FIGURES.exists() else {}
+    out = tmp_path / "figures"
+    for script in ("make_figures.py", "make_architecture_figures.py"):
+        result = run(script, "--out", str(out))
+        assert result.returncode == 0, result.stderr
+    first = digest(out)
+    assert first, "the scripts wrote nothing to the output directory"
+    for script in ("make_figures.py", "make_architecture_figures.py"):
+        result = run(script, "--out", str(out))
+        assert result.returncode == 0, result.stderr
+    assert digest(out) == first, "two runs of the same scripts differ"
+
+    # The committed directory must be exactly as it was. This is the assertion
+    # the previous version claimed and did not make.
+    assert digest(FIGURES) == committed_before, (
+        "running the figure scripts with --out touched the committed figures")
+
+
+@needs_matplotlib
+def test_the_committed_figures_match_this_machine_when_the_environment_does(tmp_path):
+    """Cross-machine byte identity is conditional, and the condition is checked.
+
+    FreeType and the font stack decide where glyphs land. Regenerating on a
+    machine whose versions differ from the recorded ones legitimately produces
+    different text positions in the SVG and different anti-aliased pixels in the
+    PNG, with identical geometry. Asserting byte identity unconditionally
+    contradicted `FIGURE_ENVIRONMENT.json`, which says in as many words that a
+    regeneration elsewhere may differ.
+
+    So: where the environment matches, a difference is a real divergence between
+    the committed images and the code that draws them, and this fails. Where it
+    does not match, this skips and names the versions, which is information a
+    reader can act on rather than a red failure they must learn to ignore.
+    """
+    import hashlib
+
+    recorded = _recorded_environment()
+    if recorded is None or not (ROOT / "results" / "analysis" / "hypotheses.json").exists():
+        pytest.skip("figures or analysis outputs are not present")
+    current = _current_environment()
+    relevant = ("matplotlib", "freetype")
+    mismatch = {k: (recorded.get(k), current.get(k))
+                for k in relevant if recorded.get(k) != current.get(k)}
+    if mismatch:
+        pytest.skip(
+            "this machine did not draw the committed figures: "
+            + ", ".join(f"{k} recorded {r!r}, here {c!r}"
+                        for k, (r, c) in mismatch.items())
+            + ". Regenerate deliberately if you want them redrawn here, and "
+            "commit FIGURE_ENVIRONMENT.json with them.")
+
+    out = tmp_path / "figures"
+    for script in ("make_figures.py", "make_architecture_figures.py"):
+        result = run(script, "--out", str(out))
+        assert result.returncode == 0, result.stderr
+    for path in sorted(out.iterdir()):
+        committed = FIGURES / path.name
+        assert committed.exists(), f"{path.name} is generated but not committed"
+        assert hashlib.sha256(path.read_bytes()).hexdigest() == \
+            hashlib.sha256(committed.read_bytes()).hexdigest(), (
+                f"{path.name} differs from the committed image on a machine "
+                "whose recorded environment matches; the images and the code "
+                "that draws them have diverged")
+
+
+@needs_matplotlib
+def test_the_figure_scripts_accept_an_output_directory():
+    """Enforced over the source as well as by use, because the isolation above
+    is only as good as the flag existing in both scripts."""
+    for script in ("make_figures.py", "make_architecture_figures.py"):
+        source = (SCRIPTS / script).read_text(encoding="utf-8")
+        assert '"--out"' in source, script
+        assert "parser.parse_args(argv)" in source, (
+            f"{script} parses an empty list, so --out on the command line is "
+            "silently ignored")

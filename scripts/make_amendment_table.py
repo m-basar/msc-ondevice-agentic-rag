@@ -125,7 +125,9 @@ SUMMARY = {
             "when written, 1.29's principal denominator contradicted its own "
             "rule against a pooled headline, and 1.26's figures were not "
             "byte-reproducible. Enforcement added, the pooled total withdrawn, "
-            "Appendix D generated.",
+            "Appendix D generated. 1.30.11 records the same defect recurring "
+            "in this amendment's own test, which claimed an isolation the "
+            "code could not perform and overwrote four committed figures.",
     "1.29": "Post-hoc exploratory diagnostic of the frozen verifier's internal "
             "relationship classification, kept separate from binary conflict "
             "detection. No threshold, no verdict, no hypothesis revisited.",

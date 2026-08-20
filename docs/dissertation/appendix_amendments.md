@@ -47,9 +47,9 @@ Phases are taken from the commit history. The frozen four-arm test run is
 | | | | **Phase F: Exploratory analysis of already-frozen data** |
 | 1.29 | 20 August | 5 | Post-hoc exploratory diagnostic of the frozen verifier's internal relationship classification, kept separate from binary conflict detection. No threshold, no verdict, no hypothesis revisited. |
 | | | | **Phase G: Review corrections, no experimental change** |
-| 1.30 | 20 August | 11 | Eight corrections after a second review, seven of them rules this document stated and the code did not enforce: 1.28's claim that replay failed closed and that live questions used POST was false when written, 1.29's principal denominator contradicted its own rule against a pooled headline, and 1.26's figures were not byte-reproducible. Enforcement added, the pooled total withdrawn, Appendix D generated. |
+| 1.30 | 20 August | 12 | Eight corrections after a second review, seven of them rules this document stated and the code did not enforce: 1.28's claim that replay failed closed and that live questions used POST was false when written, 1.29's principal denominator contradicted its own rule against a pooled headline, and 1.26's figures were not byte-reproducible. Enforcement added, the pooled total withdrawn, Appendix D generated. 1.30.11 records the same defect recurring in this amendment's own test, which claimed an isolation the code could not perform and overwrote four committed figures. |
 
-**30 amendments, 195 numbered sub-entries.** Phase A amendments precede the
+**30 amendments, 196 numbered sub-entries.** Phase A amendments precede the
 frozen confirmatory runs and could and did change the design. Nothing from Phase B
 onwards could: the runs were complete before Phase B opened. Phases B and D govern
 how the already-frozen data are scored, aggregated and reported; Phase C concerns
