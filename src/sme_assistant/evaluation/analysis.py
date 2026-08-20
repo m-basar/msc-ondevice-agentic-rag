@@ -566,6 +566,154 @@ def common_eligibility_variant(rows: Iterable[Joined]) -> dict[str, dict[str, An
     return out
 
 
+#: The frozen Arm D quality run, named rather than discovered. Amendment 1.29
+#: sources the diagnostic from this run and nothing else.
+DIAGNOSTIC_RUN = "20260814_055018_D_test"
+
+#: A family counts as exactly classified when a majority of its three
+#: paraphrases were. The constant is the one already used by the stopping gate.
+FAMILY_MAJORITY = 2
+
+
+def verifier_relationship_diagnostic(
+    records: Iterable[Mapping[str, Any]],
+    declared_type: Mapping[str, str],
+    mapping: Mapping[str, str],
+    pair_present: Mapping[str, bool] | None = None,
+) -> dict[str, Any]:
+    """What the verifier concluded internally, against what was declared.
+
+    **Exploratory and post-hoc.** Amendment 1.29 records that the pattern was
+    seen before the rule was written, and that this carries none of the weight
+    of a pre-registered analysis. No threshold is applied, no verdict is
+    reached, and no chance baseline is computed: none was pre-registered, and a
+    uniform model over six categories that are neither equiprobable nor
+    independently reachable would not be one.
+
+    Two metrics, kept apart, because the project's own verifier protocol keeps
+    them apart and a figure combining them is not a rate:
+
+    ``detected``
+        binary. Did the verifier report any conflict relationship at all?
+    ``exact``
+        did the reported relationship equal the mapped declared type?
+
+    A provisional figure that summed exact classification on the conflict
+    families with binary non-detection on the compatible controls is withdrawn
+    in 1.29.1. This function cannot reproduce it: the two counts are returned
+    in separate keys and never added.
+
+    ``pair_present`` carries the retrieval confound per question, computed by
+    the caller with ``anchor_chunks`` and ``pair_is_present``. The weaker rule
+    of "both document identifiers were retrieved" is not accepted here, because
+    it admits a case where only one side of the disputed fact was shown and a
+    verifier shown one position has nothing to detect.
+    """
+    #: The six relationships the verifier may return. A conflict relationship
+    #: is one asserting the passages disagree; the other three do not.
+    conflict_relationships = {"supersession", "mutually_exclusive",
+                              "stricter_looser"}
+
+    pair_present = pair_present or {}
+    per_question: list[dict[str, Any]] = []
+    confusion: dict[str, dict[str, int]] = {}
+
+    for record in records:
+        family = record.get("family_id")
+        if not family or family not in declared_type:
+            continue
+        declared = declared_type[family]
+        expected = mapping.get(declared)
+        if expected is None:
+            raise AnalysisError(
+                f"no mapping from declared type {declared!r} to a verifier "
+                "relationship; the mapping must not be extended here"
+            )
+        verification = record.get("verification") or {}
+        reported = verification.get("relationship") or "none"
+        question_id = record["question_id"]
+        entry = {
+            "question_id": question_id,
+            "family_id": family,
+            "declared": declared,
+            "expected": expected,
+            "reported": reported,
+            "detected": reported in conflict_relationships,
+            "exact": reported == expected,
+            "pair_present": pair_present.get(question_id),
+        }
+        per_question.append(entry)
+        confusion.setdefault(declared, {})
+        confusion[declared][reported] = confusion[declared].get(reported, 0) + 1
+
+    if not per_question:
+        raise AnalysisError("no registered-family questions found for the diagnostic")
+
+    def summarise(rows: Sequence[dict[str, Any]]) -> dict[str, Any]:
+        families: dict[str, list[bool]] = {}
+        for row in rows:
+            families.setdefault(row["family_id"], []).append(row["exact"])
+        return {
+            "questions": len(rows),
+            "detected": sum(1 for r in rows if r["detected"]),
+            "exactly_classified": sum(1 for r in rows if r["exact"]),
+            "families": len(families),
+            "families_exact_on_a_majority": sum(
+                1 for outcomes in families.values()
+                if sum(outcomes) >= FAMILY_MAJORITY),
+            "reported_relationships": dict(sorted(
+                {r["reported"]: sum(1 for x in rows if x["reported"] == r["reported"])
+                 for r in rows}.items())),
+        }
+
+    by_declared = {
+        declared: summarise([r for r in per_question if r["declared"] == declared])
+        for declared in sorted({r["declared"] for r in per_question})
+    }
+    with_pair = [r for r in per_question if r["pair_present"] is True]
+
+    return {
+        "basis": (
+            "Exploratory, post-hoc, amendment 1.29. The pattern was inspected "
+            "before the rule was written. Detection and exact classification "
+            "are separate metrics and are never summed. No threshold, no "
+            "verdict and no chance baseline."
+        ),
+        "source_run": DIAGNOSTIC_RUN,
+        "denominator": (
+            "every test-split question belonging to a registered reported "
+            "family"
+        ),
+        "all_registered_families": summarise(per_question),
+        "by_declared_type": by_declared,
+        "restricted_to_pair_present": (
+            {
+                **summarise(with_pair),
+                "by_declared_type": {
+                    declared: summarise(
+                        [r for r in with_pair if r["declared"] == declared])
+                    for declared in sorted({r["declared"] for r in with_pair})
+                },
+            } if with_pair else
+            {"questions": 0, "note": "pair presence was not supplied"}
+        ),
+        "pair_present_rule": (
+            "anchor_chunks and pair_is_present, unmodified. Requires the chunks "
+            "carrying both sides of the focal disputed fact, from two different "
+            "documents. Not 'both document identifiers retrieved'."
+        ),
+        "confusion": {k: dict(sorted(v.items())) for k, v in sorted(confusion.items())},
+        "per_question": per_question,
+        "relation_to_H2c": (
+            "H2c is scored on asserts_conflict, the reviewer's judgement of what "
+            "the served answer says, and reports zero false conflicts on the "
+            "controls. This diagnostic reads the verifier's internal "
+            "relationship field. They measure different outputs. Neither "
+            "revises the other, and H2c stands exactly as reported."
+        ),
+    }
+
+
 def cohens_kappa(pairs: Sequence[tuple[bool, bool]]) -> dict[str, Any]:
     """Chance-corrected agreement for one binary field over two passes.
 

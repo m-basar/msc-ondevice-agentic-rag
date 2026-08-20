@@ -31,6 +31,7 @@ from sme_assistant.evaluation.analysis import (
     join,
     leave_one_family_out,
     primary_metrics,
+    verifier_relationship_diagnostic,
     question_table,
     quality_run_directories,
     rate_by_arm,
@@ -634,3 +635,145 @@ def test_the_group_level_mean_differs_from_the_question_level_one():
     accuracy = primary_metrics(rows)["answer_correctness"]
     assert accuracy["by_question"]["A"] == pytest.approx(2 / 3)
     assert accuracy["group_level"]["A"] == pytest.approx(1.0)
+
+
+# --- the exploratory verifier diagnostic, amendment 1.29 ---------------------
+
+DECLARED = {"CONF-02": "version_supersession", "CONF-06": "mutually_exclusive",
+            "CONF-11": "stricter_looser", "CONF-07": "compatible"}
+MAP = {"version_supersession": "supersession",
+       "mutually_exclusive": "mutually_exclusive",
+       "stricter_looser": "stricter_looser",
+       "compatible": "contextually_compatible"}
+
+
+def diag_record(question_id, family_id, relationship, **extra):
+    record = {"question_id": question_id, "family_id": family_id,
+              "verification": {"relationship": relationship}}
+    record.update(extra)
+    return record
+
+
+def test_questions_outside_a_registered_family_are_not_in_the_denominator():
+    """Amendment 1.29.3 rule 2. A gap or factual question has no declared
+    relationship, so counting it would put questions in the denominator that
+    the verifier was never asked to classify."""
+    records = [
+        diag_record("CONF-02-Q1", "CONF-02", "supersession"),
+        diag_record("GAP-share-Q1", None, "no_relationship"),
+        diag_record("FACT-payment-terms", "", "no_relationship"),
+    ]
+    result = verifier_relationship_diagnostic(records, DECLARED, MAP)
+    assert result["all_registered_families"]["questions"] == 1
+    assert [r["question_id"] for r in result["per_question"]] == ["CONF-02-Q1"]
+
+
+def test_detection_and_exact_classification_are_never_combined():
+    """The withdrawn 8-of-38 figure summed exact classification on the conflict
+    families with binary non-detection on the controls. This asserts the shape
+    that made it possible cannot recur: the two counts live in separate keys
+    and no total over both is offered."""
+    records = [
+        diag_record("CONF-02-Q1", "CONF-02", "mutually_exclusive"),
+        diag_record("CONF-07-Q1", "CONF-07", "no_relationship"),
+    ]
+    result = verifier_relationship_diagnostic(records, DECLARED, MAP)
+    summary = result["all_registered_families"]
+    assert summary["detected"] == 1          # the supersession call, wrongly typed
+    assert summary["exactly_classified"] == 0
+    # A control answered "no_relationship" is neither detected nor exact. It is
+    # not silently promoted to correct, which is what the withdrawn figure did.
+    control = result["by_declared_type"]["compatible"]
+    assert control["detected"] == 0
+    assert control["exactly_classified"] == 0
+    assert "correct" not in json.dumps(summary)
+
+
+def test_a_control_answered_no_relationship_is_not_counted_as_exact():
+    """Exact classification for a compatible family requires
+    contextually_compatible. no_relationship is a different answer, and in the
+    frozen run the verifier never returned the right one at all."""
+    records = [diag_record("CONF-07-Q1", "CONF-07", "no_relationship"),
+               diag_record("CONF-07-Q2", "CONF-07", "contextually_compatible")]
+    result = verifier_relationship_diagnostic(records, DECLARED, MAP)
+    assert result["by_declared_type"]["compatible"]["exactly_classified"] == 1
+
+
+def test_the_mapping_is_used_as_given_and_an_unmapped_type_is_an_error():
+    """Amendment 1.29.3 rule 3. Extending the mapping here would be choosing a
+    comparison after the data."""
+    records = [diag_record("X-Q1", "X", "supersession")]
+    with pytest.raises(AnalysisError, match="no mapping from declared type"):
+        verifier_relationship_diagnostic(records, {"X": "invented_type"}, MAP)
+
+
+def test_pair_presence_restricts_the_denominator_and_is_supplied_not_inferred():
+    """Amendment 1.29.3 rule 6. The confound rule comes from anchor_chunks and
+    pair_is_present, computed by the caller. This function must not invent a
+    weaker one from the retrieved document identifiers."""
+    records = [
+        diag_record("CONF-02-Q1", "CONF-02", "supersession",
+                    retrieval={"results": [{"chunk_id": "HR-02#002",
+                                            "doc_id": "HR-02"},
+                                           {"chunk_id": "HR-12#002",
+                                            "doc_id": "HR-12"}]}),
+        diag_record("CONF-02-Q2", "CONF-02", "supersession",
+                    retrieval={"results": [{"chunk_id": "HR-12#002",
+                                            "doc_id": "HR-12"}]}),
+    ]
+    # Both documents appear for the first question only; the caller says the
+    # anchors were present for neither.
+    result = verifier_relationship_diagnostic(
+        records, DECLARED, MAP, pair_present={"CONF-02-Q1": False,
+                                              "CONF-02-Q2": False})
+    assert result["all_registered_families"]["questions"] == 2
+    assert result["restricted_to_pair_present"]["questions"] == 0
+    rule = result["pair_present_rule"].lower()
+    assert "anchor_chunks and pair_is_present" in rule
+    assert "not 'both document identifiers retrieved'" in rule
+
+
+def test_the_diagnostic_attaches_no_threshold_verdict_or_baseline():
+    """Amendment 1.29.3 rule 9, and the withdrawn chance baseline of 1.29.1.
+
+    Checked over keys rather than over the serialised text, because the basis
+    string has to be free to say that there is no verdict and no baseline. The
+    same over-broad check caught the equivalence wording earlier in this file
+    and was wrong for the same reason.
+    """
+    records = [diag_record("CONF-02-Q1", "CONF-02", "supersession")]
+    result = verifier_relationship_diagnostic(records, DECLARED, MAP)
+
+    def keys(node):
+        if isinstance(node, dict):
+            for key, value in node.items():
+                yield key
+                yield from keys(value)
+        elif isinstance(node, list):
+            for value in node:
+                yield from keys(value)
+
+    found = set(keys(result))
+    for banned in ("verdict", "threshold", "chance", "baseline", "decision",
+                   "significance", "p_value", "supported"):
+        assert banned not in found, banned
+    assert "no threshold, no verdict and no chance baseline" in result["basis"].lower()
+
+
+def test_a_family_needs_a_majority_of_its_paraphrases_to_count():
+    records = [diag_record(f"CONF-02-Q{i}", "CONF-02", rel)
+               for i, rel in enumerate(("supersession", "supersession",
+                                        "no_relationship"), start=1)]
+    result = verifier_relationship_diagnostic(records, DECLARED, MAP)
+    assert result["all_registered_families"]["families_exact_on_a_majority"] == 1
+    records[1] = diag_record("CONF-02-Q2", "CONF-02", "mutually_exclusive")
+    result = verifier_relationship_diagnostic(records, DECLARED, MAP)
+    assert result["all_registered_families"]["families_exact_on_a_majority"] == 0
+
+
+def test_the_diagnostic_states_that_it_does_not_revise_h2c():
+    records = [diag_record("CONF-07-Q1", "CONF-07", "mutually_exclusive")]
+    note = verifier_relationship_diagnostic(records, DECLARED, MAP)["relation_to_H2c"]
+    assert "asserts_conflict" in note
+    assert "served answer" in note
+    assert "different outputs" in note

@@ -37,6 +37,7 @@ from sme_assistant.evaluation.analysis import (  # noqa: E402
     contrast,
     citation_metrics,
     cohens_kappa,
+    DIAGNOSTIC_RUN,
     common_eligibility_variant,
     decide,
     decide_within_margin,
@@ -47,13 +48,18 @@ from sme_assistant.evaluation.analysis import (  # noqa: E402
     question_table,
     quality_run_directories,
     rate_by_arm,
+    verifier_relationship_diagnostic,
     select,
+)
+from sme_assistant.evaluation.stopping_gate import (  # noqa: E402
+    DECLARED_TO_INFERRED,
 )
 from sme_assistant.evaluation.manual_scoring import (  # noqa: E402
     load_abstention,
     load_judgements,
 )
 from sme_assistant.evaluation.config import load_evaluation_config  # noqa: E402
+from sme_assistant.evaluation.conflicts import load_conflicts  # noqa: E402
 from sme_assistant.evaluation.question_set import load_question_set  # noqa: E402
 
 MANUAL = ROOT / "results" / "manual"
@@ -450,6 +456,43 @@ def main(argv: list[str] | None = None) -> int:
         },
         "blinding": report["blinding"],
     }
+
+    # --- verifier relationship diagnostic, exploratory -----------------------
+    # Amendment 1.29. Post-hoc and labelled as such. The pattern was seen before
+    # the rule was written, and the rule is what stops the second look being
+    # shaped by the first: two metrics that are never summed, the mapping and
+    # the pair-presence rule taken unmodified from code that already existed,
+    # and no threshold anywhere.
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from evaluate_retrieval import anchor_chunks  # noqa: E402
+    from verifier_protocol import pair_is_present  # noqa: E402
+
+    diagnostic_records = [
+        json.loads(line)
+        for line in (ROOT / "results" / "runs" / DIAGNOSTIC_RUN / "answers.jsonl")
+        .read_text(encoding="utf-8").splitlines() if line.strip()
+    ]
+    index_chunks = json.loads(
+        (ROOT / "data" / "index.json").read_text(encoding="utf-8"))["chunks"]
+    chunk_texts = {c["chunk_id"]: c["text"] for c in index_chunks}
+    registry = load_conflicts(load_evaluation_config().path("conflicts"))
+    declared_type = {f.family_id: f.conflict_type for f in registry.families}
+    questions_by_id = {q.question_id: q for q in question_set.questions}
+
+    pair_present = {}
+    for record in diagnostic_records:
+        family_id = record.get("family_id")
+        question = questions_by_id.get(record["question_id"])
+        if not family_id or family_id not in declared_type or question is None:
+            continue
+        family = registry.by_id(family_id)
+        wanted = anchor_chunks(family, chunk_texts, question.expected_chunks)
+        present = {r["chunk_id"]
+                   for r in (record.get("retrieval") or {}).get("results") or []}
+        pair_present[record["question_id"]] = pair_is_present(wanted, present)
+
+    report["verifier_relationship_diagnostic"] = verifier_relationship_diagnostic(
+        diagnostic_records, declared_type, DECLARED_TO_INFERRED, pair_present)
 
     (out / "hypotheses.json").write_text(
         json.dumps(report, indent=2), encoding="utf-8", newline="\n"

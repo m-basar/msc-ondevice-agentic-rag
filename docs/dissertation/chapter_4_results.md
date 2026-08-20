@@ -17,7 +17,7 @@ Section 4.2 states the evaluation as executed. Section 4.3 establishes how far
 the measurements can be trusted, before any verdict is given. Section 4.4 gives
 the whole comparison in one view, and sections 4.5 to 4.10 take the hypotheses
 in turn. Section 4.11 reports the remaining primary metric, which carries no
-hypothesis. Analysis of why these results occurred is held for Chapter 5;
+hypothesis, and section 4.13 adds a clearly labelled exploratory diagnostic. Analysis of why these results occurred is held for Chapter 5;
 comparison with the literature, implications for deployment and the study's
 limitations are held for Chapter 6.
 
@@ -391,6 +391,76 @@ question that A, B and C answered correctly. A fourth loss, on
 answerable questions is computed, because section 4 of the pre-registration
 defines abstention over the gaps only and a metric over the complement would be
 one invented after the data.
+
+## 4.13 Exploratory: what the verifier concluded internally
+
+**This section is exploratory and post-hoc.** The pattern was noticed while
+checking a screenshot of the demonstrator, provisional figures were produced,
+and only then was the rule fixed and recorded as amendment 1.29. It carries none
+of the weight of sections 4.5 to 4.11, no threshold is applied, no verdict is
+reached and no chance baseline is computed. It is reported because a reader of
+two null results is entitled to ask what the verification layer was doing
+instead.
+
+The verifier records a `relationship` for the retrieved passages, chosen from
+six categories, without ever seeing the registry's declared type. The two
+vocabularies are mapped by `DECLARED_TO_INFERRED`, which predates this analysis.
+**Two measures are kept separate and are never combined:** whether any conflict
+relationship was reported at all, and whether the reported relationship matched
+the mapped declared type.
+
+**Table 4.11** The verifier's internal relationship classification against the
+registry, frozen Arm D quality run, all 45 test questions
+belonging to a registered family. Descriptive only.
+
+| Declared type | Questions | Any conflict reported | Exactly classified | Families exact on a majority |
+|---|---:|---:|---:|---:|
+| Version supersession | 12 | 8 | 4 | 1 / 4 |
+| Mutually exclusive | 9 | 1 | 1 | 0 / 3 |
+| Stricter-looser | 15 | 6 | 1 | 0 / 5 |
+| Compatible controls | 9 | 5 | 0 | 0 / 3 |
+| **All registered families** | **45** | **20** | **6** | **1 / 15** |
+
+On the 36 questions drawn from families that carry a genuine conflict, the
+verifier reported some conflict relationship on 15 and named the declared type
+on 6. One family of the fifteen was exactly classified on a majority of its
+three paraphrases. **The category `contextually_compatible` was never returned
+once in the entire run**, which is the category the three compatible controls
+call for.
+
+A verifier shown only one side of a disputed fact has nothing to classify, so
+the figures are repeated below restricted to the questions where the chunks
+carrying both sides of the focal fact were retrieved. That restriction uses
+`anchor_chunks` and `pair_is_present` from the existing retrieval and protocol
+code; the weaker test of whether both document identifiers appeared is not used,
+because it admits exactly the case the restriction exists to exclude.
+
+**Table 4.12** Restricted to the 33 questions where both sides of
+the focal disputed fact were retrieved.
+
+| Declared type | Questions | Any conflict reported | Exactly classified |
+|---|---:|---:|---:|
+| Version supersession | 12 | 8 | 4 |
+| Mutually exclusive | 6 | 0 | 0 |
+| Stricter-looser | 8 | 4 | 0 |
+| Compatible controls | 7 | 4 | 0 |
+| **Total** | **33** | **16** | **4** |
+
+The full confusion matrix of declared type against reported relationship is in
+Appendix D.
+
+**These figures do not revise H2c, and they are not in tension with it.** H2c is
+scored on `asserts_conflict`, the reviewer's judgement of what the **served
+answer** says, and records no false conflicts on the controls in any arm. The
+figures above read the verifier's **internal** relationship field, where a
+conflict relationship was reported on 5 of the
+9 control questions. The two measure different
+outputs: the internal conclusion did not become an assertion in the answer
+served. Both are correct and neither replaces the other.
+
+`CONF-02-Q1` is offered in Appendix D as one illustrative frozen case rather
+than as evidence in itself. What these figures support, and no more, is examined
+in Chapter 5.
 
 ## 4.12 Summary
 
