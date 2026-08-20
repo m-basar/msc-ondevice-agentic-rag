@@ -418,7 +418,7 @@ def chunk_document(
     # behaviour it produced was correct, but a dead guard is still a defect: it
     # contradicted the comment above it, so the comment could not be trusted,
     # and it would have merged a distant or oversized tail without complaint if
-    # the corpus ever produced one. Measured across the current 37 documents,
+    # the corpus ever produced one. Measured across the corpus as it stands,
     # all 19 tail merges join immediately adjacent sibling sections and none
     # reaches max_words, so restoring a real guard leaves the chunk set
     # unchanged. That is the point: the guard is here for the corpus that has
