@@ -1,0 +1,11 @@
+{
+  "creator": "sme-assistant figure generator, docs/PREREGISTRATION.md amendment 1.30.7",
+  "note": "Recorded, not pinned by this file. Figure metadata is constant so that two runs on one machine are byte-identical; rendering still depends on the versions below, so a regeneration elsewhere may differ in pixels and this states what drew the committed images.",
+  "versions": {
+    "freetype": "2.6.1",
+    "matplotlib": "3.10.9",
+    "matplotlib_backend": "Agg",
+    "numpy": "2.4.4",
+    "python": "3.11.15"
+  }
+}

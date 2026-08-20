@@ -4079,3 +4079,225 @@ explanations are not excluded and were not tested.
 | Confound rule | `anchor_chunks` and `pair_is_present`, unmodified |
 | Threshold or verdict | **none** |
 | H1 to H5 | unchanged, byte-identical |
+
+---
+
+# Amendment 1.30 - 20 August 2026
+
+Eight corrections following a second independent review of amendments 1.28 and
+1.29 and the code they describe. Nothing in the experiment changes.
+
+## 1.30.1 Every one of these is the same defect, and it is this document's own
+
+Seven of the eight items below are cases of a rule written here and not enforced
+in code. That is precisely the failure amendment 1.16.1 records, and it has now
+recurred often enough that the pattern is worth stating plainly rather than
+apologising for individually.
+
+**A rule describing what the code was supposed to do is worth less than no rule
+at all**, because a rule that exists gets quoted as though it were enforced. A
+missing rule at least prompts someone to check.
+
+Three specific instances, named because a general confession is not an audit
+trail:
+
+**Amendment 1.28 states that replay "now fails closed" and that live questions
+"now travel by POST". Neither was true when 1.28 was committed.** Replay checked
+three provenance hashes of six, and checked neither the split, the purpose, the
+run identifier, the uniqueness of the declared arms, the arm recorded on each
+answer, nor that the arms had been asked the same question. Live mode changed the
+`method` attribute of an HTML form; a question pasted into the address bar was
+still answered and still passed through the browser history and every log between
+the address bar and the handler, which is the whole of what the rule was for.
+1.28 is the amendment that exists to correct unenforced dashboard rules, and it
+introduced two of its own in the same commit.
+
+**Amendment 1.29 contradicts itself.** Rule 2 of 1.29.3 names "all 45 questions
+belonging to a registered reported family" as the principal denominator; rule 7
+requires the figures to be reported separately for H1, H2 and the controls with
+"no pooled headline figure". The implementation followed rule 2 and produced an
+`all_registered_families` block, and section 4.13 printed a bold 45-question
+total row. Rule 7 was the correct rule and rule 2 should never have been written
+beside it. 1.30.5 removes the total from the analysis, from the results chapter
+and from the appendix, and 1.30.6 records that a check now refuses to typeset one.
+
+**Amendment 1.26 declares the figures reproducible.** They are not
+byte-reproducible: matplotlib writes its own version into the metadata of both
+the PNG and the SVG, so the same script on the same data on a different
+matplotlib produces different bytes. Suppressing the creation date, which 1.26.6
+did, was necessary and not sufficient. 1.30.7 addresses it.
+
+The eighth item, 1.30.9, is repository hygiene and carries no such history.
+
+## 1.30.2 Replay fails closed, this time in code
+
+`load_replay_library` now refuses, with a named error, when any of the following
+holds. Each has a negative test that fails against the previous implementation.
+
+1. A manifest declares a split other than `test`.
+2. A manifest declares `purpose` of `performance` or `demonstration`.
+3. A manifest's `run_id` disagrees with the directory it was found in.
+4. Two of the named runs declare the same arm.
+5. A record's own `arm` field disagrees with its run's manifest.
+6. A run answers the same question identifier twice.
+7. The arms disagree on a question's text, category or family.
+8. The joined question count disagrees with the test-split size the manifests
+   themselves declare, or with the count the caller states independently.
+9. Any of **six** provenance hashes disagrees across the four runs, or is absent
+   from any of them: `corpus_sha256`, `chunk_set_sha256`, `config_sha256`,
+   `question_set_sha256`, `registry_sha256`, `index_file_sha256`. 1.28 enforced
+   the first three and displayed the rest.
+
+The expected test-split size is read from each run's own
+`question_set_metadata.summary`, not from the gold question set, which no part
+of the demonstrator opens. It is stated a second time in `server.py` so that a
+set of runs internally consistent at some other size still fails.
+
+## 1.30.3 Live questions travel by POST, enforced at the handler
+
+`GET /live` executes nothing and reflects nothing, whatever query string it is
+given. The query is discarded rather than echoed, so a form cannot helpfully
+repopulate its input with the text the rule exists to keep off the page. Two
+tests: one over the wire, using a stub assistant that fails the test if it is
+reached at all, and one over the abstract syntax tree of `do_GET`, which holds
+on a machine where live mode reports itself unavailable.
+
+## 1.30.4 Thermal telemetry by stage, and the exploratory diagnostic hardened
+
+**Telemetry.** The timing panel reported one row, "CPU temperature", taking the
+draft's reading or falling back to the verifier's. On the frozen Pi 5 record the
+draft ran at 84.8 °C and the verifier, arriving second onto an already hot core,
+at 88.1 °C. Merging the rows deleted the finding. Throttling was likewise
+reported once for two stages. Both are now per stage, and a host that reports
+neither shows "not reported on this host" rather than "no", because a
+measurement never taken is not a negative result.
+
+**The diagnostic.** The following are now imported rather than restated, and a
+test asserts the restatements cannot return:
+
+* `MAJORITY` from `evaluation.stopping_gate`, replacing a local
+  `FAMILY_MAJORITY` of the same value.
+* `CONFLICTING_RELATIONSHIPS` and `VALID_RELATIONSHIPS` from `verify.schema`,
+  replacing a local set literal of the three conflicting relationships.
+
+A relationship the schema does not define is now **refused**, not counted as a
+non-detection: an unrecognised label means the verifier's contract has changed
+and every count would be over a vocabulary the analysis does not know.
+
+The source run is validated before it is read, by `load_diagnostic_source`. It
+must be a directory whose manifest names that same run identifier, on the test
+split, with no `purpose`, declaring arm D, carrying all 68 answers, with no
+duplicate question identifier and no record from another arm. Previously the run
+identifier was a constant in one module and a sentence in the report, and neither
+was compared with the file that was opened.
+
+Pair presence must now cover every question in the denominator. A missing entry
+was previously read as unknown and dropped from the restricted set, which shrinks
+a denominator without saying so.
+
+The expected shape - 15 registered families, 45 questions, 3 paraphrases each -
+is a **required argument** with no default. Every caller has to state what it
+expects, which is what stops a test that happens to use three records from also
+deciding what the production denominator is allowed to be.
+
+## 1.30.5 The pooled total is withdrawn, and the groups are reported separately
+
+Rule 7 of 1.29.3 governs and rule 2 is withdrawn as inconsistent with it.
+
+* The `all_registered_families` block is removed from
+  `verifier_relationship_diagnostic`. The function now returns
+  `by_hypothesis_group` keyed by `H1_supersession`, `H2_live_disagreement` and
+  `compatible_controls`, and there is no key from which a figure spanning them
+  can be read. A test asserts the absence.
+* The bold 45-question row and the 33-question restricted total are removed from
+  section 4.13, which now reports one table per group.
+* The subtype rows for `mutually_exclusive` and `stricter_looser` are **kept**,
+  beneath the pooled H2 group and labelled as description. They are the reason
+  the pooled figure is misleading on its own: `mutually_exclusive` questions were
+  almost never flagged, while `stricter_looser` questions were flagged and then
+  named wrongly.
+* Sentences pooling H1 and H2 counts in prose ("on the 36 questions drawn from
+  families that carry a genuine conflict...") are removed for the same reason as
+  the table rows.
+* The confusion matrix stays in Appendix D. It is a cross-tabulation, not a rate,
+  and carries no marginal totals.
+* Section 4.13 is moved to follow section 4.12, so that sections 4.10, 4.11,
+  4.12 and 4.13 and Tables 4.10 to 4.13 all appear in numerical order.
+* Chapter 4's provenance paragraph now names the diagnostic's source run, the
+  function that computes it and the validation applied to it.
+
+## 1.30.6 Appendix D is generated, not transcribed
+
+Every count in Appendix D is now emitted by
+`scripts/make_verifier_appendix.py` from `results/analysis/hypotheses.json`. The
+prose is authored in the script, as in `make_amendment_table.py`, because prose
+cannot be derived from a JSON object; the numbers quoted inside the prose are
+formatted from the same block as the tables, so the two cannot disagree.
+
+The generator refuses rather than emitting a shorter appendix if the diagnostic
+block is absent, is not at the frozen shape, names a different source run, or has
+acquired a key spanning the three groups. That last check is what makes 1.30.5 a
+rule rather than an intention.
+
+## 1.30.7 The figures are made byte-reproducible
+
+matplotlib writes its own version string into PNG and SVG metadata. Suppressing
+the creation date under 1.26.6 was necessary and not sufficient: the same script
+on the same data under a different matplotlib produced different bytes, while
+this document called the figures reproducible.
+
+Version metadata is now stripped and replaced with constant project metadata; the
+exact figure-generation dependency versions are pinned and recorded beside the
+figures; all eight figures are regenerated once and two consecutive runs are
+verified byte-identical. The rendered pixels are compared against the committed
+images to confirm that nothing but metadata changed.
+
+## 1.30.8 Volatile counts are removed from the prose
+
+Chapter 3 stated a test count. It rises with every correction, so a number
+written into prose is stale by the next commit and invites a reader to check a
+figure that measures nothing in particular. The sentence now describes what the
+suite covers and says where the count can be read at any given commit.
+
+The generated appendix footer claimed that every amendment after Phase A
+"governs how the existing data are scored and analysed, or concerns the separate
+hardware experiment". That stopped being true when Phase E added a demonstrator
+built after all evidence was frozen, and Phase F added exploratory analysis. The
+footer now names each phase and what it could affect.
+
+## 1.30.9 Repository history
+
+The commit adding `_to_delete` to `.gitignore` is dropped. The directory it
+refers to holds files that this mount cannot unlink; ignoring it in the
+repository is a local convenience with no bearing on the artefact or the results,
+and it does not belong in the history a marker reads. The directory itself is
+untouched, as is the separate transfer archive above the repository root.
+
+## 1.30.10 What this does not license
+
+* **No hypothesis, verdict, frozen file or plotted value changes.** H1 to H5
+  stand exactly as reported, including the H2c contrast the diagnostic sits
+  beside.
+* No arm is rerun, rescored or retuned. No frozen record is read for anything
+  but reporting, and none is modified.
+* The diagnostic remains exploratory and post-hoc. Hardening how it is computed
+  does not promote it: no threshold is applied, no verdict is reached and no
+  chance baseline is computed.
+* `hypotheses.json` is regenerated by the same script from the same read-only
+  inputs. Every H1 to H5 section must return byte-identical, and the diagnostic's
+  per-question rows must be unchanged apart from the added `group` field and the
+  removal of the pooled block. If any hypothesis figure moves, the change is
+  withdrawn rather than the earlier result.
+* The demonstrator contributes no evidence, as declared in 1.27 and enforced in
+  1.28 and here.
+
+## 1.30.11 State
+
+| | |
+|---|---|
+| Status | review correction, no experimental change |
+| Corrected | 1.28's two false claims, 1.29's internal contradiction, 1.26's reproducibility claim |
+| Withdrawn | rule 2 of 1.29.3; the 45-question headline; the 33-question restricted total |
+| New enforcement | replay fail-closed, POST at the handler, validated diagnostic source, generated Appendix D |
+| Frozen runs, judgements, question set, models | unchanged |
+| H1 to H5 | unchanged, byte-identical |

@@ -73,15 +73,51 @@ looks the same on screen as it does in the results.
 | Draft before verification | Shown for Arm D only where the verifier changed the answer; otherwise the card states that the draft was returned unchanged |
 | Claim audit | Each claim the verifier examined, its verdict of supported, contradicted or insufficient evidence, and the passages supporting it. Arm D only |
 | Retrieved evidence | The six retrieved chunks with similarity score and document status. Superseded documents are marked in red |
-| Timings and device state | Retrieval embed and search, generation, verification and end-to-end seconds; CPU temperature and throttle state where the platform reports them |
-| Provenance | Corpus hash, the four run directories, and the arm definition each was executed under |
+| Timings and device state | Retrieval embed and search, generation, verification and end-to-end seconds; CPU temperature and throttle state **per stage**, where the platform reports them. A host that reports neither says so rather than showing "no" |
+| Provenance | Six hashes agreeing across the four runs, the run directories, and the arm definition each was executed under |
 
 Confidence is labelled **rule-based** wherever it appears, and a test asserts
 that the word "calibrated" never does. Arms A, B and C show no confidence level
 at all, because they have no verifier to produce one: that is an absence by
 design rather than a missing value, and the interface distinguishes the two.
 
-## C.4 A demonstration that shows the finding
+The claim audit shows both the supporting and the contradicting passages, and is
+captioned as recorded verifier output rather than as an adjudication. On
+`CONF-02-Q1` the verifier marks a correct claim contradicted and endorses a
+withdrawn document's claim; an interface presenting that as a judgement would
+mislead the person reading it. The audit collapses in the four-up replay grid,
+where a three-column table made the Arm D card twice the height of the others,
+and expands in the single-card live view.
+
+## C.4 What replay refuses to show
+
+Amendments 1.28 and 1.30.2. Replay joins four separate run directories into one
+grid, and every property that makes that join meaningful is now checked rather
+than displayed. It refuses, with a named error rather than a shorter table, when
+a manifest declares a split other than `test`; when a run is marked
+`performance` or `demonstration`; when a manifest names a different run than the
+directory it sits in; when two of the named runs declare the same arm; when a
+record's own `arm` field disagrees with its manifest; when a run answers the same
+question twice; when the arms disagree on a question's text, category or family;
+when the joined question count disagrees with the test-split size the manifests
+declare; and when any of six provenance hashes disagrees across the runs or is
+missing from one.
+
+The last of these is the reason the appendix says six and not three. Amendment
+1.28 enforced the corpus, chunk-set and configuration hashes and printed the
+question set, conflict registry and index hashes beside them without comparing
+them. A property that is displayed and not checked is not a guarantee, and it
+gets quoted as though it were.
+
+Live questions travel by POST. A question typed into a GET form ends up in the
+URL, and from there in the browser history and in every proxy or server log
+between the browser and this handler; a query about someone's sick pay or
+disciplinary record does not belong in a log line. A GET to `/live` renders the
+empty form, executes nothing and does not echo whatever it was given. Replay
+stays on GET, because its parameter is a question identifier from a fixed public
+list and a shareable link to a particular comparison is useful.
+
+## C.5 A demonstration that shows the finding
 
 `CONF-02-Q1`, "When does Statutory Sick Pay start being paid?", is the clearest
 single screen in the study. The corpus contains HR-02, withdrawn, which says
@@ -101,7 +137,7 @@ the four. Arm D reaches the same answer as B and C and takes roughly ten times
 as long as C to do it. That is the dissertation's central finding on one screen,
 and it is the recommended question for a demonstration.
 
-## C.5 Screenshots
+## C.6 Screenshots
 
 > **To be captured.** Run the dashboard and save these four images into
 > `docs/dissertation/figures/`, then replace this note.

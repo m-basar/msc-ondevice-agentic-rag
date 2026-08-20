@@ -189,18 +189,33 @@ def _timings(answer) -> str:
         if isinstance(rate, (int, float)):
             cells += (f"<tr><th>{escape(label)} decode</th><td class='num'>"
                       f"{rate:.2f} tok/s</td></tr>")
-    temperature = generation.get("cpu_temp_c") or verifier.get("cpu_temp_c")
-    throttled = generation.get("throttled")
-    if throttled is None:
-        throttled = verifier.get("throttled")
-    if isinstance(temperature, (int, float)):
-        cells += (f"<tr><th>CPU temperature</th><td class='num'>"
-                  f"{temperature:.1f} &deg;C</td></tr>")
-    if throttled is not None:
-        cells += (f"<tr><th>Throttled</th><td class='num'>"
-                  f"{'yes' if throttled else 'no'}</td></tr>")
-    else:
-        cells += ("<tr><th>Throttled</th><td class='num'>not reported</td></tr>")
+    # Temperature and throttling by stage, not merged. The previous version
+    # took the draft's reading or fell back to the verifier's and printed one
+    # row called "CPU temperature", which on the Pi 5 record hid the finding:
+    # the draft ran at 84.8 degrees and the verifier, arriving second onto an
+    # already hot core, at 88.1. Throttling was reported once, so a stage that
+    # was throttled and a stage that was not looked like one machine.
+    reported_any = False
+    for label, stage in (("Draft", generation), ("Verifier", verifier)):
+        if not stage:
+            continue
+        temperature = stage.get("cpu_temp_c")
+        if isinstance(temperature, (int, float)):
+            reported_any = True
+            cells += (f"<tr><th>{escape(label)} CPU temperature</th>"
+                      f"<td class='num'>{temperature:.1f} &deg;C</td></tr>")
+        throttled = stage.get("throttled")
+        if throttled is not None:
+            reported_any = True
+            cells += (f"<tr><th>{escape(label)} throttled</th>"
+                      f"<td class='num'>{'yes' if throttled else 'no'}"
+                      f"</td></tr>")
+    if not reported_any:
+        # Said once, and said as absence rather than as "no". The laptop runs
+        # report neither field, and a row reading "no" would be a measurement
+        # that was never taken.
+        cells += ("<tr><th>Thermal telemetry</th><td class='num'>"
+                  "not reported on this host</td></tr>")
     return f"<table>{cells}</table>"
 
 

@@ -18,6 +18,7 @@ numerical one.
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -176,3 +177,86 @@ def test_the_results_chapter_keeps_citation_support_as_an_upper_bound(chapters):
         pytest.skip("results chapter is not present")
     assert "upper bound" in results
     assert "lower bound on citation **error**" in results
+
+
+# --- amendment 1.30: what the chapters and appendices may not say -----------
+
+
+@pytest.fixture(scope="module")
+def appendices() -> dict[str, str]:
+    if not CHAPTERS.exists():
+        pytest.skip("dissertation appendices are not present")
+    found = {p.name: flatten(p.read_text(encoding="utf-8"))
+             for p in CHAPTERS.glob("appendix_*.md")}
+    if not found:
+        pytest.skip("dissertation appendices are not present")
+    return found
+
+
+@pytest.mark.parametrize("phrase", [
+    "all registered families",
+    "**45** | **20** | **6**",
+    "| **total** | **33**",
+])
+def test_no_pooled_headline_survives_in_the_chapters(chapters, appendices, phrase):
+    """Amendment 1.30.5. Rule 7 of 1.29.3 forbade a pooled headline and rule 2
+    of the same amendment named one as the principal denominator. Rule 7
+    governs, and the total row it forbade is gone from the chapter, the
+    appendix and the analysis."""
+    everywhere = {**chapters, **appendices}
+    offenders = [name for name, text in everywhere.items()
+                 if flatten(phrase) in text]
+    assert not offenders, f"{phrase!r} reappeared in {offenders}"
+
+
+def test_the_exploratory_section_says_why_it_offers_no_total(chapters):
+    results = chapters.get("chapter_4_results.md")
+    if results is None:
+        pytest.skip("results chapter is not present")
+    assert "no row of totals is offered" in results
+    assert "separate hypotheses with separate decision rules" in results
+
+
+def test_the_results_chapter_runs_in_numerical_order(chapters):
+    """4.13 was written before 4.12 and sat between 4.11 and it. A reader who
+    finds sections out of order reasonably wonders what else was not checked."""
+    path = CHAPTERS / "chapter_4_results.md"
+    if not path.exists():
+        pytest.skip("results chapter is not present")
+    text = path.read_text(encoding="utf-8")
+    headings = re.findall(r"^## 4\.(\d+) ", text, flags=re.MULTILINE)
+    numbers = [int(n) for n in headings]
+    assert numbers == sorted(numbers), f"sections out of order: {numbers}"
+    tables = [int(n) for n in re.findall(r"^\*\*Table 4\.(\d+)\*\*", text,
+                                         flags=re.MULTILINE)]
+    assert tables == sorted(tables), f"tables out of order: {tables}"
+
+
+def test_no_chapter_quotes_a_test_count(chapters):
+    """Amendment 1.30.8. The count rises with every correction, so a number in
+    prose is stale by the next commit and invites a reader to check a figure
+    that measures nothing in particular."""
+    offenders = [name for name, text in chapters.items()
+                 if re.search(r"\b\d{2,4} automated tests\b", text)]
+    assert not offenders, f"a test count is quoted in {offenders}"
+
+
+def test_the_amendment_appendix_footer_describes_every_phase(appendices):
+    """It once said every amendment after Phase A governed scoring, analysis or
+    the hardware experiment. That stopped being true when Phase E added a
+    demonstrator and Phase F added exploratory analysis."""
+    footer = appendices.get("appendix_amendments.md")
+    if footer is None:
+        pytest.skip("the amendment appendix is not present")
+    for phase in ("phase b", "phase c", "phase e", "phase f", "phase g"):
+        assert phase in footer, phase
+    assert "demonstrator built after all evidence was frozen" in footer
+
+
+def test_the_provenance_paragraph_names_the_diagnostic_source(chapters):
+    results = chapters.get("chapter_4_results.md")
+    if results is None:
+        pytest.skip("results chapter is not present")
+    assert "verifier_relationship_diagnostic" in results
+    assert "load_diagnostic_source()" in results
+    assert "20260814_055018_d_test" in results

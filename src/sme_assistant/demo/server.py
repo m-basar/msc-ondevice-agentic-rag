@@ -23,6 +23,11 @@ from . import render
 from .live import LiveAssistant, LiveUnavailable
 from .replay import ReplayUnavailable, load_replay_library
 
+#: The reported test split. Stated here so that the loader's check against the
+#: run manifests is not the only statement of it; the gold question set is not
+#: opened by the demonstrator and this number is not read from it.
+TEST_QUESTIONS = 68
+
 
 class DashboardState:
     """Lazily built, so that neither mode's absence disables the other.
@@ -40,8 +45,14 @@ class DashboardState:
         self._live_lock = threading.Lock()
         try:
             from ..evaluation.analysis import FROZEN_QUALITY_RUNS
+            # The expected size of the test split is asserted here as well as
+            # checked inside the loader against the manifests. Two independent
+            # statements of the same number is the point: a run whose manifest
+            # and answers agree on 40 questions would satisfy the loader's
+            # internal check and fail this one.
             self.library = load_replay_library(root / "results" / "runs",
-                                               FROZEN_QUALITY_RUNS)
+                                               FROZEN_QUALITY_RUNS,
+                                               expected_questions=TEST_QUESTIONS)
         except (ReplayUnavailable, OSError, KeyError) as exc:
             self.library = None
             self.replay_error = str(exc)
@@ -122,7 +133,14 @@ class Handler(BaseHTTPRequestHandler):
         elif route == "/replay":
             self._replay(query)
         elif route == "/live":
-            self._live(query)
+            # A GET renders the empty form and executes nothing, whatever it
+            # was given. Amendment 1.28 said live questions had moved to POST
+            # when only the form's method attribute had changed: a question
+            # pasted into the address bar was still answered, and still landed
+            # in the browser history and every log between here and the page.
+            # The query is discarded rather than echoed, because reflecting it
+            # would put it back on the page it was kept off.
+            self._live({}, executable=False)
         else:
             self._send(render.page(
                 "Not found", "Not found", "replay", "",
@@ -145,11 +163,12 @@ class Handler(BaseHTTPRequestHandler):
         selected = library.by_id(wanted) or library.questions[0]
         self._send(render.replay_page(library, selected, ids))
 
-    def _live(self, query: dict[str, list[str]]) -> None:
+    def _live(self, query: dict[str, list[str]], *,
+              executable: bool = True) -> None:
         status = self.state.live_status()
         question = (query.get("q") or [""])[0].strip()
         answer, error = None, None
-        if question:
+        if question and executable:
             if not status.get("ready"):
                 error = str(status.get("detail") or "live mode is unavailable")
             else:
@@ -157,6 +176,8 @@ class Handler(BaseHTTPRequestHandler):
                     answer = self.state.live().answer(question)
                 except (LiveUnavailable, Exception) as exc:  # noqa: BLE001
                     error = str(exc)
+        if not executable:
+            question = ""
         self._send(render.live_page(question or None, answer, error, status))
 
 

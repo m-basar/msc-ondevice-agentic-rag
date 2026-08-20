@@ -31,6 +31,7 @@ PHASES = {
     "1.25": ("D", "Write-up corrections"),
     "1.27": ("E", "Post-evaluation demonstrator, no evidence contributed"),
     "1.29": ("F", "Exploratory analysis of already-frozen data"),
+    "1.30": ("G", "Review corrections, no experimental change"),
 }
 
 SUMMARY = {
@@ -118,6 +119,13 @@ SUMMARY = {
             "question over the same corpus; the claim audit showed only "
             "supporting evidence and read as an adjudication rather than as "
             "recorded model output; live questions travelled in the URL.",
+    "1.30": "Eight corrections after a second review, seven of them rules this "
+            "document stated and the code did not enforce: 1.28's claim that "
+            "replay failed closed and that live questions used POST was false "
+            "when written, 1.29's principal denominator contradicted its own "
+            "rule against a pooled headline, and 1.26's figures were not "
+            "byte-reproducible. Enforcement added, the pooled total withdrawn, "
+            "Appendix D generated.",
     "1.29": "Post-hoc exploratory diagnostic of the frozen verifier's internal "
             "relationship classification, kept separate from binary conflict "
             "detection. No threshold, no verdict, no hypothesis revisited.",
@@ -181,11 +189,23 @@ def main() -> int:
               f"{SUMMARY[amendment['id']]} |")
     print()
     total = sum(a["subs"] for a in found)
+    # The footer says what each phase could and could not affect. It once said
+    # that every amendment after Phase A governed scoring, analysis or the
+    # hardware experiment, which stopped being true when Phase E added a
+    # demonstrator built after all evidence was frozen. A summary sentence that
+    # no longer describes its own table is the defect amendment 1.16.1 records,
+    # so the phases are named individually rather than swept into "onwards".
     print(f"**{len(found)} amendments, {total} numbered sub-entries.** Phase A "
-          f"amendments precede the\nfrozen confirmatory runs and could and did "
-          "change the design. Phase B onwards\ncould not: the runs were complete, "
-          "and every later amendment either governs how\nthe existing data are "
-          "scored and analysed, or concerns the separate hardware\nexperiment.")
+          "amendments precede the\nfrozen confirmatory runs and could and did "
+          "change the design. Nothing from Phase B\nonwards could: the runs were "
+          "complete before Phase B opened. Phases B and D govern\nhow the "
+          "already-frozen data are scored, aggregated and reported; Phase C "
+          "concerns\nthe separate hardware experiment; Phase E concerns a "
+          "demonstrator built after all\nevidence was frozen, which contributes "
+          "none and is scored nowhere; Phase F is\nexploratory analysis of the "
+          "frozen data, carrying no threshold and no verdict; and\nPhase G "
+          "corrects how all of the above are enforced and reported, changing no\n"
+          "hypothesis, no verdict and no frozen file.")
     return 0
 
 

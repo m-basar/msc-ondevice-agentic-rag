@@ -90,7 +90,7 @@ correctly for the limitation to make sense.
 | 3.5 | three categories | conflict, factual, partial, synthesis, unanswerable |
 | 3.3 | top four chunks | `top_k: 6` |
 | 3.3 | similarity threshold 0.32 | `min_similarity: 0.30` |
-| 3.3 | thirty automated tests | **696** |
+| 3.3 | thirty automated tests | **767** at the time of writing. Chapter 3 no longer quotes a count, because it rises with every correction and a number in prose is stale by the next commit (amendment 1.30.8) |
 | 3.5 | Pi 5 and laptop | three conditions: `laptop_gpu`, `laptop_cpu`, `pi5_cpu`, placement enforced and observed |
 
 ## Missing entirely

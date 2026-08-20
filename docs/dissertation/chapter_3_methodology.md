@@ -229,8 +229,18 @@ on screen, and their outputs are never combined in one view. The boundary is
 enforced rather than intended: pre-registration amendment 1.27 fixes the rules,
 and tests assert that a demonstration record cannot enter the quality analysis,
 that the demonstrator holds no write path at all, and that a replay session
-leaves every frozen file byte-identical. Appendix C describes the interface and
-its operation in full.
+leaves every frozen file byte-identical.
+
+Amendment 1.28 declared two further rules and amendment 1.30 found that neither
+had been implemented, which is recorded here because the correction is part of
+the method rather than an embarrassment to be tidied away. Replay now refuses to
+render a comparison unless the four runs agree on six provenance hashes, declare
+four distinct arms on the test split, and answer the same complete question set;
+each refusal has a test that fails against the previous implementation. A live
+question is accepted only by POST, so that a query about an individual's sick pay
+or disciplinary record does not travel in a URL and from there into a browser
+history or a proxy log. Appendix C describes the interface and its operation in
+full.
 
 ## 3.5 The knowledge base
 
@@ -556,11 +566,14 @@ of runs whose provenance does not agree. A model store reachable over a tunnel
 to the wrong machine was detected once by this mechanism, which is why it exists.
 
 Generation is seeded at 42 with temperature 0.1 and verification at temperature
-0.0. The repository carries 655 automated tests covering the chunker, retriever,
-generator, verifier, question-set boundary, scoring tools, analysis rules and the
-hardware boundary, including tests that assert the failure modes above cannot
-recur, and tests that pin the wording of reported claims so that a withdrawn
-overstatement cannot return unnoticed.
+0.0. The repository carries an automated test suite covering the chunker,
+retriever, generator, verifier, question-set boundary, scoring tools, analysis
+rules and the hardware boundary, including tests that assert the failure modes
+above cannot recur, and tests that pin the wording of reported claims so that a
+withdrawn overstatement cannot return unnoticed. The count is deliberately not
+quoted here: it rises with every correction, so a number written into prose is
+stale by the next commit and invites a reader to check a figure that measures
+nothing in particular. `pytest -q` at the commit under examination reports it.
 
 Two different standards apply to how results reach Chapter 4, and the difference
 is stated rather than glossed. **The figures are generated**: every value they

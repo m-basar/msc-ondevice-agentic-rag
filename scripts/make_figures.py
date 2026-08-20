@@ -50,6 +50,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
 import analyse_performance  # noqa: E402
+import figure_provenance  # noqa: E402
 
 ANALYSIS = ROOT / "results" / "analysis"
 FIGURES = ROOT / "docs" / "dissertation" / "figures"
@@ -137,7 +138,11 @@ def predicted_range(statement: str) -> tuple[float, float]:
 def save(fig, name: str) -> Path:
     FIGURES.mkdir(parents=True, exist_ok=True)
     path = FIGURES / name
-    fig.savefig(path)
+    # Constant metadata. Matplotlib's default writes its own version into the
+    # PNG's Software field, so an otherwise identical regeneration under a
+    # different matplotlib produced different bytes while amendment 1.26 called
+    # the figures reproducible. Amendment 1.30.7.
+    fig.savefig(path, metadata=dict(figure_provenance.PNG_METADATA))
     plt.close(fig)
     return path
 
@@ -470,7 +475,14 @@ def main() -> int:
         figure_latency_overhead(performance),
     ]
     for path in written:
+        if figure_provenance.carries_a_version(path):
+            raise SystemExit(
+                f"{path.name} still names a matplotlib version. Constant "
+                "metadata is what makes two regenerations comparable; "
+                "amendment 1.30.7."
+            )
         print(f"  wrote {path.relative_to(ROOT)}")
+    print(f"  wrote {figure_provenance.write_environment(FIGURES).relative_to(ROOT)}")
     return 0
 
 

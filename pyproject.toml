@@ -14,6 +14,12 @@ dependencies = []
 [project.optional-dependencies]
 plots = ["matplotlib>=3.7"]
 dev = ["pytest>=7.4"]
+# The exact versions that drew the committed figures. Amendment 1.30.7. The
+# loose "plots" extra above is for anyone who wants to run the scripts; this one
+# reproduces the images in docs/dissertation/figures byte for byte. FreeType
+# decides glyph rasterisation and is not installable from here, so the version
+# it was drawn with is recorded in figures/FIGURE_ENVIRONMENT.json instead.
+figures = ["matplotlib==3.10.9", "numpy==2.4.4"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

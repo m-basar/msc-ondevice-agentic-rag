@@ -1,6 +1,6 @@
 # Appendix B: Pre-registration amendment record
 
-All 29 amendments to `docs/PREREGISTRATION.md`, in order. Numbers, dates and
+All 30 amendments to `docs/PREREGISTRATION.md`, in order. Numbers, dates and
 sub-entry counts are read from that document by `scripts/make_amendment_table.py`;
 the summaries are written for this appendix. Each amendment in the source carries
 its own reason, its evidence, and a statement of what it did **not** change.
@@ -46,9 +46,15 @@ Phases are taken from the commit history. The frozen four-arm test run is
 | 1.28 | 20 August | 6 | Corrected the dashboard against its own amendment. 1.27 described a write path the implementation does not have; replay was joining records without enforcing that all four arms answered every question over the same corpus; the claim audit showed only supporting evidence and read as an adjudication rather than as recorded model output; live questions travelled in the URL. |
 | | | | **Phase F: Exploratory analysis of already-frozen data** |
 | 1.29 | 20 August | 5 | Post-hoc exploratory diagnostic of the frozen verifier's internal relationship classification, kept separate from binary conflict detection. No threshold, no verdict, no hypothesis revisited. |
+| | | | **Phase G: Review corrections, no experimental change** |
+| 1.30 | 20 August | 11 | Eight corrections after a second review, seven of them rules this document stated and the code did not enforce: 1.28's claim that replay failed closed and that live questions used POST was false when written, 1.29's principal denominator contradicted its own rule against a pooled headline, and 1.26's figures were not byte-reproducible. Enforcement added, the pooled total withdrawn, Appendix D generated. |
 
-**29 amendments, 184 numbered sub-entries.** Phase A amendments precede the
-frozen confirmatory runs and could and did change the design. Phase B onwards
-could not: the runs were complete, and every later amendment either governs how
-the existing data are scored and analysed, or concerns the separate hardware
-experiment.
+**30 amendments, 195 numbered sub-entries.** Phase A amendments precede the
+frozen confirmatory runs and could and did change the design. Nothing from Phase B
+onwards could: the runs were complete before Phase B opened. Phases B and D govern
+how the already-frozen data are scored, aggregated and reported; Phase C concerns
+the separate hardware experiment; Phase E concerns a demonstrator built after all
+evidence was frozen, which contributes none and is scored nowhere; Phase F is
+exploratory analysis of the frozen data, carrying no threshold and no verdict; and
+Phase G corrects how all of the above are enforced and reported, changing no
+hypothesis, no verdict and no frozen file.

@@ -175,8 +175,17 @@ python scripts/make_figures.py                      # Chapter 4 figures
 python scripts/make_architecture_figures.py         # Chapter 3 figures
 python scripts/make_corpus_doc.py > docs/CORPUS.md  # corpus provenance
 python scripts/make_amendment_table.py > docs/dissertation/appendix_amendments.md
+python scripts/make_verifier_appendix.py > docs/dissertation/appendix_verifier_classification.md
 python scripts/dashboard.py                          # the demonstrator, see above
 ```
+
+The figure scripts write constant metadata rather than matplotlib's version, so
+two runs on one machine produce byte-identical files and a regeneration can be
+checked against what is committed. Rendering still depends on the FreeType and
+font versions installed; the ones that drew the committed images are recorded in
+`docs/dissertation/figures/FIGURE_ENVIRONMENT.json` and pinned as the `figures`
+extra in `pyproject.toml`. Run `python scripts/figure_provenance.py` to print the
+versions on the current machine before regenerating.
 
 The four frozen quality runs are a closed list in
 `sme_assistant.evaluation.analysis.FROZEN_QUALITY_RUNS`. No run created later

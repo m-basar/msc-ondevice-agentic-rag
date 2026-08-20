@@ -1096,63 +1096,12 @@
     }
   },
   "verifier_relationship_diagnostic": {
-    "basis": "Exploratory, post-hoc, amendment 1.29. The pattern was inspected before the rule was written. Detection and exact classification are separate metrics and are never summed. No threshold, no verdict and no chance baseline.",
+    "basis": "Exploratory, post-hoc, amendments 1.29 and 1.30. The pattern was inspected before the rule was written. Detection and exact classification are separate metrics and are never summed. No threshold, no verdict and no chance baseline.",
     "source_run": "20260814_055018_D_test",
-    "denominator": "every test-split question belonging to a registered reported family",
-    "all_registered_families": {
-      "questions": 45,
-      "detected": 20,
-      "exactly_classified": 6,
-      "families": 15,
-      "families_exact_on_a_majority": 1,
-      "reported_relationships": {
-        "insufficient": 6,
-        "mutually_exclusive": 13,
-        "no_relationship": 19,
-        "stricter_looser": 1,
-        "supersession": 6
-      }
-    },
-    "by_declared_type": {
-      "compatible": {
-        "questions": 9,
-        "detected": 5,
-        "exactly_classified": 0,
-        "families": 3,
-        "families_exact_on_a_majority": 0,
-        "reported_relationships": {
-          "mutually_exclusive": 4,
-          "no_relationship": 4,
-          "supersession": 1
-        }
-      },
-      "mutually_exclusive": {
-        "questions": 9,
-        "detected": 1,
-        "exactly_classified": 1,
-        "families": 3,
-        "families_exact_on_a_majority": 0,
-        "reported_relationships": {
-          "insufficient": 3,
-          "mutually_exclusive": 1,
-          "no_relationship": 5
-        }
-      },
-      "stricter_looser": {
-        "questions": 15,
-        "detected": 6,
-        "exactly_classified": 1,
-        "families": 5,
-        "families_exact_on_a_majority": 0,
-        "reported_relationships": {
-          "insufficient": 1,
-          "mutually_exclusive": 4,
-          "no_relationship": 8,
-          "stricter_looser": 1,
-          "supersession": 1
-        }
-      },
-      "version_supersession": {
+    "denominator": "every test-split question belonging to a registered reported family, reported within its hypothesis group and never pooled across groups",
+    "why_there_is_no_total": "H1 and H2 are separate hypotheses with separate decision rules, and the compatible families are controls whose denominator belongs to a false-positive rate. A figure spanning all three would be the same category error as the 8-of-38 statistic withdrawn in 1.29.1.",
+    "by_hypothesis_group": {
+      "H1_supersession": {
         "questions": 12,
         "detected": 8,
         "exactly_classified": 4,
@@ -1163,56 +1112,9 @@
           "mutually_exclusive": 4,
           "no_relationship": 2,
           "supersession": 4
-        }
-      }
-    },
-    "restricted_to_pair_present": {
-      "questions": 33,
-      "detected": 16,
-      "exactly_classified": 4,
-      "families": 14,
-      "families_exact_on_a_majority": 1,
-      "reported_relationships": {
-        "insufficient": 4,
-        "mutually_exclusive": 12,
-        "no_relationship": 13,
-        "supersession": 4
-      },
-      "by_declared_type": {
-        "compatible": {
-          "questions": 7,
-          "detected": 4,
-          "exactly_classified": 0,
-          "families": 3,
-          "families_exact_on_a_majority": 0,
-          "reported_relationships": {
-            "mutually_exclusive": 4,
-            "no_relationship": 3
-          }
         },
-        "mutually_exclusive": {
-          "questions": 6,
-          "detected": 0,
-          "exactly_classified": 0,
-          "families": 3,
-          "families_exact_on_a_majority": 0,
-          "reported_relationships": {
-            "insufficient": 2,
-            "no_relationship": 4
-          }
-        },
-        "stricter_looser": {
-          "questions": 8,
-          "detected": 4,
-          "exactly_classified": 0,
-          "families": 4,
-          "families_exact_on_a_majority": 0,
-          "reported_relationships": {
-            "mutually_exclusive": 4,
-            "no_relationship": 4
-          }
-        },
-        "version_supersession": {
+        "pair_present_questions": 12,
+        "restricted_to_pair_present": {
           "questions": 12,
           "detected": 8,
           "exactly_classified": 4,
@@ -1224,8 +1126,128 @@
             "no_relationship": 2,
             "supersession": 4
           }
+        },
+        "by_declared_type": {}
+      },
+      "H2_live_disagreement": {
+        "questions": 24,
+        "detected": 7,
+        "exactly_classified": 2,
+        "families": 8,
+        "families_exact_on_a_majority": 0,
+        "reported_relationships": {
+          "insufficient": 4,
+          "mutually_exclusive": 5,
+          "no_relationship": 13,
+          "stricter_looser": 1,
+          "supersession": 1
+        },
+        "pair_present_questions": 14,
+        "restricted_to_pair_present": {
+          "questions": 14,
+          "detected": 4,
+          "exactly_classified": 0,
+          "families": 7,
+          "families_exact_on_a_majority": 0,
+          "reported_relationships": {
+            "insufficient": 2,
+            "mutually_exclusive": 4,
+            "no_relationship": 8
+          }
+        },
+        "by_declared_type": {
+          "mutually_exclusive": {
+            "questions": 9,
+            "detected": 1,
+            "exactly_classified": 1,
+            "families": 3,
+            "families_exact_on_a_majority": 0,
+            "reported_relationships": {
+              "insufficient": 3,
+              "mutually_exclusive": 1,
+              "no_relationship": 5
+            },
+            "restricted_to_pair_present": {
+              "questions": 6,
+              "detected": 0,
+              "exactly_classified": 0,
+              "families": 3,
+              "families_exact_on_a_majority": 0,
+              "reported_relationships": {
+                "insufficient": 2,
+                "no_relationship": 4
+              }
+            }
+          },
+          "stricter_looser": {
+            "questions": 15,
+            "detected": 6,
+            "exactly_classified": 1,
+            "families": 5,
+            "families_exact_on_a_majority": 0,
+            "reported_relationships": {
+              "insufficient": 1,
+              "mutually_exclusive": 4,
+              "no_relationship": 8,
+              "stricter_looser": 1,
+              "supersession": 1
+            },
+            "restricted_to_pair_present": {
+              "questions": 8,
+              "detected": 4,
+              "exactly_classified": 0,
+              "families": 4,
+              "families_exact_on_a_majority": 0,
+              "reported_relationships": {
+                "mutually_exclusive": 4,
+                "no_relationship": 4
+              }
+            }
+          }
         }
+      },
+      "compatible_controls": {
+        "questions": 9,
+        "detected": 5,
+        "exactly_classified": 0,
+        "families": 3,
+        "families_exact_on_a_majority": 0,
+        "reported_relationships": {
+          "mutually_exclusive": 4,
+          "no_relationship": 4,
+          "supersession": 1
+        },
+        "pair_present_questions": 7,
+        "restricted_to_pair_present": {
+          "questions": 7,
+          "detected": 4,
+          "exactly_classified": 0,
+          "families": 3,
+          "families_exact_on_a_majority": 0,
+          "reported_relationships": {
+            "mutually_exclusive": 4,
+            "no_relationship": 3
+          }
+        },
+        "by_declared_type": {}
       }
+    },
+    "group_membership": {
+      "H1_supersession": [
+        "version_supersession"
+      ],
+      "H2_live_disagreement": [
+        "mutually_exclusive",
+        "stricter_looser"
+      ],
+      "compatible_controls": [
+        "compatible"
+      ]
+    },
+    "shape": {
+      "families": 15,
+      "questions": 45,
+      "paraphrases_per_family": 3
     },
     "pair_present_rule": "anchor_chunks and pair_is_present, unmodified. Requires the chunks carrying both sides of the focal disputed fact, from two different documents. Not 'both document identifiers retrieved'.",
     "confusion": {
@@ -1258,6 +1280,7 @@
         "question_id": "CONF-02-Q1",
         "family_id": "CONF-02",
         "declared": "version_supersession",
+        "group": "H1_supersession",
         "expected": "supersession",
         "reported": "mutually_exclusive",
         "detected": true,
@@ -1268,6 +1291,7 @@
         "question_id": "CONF-02-Q2",
         "family_id": "CONF-02",
         "declared": "version_supersession",
+        "group": "H1_supersession",
         "expected": "supersession",
         "reported": "mutually_exclusive",
         "detected": true,
@@ -1278,6 +1302,7 @@
         "question_id": "CONF-02-Q3",
         "family_id": "CONF-02",
         "declared": "version_supersession",
+        "group": "H1_supersession",
         "expected": "supersession",
         "reported": "no_relationship",
         "detected": false,
@@ -1288,6 +1313,7 @@
         "question_id": "CONF-03-Q1",
         "family_id": "CONF-03",
         "declared": "version_supersession",
+        "group": "H1_supersession",
         "expected": "supersession",
         "reported": "insufficient",
         "detected": false,
@@ -1298,6 +1324,7 @@
         "question_id": "CONF-03-Q2",
         "family_id": "CONF-03",
         "declared": "version_supersession",
+        "group": "H1_supersession",
         "expected": "supersession",
         "reported": "insufficient",
         "detected": false,
@@ -1308,6 +1335,7 @@
         "question_id": "CONF-03-Q3",
         "family_id": "CONF-03",
         "declared": "version_supersession",
+        "group": "H1_supersession",
         "expected": "supersession",
         "reported": "supersession",
         "detected": true,
@@ -1318,6 +1346,7 @@
         "question_id": "CONF-04-Q1",
         "family_id": "CONF-04",
         "declared": "version_supersession",
+        "group": "H1_supersession",
         "expected": "supersession",
         "reported": "mutually_exclusive",
         "detected": true,
@@ -1328,6 +1357,7 @@
         "question_id": "CONF-04-Q2",
         "family_id": "CONF-04",
         "declared": "version_supersession",
+        "group": "H1_supersession",
         "expected": "supersession",
         "reported": "mutually_exclusive",
         "detected": true,
@@ -1338,6 +1368,7 @@
         "question_id": "CONF-04-Q3",
         "family_id": "CONF-04",
         "declared": "version_supersession",
+        "group": "H1_supersession",
         "expected": "supersession",
         "reported": "no_relationship",
         "detected": false,
@@ -1348,6 +1379,7 @@
         "question_id": "CONF-10-Q1",
         "family_id": "CONF-10",
         "declared": "version_supersession",
+        "group": "H1_supersession",
         "expected": "supersession",
         "reported": "supersession",
         "detected": true,
@@ -1358,6 +1390,7 @@
         "question_id": "CONF-10-Q2",
         "family_id": "CONF-10",
         "declared": "version_supersession",
+        "group": "H1_supersession",
         "expected": "supersession",
         "reported": "supersession",
         "detected": true,
@@ -1368,6 +1401,7 @@
         "question_id": "CONF-10-Q3",
         "family_id": "CONF-10",
         "declared": "version_supersession",
+        "group": "H1_supersession",
         "expected": "supersession",
         "reported": "supersession",
         "detected": true,
@@ -1378,6 +1412,7 @@
         "question_id": "CONF-06-Q1",
         "family_id": "CONF-06",
         "declared": "mutually_exclusive",
+        "group": "H2_live_disagreement",
         "expected": "mutually_exclusive",
         "reported": "no_relationship",
         "detected": false,
@@ -1388,6 +1423,7 @@
         "question_id": "CONF-06-Q2",
         "family_id": "CONF-06",
         "declared": "mutually_exclusive",
+        "group": "H2_live_disagreement",
         "expected": "mutually_exclusive",
         "reported": "no_relationship",
         "detected": false,
@@ -1398,6 +1434,7 @@
         "question_id": "CONF-06-Q3",
         "family_id": "CONF-06",
         "declared": "mutually_exclusive",
+        "group": "H2_live_disagreement",
         "expected": "mutually_exclusive",
         "reported": "no_relationship",
         "detected": false,
@@ -1408,6 +1445,7 @@
         "question_id": "CONF-07-Q1",
         "family_id": "CONF-07",
         "declared": "compatible",
+        "group": "compatible_controls",
         "expected": "contextually_compatible",
         "reported": "no_relationship",
         "detected": false,
@@ -1418,6 +1456,7 @@
         "question_id": "CONF-07-Q2",
         "family_id": "CONF-07",
         "declared": "compatible",
+        "group": "compatible_controls",
         "expected": "contextually_compatible",
         "reported": "mutually_exclusive",
         "detected": true,
@@ -1428,6 +1467,7 @@
         "question_id": "CONF-07-Q3",
         "family_id": "CONF-07",
         "declared": "compatible",
+        "group": "compatible_controls",
         "expected": "contextually_compatible",
         "reported": "no_relationship",
         "detected": false,
@@ -1438,6 +1478,7 @@
         "question_id": "CONF-08-Q1",
         "family_id": "CONF-08",
         "declared": "mutually_exclusive",
+        "group": "H2_live_disagreement",
         "expected": "mutually_exclusive",
         "reported": "no_relationship",
         "detected": false,
@@ -1448,6 +1489,7 @@
         "question_id": "CONF-08-Q2",
         "family_id": "CONF-08",
         "declared": "mutually_exclusive",
+        "group": "H2_live_disagreement",
         "expected": "mutually_exclusive",
         "reported": "insufficient",
         "detected": false,
@@ -1458,6 +1500,7 @@
         "question_id": "CONF-08-Q3",
         "family_id": "CONF-08",
         "declared": "mutually_exclusive",
+        "group": "H2_live_disagreement",
         "expected": "mutually_exclusive",
         "reported": "mutually_exclusive",
         "detected": true,
@@ -1468,6 +1511,7 @@
         "question_id": "CONF-09-Q1",
         "family_id": "CONF-09",
         "declared": "compatible",
+        "group": "compatible_controls",
         "expected": "contextually_compatible",
         "reported": "mutually_exclusive",
         "detected": true,
@@ -1478,6 +1522,7 @@
         "question_id": "CONF-09-Q2",
         "family_id": "CONF-09",
         "declared": "compatible",
+        "group": "compatible_controls",
         "expected": "contextually_compatible",
         "reported": "mutually_exclusive",
         "detected": true,
@@ -1488,6 +1533,7 @@
         "question_id": "CONF-09-Q3",
         "family_id": "CONF-09",
         "declared": "compatible",
+        "group": "compatible_controls",
         "expected": "contextually_compatible",
         "reported": "mutually_exclusive",
         "detected": true,
@@ -1498,6 +1544,7 @@
         "question_id": "CONF-11-Q1",
         "family_id": "CONF-11",
         "declared": "stricter_looser",
+        "group": "H2_live_disagreement",
         "expected": "stricter_looser",
         "reported": "mutually_exclusive",
         "detected": true,
@@ -1508,6 +1555,7 @@
         "question_id": "CONF-11-Q2",
         "family_id": "CONF-11",
         "declared": "stricter_looser",
+        "group": "H2_live_disagreement",
         "expected": "stricter_looser",
         "reported": "mutually_exclusive",
         "detected": true,
@@ -1518,6 +1566,7 @@
         "question_id": "CONF-11-Q3",
         "family_id": "CONF-11",
         "declared": "stricter_looser",
+        "group": "H2_live_disagreement",
         "expected": "stricter_looser",
         "reported": "no_relationship",
         "detected": false,
@@ -1528,6 +1577,7 @@
         "question_id": "CONF-12-Q1",
         "family_id": "CONF-12",
         "declared": "stricter_looser",
+        "group": "H2_live_disagreement",
         "expected": "stricter_looser",
         "reported": "mutually_exclusive",
         "detected": true,
@@ -1538,6 +1588,7 @@
         "question_id": "CONF-12-Q2",
         "family_id": "CONF-12",
         "declared": "stricter_looser",
+        "group": "H2_live_disagreement",
         "expected": "stricter_looser",
         "reported": "no_relationship",
         "detected": false,
@@ -1548,6 +1599,7 @@
         "question_id": "CONF-12-Q3",
         "family_id": "CONF-12",
         "declared": "stricter_looser",
+        "group": "H2_live_disagreement",
         "expected": "stricter_looser",
         "reported": "no_relationship",
         "detected": false,
@@ -1558,6 +1610,7 @@
         "question_id": "CONF-13-Q1",
         "family_id": "CONF-13",
         "declared": "mutually_exclusive",
+        "group": "H2_live_disagreement",
         "expected": "mutually_exclusive",
         "reported": "insufficient",
         "detected": false,
@@ -1568,6 +1621,7 @@
         "question_id": "CONF-13-Q2",
         "family_id": "CONF-13",
         "declared": "mutually_exclusive",
+        "group": "H2_live_disagreement",
         "expected": "mutually_exclusive",
         "reported": "no_relationship",
         "detected": false,
@@ -1578,6 +1632,7 @@
         "question_id": "CONF-13-Q3",
         "family_id": "CONF-13",
         "declared": "mutually_exclusive",
+        "group": "H2_live_disagreement",
         "expected": "mutually_exclusive",
         "reported": "insufficient",
         "detected": false,
@@ -1588,6 +1643,7 @@
         "question_id": "CONF-14-Q1",
         "family_id": "CONF-14",
         "declared": "stricter_looser",
+        "group": "H2_live_disagreement",
         "expected": "stricter_looser",
         "reported": "supersession",
         "detected": true,
@@ -1598,6 +1654,7 @@
         "question_id": "CONF-14-Q2",
         "family_id": "CONF-14",
         "declared": "stricter_looser",
+        "group": "H2_live_disagreement",
         "expected": "stricter_looser",
         "reported": "no_relationship",
         "detected": false,
@@ -1608,6 +1665,7 @@
         "question_id": "CONF-14-Q3",
         "family_id": "CONF-14",
         "declared": "stricter_looser",
+        "group": "H2_live_disagreement",
         "expected": "stricter_looser",
         "reported": "insufficient",
         "detected": false,
@@ -1618,6 +1676,7 @@
         "question_id": "CONF-15-Q1",
         "family_id": "CONF-15",
         "declared": "stricter_looser",
+        "group": "H2_live_disagreement",
         "expected": "stricter_looser",
         "reported": "no_relationship",
         "detected": false,
@@ -1628,6 +1687,7 @@
         "question_id": "CONF-15-Q2",
         "family_id": "CONF-15",
         "declared": "stricter_looser",
+        "group": "H2_live_disagreement",
         "expected": "stricter_looser",
         "reported": "no_relationship",
         "detected": false,
@@ -1638,6 +1698,7 @@
         "question_id": "CONF-15-Q3",
         "family_id": "CONF-15",
         "declared": "stricter_looser",
+        "group": "H2_live_disagreement",
         "expected": "stricter_looser",
         "reported": "no_relationship",
         "detected": false,
@@ -1648,6 +1709,7 @@
         "question_id": "CONF-16-Q1",
         "family_id": "CONF-16",
         "declared": "stricter_looser",
+        "group": "H2_live_disagreement",
         "expected": "stricter_looser",
         "reported": "mutually_exclusive",
         "detected": true,
@@ -1658,6 +1720,7 @@
         "question_id": "CONF-16-Q2",
         "family_id": "CONF-16",
         "declared": "stricter_looser",
+        "group": "H2_live_disagreement",
         "expected": "stricter_looser",
         "reported": "no_relationship",
         "detected": false,
@@ -1668,6 +1731,7 @@
         "question_id": "CONF-16-Q3",
         "family_id": "CONF-16",
         "declared": "stricter_looser",
+        "group": "H2_live_disagreement",
         "expected": "stricter_looser",
         "reported": "stricter_looser",
         "detected": true,
@@ -1678,6 +1742,7 @@
         "question_id": "CONF-17-Q1",
         "family_id": "CONF-17",
         "declared": "compatible",
+        "group": "compatible_controls",
         "expected": "contextually_compatible",
         "reported": "supersession",
         "detected": true,
@@ -1688,6 +1753,7 @@
         "question_id": "CONF-17-Q2",
         "family_id": "CONF-17",
         "declared": "compatible",
+        "group": "compatible_controls",
         "expected": "contextually_compatible",
         "reported": "no_relationship",
         "detected": false,
@@ -1698,6 +1764,7 @@
         "question_id": "CONF-17-Q3",
         "family_id": "CONF-17",
         "declared": "compatible",
+        "group": "compatible_controls",
         "expected": "contextually_compatible",
         "reported": "no_relationship",
         "detected": false,
@@ -1705,6 +1772,13 @@
         "pair_present": true
       }
     ],
-    "relation_to_H2c": "H2c is scored on asserts_conflict, the reviewer's judgement of what the served answer says, and reports zero false conflicts on the controls. This diagnostic reads the verifier's internal relationship field. They measure different outputs. Neither revises the other, and H2c stands exactly as reported."
+    "relation_to_H2c": "H2c is scored on asserts_conflict, the reviewer's judgement of what the served answer says, and reports zero false conflicts on the controls. This diagnostic reads the verifier's internal relationship field. They measure different outputs. Neither revises the other, and H2c stands exactly as reported.",
+    "source_checks": {
+      "run_id_matches_directory": true,
+      "split": "test",
+      "arm": "D",
+      "answers": 68,
+      "question_ids_unique": true
+    }
   }
 }

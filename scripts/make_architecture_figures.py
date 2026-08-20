@@ -36,6 +36,10 @@ import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib.patches import FancyArrowPatch, FancyBboxPatch  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+
+import figure_provenance  # noqa: E402
+
 FIGURES = ROOT / "docs" / "dissertation" / "figures"
 
 #: Okabe-Ito, the same assignment the results figures use, so an arm keeps its
@@ -97,12 +101,25 @@ def save(fig, stem: str) -> list[Path]:
     written = []
     for suffix, dpi in ((".svg", None), (".png", 300)):
         path = FIGURES / f"{stem}{suffix}"
-        # Matplotlib stamps a creation date into SVG metadata by default, which
-        # makes an otherwise identical regeneration produce a different file.
-        # A committed artefact that changes on every run cannot be checked
-        # against its source, so the stamp is suppressed.
-        options = {"metadata": {"Date": None}} if suffix == ".svg" else {"dpi": dpi}
+        # Matplotlib stamps a creation date into SVG metadata and its own
+        # version into both formats, so an otherwise identical regeneration
+        # produces a different file. A committed artefact that changes on every
+        # run cannot be checked against its source. The date is suppressed and
+        # the producer is named constantly; amendments 1.26.6 and 1.30.7.
+        if suffix == ".svg":
+            options = {"metadata": dict(figure_provenance.SVG_METADATA)}
+        else:
+            options = {"dpi": dpi,
+                       "metadata": dict(figure_provenance.PNG_METADATA)}
         fig.savefig(path, **options)
+        if suffix == ".svg":
+            figure_provenance.scrub_svg(path)
+        if figure_provenance.carries_a_version(path):
+            raise SystemExit(
+                f"{path.name} still names a matplotlib version, so two "
+                "regenerations under different matplotlibs would differ in "
+                "bytes; amendment 1.30.7."
+            )
         written.append(path)
     plt.close(fig)
     return written

@@ -20,9 +20,12 @@ from pathlib import Path
 import pytest
 
 from sme_assistant.evaluation.analysis import (
-    AnalysisError,
-    Joined,
+    DIAGNOSTIC_GROUPS,
+    FROZEN_DIAGNOSTIC_SHAPE,
     FROZEN_QUALITY_RUNS,
+    AnalysisError,
+    DiagnosticShape,
+    Joined,
     cohens_kappa,
     contrast,
     decide,
@@ -30,13 +33,17 @@ from sme_assistant.evaluation.analysis import (
     family_table,
     join,
     leave_one_family_out,
+    load_diagnostic_source,
     primary_metrics,
-    verifier_relationship_diagnostic,
     question_table,
     quality_run_directories,
     rate_by_arm,
     select,
+    verifier_relationship_diagnostic,
 )
+from sme_assistant.evaluation import analysis as analysis_module
+from sme_assistant.evaluation.stopping_gate import DECLARED_TO_INFERRED, MAJORITY
+from sme_assistant.verify.schema import CONFLICTING_RELATIONSHIPS
 from sme_assistant.evaluation.manual_scoring import Judgement, append_judgement
 from sme_assistant.evaluation.question_set import Question, QuestionSet
 
@@ -637,21 +644,40 @@ def test_the_group_level_mean_differs_from_the_question_level_one():
     assert accuracy["group_level"]["A"] == pytest.approx(1.0)
 
 
-# --- the exploratory verifier diagnostic, amendment 1.29 ---------------------
+# --- the exploratory verifier diagnostic, amendments 1.29 and 1.30 -----------
+#
+# Every call states the shape it expects. There is no default: a test that
+# happens to use three records cannot also be the thing that decides what the
+# production denominator is allowed to be.
 
 DECLARED = {"CONF-02": "version_supersession", "CONF-06": "mutually_exclusive",
             "CONF-11": "stricter_looser", "CONF-07": "compatible"}
-MAP = {"version_supersession": "supersession",
-       "mutually_exclusive": "mutually_exclusive",
-       "stricter_looser": "stricter_looser",
-       "compatible": "contextually_compatible"}
+MAP = dict(DECLARED_TO_INFERRED)
 
 
 def diag_record(question_id, family_id, relationship, **extra):
     record = {"question_id": question_id, "family_id": family_id,
-              "verification": {"relationship": relationship}}
+              "arm": "D", "verification": {"relationship": relationship}}
     record.update(extra)
     return record
+
+
+def run_diagnostic(records, declared=None, mapping=None, pair_present=None,
+                   shape=None):
+    """Call with a shape derived from the records unless one is given."""
+    declared = DECLARED if declared is None else declared
+    rows = [r for r in records
+            if r.get("family_id") and r["family_id"] in declared]
+    if shape is None:
+        families = {r["family_id"] for r in rows}
+        sizes = {len([x for x in rows if x["family_id"] == f]) for f in families}
+        shape = DiagnosticShape(families=len(families), questions=len(rows),
+                                paraphrases=sizes.pop() if len(sizes) == 1 else 0)
+    if pair_present is None:
+        pair_present = {r["question_id"]: True for r in rows}
+    return verifier_relationship_diagnostic(
+        records, declared, MAP if mapping is None else mapping,
+        pair_present, shape)
 
 
 def test_questions_outside_a_registered_family_are_not_in_the_denominator():
@@ -663,30 +689,59 @@ def test_questions_outside_a_registered_family_are_not_in_the_denominator():
         diag_record("GAP-share-Q1", None, "no_relationship"),
         diag_record("FACT-payment-terms", "", "no_relationship"),
     ]
-    result = verifier_relationship_diagnostic(records, DECLARED, MAP)
-    assert result["all_registered_families"]["questions"] == 1
+    result = run_diagnostic(records)
     assert [r["question_id"] for r in result["per_question"]] == ["CONF-02-Q1"]
+    assert result["by_hypothesis_group"]["H1_supersession"]["questions"] == 1
 
 
-def test_detection_and_exact_classification_are_never_combined():
-    """The withdrawn 8-of-38 figure summed exact classification on the conflict
-    families with binary non-detection on the controls. This asserts the shape
-    that made it possible cannot recur: the two counts live in separate keys
-    and no total over both is offered."""
-    records = [
-        diag_record("CONF-02-Q1", "CONF-02", "mutually_exclusive"),
-        diag_record("CONF-07-Q1", "CONF-07", "no_relationship"),
-    ]
-    result = verifier_relationship_diagnostic(records, DECLARED, MAP)
-    summary = result["all_registered_families"]
-    assert summary["detected"] == 1          # the supersession call, wrongly typed
-    assert summary["exactly_classified"] == 0
+def test_the_diagnostic_reports_no_total_over_the_three_groups():
+    """Amendment 1.30.5. The withdrawn 8-of-38 figure summed exact
+    classification on the conflict families with binary non-detection on the
+    controls. 1.29 separated the two metrics; a single 45-question headline
+    still spanned two hypotheses and a false-positive denominator, so it is
+    removed as well. There is no key from which one can be read.
+    """
+    records = [diag_record("CONF-02-Q1", "CONF-02", "mutually_exclusive"),
+               diag_record("CONF-07-Q1", "CONF-07", "no_relationship")]
+    result = run_diagnostic(records)
+    assert "all_registered_families" not in result
+    groups = result["by_hypothesis_group"]
+    assert set(groups) == {"H1_supersession", "H2_live_disagreement",
+                           "compatible_controls"}
+    assert groups["H1_supersession"]["detected"] == 1
+    assert groups["H1_supersession"]["exactly_classified"] == 0
     # A control answered "no_relationship" is neither detected nor exact. It is
     # not silently promoted to correct, which is what the withdrawn figure did.
-    control = result["by_declared_type"]["compatible"]
-    assert control["detected"] == 0
-    assert control["exactly_classified"] == 0
-    assert "correct" not in json.dumps(summary)
+    assert groups["compatible_controls"]["detected"] == 0
+    assert groups["compatible_controls"]["exactly_classified"] == 0
+    assert "correct" not in json.dumps(groups)
+    assert "same category error" in result["why_there_is_no_total"]
+
+
+def test_the_three_groups_are_the_sets_the_hypotheses_are_stated_over():
+    """H1 is supersession; H2 pools the two live-disagreement subtypes; the
+    compatible families are controls. The grouping is not invented here."""
+    assert DIAGNOSTIC_GROUPS["H1_supersession"] == ("version_supersession",)
+    assert DIAGNOSTIC_GROUPS["H2_live_disagreement"] == (
+        "mutually_exclusive", "stricter_looser")
+    assert DIAGNOSTIC_GROUPS["compatible_controls"] == ("compatible",)
+    covered = {d for types in DIAGNOSTIC_GROUPS.values() for d in types}
+    assert covered == set(DECLARED_TO_INFERRED), (
+        "a declared conflict type is not in any group and would vanish")
+
+
+def test_subtype_rows_are_retained_beneath_the_pooled_group():
+    """1.30.5 keeps the subtypes as description. Removing them would hide that
+    the pooled H2 figure is nine mutually_exclusive and fifteen
+    stricter_looser questions with quite different behaviour."""
+    records = ([diag_record(f"CONF-06-Q{i}", "CONF-06", "mutually_exclusive")
+                for i in (1, 2, 3)]
+               + [diag_record(f"CONF-11-Q{i}", "CONF-11", "no_relationship")
+                  for i in (1, 2, 3)])
+    subtypes = run_diagnostic(records)["by_hypothesis_group"][
+        "H2_live_disagreement"]["by_declared_type"]
+    assert subtypes["mutually_exclusive"]["exactly_classified"] == 3
+    assert subtypes["stricter_looser"]["exactly_classified"] == 0
 
 
 def test_a_control_answered_no_relationship_is_not_counted_as_exact():
@@ -695,16 +750,63 @@ def test_a_control_answered_no_relationship_is_not_counted_as_exact():
     frozen run the verifier never returned the right one at all."""
     records = [diag_record("CONF-07-Q1", "CONF-07", "no_relationship"),
                diag_record("CONF-07-Q2", "CONF-07", "contextually_compatible")]
-    result = verifier_relationship_diagnostic(records, DECLARED, MAP)
-    assert result["by_declared_type"]["compatible"]["exactly_classified"] == 1
+    result = run_diagnostic(records)
+    controls = result["by_hypothesis_group"]["compatible_controls"]
+    assert controls["exactly_classified"] == 1
 
 
 def test_the_mapping_is_used_as_given_and_an_unmapped_type_is_an_error():
     """Amendment 1.29.3 rule 3. Extending the mapping here would be choosing a
     comparison after the data."""
     records = [diag_record("X-Q1", "X", "supersession")]
-    with pytest.raises(AnalysisError, match="no mapping from declared type"):
-        verifier_relationship_diagnostic(records, {"X": "invented_type"}, MAP)
+    with pytest.raises(AnalysisError, match="mapping has been substituted"):
+        run_diagnostic(records, declared={"X": "invented_type"},
+                       mapping={"invented_type": "supersession"})
+
+
+def test_the_conflict_set_is_the_verifier_schema_not_a_local_restatement():
+    """Amendment 1.30.4. The diagnostic previously restated the three
+    conflicting relationships as a literal set beside the schema that already
+    defined them. Two copies of a definition drift, and the one that drifts is
+    never the one anybody reads."""
+    source = Path(analysis_module.__file__).read_text(encoding="utf-8")
+    assert "CONFLICTING_RELATIONSHIPS" in source
+    assert 'conflict_relationships = {"supersession"' not in source
+    assert "FAMILY_MAJORITY" not in source, (
+        "the family majority is the stopping gate's MAJORITY, not a second "
+        "constant of the same value")
+    assert CONFLICTING_RELATIONSHIPS == {
+        "supersession", "mutually_exclusive", "stricter_looser"}
+    assert "contextually_compatible" not in CONFLICTING_RELATIONSHIPS
+
+
+def test_an_unrecognised_relationship_is_refused_not_counted_as_a_miss():
+    """A label the schema does not define means the verifier's contract has
+    changed. Counting it as a non-detection would report a classification rate
+    over a vocabulary the analysis does not know."""
+    records = [diag_record("CONF-02-Q1", "CONF-02", "probably_fine")]
+    with pytest.raises(AnalysisError, match="not.*one of"):
+        run_diagnostic(records)
+
+
+def test_a_record_with_no_verification_block_is_refused():
+    """Arm D produces one for every answer, so its absence is a damaged record
+    rather than an arm without a verifier."""
+    records = [{"question_id": "CONF-02-Q1", "family_id": "CONF-02", "arm": "D"}]
+    with pytest.raises(AnalysisError, match="carries no verification block"):
+        run_diagnostic(records)
+
+
+def test_pair_presence_must_cover_every_question(): 
+    """A missing entry was previously read as None and dropped from the
+    restricted set, which shrinks a denominator without saying so."""
+    records = [diag_record("CONF-02-Q1", "CONF-02", "supersession"),
+               diag_record("CONF-02-Q2", "CONF-02", "supersession")]
+    with pytest.raises(AnalysisError, match="no pair-presence entry"):
+        run_diagnostic(records, pair_present={"CONF-02-Q1": True})
+    with pytest.raises(AnalysisError, match="not a boolean"):
+        run_diagnostic(records, pair_present={"CONF-02-Q1": True,
+                                              "CONF-02-Q2": None})
 
 
 def test_pair_presence_restricts_the_denominator_and_is_supplied_not_inferred():
@@ -723,11 +825,12 @@ def test_pair_presence_restricts_the_denominator_and_is_supplied_not_inferred():
     ]
     # Both documents appear for the first question only; the caller says the
     # anchors were present for neither.
-    result = verifier_relationship_diagnostic(
-        records, DECLARED, MAP, pair_present={"CONF-02-Q1": False,
-                                              "CONF-02-Q2": False})
-    assert result["all_registered_families"]["questions"] == 2
-    assert result["restricted_to_pair_present"]["questions"] == 0
+    result = run_diagnostic(records, pair_present={"CONF-02-Q1": False,
+                                                   "CONF-02-Q2": False})
+    group = result["by_hypothesis_group"]["H1_supersession"]
+    assert group["questions"] == 2
+    assert group["pair_present_questions"] == 0
+    assert group["restricted_to_pair_present"]["questions"] == 0
     rule = result["pair_present_rule"].lower()
     assert "anchor_chunks and pair_is_present" in rule
     assert "not 'both document identifiers retrieved'" in rule
@@ -742,7 +845,7 @@ def test_the_diagnostic_attaches_no_threshold_verdict_or_baseline():
     and was wrong for the same reason.
     """
     records = [diag_record("CONF-02-Q1", "CONF-02", "supersession")]
-    result = verifier_relationship_diagnostic(records, DECLARED, MAP)
+    result = run_diagnostic(records)
 
     def keys(node):
         if isinstance(node, dict):
@@ -764,16 +867,100 @@ def test_a_family_needs_a_majority_of_its_paraphrases_to_count():
     records = [diag_record(f"CONF-02-Q{i}", "CONF-02", rel)
                for i, rel in enumerate(("supersession", "supersession",
                                         "no_relationship"), start=1)]
-    result = verifier_relationship_diagnostic(records, DECLARED, MAP)
-    assert result["all_registered_families"]["families_exact_on_a_majority"] == 1
+    group = run_diagnostic(records)["by_hypothesis_group"]["H1_supersession"]
+    assert group["families_exact_on_a_majority"] == 1
     records[1] = diag_record("CONF-02-Q2", "CONF-02", "mutually_exclusive")
-    result = verifier_relationship_diagnostic(records, DECLARED, MAP)
-    assert result["all_registered_families"]["families_exact_on_a_majority"] == 0
+    group = run_diagnostic(records)["by_hypothesis_group"]["H1_supersession"]
+    assert group["families_exact_on_a_majority"] == 0
+
+
+def test_the_majority_is_the_stopping_gate_constant():
+    """Two of three, from the module that already defined it."""
+    assert MAJORITY == 2
+
+
+@pytest.mark.parametrize("shape,message", [
+    (DiagnosticShape(2, 3, 3), "registered families"),
+    (DiagnosticShape(1, 9, 3), "registered-family"),
+    (DiagnosticShape(1, 3, 2), "must carry 2"),
+])
+def test_the_expected_shape_is_checked_rather_than_assumed(shape, message):
+    """Amendment 1.30.4. A family that lost a paraphrase, or a registry that
+    gained a family, would otherwise change the denominator quietly."""
+    records = [diag_record(f"CONF-02-Q{i}", "CONF-02", "supersession")
+               for i in (1, 2, 3)]
+    with pytest.raises(AnalysisError, match=message):
+        run_diagnostic(records, shape=shape)
+
+
+def test_the_frozen_shape_is_the_reported_registry():
+    assert FROZEN_DIAGNOSTIC_SHAPE == (15, 45, 3)
+
+
+# --- the diagnostic's source run, amendment 1.30.4 ---------------------------
+
+
+def _diag_run(directory: Path, *, run_id=None, split="test", arm="D",
+              purpose=None, answers=68, duplicate=False, stray_arm=None):
+    """A source run valid by default, broken one property at a time."""
+    directory.mkdir(parents=True, exist_ok=True)
+    manifest = {"run_id": directory.name if run_id is None else run_id,
+                "split": split, "arm": {"arm": arm}}
+    if purpose is not None:
+        manifest["purpose"] = purpose
+    (directory / "manifest.json").write_text(json.dumps(manifest),
+                                             encoding="utf-8")
+    ids = [f"Q{i}" for i in range(answers)]
+    if duplicate and len(ids) > 1:
+        ids[-1] = ids[0]
+    lines = [json.dumps({"question_id": qid, "arm": arm,
+                         "verification": {"relationship": "no_relationship"}})
+             for qid in ids]
+    if stray_arm and lines:
+        lines[0] = json.dumps({"question_id": ids[0], "arm": stray_arm,
+                               "verification": {"relationship": "no_relationship"}})
+    (directory / "answers.jsonl").write_text("\n".join(lines) + "\n",
+                                             encoding="utf-8")
+
+
+DIAG = "20260814_055018_D_test"
+
+
+def test_the_diagnostic_source_is_accepted_when_it_is_the_frozen_run(tmp_path):
+    _diag_run(tmp_path / DIAG)
+    source = load_diagnostic_source(tmp_path)
+    assert len(source.records) == 68
+    assert source.checks["arm"] == "D"
+
+
+@pytest.mark.parametrize("kwargs,message", [
+    ({"run_id": "something_else"}, "has been renamed"),
+    ({"split": "dev"}, "not 'test'"),
+    ({"purpose": "performance"}, "purpose"),
+    ({"arm": "B"}, "declares arm 'B'"),
+    ({"answers": 60}, "holds 60 answers"),
+    ({"duplicate": True}, "more than once"),
+    ({"stray_arm": "B"}, "not only D"),
+])
+def test_the_diagnostic_source_is_validated_not_merely_named(tmp_path, kwargs,
+                                                             message):
+    """The run identifier was a constant in the module and a sentence in the
+    report, and neither was compared with the file that was opened. A renamed
+    or re-executed directory of the same name would have been read without
+    complaint and reported as the frozen run."""
+    _diag_run(tmp_path / DIAG, **kwargs)
+    with pytest.raises(AnalysisError, match=message):
+        load_diagnostic_source(tmp_path)
+
+
+def test_a_missing_diagnostic_source_is_an_error_not_an_empty_report(tmp_path):
+    with pytest.raises(AnalysisError, match="missing"):
+        load_diagnostic_source(tmp_path)
 
 
 def test_the_diagnostic_states_that_it_does_not_revise_h2c():
     records = [diag_record("CONF-07-Q1", "CONF-07", "mutually_exclusive")]
-    note = verifier_relationship_diagnostic(records, DECLARED, MAP)["relation_to_H2c"]
+    note = run_diagnostic(records)["relation_to_H2c"]
     assert "asserts_conflict" in note
     assert "served answer" in note
     assert "different outputs" in note

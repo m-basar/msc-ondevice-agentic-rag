@@ -48,6 +48,8 @@ from sme_assistant.evaluation.analysis import (  # noqa: E402
     question_table,
     quality_run_directories,
     rate_by_arm,
+    FROZEN_DIAGNOSTIC_SHAPE,
+    load_diagnostic_source,
     verifier_relationship_diagnostic,
     select,
 )
@@ -467,11 +469,11 @@ def main(argv: list[str] | None = None) -> int:
     from evaluate_retrieval import anchor_chunks  # noqa: E402
     from verifier_protocol import pair_is_present  # noqa: E402
 
-    diagnostic_records = [
-        json.loads(line)
-        for line in (ROOT / "results" / "runs" / DIAGNOSTIC_RUN / "answers.jsonl")
-        .read_text(encoding="utf-8").splitlines() if line.strip()
-    ]
+    # Amendment 1.30.4. The source run is validated rather than opened: the
+    # directory must still hold the frozen Arm D test run of that name, with
+    # all 68 answers and no duplicates.
+    source = load_diagnostic_source(ROOT / "results" / "runs")
+    diagnostic_records = source.records
     index_chunks = json.loads(
         (ROOT / "data" / "index.json").read_text(encoding="utf-8"))["chunks"]
     chunk_texts = {c["chunk_id"]: c["text"] for c in index_chunks}
@@ -479,20 +481,34 @@ def main(argv: list[str] | None = None) -> int:
     declared_type = {f.family_id: f.conflict_type for f in registry.families}
     questions_by_id = {q.question_id: q for q in question_set.questions}
 
+    # Every registered-family question gets an entry. A question the loop could
+    # not resolve raises here rather than being left out of the mapping, where
+    # the diagnostic would once have read it as unknown and dropped it from the
+    # restricted denominator without saying so.
     pair_present = {}
     for record in diagnostic_records:
         family_id = record.get("family_id")
-        question = questions_by_id.get(record["question_id"])
-        if not family_id or family_id not in declared_type or question is None:
+        if not family_id or family_id not in declared_type:
             continue
+        question = questions_by_id.get(record["question_id"])
+        if question is None:
+            raise SystemExit(
+                f"{record['question_id']} is answered in {DIAGNOSTIC_RUN} but "
+                "is not in the question set; pair presence cannot be computed "
+                "for it and the diagnostic will not guess"
+            )
         family = registry.by_id(family_id)
         wanted = anchor_chunks(family, chunk_texts, question.expected_chunks)
         present = {r["chunk_id"]
                    for r in (record.get("retrieval") or {}).get("results") or []}
         pair_present[record["question_id"]] = pair_is_present(wanted, present)
 
-    report["verifier_relationship_diagnostic"] = verifier_relationship_diagnostic(
-        diagnostic_records, declared_type, DECLARED_TO_INFERRED, pair_present)
+    report["verifier_relationship_diagnostic"] = {
+        **verifier_relationship_diagnostic(
+            diagnostic_records, declared_type, DECLARED_TO_INFERRED,
+            pair_present, FROZEN_DIAGNOSTIC_SHAPE),
+        "source_checks": source.checks,
+    }
 
     (out / "hypotheses.json").write_text(
         json.dumps(report, indent=2), encoding="utf-8", newline="\n"

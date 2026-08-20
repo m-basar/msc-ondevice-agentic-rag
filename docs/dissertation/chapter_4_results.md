@@ -392,76 +392,6 @@ answerable questions is computed, because section 4 of the pre-registration
 defines abstention over the gaps only and a metric over the complement would be
 one invented after the data.
 
-## 4.13 Exploratory: what the verifier concluded internally
-
-**This section is exploratory and post-hoc.** The pattern was noticed while
-checking a screenshot of the demonstrator, provisional figures were produced,
-and only then was the rule fixed and recorded as amendment 1.29. It carries none
-of the weight of sections 4.5 to 4.11, no threshold is applied, no verdict is
-reached and no chance baseline is computed. It is reported because a reader of
-two null results is entitled to ask what the verification layer was doing
-instead.
-
-The verifier records a `relationship` for the retrieved passages, chosen from
-six categories, without ever seeing the registry's declared type. The two
-vocabularies are mapped by `DECLARED_TO_INFERRED`, which predates this analysis.
-**Two measures are kept separate and are never combined:** whether any conflict
-relationship was reported at all, and whether the reported relationship matched
-the mapped declared type.
-
-**Table 4.11** The verifier's internal relationship classification against the
-registry, frozen Arm D quality run, all 45 test questions
-belonging to a registered family. Descriptive only.
-
-| Declared type | Questions | Any conflict reported | Exactly classified | Families exact on a majority |
-|---|---:|---:|---:|---:|
-| Version supersession | 12 | 8 | 4 | 1 / 4 |
-| Mutually exclusive | 9 | 1 | 1 | 0 / 3 |
-| Stricter-looser | 15 | 6 | 1 | 0 / 5 |
-| Compatible controls | 9 | 5 | 0 | 0 / 3 |
-| **All registered families** | **45** | **20** | **6** | **1 / 15** |
-
-On the 36 questions drawn from families that carry a genuine conflict, the
-verifier reported some conflict relationship on 15 and named the declared type
-on 6. One family of the fifteen was exactly classified on a majority of its
-three paraphrases. **The category `contextually_compatible` was never returned
-once in the entire run**, which is the category the three compatible controls
-call for.
-
-A verifier shown only one side of a disputed fact has nothing to classify, so
-the figures are repeated below restricted to the questions where the chunks
-carrying both sides of the focal fact were retrieved. That restriction uses
-`anchor_chunks` and `pair_is_present` from the existing retrieval and protocol
-code; the weaker test of whether both document identifiers appeared is not used,
-because it admits exactly the case the restriction exists to exclude.
-
-**Table 4.12** Restricted to the 33 questions where both sides of
-the focal disputed fact were retrieved.
-
-| Declared type | Questions | Any conflict reported | Exactly classified |
-|---|---:|---:|---:|
-| Version supersession | 12 | 8 | 4 |
-| Mutually exclusive | 6 | 0 | 0 |
-| Stricter-looser | 8 | 4 | 0 |
-| Compatible controls | 7 | 4 | 0 |
-| **Total** | **33** | **16** | **4** |
-
-The full confusion matrix of declared type against reported relationship is in
-Appendix D.
-
-**These figures do not revise H2c, and they are not in tension with it.** H2c is
-scored on `asserts_conflict`, the reviewer's judgement of what the **served
-answer** says, and records no false conflicts on the controls in any arm. The
-figures above read the verifier's **internal** relationship field, where a
-conflict relationship was reported on 5 of the
-9 control questions. The two measure different
-outputs: the internal conclusion did not become an assertion in the answer
-served. Both are correct and neither replaces the other.
-
-`CONF-02-Q1` is offered in Appendix D as one illustrative frozen case rather
-than as evidence in itself. What these figures support, and no more, is examined
-in Chapter 5.
-
 ## 4.12 Summary
 
 **Table 4.10** Hypothesis verdicts under the pre-registered decision rule of
@@ -484,10 +414,120 @@ six ties and two families where D was worse. The layer's measured cost is a
 factor of 3.18 in mean end-to-end latency on the target device, under the
 throttled conditions recorded in section 4.10.
 
-This chapter reports what was measured and the verdict each pre-registered rule
-produced. Chapter 5 analyses why these results occurred, by research question.
-Chapter 6 sets them against the literature and draws out the implications and
-limitations.
+The pre-registered results end here. Section 4.13 reports one exploratory
+observation, clearly separated and carrying no verdict, before Chapter 5
+analyses why these results occurred, by research question. Chapter 6 sets them
+against the literature and draws out the implications and limitations.
+
+## 4.13 Exploratory: what the verifier concluded internally
+
+**This section is exploratory and post-hoc.** The pattern was noticed while
+checking a screenshot of the demonstrator, provisional figures were produced,
+and only then was the rule fixed and recorded as amendment 1.29. It carries none
+of the weight of sections 4.5 to 4.11, no threshold is applied, no verdict is
+reached and no chance baseline is computed. It is reported because a reader of
+two null results is entitled to ask what the verification layer was doing
+instead.
+
+The verifier records a `relationship` for the retrieved passages, chosen from
+six categories, without ever seeing the registry's declared type. The two
+vocabularies are mapped by `DECLARED_TO_INFERRED`, which predates this analysis.
+**Two measures are kept separate and are never combined:** whether any conflict
+relationship was reported at all, and whether the reported relationship matched
+the mapped declared type.
+
+**The figures are reported within each hypothesis group and are never pooled
+across them.** H1 and H2 are separate hypotheses with separate decision rules,
+and the compatible families are controls whose denominator belongs to a
+false-positive rate rather than to a detection rate. A single figure spanning
+all three would repeat in a smaller way the error of the withdrawn 8-of-38
+statistic (amendment 1.29.1): it would add counts whose denominators mean
+different things. No row of totals is offered below, and none is computed by
+`analyse_results.py`.
+
+A verifier shown only one side of a disputed fact has nothing to classify, so
+each group is reported twice: over all of its questions, and restricted to those
+where the chunks carrying both sides of the focal fact were actually retrieved.
+That restriction uses `anchor_chunks` and `pair_is_present` from the existing
+retrieval and protocol code; the weaker test of whether both document
+identifiers appeared is not used, because it admits exactly the case the
+restriction exists to exclude.
+
+One caveat applies to the family-majority column on the restricted rows. Every
+family carries three paraphrases, so unrestricted a majority means two of three.
+Restricted, a family may retain only one or two questions, and the rule becomes a
+majority of what remains. The restricted family counts are therefore not directly
+comparable with the unrestricted ones, and are given because dropping them
+entirely would hide how few families survive the restriction at all. Every
+restricted majority count below is zero, so nothing in the reading turns on it.
+
+### H1: the four supersession families
+
+**Table 4.11** Verifier relationship classification on the twelve questions of
+H1's four `version_supersession` families, frozen Arm D quality run. Descriptive
+only.
+
+| | Questions | Any conflict reported | Exactly classified | Families exact on a majority |
+|---|---:|---:|---:|---:|
+| All H1 questions | 12 | 8 | 4 | 1 / 4 |
+| Both sides retrieved | 12 | 8 | 4 | 1 / 4 |
+
+Both sides of the disputed fact were retrieved on all twelve, so the restriction
+removes nothing here and the two rows coincide. The verifier named supersession
+on four of the twelve and called four of the remaining eight `mutually_exclusive`
+instead: it saw a disagreement and did not recognise that the document dates
+resolved it. One of the four families was exactly classified on a majority of its
+three paraphrases.
+
+### H2: the eight live-disagreement families
+
+**Table 4.12** Verifier relationship classification on the twenty-four questions
+of H2's eight pooled families, with the two subtypes shown beneath as
+description. Descriptive only.
+
+| | Questions | Any conflict reported | Exactly classified | Families exact on a majority |
+|---|---:|---:|---:|---:|
+| All H2 questions | 24 | 7 | 2 | 0 / 8 |
+| Both sides retrieved | 14 | 4 | 0 | 0 / 7 |
+| *of which* mutually exclusive | 9 | 1 | 1 | 0 / 3 |
+| *of which* mutually exclusive, both sides retrieved | 6 | 0 | 0 | 0 / 3 |
+| *of which* stricter-looser | 15 | 6 | 1 | 0 / 5 |
+| *of which* stricter-looser, both sides retrieved | 8 | 4 | 0 | 0 / 4 |
+
+The subtype rows are retained because the pooled figure hides a real difference:
+`mutually_exclusive` questions were almost never flagged at all, while
+`stricter_looser` questions were flagged more often and then named wrongly, four
+of them as `mutually_exclusive`. No family of the eight was exactly classified on
+a majority of its paraphrases, and on the fourteen questions where both sides
+were retrieved the exact count is zero.
+
+### The three compatible controls
+
+**Table 4.13** Verifier relationship classification on the nine questions of the
+three `compatible` control families. These are negative controls: the target
+behaviour is *no* conflict relationship, and `contextually_compatible` is the
+category the design calls for. Descriptive only.
+
+| | Questions | Any conflict reported | `contextually_compatible` returned |
+|---|---:|---:|---:|
+| All control questions | 9 | 5 | 0 |
+| Both sides retrieved | 7 | 4 | 0 |
+
+**The category `contextually_compatible` was never returned once in the entire
+run**, on the controls or anywhere else. The verifier reported a conflict
+relationship internally on five of the nine control questions.
+
+**These figures do not revise H2c, and they are not in tension with it.** H2c is
+scored on `asserts_conflict`, the reviewer's judgement of what the **served
+answer** says, and records no false conflicts on the controls in any arm. The
+figures above read the verifier's **internal** relationship field. The two
+measure different outputs: the internal conclusion did not become an assertion in
+the answer served. Both are correct and neither replaces the other.
+
+The full confusion matrix of declared type against reported relationship, and
+`CONF-02-Q1` as one illustrative frozen case, are in Appendix D. The case is
+offered as illustration rather than as evidence in itself. What these figures
+support, and no more, is examined in Chapter 5.
 
 ---
 
@@ -511,7 +551,19 @@ trust, so any discrepancy between a table here and
 
 Hypothesis decisions, levels, contrasts, sensitivity analyses, the two primary
 metrics of sections 4.5 and 4.11 and the measurement-quality block of Table 4.1:
-`results/analysis/hypotheses.json`. Latency, token rates and thermal state:
+`results/analysis/hypotheses.json`. The exploratory tables of section 4.13 and
+the confusion matrix of Appendix D: the `verifier_relationship_diagnostic` block
+of the same file, computed by `verifier_relationship_diagnostic()` in
+`src/sme_assistant/evaluation/analysis.py` over the single frozen Arm D quality
+run `results/runs/20260814_055018_D_test`. That run is validated before it is
+read rather than merely named: `load_diagnostic_source()` checks that the
+directory still holds a run of that identifier, on the test split, with no
+performance or demonstration purpose, declaring arm D, carrying all 68 answers
+with no duplicate question, and that every reported relationship is one the
+verifier's own schema defines. The conflicting-relationship set and the
+family-majority rule are imported from `verify/schema.py` and
+`evaluation/stopping_gate.py` rather than restated. Latency, token rates and
+thermal state:
 `results/analysis/performance_latest_test_performance_{laptop_gpu,laptop_cpu,pi5_cpu}.json`;
 prompt and output token counts and the per-question distributions of Figure 4.3:
 the corresponding run records, read through the validated loader in
@@ -520,4 +572,6 @@ the corresponding run records, read through the validated loader in
 and `results/manual/drift_report.json`. Hypotheses, metric definitions and the
 decision rule: `docs/PREREGISTRATION.md` sections 3 to 5; the limitations of
 section 4.3 in amendments 1.13, 1.14 and 1.16; the two primary metrics in
-amendment 1.25; Cohen's κ and the figure-generation rules in amendment 1.26.
+amendment 1.25; Cohen's κ and the figure-generation rules in amendment 1.26;
+the exploratory diagnostic, its withdrawn provisional figures and the rule
+against pooling across hypothesis groups in amendments 1.29 and 1.30.

@@ -42,11 +42,13 @@ import json
 from dataclasses import dataclass, field
 from pathlib import Path
 from statistics import mean
-from typing import Any, Iterable, Mapping, Sequence
+from typing import Any, Iterable, Mapping, NamedTuple, Sequence
 
+from ..verify.schema import CONFLICTING_RELATIONSHIPS, VALID_RELATIONSHIPS
 from .manual_scoring import load_abstention, load_judgements, load_sheet
 from .question_set import QuestionSet, load_question_set
 from .run_writer import read_run
+from .stopping_gate import DECLARED_TO_INFERRED, MAJORITY
 
 SCHEMA_VERSION = "1.0"
 
@@ -567,19 +569,131 @@ def common_eligibility_variant(rows: Iterable[Joined]) -> dict[str, dict[str, An
 
 
 #: The frozen Arm D quality run, named rather than discovered. Amendment 1.29
-#: sources the diagnostic from this run and nothing else.
+#: sources the diagnostic from this run and nothing else, and amendment 1.30
+#: checks that the directory of that name still holds that run.
 DIAGNOSTIC_RUN = "20260814_055018_D_test"
 
-#: A family counts as exactly classified when a majority of its three
-#: paraphrases were. The constant is the one already used by the stopping gate.
-FAMILY_MAJORITY = 2
+#: What the frozen Arm D run must contain for the diagnostic to be the
+#: diagnostic that was described. Stated as numbers so that a run which lost a
+#: question, or a registry which gained a family, fails rather than reports a
+#: quietly different denominator.
+DIAGNOSTIC_TEST_QUESTIONS = 68
+
+
+class DiagnosticShape(NamedTuple):
+    """How many registered families and questions the diagnostic must find.
+
+    Passed in rather than defaulted. Every call has to state what it expects,
+    which is what stops a test that happens to use three records from also
+    being the thing that decides the production denominator.
+    """
+
+    families: int
+    questions: int
+    paraphrases: int
+
+
+#: The reported conflict registry: fifteen families, three paraphrases each.
+FROZEN_DIAGNOSTIC_SHAPE = DiagnosticShape(families=15, questions=45,
+                                          paraphrases=3)
+
+#: The declared conflict types, grouped as the hypotheses group them. Amendment
+#: 1.30.5: the diagnostic is reported against these three sets and never as one
+#: number over all of them. H1 and H2 are separate hypotheses with separate
+#: decision rules, and the controls are the denominator of a false-positive
+#: rate, so a figure spanning all three is not a rate of anything.
+DIAGNOSTIC_GROUPS: dict[str, tuple[str, ...]] = {
+    "H1_supersession": ("version_supersession",),
+    "H2_live_disagreement": ("mutually_exclusive", "stricter_looser"),
+    "compatible_controls": ("compatible",),
+}
+
+
+class _DiagnosticSource(NamedTuple):
+    """The frozen records, with what was checked about them."""
+
+    records: tuple[Mapping[str, Any], ...]
+    manifest: Mapping[str, Any]
+    checks: dict[str, Any]
+
+
+def load_diagnostic_source(runs_root: Path | str,
+                           name: str = DIAGNOSTIC_RUN) -> _DiagnosticSource:
+    """Read the frozen Arm D run for the diagnostic, or refuse.
+
+    Amendment 1.30.4. The first version of the diagnostic took whatever
+    ``answers.jsonl`` it was handed. The run identifier was a constant in this
+    module and a comment in the report, and neither was compared with the file
+    that was opened, so a re-executed or renamed directory of the same name
+    would have been read without complaint and reported as the frozen run.
+    """
+    directory = Path(runs_root) / name
+    manifest_path = directory / "manifest.json"
+    answers_path = directory / "answers.jsonl"
+    if not manifest_path.exists() or not answers_path.exists():
+        raise AnalysisError(
+            f"the diagnostic source run {name} is missing from {runs_root}"
+        )
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    declared_id = manifest.get("run_id")
+    if declared_id != name:
+        raise AnalysisError(
+            f"{name} holds a run whose manifest calls it {declared_id!r}; the "
+            "directory has been renamed and is not the frozen Arm D run"
+        )
+    if manifest.get("split") != "test":
+        raise AnalysisError(
+            f"{name} declares split={manifest.get('split')!r}, not 'test'"
+        )
+    if manifest.get("purpose") is not None:
+        raise AnalysisError(
+            f"{name} declares purpose={manifest.get('purpose')!r}; the "
+            "diagnostic reads the frozen quality run and nothing else"
+        )
+    arm = (manifest.get("arm") or {}).get("arm")
+    if arm != "D":
+        raise AnalysisError(
+            f"{name} declares arm {arm!r}. The diagnostic reads the verifier's "
+            "internal classification, which only Arm D produces."
+        )
+    records = tuple(
+        json.loads(line)
+        for line in answers_path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    )
+    if len(records) != DIAGNOSTIC_TEST_QUESTIONS:
+        raise AnalysisError(
+            f"{name} holds {len(records)} answers, the reported test split has "
+            f"{DIAGNOSTIC_TEST_QUESTIONS}. A diagnostic over a subset would "
+            "report a denominator the dissertation does not describe."
+        )
+    ids = [r["question_id"] for r in records]
+    if len(set(ids)) != len(ids):
+        raise AnalysisError(f"{name} answers a question more than once")
+    off_arm = sorted({r.get("arm") for r in records if r.get("arm") != "D"})
+    if off_arm:
+        raise AnalysisError(
+            f"{name} contains answers from arm(s) {off_arm}, not only D"
+        )
+    return _DiagnosticSource(
+        records=records,
+        manifest=manifest,
+        checks={
+            "run_id_matches_directory": True,
+            "split": "test",
+            "arm": "D",
+            "answers": len(records),
+            "question_ids_unique": True,
+        },
+    )
 
 
 def verifier_relationship_diagnostic(
     records: Iterable[Mapping[str, Any]],
     declared_type: Mapping[str, str],
     mapping: Mapping[str, str],
-    pair_present: Mapping[str, bool] | None = None,
+    pair_present: Mapping[str, bool],
+    shape: DiagnosticShape,
 ) -> dict[str, Any]:
     """What the verifier concluded internally, against what was declared.
 
@@ -603,18 +717,35 @@ def verifier_relationship_diagnostic(
     in 1.29.1. This function cannot reproduce it: the two counts are returned
     in separate keys and never added.
 
+    Amendment 1.30 removes the remaining total as well. Results are returned
+    per ``DIAGNOSTIC_GROUPS`` - H1's supersession families, H2's pooled live
+    disagreements, and the compatible controls - because those are the sets the
+    hypotheses are stated over, and a single figure spanning a detection rate
+    and a false-positive denominator is not a rate of anything. Subtype rows
+    are retained as description beneath their group.
+
     ``pair_present`` carries the retrieval confound per question, computed by
     the caller with ``anchor_chunks`` and ``pair_is_present``. The weaker rule
     of "both document identifiers were retrieved" is not accepted here, because
     it admits a case where only one side of the disputed fact was shown and a
-    verifier shown one position has nothing to detect.
+    verifier shown one position has nothing to detect. Every question must
+    carry an entry: a missing one was previously read as ``None`` and dropped
+    from the restricted set, which shrinks a denominator silently.
     """
-    #: The six relationships the verifier may return. A conflict relationship
-    #: is one asserting the passages disagree; the other three do not.
-    conflict_relationships = {"supersession", "mutually_exclusive",
-                              "stricter_looser"}
+    if set(mapping) != set(DECLARED_TO_INFERRED):
+        raise AnalysisError(
+            "the declared-to-inferred mapping has been substituted; it is the "
+            "one the stopping gate already used and is not extended here"
+        )
+    grouped = {declared: group
+               for group, declared_types in DIAGNOSTIC_GROUPS.items()
+               for declared in declared_types}
+    if set(grouped) != set(DECLARED_TO_INFERRED):
+        raise AnalysisError(
+            "DIAGNOSTIC_GROUPS does not cover exactly the declared conflict "
+            f"types: {sorted(set(DECLARED_TO_INFERRED) ^ set(grouped))}"
+        )
 
-    pair_present = pair_present or {}
     per_question: list[dict[str, Any]] = []
     confusion: dict[str, dict[str, int]] = {}
 
@@ -629,30 +760,82 @@ def verifier_relationship_diagnostic(
                 f"no mapping from declared type {declared!r} to a verifier "
                 "relationship; the mapping must not be extended here"
             )
-        verification = record.get("verification") or {}
-        reported = verification.get("relationship") or "none"
+        verification = record.get("verification")
         question_id = record["question_id"]
-        entry = {
+        if not verification:
+            raise AnalysisError(
+                f"{question_id} carries no verification block. Arm D produces "
+                "one for every answer, so its absence is a damaged record "
+                "rather than an arm without a verifier."
+            )
+        reported = verification.get("relationship")
+        # An unrecognised label is refused rather than counted as a
+        # non-detection. A relationship the schema does not define means the
+        # verifier's contract has changed, and every count below would be over
+        # a vocabulary the analysis does not know.
+        if reported not in VALID_RELATIONSHIPS:
+            raise AnalysisError(
+                f"{question_id} reports relationship {reported!r}, which is not "
+                f"one of {sorted(VALID_RELATIONSHIPS)}. The diagnostic counts "
+                "labels from the verifier's own schema and will not invent one."
+            )
+        if question_id not in pair_present:
+            raise AnalysisError(
+                f"no pair-presence entry for {question_id}. A missing entry was "
+                "previously read as unknown and dropped, which shrinks the "
+                "restricted denominator without saying so."
+            )
+        present = pair_present[question_id]
+        if not isinstance(present, bool):
+            raise AnalysisError(
+                f"pair presence for {question_id} is {present!r}, not a boolean"
+            )
+        per_question.append({
             "question_id": question_id,
             "family_id": family,
             "declared": declared,
+            "group": grouped[declared],
             "expected": expected,
             "reported": reported,
-            "detected": reported in conflict_relationships,
+            "detected": reported in CONFLICTING_RELATIONSHIPS,
             "exact": reported == expected,
-            "pair_present": pair_present.get(question_id),
-        }
-        per_question.append(entry)
+            "pair_present": present,
+        })
         confusion.setdefault(declared, {})
         confusion[declared][reported] = confusion[declared].get(reported, 0) + 1
 
-    if not per_question:
-        raise AnalysisError("no registered-family questions found for the diagnostic")
+    families_seen = {r["family_id"] for r in per_question}
+    if len(families_seen) != shape.families:
+        raise AnalysisError(
+            f"the diagnostic found {len(families_seen)} registered families, "
+            f"the caller expects {shape.families}"
+        )
+    if len(per_question) != shape.questions:
+        raise AnalysisError(
+            f"the diagnostic found {len(per_question)} registered-family "
+            f"questions, the caller expects {shape.questions}"
+        )
+    per_family: dict[str, int] = {}
+    for row in per_question:
+        per_family[row["family_id"]] = per_family.get(row["family_id"], 0) + 1
+    wrong = {f: n for f, n in sorted(per_family.items())
+             if n != shape.paraphrases}
+    if wrong:
+        raise AnalysisError(
+            f"every reported family must carry {shape.paraphrases} "
+            f"paraphrases; these do not: {wrong}. The family-level counts "
+            "below are means over families and would otherwise be means over "
+            "different denominators."
+        )
 
     def summarise(rows: Sequence[dict[str, Any]]) -> dict[str, Any]:
         families: dict[str, list[bool]] = {}
         for row in rows:
             families.setdefault(row["family_id"], []).append(row["exact"])
+        reported_counts: dict[str, int] = {}
+        for row in rows:
+            reported_counts[row["reported"]] = (
+                reported_counts.get(row["reported"], 0) + 1)
         return {
             "questions": len(rows),
             "detected": sum(1 for r in rows if r["detected"]),
@@ -660,43 +843,56 @@ def verifier_relationship_diagnostic(
             "families": len(families),
             "families_exact_on_a_majority": sum(
                 1 for outcomes in families.values()
-                if sum(outcomes) >= FAMILY_MAJORITY),
-            "reported_relationships": dict(sorted(
-                {r["reported"]: sum(1 for x in rows if x["reported"] == r["reported"])
-                 for r in rows}.items())),
+                if sum(outcomes) >= min(MAJORITY, len(outcomes))),
+            "reported_relationships": dict(sorted(reported_counts.items())),
         }
 
-    by_declared = {
-        declared: summarise([r for r in per_question if r["declared"] == declared])
-        for declared in sorted({r["declared"] for r in per_question})
+    def describe(rows: Sequence[dict[str, Any]]) -> dict[str, Any]:
+        restricted = [r for r in rows if r["pair_present"]]
+        subtypes = sorted({r["declared"] for r in rows})
+        return {
+            **summarise(rows),
+            "pair_present_questions": len(restricted),
+            "restricted_to_pair_present": summarise(restricted),
+            "by_declared_type": {
+                declared: {
+                    **summarise([r for r in rows if r["declared"] == declared]),
+                    "restricted_to_pair_present": summarise(
+                        [r for r in restricted if r["declared"] == declared]),
+                }
+                for declared in subtypes
+            } if len(subtypes) > 1 else {},
+        }
+
+    by_group = {
+        group: describe([r for r in per_question if r["group"] == group])
+        for group in DIAGNOSTIC_GROUPS
     }
-    with_pair = [r for r in per_question if r["pair_present"] is True]
 
     return {
         "basis": (
-            "Exploratory, post-hoc, amendment 1.29. The pattern was inspected "
-            "before the rule was written. Detection and exact classification "
-            "are separate metrics and are never summed. No threshold, no "
-            "verdict and no chance baseline."
+            "Exploratory, post-hoc, amendments 1.29 and 1.30. The pattern was "
+            "inspected before the rule was written. Detection and exact "
+            "classification are separate metrics and are never summed. No "
+            "threshold, no verdict and no chance baseline."
         ),
         "source_run": DIAGNOSTIC_RUN,
         "denominator": (
             "every test-split question belonging to a registered reported "
-            "family"
+            "family, reported within its hypothesis group and never pooled "
+            "across groups"
         ),
-        "all_registered_families": summarise(per_question),
-        "by_declared_type": by_declared,
-        "restricted_to_pair_present": (
-            {
-                **summarise(with_pair),
-                "by_declared_type": {
-                    declared: summarise(
-                        [r for r in with_pair if r["declared"] == declared])
-                    for declared in sorted({r["declared"] for r in with_pair})
-                },
-            } if with_pair else
-            {"questions": 0, "note": "pair presence was not supplied"}
+        "why_there_is_no_total": (
+            "H1 and H2 are separate hypotheses with separate decision rules, "
+            "and the compatible families are controls whose denominator "
+            "belongs to a false-positive rate. A figure spanning all three "
+            "would be the same category error as the 8-of-38 statistic "
+            "withdrawn in 1.29.1."
         ),
+        "by_hypothesis_group": by_group,
+        "group_membership": {k: list(v) for k, v in DIAGNOSTIC_GROUPS.items()},
+        "shape": {"families": shape.families, "questions": shape.questions,
+                  "paraphrases_per_family": shape.paraphrases},
         "pair_present_rule": (
             "anchor_chunks and pair_is_present, unmodified. Requires the chunks "
             "carrying both sides of the focal disputed fact, from two different "
