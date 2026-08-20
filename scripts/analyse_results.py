@@ -36,6 +36,7 @@ from sme_assistant.evaluation.analysis import (  # noqa: E402
     AnalysisError,
     contrast,
     citation_metrics,
+    cohens_kappa,
     common_eligibility_variant,
     decide,
     decide_within_margin,
@@ -48,10 +49,16 @@ from sme_assistant.evaluation.analysis import (  # noqa: E402
     rate_by_arm,
     select,
 )
+from sme_assistant.evaluation.manual_scoring import (  # noqa: E402
+    load_abstention,
+    load_judgements,
+)
 from sme_assistant.evaluation.config import load_evaluation_config  # noqa: E402
 from sme_assistant.evaluation.question_set import load_question_set  # noqa: E402
 
 MANUAL = ROOT / "results" / "manual"
+CONSISTENCY = MANUAL / "consistency.json"
+AGREEMENT = MANUAL / "abstention_agreement.json"
 OUT = ROOT / "results" / "analysis"
 
 
@@ -61,9 +68,22 @@ def test_runs() -> list[Path]:
 
 
 def both_levels(rows, *, field_name="score") -> dict:
+    """Both levels, plus the mean over family means.
+
+    ``family_level`` is the figure in section 5's unit of analysis. It happens
+    to equal ``by_question`` wherever every family carries the same number of
+    questions, which is true of the conflict families and not true elsewhere,
+    so it is computed rather than assumed. Adding it here also keeps the
+    aggregation out of the plotting layer, where it would have no test.
+    """
+    families = family_table(rows, field_name=field_name)
     return {
         "by_question": question_table(rows, field_name=field_name),
-        "by_family": family_table(rows, field_name=field_name),
+        "by_family": families,
+        "family_level": {
+            arm: mean([row[arm] for row in families.values() if arm in row])
+            for arm in sorted({r.arm for r in rows})
+        },
         "families": len({r.group_id for r in rows}),
         "questions": len(rows),
     }
@@ -205,10 +225,12 @@ def main(argv: list[str] | None = None) -> int:
         "a spread of "
         f"{h2['leave_one_family_out']['D_vs_B']['range']:.4f} across the eight "
         "folds. This shows the point estimate is stable and that no one family "
-        "is driving it. It is not evidence for the null: with eight families the "
-        "study could not have detected a small true effect, and a stable "
-        "estimate of a small negative number is not a demonstration that the "
-        "true difference is zero."
+        "is driving it. It is not evidence for the null: with eight families "
+        "the design cannot rule out a small true effect in either direction, "
+        "and a stable estimate of a small negative number is not a "
+        "demonstration that the true difference is zero. No inferential test "
+        "was pre-registered or computed; the prespecified paired-effect and "
+        "direction criteria are what decide this hypothesis."
     )
     report["hypotheses"]["H2"] = h2
 
@@ -237,18 +259,23 @@ def main(argv: list[str] | None = None) -> int:
         ),
         "verdict_unit": "control families with any false conflict",
         "reading": (
-            "The directional prediction is falsified: D did not over-detect "
-            "relative to B. Both are at zero, on families and on questions."
+            "The directional prediction is not supported. No false conflicts "
+            "were observed for Arm D or Arm B in this control sample: both are "
+            "at zero, on families and on questions. This records what was "
+            "observed on these controls and is not a general claim that the "
+            "verification layer does not over-detect."
         ),
         "power_limitation": (
-            f"Zero events observed in every arm across "
+            f"Zero false-conflict events were observed in every arm across "
             f"{len({r.group_id for r in controls})} control families and "
             f"{len(controls) // 4} questions per arm. This is a floor, not a "
-            "measurement: the design could not have detected moderate "
-            "over-detection. The pre-registration states that a null H2c is a "
-            "genuinely strong result and should be reported as such, and that "
-            "holds, but it is reported with this limitation attached rather "
-            "than as a demonstration that over-detection does not occur."
+            "measurement: a denominator this small cannot rule out moderate "
+            "over-detection, because an over-detection rate well above zero "
+            "could still have produced no events here. The pre-registration "
+            "states that a null H2c is a genuinely strong result and should be "
+            "reported as such, and that holds for what was observed, but it is "
+            "reported with this limitation attached rather than as evidence "
+            "that over-detection does not occur."
         ),
     }
 
@@ -371,6 +398,58 @@ def main(argv: list[str] | None = None) -> int:
     # The rule lives in analysis.primary_metrics, where it is tested, and
     # neither metric takes a verdict.
     report["primary_metrics"] = primary_metrics(rows)
+
+    # --- measurement quality -------------------------------------------------
+    # Amendment 1.26. One source for the measurement-quality table in the
+    # results chapter, rather than four files a reader has to reconcile. Only
+    # Cohen's kappa is computed here; the rest is read from the reports that
+    # already exist and cross-checked against them, so this block cannot
+    # silently disagree with them.
+    first_pass = load_judgements(args.judgements)
+    second_pass = load_abstention(args.abstention)
+    shared = sorted(set(first_pass) & set(second_pass))
+    kappa = cohens_kappa(
+        [(bool(first_pass[i].abstained), bool(second_pass[i].abstained))
+         for i in shared]
+    )
+    consistency = json.loads(Path(CONSISTENCY).read_text(encoding="utf-8"))
+    agreement = json.loads(Path(AGREEMENT).read_text(encoding="utf-8"))
+    if round(kappa["observed_agreement"], 9) != round(agreement["agreement_rate"], 9):
+        raise AnalysisError(
+            "recomputed abstention agreement "
+            f"{kappa['observed_agreement']} does not match the committed "
+            f"{agreement['agreement_rate']} in {AGREEMENT}; amendment 1.26.3 "
+            "makes this a defect in the change rather than a new figure"
+        )
+    report["measurement_quality"] = {
+        "basis": (
+            "Reliability and blinding figures for the manual metrics. Amendment "
+            "1.26. No threshold is attached to any of them."
+        ),
+        "rubric_score_agreement": {
+            "groups": consistency["duplicate_groups"],
+            "consistent_on_reported_values": consistency["consistent"],
+            "unreconciled": [d["question_id"] for d in consistency["divergent"]],
+            "note": (
+                "The three-point rubric score agreed in 58 of 58 duplicate "
+                "groups, amendment 1.14.1. The figure above additionally "
+                "counts the flags, where one divergence remains on "
+                "asserts_conflict."
+            ),
+        },
+        "abstention_agreement": kappa,
+        "abstention_drift": {
+            "second_pass_only": agreement["missed_by_first_pass"],
+            "first_pass_only": agreement["missed_by_second_pass"],
+            "reported_pass": "second, per amendment 1.14.4 rule 1",
+            "note": (
+                "The items the first pass missed are confined to its own tail, "
+                "positions 227 to 271, and are scattered in the re-pass order. "
+                "See results/manual/drift_report.json."
+            ),
+        },
+        "blinding": report["blinding"],
+    }
 
     (out / "hypotheses.json").write_text(
         json.dumps(report, indent=2), encoding="utf-8", newline="\n"

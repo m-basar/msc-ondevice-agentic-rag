@@ -566,6 +566,52 @@ def common_eligibility_variant(rows: Iterable[Joined]) -> dict[str, dict[str, An
     return out
 
 
+def cohens_kappa(pairs: Sequence[tuple[bool, bool]]) -> dict[str, Any]:
+    """Chance-corrected agreement for one binary field over two passes.
+
+    Amendment 1.26. Raw agreement overstates reliability when one outcome
+    dominates: on this field 191 of 272 items are agreed negatives, so a rater
+    who marked nothing at all would score 0.702 for doing no work. Kappa removes
+    the agreement expected from the marginals.
+
+    The 2x2 table is returned with the coefficient so a reader can recompute it
+    by hand. No threshold is attached and no verdict is drawn from it.
+    """
+    pairs = list(pairs)
+    if not pairs:
+        raise AnalysisError("no paired judgements to compare")
+    n = len(pairs)
+    both_yes = sum(1 for first, second in pairs if first and second)
+    first_only = sum(1 for first, second in pairs if first and not second)
+    second_only = sum(1 for first, second in pairs if not first and second)
+    both_no = sum(1 for first, second in pairs if not first and not second)
+    observed = (both_yes + both_no) / n
+    expected = (
+        (both_yes + first_only) * (both_yes + second_only)
+        + (second_only + both_no) * (first_only + both_no)
+    ) / (n * n)
+    # Perfect agreement on a field with no variation leaves kappa undefined
+    # rather than 1.0, and saying so is better than dividing by zero.
+    kappa = None if expected == 1.0 else (observed - expected) / (1 - expected)
+    return {
+        "n": n,
+        "table": {
+            "both_marked": both_yes,
+            "first_pass_only": first_only,
+            "second_pass_only": second_only,
+            "neither_marked": both_no,
+        },
+        "observed_agreement": observed,
+        "expected_agreement": expected,
+        "cohens_kappa": kappa,
+        "note": (
+            "Chance-corrected agreement between the two abstention passes on "
+            "the same 272 items, one reviewer. No threshold is attached and no "
+            "verdict is drawn from it. Amendment 1.26."
+        ),
+    }
+
+
 def primary_metrics(rows: Iterable[Joined]) -> dict[str, Any]:
     """The two section 4 primary metrics that carry no hypothesis.
 
@@ -615,6 +661,16 @@ def primary_metrics(rows: Iterable[Joined]) -> dict[str, Any]:
             "unit": "group, per section 5; question level reported alongside",
             "by_question": question_table(correctness),
             "by_group": family_table(correctness),
+            # The mean over group means, which is the unit section 5 names.
+            # Computed here rather than in the figure layer: a number derived
+            # at plot time is a number with no test behind it.
+            "group_level": {
+                arm: mean([
+                    row[arm] for row in family_table(correctness).values()
+                    if arm in row
+                ])
+                for arm in sorted({r.arm for r in correctness})
+            },
             "groups": len({r.group_id for r in correctness}),
             "questions_per_arm": len(correctness) // len({r.arm for r in correctness}),
             "reliability": (

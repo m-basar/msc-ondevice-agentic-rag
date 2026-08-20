@@ -23,6 +23,7 @@ from sme_assistant.evaluation.analysis import (
     AnalysisError,
     Joined,
     FROZEN_QUALITY_RUNS,
+    cohens_kappa,
     contrast,
     decide,
     decide_within_margin,
@@ -552,3 +553,84 @@ def test_a_missing_denominator_is_an_error_not_an_empty_metric():
         primary_metrics([row("A", "CONF-02", 1, behaviour="cite_current_only")])
     with pytest.raises(AnalysisError, match="supersession"):
         primary_metrics([row("A", "FACT-1", 2, behaviour="answer_directly")])
+
+
+# --- chance-corrected agreement, amendment 1.26 ------------------------------
+
+
+def test_kappa_matches_a_hand_worked_table():
+    """The 2x2 is reported with the coefficient so it can be checked by hand.
+    This is that check, written against the arithmetic rather than the code."""
+    pairs = ([(True, True)] * 62 + [(True, False)] * 9
+             + [(False, True)] * 10 + [(False, False)] * 191)
+    result = cohens_kappa(pairs)
+    assert result["n"] == 272
+    assert result["table"] == {
+        "both_marked": 62, "first_pass_only": 9,
+        "second_pass_only": 10, "neither_marked": 191,
+    }
+    # po = 253/272; pe = (71*72 + 201*200) / 272**2
+    assert result["observed_agreement"] == pytest.approx(253 / 272)
+    expected = (71 * 72 + 201 * 200) / (272 ** 2)
+    assert result["expected_agreement"] == pytest.approx(expected)
+    assert result["cohens_kappa"] == pytest.approx(
+        ((253 / 272) - expected) / (1 - expected)
+    )
+
+
+def test_kappa_is_below_raw_agreement_on_an_imbalanced_field():
+    """The reason for reporting it at all. A field where one outcome dominates
+    scores high on raw agreement for doing very little."""
+    pairs = [(False, False)] * 95 + [(True, True)] * 2 + [(True, False)] * 3
+    result = cohens_kappa(pairs)
+    assert result["observed_agreement"] == pytest.approx(0.97)
+    assert result["cohens_kappa"] < result["observed_agreement"]
+
+
+def test_kappa_is_zero_when_agreement_is_only_what_chance_predicts():
+    pairs = ([(True, True)] * 25 + [(True, False)] * 25
+             + [(False, True)] * 25 + [(False, False)] * 25)
+    assert cohens_kappa(pairs)["cohens_kappa"] == pytest.approx(0.0)
+
+
+def test_kappa_is_undefined_rather_than_one_when_nothing_varies():
+    """Two passes that both marked every item agree perfectly and establish
+    nothing. Returning 1.0 there would report a reliability that was never
+    tested."""
+    result = cohens_kappa([(True, True)] * 40)
+    assert result["observed_agreement"] == 1.0
+    assert result["cohens_kappa"] is None
+
+
+def test_kappa_refuses_an_empty_comparison():
+    with pytest.raises(AnalysisError, match="no paired judgements"):
+        cohens_kappa([])
+
+
+# --- group-level means live in the analysis, not the plotting layer ----------
+
+
+def test_answer_correctness_carries_its_group_level_mean():
+    """The figure reads this rather than averaging at plot time. A number
+    derived in the plotting layer has no test behind it."""
+    report = primary_metrics(correctness_and_supersession_rows())
+    accuracy = report["answer_correctness"]
+    for arm in ("A", "D"):
+        expected = sum(
+            row[arm] for row in accuracy["by_group"].values() if arm in row
+        ) / len(accuracy["by_group"])
+        assert accuracy["group_level"][arm] == pytest.approx(expected)
+
+
+def test_the_group_level_mean_differs_from_the_question_level_one():
+    """If they always coincided there would be no reason to report both. They
+    diverge as soon as one group carries more questions than another."""
+    rows = [
+        row("A", "FACT-1", 2, behaviour="answer_directly"),
+        row("A", "PART-1", 0, behaviour="answer_and_flag_gap", qid="PART-1-Q1"),
+        row("A", "PART-1", 0, behaviour="answer_and_flag_gap", qid="PART-1-Q2"),
+        row("A", "CONF-02", 1, behaviour="cite_current_only"),
+    ]
+    accuracy = primary_metrics(rows)["answer_correctness"]
+    assert accuracy["by_question"]["A"] == pytest.approx(2 / 3)
+    assert accuracy["group_level"]["A"] == pytest.approx(1.0)
