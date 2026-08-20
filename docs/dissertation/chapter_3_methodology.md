@@ -498,7 +498,7 @@ pressure to be reframed, and Chapter 4 reports it.
 
 ### 3.8.4 The amendment record
 
-Twenty-six amendments across 168 numbered entries are tabulated in Appendix B.
+Twenty-nine amendments across 184 numbered entries are tabulated in Appendix B.
 Six groups shaped the study most and are summarised here.
 
 **The taxonomy was wrong twice (1.2, 1.4, 1.5).** A single contradiction type
@@ -527,6 +527,13 @@ reproducibility had it not been anticipated.
 **The blinding was defeated and the scoring instrument drifted (1.13, 1.14).**
 Described in 3.7.4. Both were found by the author, after scoring, and reported
 rather than repaired into invisibility.
+
+**The demonstrator was corrected against its own amendment (1.27, 1.28).**
+1.27 fixed the boundary for the post-evaluation dashboard before it was built,
+and 1.28 records that one of its rules described a write path the code does not
+have. The implementation was the safer of the two and was kept; the amendment
+was corrected, because a rule describing something the code does not do does not
+become acceptable by pointing in the safe direction.
 
 **Two pre-registered metrics had never been aggregated (1.25, 1.26).** Answer
 correctness and superseded citation rate were scored and frozen but no code ever

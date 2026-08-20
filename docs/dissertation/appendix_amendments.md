@@ -1,6 +1,6 @@
 # Appendix B: Pre-registration amendment record
 
-All 26 amendments to `docs/PREREGISTRATION.md`, in order. Numbers, dates and
+All 29 amendments to `docs/PREREGISTRATION.md`, in order. Numbers, dates and
 sub-entry counts are read from that document by `scripts/make_amendment_table.py`;
 the summaries are written for this appendix. Each amendment in the source carries
 its own reason, its evidence, and a statement of what it did **not** change.
@@ -41,8 +41,13 @@ Phases are taken from the commit history. The frozen four-arm test run is
 | | | | **Phase D: Write-up corrections** |
 | 1.25 | 19 August | 6 | Two pre-registered primary metrics, answer correctness and superseded citation rate, had been scored and frozen but never aggregated. The rule was fixed before either figure was computed. |
 | 1.26 | 19 August | 6 | Cohen's kappa was quoted in working notes but existed in no file; implemented and tested. Figure-generation rules declared, then seven reporting defects corrected following independent review. |
+| | | | **Phase E: Post-evaluation demonstrator, no evidence contributed** |
+| 1.27 | 20 August | 5 | Declared the boundary for a post-evaluation dashboard before it was built: two separated modes, live output confined to Arm D, replay read-only over the frozen runs, and no evidence contributed to any hypothesis. |
+| 1.28 | 20 August | 6 | Corrected the dashboard against its own amendment. 1.27 described a write path the implementation does not have; replay was joining records without enforcing that all four arms answered every question over the same corpus; the claim audit showed only supporting evidence and read as an adjudication rather than as recorded model output; live questions travelled in the URL. |
+| | | | **Phase F: Exploratory analysis of already-frozen data** |
+| 1.29 | 20 August | 5 | Post-hoc exploratory diagnostic of the frozen verifier's internal relationship classification, kept separate from binary conflict detection. No threshold, no verdict, no hypothesis revisited. |
 
-**26 amendments, 168 numbered sub-entries.** Phase A amendments precede the
+**29 amendments, 184 numbered sub-entries.** Phase A amendments precede the
 frozen confirmatory runs and could and did change the design. Phase B onwards
 could not: the runs were complete, and every later amendment either governs how
 the existing data are scored and analysed, or concerns the separate hardware

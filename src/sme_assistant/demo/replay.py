@@ -46,6 +46,7 @@ class ArmAnswer:
     wall_seconds: float | None
     verification_seconds: float | None
     generation: Mapping[str, Any]
+    verification_generation: Mapping[str, Any]
     retrieval: Mapping[str, Any]
     verification: Mapping[str, Any] | None
     scoring: Mapping[str, Any] | None
@@ -130,6 +131,7 @@ def _arm_answer(record: Mapping[str, Any]) -> ArmAnswer:
         wall_seconds=record.get("wall_seconds"),
         verification_seconds=record.get("verification_seconds"),
         generation=record.get("generation") or {},
+        verification_generation=record.get("verification_generation") or {},
         retrieval=record.get("retrieval") or {},
         verification=record.get("verification"),
         scoring=record.get("scoring"),
@@ -197,8 +199,35 @@ def load_replay_library(runs_root: Path | str,
     if not merged:
         raise ReplayUnavailable(f"no answers found under {root}")
 
-    hashes = {r["corpus_sha256"] for r in provenance["runs"].values()}
-    provenance["corpus_consistent"] = len(hashes) == 1
+    # Fail closed. Everything below was previously computed and displayed
+    # rather than enforced, which is the same defect amendment 1.16.1 records:
+    # a property that is reported but not checked is not a guarantee. A replay
+    # that quietly drops an arm on some questions, or joins runs built over
+    # different corpora, would show a comparison that was never made.
+    expected_arms = set(provenance["runs"])
+    if expected_arms != set(ARMS):
+        raise ReplayUnavailable(
+            f"expected arms {sorted(ARMS)}, the named runs declare "
+            f"{sorted(expected_arms)}"
+        )
+    incomplete = sorted(qid for qid, entry in merged.items()
+                        if set(entry["by_arm"]) != expected_arms)
+    if incomplete:
+        missing = {qid: sorted(expected_arms - set(merged[qid]["by_arm"]))
+                   for qid in incomplete[:5]}
+        raise ReplayUnavailable(
+            f"{len(incomplete)} question(s) are not answered by every arm, so a "
+            f"side-by-side comparison would be missing a column: {missing}"
+        )
+    for field in ("corpus_sha256", "chunk_set_sha256", "config_sha256"):
+        values = {info[field] for info in provenance["runs"].values()}
+        if len(values) != 1:
+            raise ReplayUnavailable(
+                f"the four runs disagree on {field}: {sorted(values)}. They were "
+                "not executed over the same material and must not be compared."
+            )
+
+    provenance["corpus_consistent"] = True
     provenance["question_count"] = len(merged)
     provenance["arms"] = sorted(provenance["runs"])
 

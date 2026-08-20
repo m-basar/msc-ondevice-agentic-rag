@@ -89,6 +89,27 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(payload)
 
+    def do_POST(self) -> None:  # noqa: N802 - required by BaseHTTPRequestHandler
+        """Live questions arrive by POST.
+
+        A question typed into a GET form ends up in the URL, and from there in
+        the browser history and in any proxy or server log between here and the
+        page. This serves an organisation's internal documents, and a query
+        about someone's sick pay or disciplinary record does not belong in a
+        log line. Replay stays on GET because its parameter is a question
+        identifier from a fixed public list, and a shareable link to a
+        particular comparison is useful.
+        """
+        parsed = urlparse(self.path)
+        if parsed.path.rstrip("/") != "/live":
+            self._send(render.page(
+                "Not found", "Not found", "replay", "",
+                "<header><h1>Not found</h1></header>"), 404)
+            return
+        length = int(self.headers.get("Content-Length") or 0)
+        raw = self.rfile.read(length).decode("utf-8") if length else ""
+        self._live(parse_qs(raw))
+
     def do_GET(self) -> None:  # noqa: N802 - required by BaseHTTPRequestHandler
         parsed = urlparse(self.path)
         query = parse_qs(parsed.query)

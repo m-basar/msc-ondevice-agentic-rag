@@ -29,6 +29,8 @@ PHASES = {
     "1.13": ("B", "Manual scoring, after the runs and before unsealing"),
     "1.15": ("C", "Hardware boundary and execution, after the quality analysis"),
     "1.25": ("D", "Write-up corrections"),
+    "1.27": ("E", "Post-evaluation demonstrator, no evidence contributed"),
+    "1.29": ("F", "Exploratory analysis of already-frozen data"),
 }
 
 SUMMARY = {
@@ -106,6 +108,19 @@ SUMMARY = {
     "1.25": "Two pre-registered primary metrics, answer correctness and "
             "superseded citation rate, had been scored and frozen but never "
             "aggregated. The rule was fixed before either figure was computed.",
+    "1.27": "Declared the boundary for a post-evaluation dashboard before it was "
+            "built: two separated modes, live output confined to Arm D, replay "
+            "read-only over the frozen runs, and no evidence contributed to any "
+            "hypothesis.",
+    "1.28": "Corrected the dashboard against its own amendment. 1.27 described "
+            "a write path the implementation does not have; replay was joining "
+            "records without enforcing that all four arms answered every "
+            "question over the same corpus; the claim audit showed only "
+            "supporting evidence and read as an adjudication rather than as "
+            "recorded model output; live questions travelled in the URL.",
+    "1.29": "Post-hoc exploratory diagnostic of the frozen verifier's internal "
+            "relationship classification, kept separate from binary conflict "
+            "detection. No threshold, no verdict, no hypothesis revisited.",
     "1.26": "Cohen's kappa was quoted in working notes but existed in no file; "
             "implemented and tested. Figure-generation rules declared, then "
             "seven reporting defects corrected following independent review.",
@@ -130,6 +145,16 @@ def main() -> int:
     if missing:
         print(f"no summary written for amendment(s): {', '.join(missing)}",
               file=sys.stderr)
+        return 1
+    # The reverse, added under amendment 1.28. The guard above fired correctly
+    # when 1.27 was appended without a summary, and was then satisfied by
+    # writing summaries for amendments that did not yet exist, which it could
+    # not see. A summary with no amendment behind it means someone described a
+    # change that never landed.
+    orphaned = sorted(set(SUMMARY) - {a["id"] for a in found})
+    if orphaned:
+        print(f"summary written for amendment(s) absent from the document: "
+              f"{', '.join(orphaned)}", file=sys.stderr)
         return 1
 
     print("# Appendix B: Pre-registration amendment record")

@@ -164,16 +164,35 @@ def _flags(answer) -> str:
 
 def _timings(answer) -> str:
     generation = answer.generation or {}
+    verifier = getattr(answer, "verification_generation", None) or {}
     rows = [("Retrieval, embed", answer.retrieval.get("embed_seconds")),
             ("Retrieval, search", answer.retrieval.get("search_seconds")),
-            ("Generation", generation.get("wall_seconds")),
-            ("Verification", answer.verification_seconds),
+            ("Draft, prompt", generation.get("prompt_seconds")),
+            ("Draft, generation", generation.get("eval_seconds")),
+            ("Draft, total", generation.get("wall_seconds")),
+            ("Verifier, prompt", verifier.get("prompt_seconds")),
+            ("Verifier, generation", verifier.get("eval_seconds")),
+            ("Verification, total", answer.verification_seconds),
             ("End to end", answer.wall_seconds)]
     cells = "".join(
         f"<tr><th>{escape(label)}</th><td class='num'>{value:.3f} s</td></tr>"
         for label, value in rows if isinstance(value, (int, float)))
-    temperature = generation.get("cpu_temp_c")
+    # Both stages are shown separately. The verifier processes roughly twice
+    # the prompt and emits roughly four times the output of the draft, which is
+    # the whole of the latency finding and is invisible in a single total.
+    for label, stage in (("Draft", generation), ("Verifier", verifier)):
+        tokens_in, tokens_out = stage.get("prompt_tokens"), stage.get("eval_tokens")
+        if tokens_in or tokens_out:
+            cells += (f"<tr><th>{escape(label)} tokens</th><td class='num'>"
+                      f"{tokens_in or 0} in, {tokens_out or 0} out</td></tr>")
+        rate = stage.get("eval_tokens_per_second")
+        if isinstance(rate, (int, float)):
+            cells += (f"<tr><th>{escape(label)} decode</th><td class='num'>"
+                      f"{rate:.2f} tok/s</td></tr>")
+    temperature = generation.get("cpu_temp_c") or verifier.get("cpu_temp_c")
     throttled = generation.get("throttled")
+    if throttled is None:
+        throttled = verifier.get("throttled")
     if isinstance(temperature, (int, float)):
         cells += (f"<tr><th>CPU temperature</th><td class='num'>"
                   f"{temperature:.1f} &deg;C</td></tr>")
@@ -219,6 +238,8 @@ def _verdicts(answer, *, expanded: bool) -> str:
         f"<tr><td>{escape(str(v.get('claim','')))}</td>"
         f"<td>{escape(str(v.get('verdict','')))}</td>"
         f"<td><code>{escape(', '.join(v.get('supporting') or []) or '-')}</code>"
+        f"</td>"
+        f"<td><code>{escape(', '.join(v.get('contradicting') or []) or '-')}</code>"
         f"</td></tr>" for v in verdicts)
     rationale = verification.get("rationale")
     tail = (f"<p class='muted' style='margin-top:8px'>{escape(str(rationale))}</p>"
@@ -227,10 +248,19 @@ def _verdicts(answer, *, expanded: bool) -> str:
                        if str(v.get("verdict", "")).upper() == "CONTRADICTED")
     label = f"Claim audit ({len(verdicts)} claims"
     label += f", {contradicted} contradicted)" if contradicted else ")"
+    # The verdicts below are what the verifier model returned. They are not a
+    # key, and they are sometimes wrong: in the frozen run the layer marked a
+    # correct claim contradicted and endorsed a withdrawn document's claim on
+    # the same question. Presenting them without that caveat would invite a
+    # viewer to read a model's opinion as an adjudication.
+    caveat = ("<p class='muted' style='margin:8px 0 0'><strong>Recorded "
+              "verifier output, not ground truth.</strong> These verdicts are "
+              "what the verification model returned. They were not checked "
+              "against the answer key and are sometimes incorrect.</p>")
     return (f"<details{' open' if expanded else ''}><summary>{escape(label)}"
             "</summary>"
-            "<table><tr><th>Claim</th><th>Verdict</th><th>Supported by</th></tr>"
-            f"{rows}</table>{tail}</details>")
+            "<table><tr><th>Claim</th><th>Verdict</th><th>Supported by</th>"
+            f"<th>Contradicted by</th></tr>{rows}</table>{caveat}{tail}</details>")
 
 
 def arm_card(answer, *, show_draft: bool = True, expanded: bool = False) -> str:
@@ -336,7 +366,7 @@ def live_page(question: str | None, answer, error: str | None,
         "available under <a href='/replay'>Frozen replay</a>, where it comes "
         "from the committed experimental records rather than from a fresh "
         f"execution.<br><span class='muted'>{status_line}</span></div>"
-        "<form method='get' action='/live'>"
+        "<form method='post' action='/live'>"
         "<label for='q'><strong>Ask a question about the knowledge base"
         "</strong></label>"
         f"<input id='q' type='text' name='q' value='{escape(question or '')}' "

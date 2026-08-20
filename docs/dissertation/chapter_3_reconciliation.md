@@ -9,7 +9,7 @@ retained as the record of what was wrong and what was done about it. The RTF
 drafts are now legacy and should not be transferred into the template.
 
 Nothing here is a defect in the experiment. The draft simply predates
-amendments 1.1 to 1.26, and the design moved a long way under them.
+amendments 1.1 to 1.29, and the design moved a long way under them.
 
 ## Serious: the draft rules out the method that was used
 
@@ -90,7 +90,7 @@ correctly for the limitation to make sense.
 | 3.5 | three categories | conflict, factual, partial, synthesis, unanswerable |
 | 3.3 | top four chunks | `top_k: 6` |
 | 3.3 | similarity threshold 0.32 | `min_similarity: 0.30` |
-| 3.3 | thirty automated tests | **655** |
+| 3.3 | thirty automated tests | **696** |
 | 3.5 | Pi 5 and laptop | three conditions: `laptop_gpu`, `laptop_cpu`, `pi5_cpu`, placement enforced and observed |
 
 ## Missing entirely

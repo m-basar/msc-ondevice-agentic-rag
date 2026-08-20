@@ -3883,3 +3883,199 @@ are never shown together and their outputs are never merged in a single view.
 | Live four-arm comparison | **not permitted** |
 | Evidence contributed to H1 to H5 | **none** |
 | Frozen runs, judgements, question set, models | unchanged |
+
+---
+
+# Amendment 1.28 - 20 August 2026
+
+Corrections to the dashboard, made after it was built and reviewed. Five
+defects, one of which is that amendment 1.27 described an implementation that
+does not exist. No hypothesis, verdict, judgement, run or frozen record changes.
+
+## 1.28.1 Amendment 1.27 described a write path the code does not have
+
+1.27.3 rule 1 says live output is written to `results/demo/`, never to
+`results/runs/`. The implementation writes nothing at all: the demonstrator has
+no write path anywhere, and a test asserts that over its own syntax tree.
+
+The implementation is the safer of the two and is kept. The amendment is
+corrected rather than the code, because **a rule describing something the code
+does not do is the defect this project keeps finding**, and it does not become
+acceptable by pointing in the safe direction. 1.27.3 rule 1 should be read as:
+the demonstrator writes nothing; were a future version to record a live answer,
+it would go to `results/demo/` and carry `purpose: demonstration`, and the
+closed `FROZEN_QUALITY_RUNS` list would still refuse it.
+
+The distinction matters for what the guarantee rests on. "It writes somewhere
+harmless" depends on the writer behaving. "It cannot write" does not.
+
+## 1.28.2 Replay computed its consistency checks and did not enforce them
+
+The reader recorded whether the four runs agreed on the corpus hash, displayed
+the answer, and joined them regardless. It also joined whatever questions it
+found, so an arm missing an answer would have produced three cards where there
+should be four.
+
+Both now refuse. A question not answered by every arm, a set of runs that does
+not declare exactly the four arms, or any disagreement on the corpus, chunk-set
+or configuration hash raises rather than rendering. This is the same defect as
+1.16.1 in a different place: a property reported but not checked is not a
+guarantee, and a partial comparison presented as a complete one is worse than
+no comparison.
+
+## 1.28.3 The claim audit read as an adjudication
+
+It showed each claim, a verdict and the supporting passages. Two problems.
+
+**Only one side of the evidence was shown.** The verifier returns supporting
+*and* contradicting identifiers, and on the frozen record for CONF-02-Q1 the
+contradicting column is the informative one. Both are now displayed.
+
+**Nothing said the verdicts could be wrong.** They are the verification model's
+output, not a key, and they were never checked against one. On that same frozen
+question the layer marked the correct claim `CONTRADICTED` and recorded the
+withdrawn document's claim as `SUPPORTED`. An interface presenting that as
+adjudication misleads its reader about what it is looking at. The panel now
+carries: *recorded verifier output, not ground truth; these verdicts were not
+checked against the answer key and are sometimes incorrect.*
+
+## 1.28.4 Live questions travelled in the URL
+
+The live form used `GET`, so a typed question reached the browser history and
+any log between the browser and the server. This serves an organisation's
+internal documents, and a question about an individual's sick pay or
+disciplinary record does not belong in a log line. Live questions now use
+`POST`.
+
+Replay stays on `GET` deliberately: its parameter is a question identifier from
+a fixed, published list, and a shareable link to a particular comparison is
+useful.
+
+## 1.28.5 The timing panel hid the finding it exists to show
+
+It reported one end-to-end total and one verification total. The RQ4 result is
+that the verifier processes roughly twice the prompt and emits roughly four
+times the output of the draft, and a single total makes that invisible. Prompt
+and generation seconds, token counts and decode rate are now shown for the
+draft and the verifier stages separately.
+
+## 1.28.6 State
+
+| | |
+|---|---|
+| 1.27.3 rule 1 | corrected: the demonstrator has no write path |
+| Replay | fails closed on a missing arm, a missing answer or a provenance disagreement |
+| Claim audit | both evidence columns, labelled as recorded model output |
+| Live questions | `POST`; replay remains `GET` |
+| Timings | draft and verifier stages reported separately |
+| Frozen runs, judgements, question set, models, H1 to H5 | unchanged |
+
+---
+
+# Amendment 1.29 - 20 August 2026
+
+A descriptive diagnostic of the frozen verifier's internal relationship
+classification, added at write-up.
+
+## 1.29.1 This is post-hoc exploratory analysis, and the ordering is stated
+
+**The pattern was seen before this amendment was written.** A single frozen
+record was inspected while checking a dashboard screenshot; the verifier had
+marked a correct claim `CONTRADICTED` and recorded a withdrawn document's claim
+as `SUPPORTED` on the same question. The frozen run was then queried, provisional
+figures were produced and reviewed, and only afterwards was this rule written.
+
+That ordering is the opposite of sections 3 and 5 of this document, and nothing
+below should be read as carrying their weight. This is **exploratory** analysis
+of data already collected, on a field no hypothesis is stated over. It generates
+a description, not a test.
+
+**A provisional figure produced in that first pass is withdrawn.** It reported
+"8 of 38 correct" by summing exact relationship classification on the conflict
+families with binary non-detection on the compatible controls, where
+`no_relationship` was counted as correct although exact classification requires
+`contextually_compatible`. Two different metrics in one denominator is not a
+rate. This project's own verifier protocol separates detection from
+classification, and 1.29.3 keeps them separate.
+
+**A chance baseline offered alongside it is also withdrawn.** "About 17 per cent
+for guessing among six categories" assumes a uniform model over categories that
+are neither equiprobable nor independently reachable. No baseline was
+pre-registered, none is justified here, and none is reported.
+
+## 1.29.2 Why it is worth reporting at all
+
+H1 and H2 ask whether a verification layer improves the handling of
+contradictory evidence, and both are not supported. A reader is entitled to ask
+what the layer was doing instead. The relationship field records what it
+concluded internally, it was frozen with everything else on 14 August, and it
+has never been reported.
+
+The claim this supports is bounded: **poor internal relationship classification
+is consistent with one mechanism contributing to the failure of verification to
+improve served answers.** It does not establish that mechanism, does not
+demonstrate causation, and does not explain the null results. Other
+explanations are not excluded and were not tested.
+
+## 1.29.3 The rule
+
+1. **Source.** The frozen Arm D quality run, `20260814_055018_D_test`, and
+   nothing else. No other run, split or arm.
+2. **Principal denominator.** All **45** questions belonging to a registered
+   reported family in the test split. Questions outside a registered family are
+   excluded; there is nothing for the verifier to classify.
+3. **Mapping.** `DECLARED_TO_INFERRED` from
+   `sme_assistant.evaluation.stopping_gate`, used unmodified. The registry's
+   vocabulary and the verifier's are separate by design and the mapping already
+   exists; rewriting it here would be choosing a comparison after the data.
+4. **Two metrics, never combined.**
+   * **Detection**, binary: did the verifier report any conflict relationship?
+   * **Exact classification**: did the reported relationship equal the mapped
+     declared type?
+   A figure mixing them is not reported, and a test asserts they cannot share a
+   denominator.
+5. **Levels.** Question-level counts, family-majority counts (a family counts
+   when at least 2 of its 3 paraphrases are exactly classified, the `MAJORITY`
+   constant already in the gate), and a complete confusion matrix of declared
+   type against reported relationship.
+6. **Retrieval confound.** `anchor_chunks` and `pair_is_present` from the
+   existing retrieval and protocol code, unmodified. The weaker rule "both
+   document identifiers appear among the retrieved chunks" is **not** used: it
+   admits a case where only one side of the disputed fact was shown, which is
+   exactly when a verifier's silence must not be read as a reasoning failure.
+7. **Reported separately** for the four supersession families of H1, the eight
+   pooled live-disagreement families of H2, and the three compatible controls.
+   No pooled headline figure across all four is reported.
+8. **The controls are contrasted with H2c, and the difference is explained.**
+   H2c is scored on `asserts_conflict`, the reviewer's judgement of what the
+   **served answer** says. This diagnostic reads `relationship`, the verifier's
+   **internal** conclusion. They measure different outputs, both are correct,
+   and neither revises the other.
+9. **No threshold, no verdict, no baseline.** Section 5's decision rule does not
+   apply and is not applied.
+
+## 1.29.4 What this does not license
+
+* H1 to H5 are unchanged and none is revisited. H2c in particular stands exactly
+  as reported.
+* No arm is rerun, rescored or retuned. No frozen record is modified.
+* The figures are reported in a clearly labelled exploratory subsection of the
+  results chapter, with the confusion matrix in an appendix, and are interpreted
+  in the analysis chapter as a plausible contributing mechanism and not as a
+  demonstrated cause.
+* `hypotheses.json` is regenerated by the same script from the same read-only
+  inputs. Every existing H1 to H5 section must return byte-identical; if any
+  moves, the change is withdrawn rather than the earlier result.
+
+## 1.29.5 State
+
+| | |
+|---|---|
+| Status | post-hoc, exploratory, pattern seen first and said so |
+| Withdrawn | the 8 of 38 figure, and the six-category chance baseline |
+| Source | frozen Arm D quality run only |
+| Denominator | 45 registered test-family questions |
+| Metrics | detection and exact classification, never combined |
+| Confound rule | `anchor_chunks` and `pair_is_present`, unmodified |
+| Threshold or verdict | **none** |
+| H1 to H5 | unchanged, byte-identical |
