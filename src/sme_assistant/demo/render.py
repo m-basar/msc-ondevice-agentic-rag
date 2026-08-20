@@ -202,7 +202,15 @@ def _evidence(answer) -> str:
     return f"<ul class='evidence'>{''.join(items)}</ul>"
 
 
-def _verdicts(answer) -> str:
+def _verdicts(answer, *, expanded: bool) -> str:
+    """The claim audit.
+
+    Expanded in the single-card live view, where there is width for a
+    three-column table, and collapsed in the four-up replay, where it made the
+    Arm D card twice the height of the others and wrapped the claim column to
+    two words. The audit is the most interesting thing the verifier produces,
+    so it stays one click away rather than being dropped.
+    """
     verification = answer.verification or {}
     verdicts = verification.get("verdicts") or []
     if not verdicts:
@@ -215,12 +223,17 @@ def _verdicts(answer) -> str:
     rationale = verification.get("rationale")
     tail = (f"<p class='muted' style='margin-top:8px'>{escape(str(rationale))}</p>"
             if rationale else "")
-    return ("<details open><summary>Claim audit</summary>"
+    contradicted = sum(1 for v in verdicts
+                       if str(v.get("verdict", "")).upper() == "CONTRADICTED")
+    label = f"Claim audit ({len(verdicts)} claims"
+    label += f", {contradicted} contradicted)" if contradicted else ")"
+    return (f"<details{' open' if expanded else ''}><summary>{escape(label)}"
+            "</summary>"
             "<table><tr><th>Claim</th><th>Verdict</th><th>Supported by</th></tr>"
             f"{rows}</table>{tail}</details>")
 
 
-def arm_card(answer, *, show_draft: bool = True) -> str:
+def arm_card(answer, *, show_draft: bool = True, expanded: bool = False) -> str:
     colour = ARM_COLOUR.get(answer.arm, "#5b6167")
     draft = ""
     if (show_draft and answer.draft_answer
@@ -239,7 +252,7 @@ def arm_card(answer, *, show_draft: bool = True) -> str:
         f"<div class='answer'>{escape(answer.answer) or '<em>empty</em>'}</div>"
         f"<p style='margin:11px 0 4px'>{_flags(answer)}</p>"
         f"<p class='muted'>Cites <code>{escape(citations)}</code></p>"
-        f"{draft}{_verdicts(answer)}"
+        f"{draft}{_verdicts(answer, expanded=expanded)}"
         "<details><summary>Retrieved evidence</summary>"
         f"{_evidence(answer)}</details>"
         "<details><summary>Timings and device state</summary>"
@@ -252,7 +265,7 @@ def replay_page(library, selected, question_ids: Iterable[str]) -> str:
         f"<option value='{escape(qid)}'"
         f"{' selected' if selected and qid == selected.question_id else ''}>"
         f"{escape(qid)}</option>" for qid in question_ids)
-    cards = "".join(arm_card(selected.by_arm[arm])
+    cards = "".join(arm_card(selected.by_arm[arm], expanded=False)
                     for arm in ("A", "B", "C", "D") if arm in selected.by_arm)
     superseded = selected.any_cited_superseded
     note = ""
@@ -310,7 +323,7 @@ def live_page(question: str | None, answer, error: str | None,
     elif answer is not None:
         result = (f"<h2 style='font-size:17px;margin:18px 0 10px'>"
                   f"{escape(question or '')}</h2>"
-                  f"<div class='grid'>{arm_card(answer)}</div>")
+                  f"<div class='grid'>{arm_card(answer, expanded=True)}</div>")
     body = (
         "<header><h1>Live Assistant</h1>"
         "<p class='muted'>Arm D, the verified configuration, answering a new "
