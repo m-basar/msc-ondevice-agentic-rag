@@ -1,12 +1,15 @@
 # Chapter 3 reconciliation note
 
-**19 August 2026.** Chapter 4 was written against `docs/PREREGISTRATION.md` and
-the committed analysis outputs. `Methodology_DRAFT.rtf`, dated 16 July, describes
-an earlier design that the experiment did not follow. This note lists every
-claim that no longer matches, so Chapter 3 can be rewritten before Chapter 5.
+**19 August 2026, actioned.** `Methodology_DRAFT.rtf` of 16 July described a
+design the experiment did not follow. This note listed every claim that no
+longer matched. **Chapter 3 has since been rewritten as
+`chapter_3_methodology.md`, and Chapters 1 and 2 have been revised as
+`chapter_1_introduction.md` and `chapter_2_literature_review.md`.** The note is
+retained as the record of what was wrong and what was done about it. The RTF
+drafts are now legacy and should not be transferred into the template.
 
 Nothing here is a defect in the experiment. The draft simply predates
-amendments 1.1 to 1.25, and the design moved a long way under them.
+amendments 1.1 to 1.26, and the design moved a long way under them.
 
 ## Serious: the draft rules out the method that was used
 
@@ -87,7 +90,7 @@ correctly for the limitation to make sense.
 | 3.5 | three categories | conflict, factual, partial, synthesis, unanswerable |
 | 3.3 | top four chunks | `top_k: 6` |
 | 3.3 | similarity threshold 0.32 | `min_similarity: 0.30` |
-| 3.3 | thirty automated tests | **648** |
+| 3.3 | thirty automated tests | **655** |
 | 3.5 | Pi 5 and laptop | three conditions: `laptop_gpu`, `laptop_cpu`, `pi5_cpu`, placement enforced and observed |
 
 ## Missing entirely
@@ -105,3 +108,33 @@ report a negative result, which the study then honoured. Section 3.6 on ethics.
 The chunking parameters (180 words, one-sentence overlap). The choice of Ollama
 and local-only inference. The architectural motivation for verification. These
 can be carried over with light editing.
+
+## Found while writing Chapter 3
+
+**The organisation has a different name.** The draft calls the fictional firm
+"Bramley and Finch Ltd" with 48 staff. The corpus describes **Northgate
+Kitchenware Ltd**, and `docs/CORPUS.md` records why its identifiers were changed
+to ranges reserved for fiction after an earlier version used a company
+registration number in valid Companies House format.
+
+**Two pipeline stages were never built.** The package docstring, and Chapter 1
+objective 2, describe a six-stage pipeline including query analysis and
+next-action suggestion. Neither exists in the source. The served pipeline is
+retrieval, generation and, in the verified arm, verification. Chapter 1's
+objective and Chapter 3's architecture section have both been corrected, and the
+stale docstring in `src/sme_assistant/__init__.py` should be fixed too.
+
+**`docs/CORPUS.md` is itself stale**, giving 37 documents where the index gives
+38. The file says figures should be regenerated rather than transcribed, which is
+what Chapter 3 does, but the stale number should be corrected at source.
+
+## Still outstanding
+
+- `src/sme_assistant/__init__.py` docstring still describes six stages.
+- `docs/CORPUS.md` says 37 documents; `scripts/kb_summary.py` reports 38.
+- `config.json` retains a dead `confidence.weights` block that appears nowhere
+  in the source. Removing it, or marking it dead in the file, would stop the next
+  reader assuming it is live.
+- References needed for Chapter 3 that are not yet in `references.md`: a source
+  for pre-registration as a methodological device, and Cohen (1960) for the
+  agreement coefficient.
