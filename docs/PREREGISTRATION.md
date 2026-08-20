@@ -4345,6 +4345,23 @@ So the rule is:
   repository**, so that this check is live rather than skipped for the person
   who would actually regenerate them.
 
+All eight figures were accordingly redrawn on the authoring machine and
+recommitted: Python 3.13.5, matplotlib 3.11.1, FreeType 2.14.3, NumPy 2.5.1,
+recorded in `FIGURE_ENVIRONMENT.json` and pinned as the `figures` extra. The
+FreeType difference is the substantive one - matplotlib 3.11 bundles 2.14.3
+where 3.10 bundled 2.6.1 - and it is what moved the glyphs. Every value plotted
+is unchanged, because the figure scripts read them from `hypotheses.json` and
+the performance reports and compute nothing. Six of the eight came out at
+identical pixel dimensions; `fig_4_3` gained six pixels of height and `fig_4_4`
+ten of height and fourteen of width, because `savefig.bbox="tight"` crops to
+text extents and the extents moved. All eight were inspected after redrawing:
+no label is clipped, no axis is rescaled, and every number matches the tables in
+Chapter 4.
+
+The check is now live on the machine that owns the repository and skips
+elsewhere, which is the right way round. It skipped on the container that drew
+the previous set, naming both versions.
+
 ## 1.30.12 State
 
 | | |

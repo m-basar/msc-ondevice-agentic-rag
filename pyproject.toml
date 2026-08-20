@@ -14,12 +14,15 @@ dependencies = []
 [project.optional-dependencies]
 plots = ["matplotlib>=3.7"]
 dev = ["pytest>=7.4"]
-# The exact versions that drew the committed figures. Amendment 1.30.7. The
-# loose "plots" extra above is for anyone who wants to run the scripts; this one
-# reproduces the images in docs/dissertation/figures byte for byte. FreeType
-# decides glyph rasterisation and is not installable from here, so the version
-# it was drawn with is recorded in figures/FIGURE_ENVIRONMENT.json instead.
-figures = ["matplotlib==3.10.9", "numpy==2.4.4"]
+# The exact versions that drew the committed figures. Amendments 1.30.7 and
+# 1.30.11. The loose "plots" extra above is for anyone who wants to run the
+# scripts; this one reproduces the images in docs/dissertation/figures byte for
+# byte on the machine that owns this repository. FreeType decides glyph
+# rasterisation and is not installable from here; matplotlib 3.11 bundles 2.14.3
+# where 3.10 bundled 2.6.1, which is why the two produce different text
+# positions from identical geometry. The version actually used is recorded in
+# figures/FIGURE_ENVIRONMENT.json beside the images.
+figures = ["matplotlib==3.11.1", "numpy==2.5.1"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
