@@ -9,6 +9,12 @@ from a JSON object and pretending otherwise is the provenance overstatement
 amendment 1.26.6 was written about; the numbers inside the prose are formatted
 from the same block as the tables, so the two cannot disagree.
 
+Section D.4 is the exception and is derived in full. Amendment 1.33 records why:
+it was a prose template describing a frozen record - which document was
+withdrawn, what the claim audit returned, whether the draft was served unchanged
+- and every one of those facts is in the record. It now reads them from the
+authenticated Arm D run rather than restating them.
+
 The script refuses rather than emitting a shorter appendix if the diagnostic is
 absent, is not at the frozen shape, or has acquired a total spanning the three
 hypothesis groups. A generator that quietly produces a smaller document when its
@@ -20,6 +26,7 @@ from __future__ import annotations
 import json
 import sys
 from pathlib import Path
+from typing import Any, Mapping
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
@@ -28,6 +35,7 @@ from sme_assistant.evaluation.analysis import (  # noqa: E402
     DIAGNOSTIC_GROUPS,
     DIAGNOSTIC_RUN,
     FROZEN_DIAGNOSTIC_SHAPE,
+    load_diagnostic_source,
 )
 from sme_assistant.verify.schema import (  # noqa: E402
     CONTEXTUALLY_COMPATIBLE,
@@ -58,23 +66,86 @@ GROUP_LABEL = {
     "compatible_controls": "Negative controls",
 }
 
-#: The illustrative case. Authored, keyed by question identifier, and checked
-#: against the frozen record below so the description cannot drift from it.
+#: The illustrative case, named here and described nowhere. Amendment 1.33.
+#:
+#: The previous version held a prose template with two substituted fields and
+#: the rest typed: which document was withdrawn, which figure each carried, that
+#: both were retrieved, that one bore a superseded marker, what the claim audit
+#: returned and that the draft came back unchanged. Every one of those is in the
+#: frozen record, in a document whose header says every count in it is generated
+#: and no number typed. The description was accurate when written and nothing
+#: checked it, which is the defect this project has now corrected nine times.
+#:
+#: D.4 is now derived from the authenticated Arm D record. Only the question
+#: identifier is chosen here.
 CASE_ID = "CONF-02-Q1"
-CASE_PROSE = """`{qid}` asks when Statutory Sick Pay starts being paid. The corpus holds
-HR-02, withdrawn, saying the fourth qualifying day, and HR-12, current, saying
-the first. Both were retrieved and HR-02 carried a `[SUPERSEDED]` marker in the
-evidence block.
 
-Arm D's frozen record classifies the relationship as `{reported}` where the
-declared type maps to `{expected}`. In its claim audit it marks the claim drawn
-from the current document `CONTRADICTED` and records the withdrawn document's
-claim as `SUPPORTED`.
 
-The served answer was nonetheless correct, because the verifier returned the
-draft unchanged. The failure is confined to the internal audit and is invisible
-in the answer the user receives, which is the reason it went unreported until
-the demonstrator displayed the audit alongside the answer."""
+def describe_case(record: Mapping[str, Any], reported: str,
+                  expected: str) -> list[str]:
+    """Narrate one frozen record from the record itself.
+
+    Introduces no metric, denominator, threshold or verdict: it reports what a
+    single stored record contains, which is what an illustration is for. The
+    counts that carry weight are in D.1 to D.3 and are unaffected by anything
+    here.
+    """
+    lines: list[str] = []
+    add = lines.append
+
+    retrieval = (record.get("retrieval") or {}).get("results") or []
+    by_status: dict[str, list[dict]] = {}
+    for result in retrieval:
+        by_status.setdefault(result.get("status", "unknown"), []).append(result)
+    superseded = by_status.get("superseded", [])
+    current = by_status.get("current", [])
+    verification = record.get("verification") or {}
+    verdicts = verification.get("verdicts") or []
+
+    add(f"`{record['question_id']}` asks: *{record['question'].strip()}*")
+    add("")
+    add(f"The retrieval returned {len(retrieval)} chunks, of which "
+        f"{len(superseded)} carried a `[SUPERSEDED]` marker in the evidence "
+        f"block and {len(current)} did not. The two highest ranked are the two "
+        "sides of the disputed fact:")
+    add("")
+    add("| Rank | Chunk | Status | Source |")
+    add("|---:|---|---|---|")
+    for result in retrieval[:2]:
+        marker = ("**superseded**" if result.get("status") == "superseded"
+                  else result.get("status", "unknown"))
+        add(f"| {result.get('rank')} | `{result['chunk_id']}` | {marker} | "
+            f"{result.get('citation', '')} |")
+    add("")
+    add(f"The verifier classified the relationship as `{reported}`, where the "
+        f"registry's declared type maps to `{expected}`.")
+    add("")
+    if verdicts:
+        add("Its claim audit, reproduced exactly as the record stores it:")
+        add("")
+        add("| Claim | Verdict | Supporting | Contradicting |")
+        add("|---|---|---|---|")
+        for verdict in verdicts:
+            supporting = ", ".join(f"`{c}`" for c in verdict.get("supporting") or [])
+            contradicting = ", ".join(f"`{c}`" for c in
+                                      verdict.get("contradicting") or [])
+            add(f"| {verdict.get('claim', '').strip()} | "
+                f"`{verdict.get('verdict')}` | {supporting or '-'} | "
+                f"{contradicting or '-'} |")
+        add("")
+    revised = bool(verification.get("revised"))
+    served = (record.get("answer") or "").strip()
+    serving = "replaced the draft" if revised else "returned the draft unchanged"
+    add(f"The verifier **{serving}**, so the answer served was:")
+    add("")
+    add(f"> {served}")
+    add("")
+    add("Whatever the audit above records, that is the sentence the user saw. "
+        "The audit is the verifier's own working, and it is not what any "
+        "reported metric reads: H2c is scored on the reviewer's judgement of "
+        "the served answer, which is why this record contributes no false "
+        "conflict anywhere in Chapter 4.")
+    return lines
 
 
 def cell(value: int) -> str:
@@ -266,12 +337,28 @@ def main(argv: list[str] | None = None) -> int:
     if case is None:
         raise SystemExit(
             f"the illustrative case {CASE_ID} is not in the diagnostic; the "
-            "prose below describes a record this run does not contain"
+            "section below describes a record this run does not contain"
+        )
+    source = load_diagnostic_source(ROOT / "results" / "runs")
+    record = next((r for r in source.records if r["question_id"] == CASE_ID), None)
+    if record is None:
+        raise SystemExit(
+            f"{CASE_ID} is not in the authenticated source run; D.4 is derived "
+            "from that record and will not be written without it"
         )
     add("## D.4 One illustrative case")
     add("")
-    add(CASE_PROSE.format(qid=CASE_ID, reported=case["reported"],
-                          expected=case["expected"]))
+    add("Derived from the authenticated Arm D record, not written about it.")
+    add("Amendment 1.33 records why: the previous version of this section was a")
+    add("prose template whose description of the retrieval, the claim audit and")
+    add("the serving decision was typed rather than read, in an appendix whose")
+    add("header says every count in it is generated.")
+    add("")
+    add("**Nothing here is a live demonstration.** Appendix C shows the same")
+    add("question asked live on the Raspberry Pi 5; that is a separate unscored")
+    add("execution whose recorded output differs, and none of it is read here.")
+    add("")
+    out.extend(describe_case(record, case["reported"], case["expected"]))
     add("")
     add("**This is one question.** It illustrates the pattern in the tables "
         "above; it")

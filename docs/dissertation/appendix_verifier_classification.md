@@ -86,20 +86,39 @@ two hypotheses and one control set, and a column sum would span all three.
 
 ## D.4 One illustrative case
 
-`CONF-02-Q1` asks when Statutory Sick Pay starts being paid. The corpus holds
-HR-02, withdrawn, saying the fourth qualifying day, and HR-12, current, saying
-the first. Both were retrieved and HR-02 carried a `[SUPERSEDED]` marker in the
-evidence block.
+Derived from the authenticated Arm D record, not written about it.
+Amendment 1.33 records why: the previous version of this section was a
+prose template whose description of the retrieval, the claim audit and
+the serving decision was typed rather than read, in an appendix whose
+header says every count in it is generated.
 
-Arm D's frozen record classifies the relationship as `mutually_exclusive` where the
-declared type maps to `supersession`. In its claim audit it marks the claim drawn
-from the current document `CONTRADICTED` and records the withdrawn document's
-claim as `SUPPORTED`.
+**Nothing here is a live demonstration.** Appendix C shows the same
+question asked live on the Raspberry Pi 5; that is a separate unscored
+execution whose recorded output differs, and none of it is read here.
 
-The served answer was nonetheless correct, because the verifier returned the
-draft unchanged. The failure is confined to the internal audit and is invisible
-in the answer the user receives, which is the reason it went unreported until
-the demonstrator displayed the audit alongside the answer.
+`CONF-02-Q1` asks: *When does Statutory Sick Pay start being paid?*
+
+The retrieval returned 6 chunks, of which 1 carried a `[SUPERSEDED]` marker in the evidence block and 5 did not. The two highest ranked are the two sides of the disputed fact:
+
+| Rank | Chunk | Status | Source |
+|---:|---|---|---|
+| 1 | `HR-12#002` | current | HR-12 Sickness Absence Policy (v3.0), Certification; Sick pay |
+| 2 | `HR-02#002` | **superseded** | HR-02 Sickness Absence Policy (v2.2), Certification; Sick pay |
+
+The verifier classified the relationship as `mutually_exclusive`, where the registry's declared type maps to `supersession`.
+
+Its claim audit, reproduced exactly as the record stores it:
+
+| Claim | Verdict | Supporting | Contradicting |
+|---|---|---|---|
+| Statutory Sick Pay is payable from the first qualifying day of absence [HR-12#002]. | `CONTRADICTED` | - | `HR-12#002` |
+| Statutory Sick Pay is payable from the fourth qualifying day of absence [HR-02#002]. | `SUPPORTED` | `HR-02#002` | - |
+
+The verifier **returned the draft unchanged**, so the answer served was:
+
+> Statutory Sick Pay is payable from the first qualifying day of absence [HR-12#002].
+
+Whatever the audit above records, that is the sentence the user saw. The audit is the verifier's own working, and it is not what any reported metric reads: H2c is scored on the reviewer's judgement of the served answer, which is why this record contributes no false conflict anywhere in Chapter 4.
 
 **This is one question.** It illustrates the pattern in the tables above; it
 does not establish it, and no argument in this dissertation rests on it alone.

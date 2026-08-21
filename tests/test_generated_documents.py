@@ -527,3 +527,108 @@ def test_appendix_c_displays_no_screenshot_that_is_absent():
         assert "To be captured" not in text, (
             "the screenshots are present but Appendix C still says they are "
             "outstanding")
+
+
+# --- appendix D.4 is derived, not described ----------------------------------
+
+
+def frozen_case_record():
+    """The authenticated Arm D record D.4 narrates."""
+    from sme_assistant.evaluation.analysis import DIAGNOSTIC_RUN
+    from sme_assistant.evaluation.authenticity import authenticated_run
+
+    import make_verifier_appendix
+
+    records, _, _ = authenticated_run(ROOT / "results" / "runs", DIAGNOSTIC_RUN)
+    for record in records:
+        if record["question_id"] == make_verifier_appendix.CASE_ID:
+            return record
+    raise AssertionError("the illustrative case is not in the frozen run")
+
+
+def test_every_factual_string_in_d4_is_in_the_frozen_record():
+    """Amendment 1.33. D.4 was a prose template: which document was withdrawn,
+    what the claim audit returned, whether the draft was served unchanged, all
+    typed. Each is in the record, and each is now read from it.
+
+    This asserts the direction that matters. Anything D.4 states about the case
+    must be findable in the record, so the section cannot drift from the
+    evidence it describes however the prose around it is edited.
+    """
+    path = DISSERTATION / "appendix_verifier_classification.md"
+    if not path.exists():
+        pytest.skip("appendix D is not present")
+    text = path.read_text(encoding="utf-8")
+    section = text[text.index("## D.4"):]
+    record = frozen_case_record()
+    verification = record["verification"]
+
+    assert record["question"].strip() in section
+    assert record["answer"].strip() in section
+    assert verification["relationship"] in section
+    for verdict in verification["verdicts"]:
+        assert verdict["claim"].strip() in section, verdict["claim"]
+        assert verdict["verdict"] in section
+        for chunk in verdict["supporting"] + verdict["contradicting"]:
+            assert chunk in section, chunk
+    for result in (record["retrieval"]["results"] or [])[:2]:
+        assert result["chunk_id"] in section
+        assert result["citation"] in section
+
+
+def test_d4_states_the_serving_decision_the_record_holds():
+    """Whether the draft was served unchanged is a fact in the record, and it
+    is the fact that makes the case worth showing: the audit is wrong and the
+    answer is right."""
+    path = DISSERTATION / "appendix_verifier_classification.md"
+    if not path.exists():
+        pytest.skip("appendix D is not present")
+    section = path.read_text(encoding="utf-8")
+    section = section[section.index("## D.4"):]
+    revised = bool(frozen_case_record()["verification"].get("revised"))
+    expected = "replaced the draft" if revised else "returned the draft unchanged"
+    unexpected = "returned the draft unchanged" if revised else "replaced the draft"
+    assert expected in section
+    assert unexpected not in section
+
+
+def test_the_d4_generator_describes_the_case_nowhere_in_its_source():
+    """The template is gone and must not return. A document identifier or a
+    policy figure written into this script is a claim about a frozen record
+    that nothing checks, which is exactly what 1.33 removes."""
+    source = (SCRIPTS / "make_verifier_appendix.py").read_text(encoding="utf-8")
+    body = source[source.index("CASE_ID"):]
+    for token in ("HR-02", "HR-12", "fourth qualifying", "first qualifying",
+                  "Statutory Sick Pay", "withdrawn"):
+        assert token not in body, (
+            f"{token!r} is typed into the generator; D.4 must read it from the "
+            "record instead")
+
+
+def test_the_d4_generator_refuses_when_the_case_record_is_absent(monkeypatch):
+    """A generator that emits a section about a record it could not read is
+    worse than one that stops.
+
+    Called in-process. The first version of this test patched the module here
+    and ran the generator in a subprocess, which read its own unpatched copy and
+    exited zero: a negative test that could not fail.
+    """
+    import make_verifier_appendix
+
+    monkeypatch.setattr(make_verifier_appendix, "CASE_ID", "NOT-A-QUESTION")
+    with pytest.raises(SystemExit, match="not in the diagnostic"):
+        make_verifier_appendix.main([])
+
+
+def test_d4_reads_no_live_demonstration_data():
+    """Appendix C shows the same question asked live. That is a separate
+    unscored execution and D.4 must not borrow from it, in either direction."""
+    path = DISSERTATION / "appendix_verifier_classification.md"
+    if not path.exists():
+        pytest.skip("appendix D is not present")
+    section = path.read_text(encoding="utf-8")
+    section = section[section.index("## D.4"):]
+    for token in ("231.5", "233.2", "shot_dashboard", "tok/s", "throttled"):
+        assert token not in section, f"{token!r} is live demonstration data"
+    source = (SCRIPTS / "make_verifier_appendix.py").read_text(encoding="utf-8")
+    assert "shot_" not in source
