@@ -4708,3 +4708,79 @@ records, and the appendix says that too.
 | Frozen runs, judgements, question set, models, figures | unchanged |
 | H1 to H4 | unchanged, byte-identical |
 | H5 | verdict unchanged at "not supported", 3.176; routing corrected so the generated file stops contradicting the report that scores it |
+
+---
+
+# Amendment 1.33 - 21 August 2026
+
+One reporting-provenance correction. No metric, denominator, threshold or
+verdict changes, `hypotheses.json` is byte-identical, and no frozen run,
+judgement, question or figure is touched.
+
+## 1.33.1 Appendix D.4 described a record instead of reading it
+
+D.4 illustrates the verifier's behaviour on `CONF-02-Q1`. It was a prose
+template with two substituted fields and the rest typed: which document was
+withdrawn and which figure it carried, that both sides were retrieved, that one
+bore a `[SUPERSEDED]` marker, what the claim audit returned, and that the draft
+was served unchanged.
+
+**Every one of those is in the frozen record**, in an appendix whose own header
+says every count in it is generated and none is typed. The description was
+accurate when written, and nothing checked it. That is the defect amendment
+1.16.1 records and 1.30.1 states as a pattern, appearing for the ninth time and
+in the one place this appendix claimed to be free of it.
+
+D.4 is now read from the authenticated Arm D run. Only the question identifier
+is chosen in the generator; the question text, the retrieved chunks with their
+status and citation, the classified relationship, the claim audit and the served
+answer all come from the record. A test fails if any document identifier or
+policy figure is written into the generator's source.
+
+**Deriving it surfaced something the prose had smoothed over.** The typed
+version said the verifier marks the claim drawn from the current document
+`CONTRADICTED` and records the withdrawn document's claim as `SUPPORTED`, which
+is true. What the record holds is stranger: the claim citing `HR-12#002` is
+marked `CONTRADICTED` **by `HR-12#002`**, contradicted by its own citation. The
+table now prints the supporting and contradicting identifiers as stored, so a
+reader sees the record rather than a summary of it.
+
+Four tests hold the section to the record: every factual string it states must
+be findable there; the serving decision must match what the record holds; the
+generator must name nothing about the case in its own source; and it must refuse
+rather than emit a section about a record it could not read.
+
+## 1.33.2 What this does not touch
+
+* No new metric, denominator, threshold or verdict. D.4 is an illustration, and
+  the counts that carry weight are in D.1 to D.3, which are unchanged.
+* No live demonstration data enters Appendix D, and a test asserts it. Appendix
+  C shows the same question asked live on the Raspberry Pi 5. That is a separate
+  unscored execution whose recorded output differs; the two appendices describe
+  different runs and neither corrects the other.
+* The dashboard screenshots added alongside are not governed here. Appendix C
+  already stated that its screenshots illustrate an interface rather than
+  evidence; what changed there is that the test suite now enforces the
+  distinction the document was already making, which is not a new rule.
+
+## 1.33.3 The reference this amendment exists to make true
+
+This amendment was cited in the generator's source, in the appendix it emits and
+in the commit message **before it was written**. Four references to a rule that
+did not exist, in the commit correcting the ninth instance of exactly that.
+
+It is recorded rather than quietly back-filled, because the pattern is the
+finding: a citation to a governing rule is worth nothing until the rule is
+there, and the habit of writing the citation first is how nine of the previous
+instances began.
+
+## 1.33.4 State
+
+| | |
+|---|---|
+| Status | reporting-provenance correction, no experimental change |
+| Corrected | D.4 authored rather than derived; four references to this amendment made before it existed |
+| New enforcement | D.4 derived from the authenticated record, with four tests holding it there |
+| Frozen runs, judgements, question set, models, figures | unchanged |
+| `hypotheses.json` | byte-identical |
+| H1 to H5 | unchanged |

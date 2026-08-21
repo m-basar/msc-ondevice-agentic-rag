@@ -143,6 +143,13 @@ SUMMARY = {
             "generated H5 block still saying the hardware runs had not "
             "happened, and an appendix that double-counted an arm and made "
             "three claims its generator could not reproduce.",
+    "1.33": "Appendix D.4 described a frozen record instead of reading it: "
+            "which document was withdrawn, what the claim audit returned and "
+            "whether the draft was served unchanged were all typed, in an "
+            "appendix whose header says every count is generated. It is now "
+            "derived from the authenticated record, which showed the audit to "
+            "be stranger than the prose had allowed: a claim marked "
+            "contradicted by its own citation.",
     "1.29": "Post-hoc exploratory diagnostic of the frozen verifier's internal "
             "relationship classification, kept separate from binary conflict "
             "detection. No threshold, no verdict, no hypothesis revisited.",
