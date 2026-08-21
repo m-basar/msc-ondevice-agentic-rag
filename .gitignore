@@ -39,3 +39,20 @@ ROADMAP.md
 # Mock runs are structural smoke tests, not evidence. Real runs are committed.
 results/runs/*_mock/
 results/runs/latest_*_mock.json
+
+# Six dev-split retrieval evaluations left on the Raspberry Pi 5 on 13 August,
+# minutes after the laptop's. They are unreported: nothing in the dissertation
+# or the pre-registration cites them, and they contributed to no hypothesis. The
+# laptop's nine equivalents in the same directory ARE tracked and are the ones
+# amendment 1.3 records.
+#
+# Named exactly rather than by wildcard, deliberately. A pattern such as
+# results/retrieval/*_dev.json would also hide the tracked laptop files from a
+# future reader and would silently swallow any evaluation run later, which is
+# the opposite of what this repository is for. Six names hide six files.
+results/retrieval/20260813_084726_dev.json
+results/retrieval/20260813_090256_dev.json
+results/retrieval/20260813_090724_dev.json
+results/retrieval/20260813_092602_dev.json
+results/retrieval/20260813_092945_dev.json
+results/retrieval/20260813_094559_dev.json

@@ -100,10 +100,26 @@ there; the two laptop conditions are descriptive RQ4 figures.
 | `docs/` | Pre-registration, corpus provenance, verifier protocol, dissertation |
 | `results/runs/` | Frozen experiment outputs |
 | `results/analysis/` | Generated analysis and performance reports |
+| `results/retrieval/` | Development-split retrieval evaluations (see below) |
 | `tests/` | Unit, integration, boundary and reported-wording tests |
 
 `src/sme_assistant/agent/` holds orchestration only and contains no separate
 agent stages.
+
+**`results/retrieval/` holds development-split evaluations only.** The nine
+tracked files are the laptop runs behind the retrieval calibration recorded in
+pre-registration amendment 1.3, which fixed `top_k` at 6 and `min_similarity` at
+0.30 on the development split before any test-split run. The Raspberry Pi 5 also
+produced six of its own on 13 August, minutes after the laptop's. Those six are
+listed by name in `.gitignore` so they cannot be staged by accident, and they
+are left in place on that device rather than deleted.
+
+**They are unreported.** Nothing in the dissertation or the pre-registration
+cites them, they contributed to none of H1 to H5, and they have not been
+compared with the laptop's. They are ignored to keep `results/`, which is
+otherwise evidence, free of device-local output that a careless `git add -A`
+would commit into it - not to conceal them, which is why they are named
+individually here and there.
 
 Core code uses the Python standard library only. Ollama serves the models over
 HTTP. matplotlib is required for figures.
