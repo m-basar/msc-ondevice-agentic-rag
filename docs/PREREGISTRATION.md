@@ -4784,3 +4784,109 @@ instances began.
 | Frozen runs, judgements, question set, models, figures | unchanged |
 | `hypotheses.json` | byte-identical |
 | H1 to H5 | unchanged |
+
+# Amendment 1.34 - 21 August 2026
+
+One portability correction to the test suite, found by pulling amendment 1.33
+onto the Raspberry Pi 5. No metric, denominator, threshold or verdict changes,
+`hypotheses.json` is byte-identical, and no frozen run, judgement, question,
+figure or screenshot is touched. No figure is regenerated: the committed images
+are read here and not written.
+
+## 1.34.1 Eight figure checks skipped on the target device, six for no reason
+
+Amendment 1.33 added two tests over the dashboard screenshots. Both imported
+Pillow, which `pyproject.toml` places in the optional `figures` dependency
+group, so both failed on the Pi with `ModuleNotFoundError: No module named
+'PIL'`. The Pi is right and the tests were wrong: that device runs the
+assistant, it does not draw figures, and installing a figure library there to
+satisfy a test would change the environment the hardware results were measured
+in.
+
+The first correction written for this was a `needs_pillow` marker, which is
+wrong in a more interesting way than the failure it fixes. It makes the check
+skip on the one machine the project is about. **A skipped check is a check that
+did not run**, and a suite that reports 806 passing tests on the Pi while the
+figure provenance checks are silently not among them is a suite being quoted for
+something it did not do.
+
+Reading the marker properly exposed five more. Seven tests in
+`tests/test_generated_documents.py` carried `needs_matplotlib`, eight test items
+once the parametrised one is counted, and only two of them draw anything. The
+other five read a committed PNG, a committed SVG, the recorded figure
+environment or a figure script's own source. **None of them calls matplotlib**,
+and every one had skipped on the Pi since it was written, for a library it never
+used.
+
+The corrections:
+
+* PNG metadata is read by `figure_provenance.png_text`, a standard-library
+  parser of the `tEXt`, `zTXt` and `iTXt` chunks. No optional dependency, so the
+  producer checks run everywhere.
+* The duplicated Pillow check is removed from
+  `test_no_generated_figure_is_named_like_a_screenshot`, which keeps its own
+  distinct assertion: that no figure generator emits a file named `shot_*`,
+  since the whole discriminator between a figure and a screenshot is that
+  prefix.
+* `needs_matplotlib` is left on the two tests that invoke the figure scripts and
+  removed from the five that do not.
+
+On the Pi this turns six skipped checks into six that run and two failures into
+two that pass. **This amendment does not claim the six would have failed there.**
+They pass. What changed is that the result is observed on the target device
+rather than assumed from the authoring laptop.
+
+This is the same pattern as amendments 1.16.1, 1.26, 1.28, 1.29, 1.30, 1.31,
+1.32 and 1.33 in a new form. Those record a rule stated and not enforced. This
+records a check written and not run, which is the same distance between what the
+repository says and what it does, arrived at from the other side.
+
+## 1.34.2 A hand-written reader needs its own evidence
+
+Replacing one Pillow call with thirty lines of chunk parsing creates a risk the
+Pillow version did not have, and it is a risk this project has met before: the
+screenshot assertion is **negative**. It asserts that a screenshot does *not*
+carry the figure generator's producer string. A reader that returned nothing at
+all, for any reason, would satisfy it forever.
+
+Five tests stop that:
+
+* Each of the three text chunk types is written into a properly constructed
+  1x1 PNG - signature, `IHDR`, `IDAT`, `IEND`, correct CRCs - and read back.
+  The fixture is built rather than fetched, so it needs no image library.
+* The producer string is read back in the exact shape the figures use it.
+* A PNG with no text chunks reads as empty rather than as an error, which is the
+  state every screenshot is in.
+* A file that is not a PNG raises rather than returning nothing, so a renamed or
+  truncated image cannot pass the screenshot check silently.
+* Where Pillow **is** installed, the reader is compared with it on all ten
+  committed PNGs and must agree exactly.
+
+The last of those is gated on Pillow, and that gate is legitimate for the reason
+the others were not: the check *is* the comparison, so on a machine without
+Pillow there is nothing to compare and skipping loses nothing. The gates removed
+above lost the whole check.
+
+## 1.34.3 What this does not touch
+
+* No screenshot, figure, frozen run, manifest, judgement, question or result is
+  modified. The PNG bytes are read here and never written.
+* No dependency is added anywhere. Pillow and matplotlib stay in the optional
+  `figures` group and remain absent from the Pi, which is the environment the
+  hardware results were measured in.
+* No new rule about what a figure or a screenshot is. Appendix C already stated
+  that its screenshots illustrate an interface rather than evidence; what
+  changed in 1.33 and again here is only where that distinction is enforced.
+* No hypothesis, denominator or figure value is revisited. Nothing in this
+  amendment can reach a reported number.
+
+## 1.34.4 State
+
+| | |
+|---|---|
+| Status | test portability correction, no experimental change |
+| Corrected | two tests importing an optional dependency unconditionally; five gated on a library they never call |
+| New enforcement | standard-library PNG metadata reader, itself covered by five tests including equality with Pillow where present |
+| Frozen runs, judgements, question set, models, figures, screenshots | unchanged |
+| `hypotheses.json` | byte-identical |
+| H1 to H5 | unchanged |

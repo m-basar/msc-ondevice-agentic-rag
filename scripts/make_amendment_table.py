@@ -150,6 +150,13 @@ SUMMARY = {
             "derived from the authenticated record, which showed the audit to "
             "be stranger than the prose had allowed: a claim marked "
             "contradicted by its own citation.",
+    "1.34": "Pulling 1.33 onto the Raspberry Pi 5 failed two screenshot tests "
+            "that imported an optional figure library, and reading the marker "
+            "properly found five more gated on a library they never call. "
+            "Eight provenance checks had never run on the target device. PNG "
+            "metadata is now read with the standard library, and the reader is "
+            "covered by five tests including equality with Pillow where it is "
+            "present.",
     "1.29": "Post-hoc exploratory diagnostic of the frozen verifier's internal "
             "relationship classification, kept separate from binary conflict "
             "detection. No threshold, no verdict, no hypothesis revisited.",

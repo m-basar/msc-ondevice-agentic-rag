@@ -58,9 +58,21 @@ def run(script: str, *args: str) -> subprocess.CompletedProcess:
         capture_output=True, text=True, cwd=str(ROOT))
 
 
+#: Only for the two tests that actually *draw* a figure. Amendment 1.34: five
+#: others carried this marker while reading a committed file or a script's
+#: source, so they skipped on the Raspberry Pi 5 - the target device, the one
+#: machine where a check running matters most - for want of a library they
+#: never called.
+#:
+#: There is deliberately no ``needs_pillow`` beside it. The first fix for the
+#: Pi failures added one, which would have made the producer checks skip there
+#: too. A skipped check is a check that did not run. The PNG metadata is read
+#: with ``figure_provenance.png_text`` instead, which is standard library only,
+#: so those checks run everywhere.
 needs_matplotlib = pytest.mark.skipif(
     __import__("importlib").util.find_spec("matplotlib") is None,
-    reason="matplotlib is the optional plots dependency")
+    reason="matplotlib is the optional plots dependency; only the tests that "
+           "draw a figure need it")
 
 
 # --- generated documents -----------------------------------------------------
@@ -139,7 +151,6 @@ def test_the_amendment_table_refuses_an_undescribed_amendment(tmp_path):
 # --- figures -----------------------------------------------------------------
 
 
-@needs_matplotlib
 def test_no_committed_figure_names_the_library_that_drew_it():
     """Amendment 1.30.7. matplotlib stamps its own version into the metadata of
     both formats, so the same script over the same data under a different
@@ -154,21 +165,22 @@ def test_no_committed_figure_names_the_library_that_drew_it():
     assert not offenders, offenders
 
 
-@needs_matplotlib
 def test_every_committed_figure_names_the_project_as_its_producer():
-    from PIL import Image  # noqa: PLC0415 - optional, skipped below if absent
-
+    """Reads the committed PNG bytes, so it needs neither matplotlib nor
+    Pillow and runs on every machine including the Raspberry Pi 5. It also
+    demonstrates that ``png_text`` finds a value that is really there, which is
+    what makes the negative assertion in the screenshot test below mean
+    something."""
     import figure_provenance
 
     pngs = generated_figures()
     if not pngs:
         pytest.skip("figures are not present")
     for path in pngs:
-        assert Image.open(path).info.get("Software") == figure_provenance.CREATOR, (
-            path.name)
+        assert figure_provenance.png_text(path).get("Software") == \
+            figure_provenance.CREATOR, path.name
 
 
-@needs_matplotlib
 def test_the_figure_environment_is_recorded_and_matches_the_pinned_versions():
     """Removing the version from the file does not make the rendering
     independent of it: FreeType and the font stack decide where glyphs land. The
@@ -290,7 +302,6 @@ def test_the_committed_figures_match_this_machine_when_the_environment_does(tmp_
                 "that draws them have diverged")
 
 
-@needs_matplotlib
 def test_the_figure_scripts_accept_an_output_directory():
     """Enforced over the source as well as by use, because the isolation above
     is only as good as the flag existing in both scripts."""
@@ -302,7 +313,6 @@ def test_the_figure_scripts_accept_an_output_directory():
             "silently ignored")
 
 
-@needs_matplotlib
 @pytest.mark.parametrize("script,forbidden", [
     ("make_figures.py", "fig.text("),
     ("make_architecture_figures.py", "C against D changes retrieval mode"),
@@ -322,7 +332,6 @@ def test_no_figure_carries_an_explanatory_footer(script, forbidden):
         f"{script} draws an explanatory footer again")
 
 
-@needs_matplotlib
 def test_the_committed_figures_carry_no_footer_text():
     """Over the SVG, which is the one format that says what its text is."""
     svgs = sorted(FIGURES.glob("*.svg"))
@@ -466,38 +475,149 @@ def test_the_cross_architecture_generator_refuses_if_arm_d_stops_reusing_arm_b()
         cmp_arch.load = original
 
 
+# --- the standard-library PNG metadata reader ---------------------------------
+#
+# Amendment 1.34. ``figure_provenance.png_text`` replaced a one-line Pillow
+# call, and a hand-written parser standing in for a library needs its own
+# evidence: the screenshot test below asserts that a value is *absent*, which a
+# reader that never found anything would satisfy without ever being run
+# correctly. These tests exist so that assertion cannot pass vacuously.
+
+
+def _png_chunk(kind: bytes, payload: bytes) -> bytes:
+    import zlib
+    return (len(payload).to_bytes(4, "big") + kind + payload
+            + zlib.crc32(kind + payload).to_bytes(4, "big"))
+
+
+def _png_with(*text_chunks: bytes) -> bytes:
+    """A real 1x1 greyscale PNG carrying the given text chunks.
+
+    Built rather than fetched so the fixture needs no image library, and built
+    properly - header, IHDR, IDAT, IEND, correct CRCs - rather than as a
+    signature followed by the chunks under test, so the reader is not being
+    handed something no encoder would produce.
+    """
+    import struct
+    import zlib
+    return (b"\x89PNG\r\n\x1a\n"
+            + _png_chunk(b"IHDR", struct.pack(">IIBBBBB", 1, 1, 8, 0, 0, 0, 0))
+            + b"".join(text_chunks)
+            + _png_chunk(b"IDAT", zlib.compress(b"\x00\x00"))
+            + _png_chunk(b"IEND", b""))
+
+
+def test_png_text_reads_back_each_of_the_three_text_chunk_types(tmp_path):
+    """tEXt, zTXt and iTXt. matplotlib writes tEXt today; which one it writes is
+    its business and not a property this project pins, so all three are read."""
+    import zlib
+
+    import figure_provenance
+
+    value = "sme-assistant, amendment 1.34"
+    path = tmp_path / "three.png"
+    path.write_bytes(_png_with(
+        _png_chunk(b"tEXt", b"Plain\x00" + value.encode("latin-1")),
+        _png_chunk(b"zTXt", b"Deflated\x00\x00" + zlib.compress(
+            value.encode("latin-1"))),
+        _png_chunk(b"iTXt", b"International\x00\x00\x00\x00\x00"
+                   + value.encode("utf-8")),
+    ))
+    read = figure_provenance.png_text(path)
+    assert read == {"Plain": value, "Deflated": value, "International": value}
+
+
+def test_png_text_reads_the_producer_string_out_of_a_png_that_carries_it(
+        tmp_path):
+    """The positive case in the exact shape the figures use it."""
+    import figure_provenance
+
+    path = tmp_path / "stamped.png"
+    path.write_bytes(_png_with(_png_chunk(
+        b"tEXt", b"Software\x00" + figure_provenance.CREATOR.encode("latin-1"))))
+    assert figure_provenance.png_text(path).get("Software") == \
+        figure_provenance.CREATOR
+
+
+def test_png_text_finds_nothing_in_a_png_that_carries_nothing(tmp_path):
+    """A PNG with no text chunks reads as empty rather than as an error, which
+    is the case every screenshot is in."""
+    import figure_provenance
+
+    path = tmp_path / "bare.png"
+    path.write_bytes(_png_with())
+    assert figure_provenance.png_text(path) == {}
+
+
+def test_png_text_refuses_a_file_that_is_not_a_png(tmp_path):
+    """Returning ``{}`` for an unreadable file would let a renamed or truncated
+    image pass the screenshot test silently."""
+    import figure_provenance
+
+    path = tmp_path / "not_really.png"
+    path.write_bytes(b"GIF89a" + b"\x00" * 32)
+    with pytest.raises(ValueError, match="not a PNG"):
+        figure_provenance.png_text(path)
+
+
+@pytest.mark.skipif(
+    __import__("importlib").util.find_spec("PIL") is None,
+    reason="Pillow is the reference this reader was written to replace")
+def test_png_text_agrees_with_pillow_on_every_committed_png():
+    """The one legitimate use of a Pillow gate in this file: the check *is* the
+    comparison, so on a machine without Pillow there is nothing to compare and
+    skipping loses nothing. That is the opposite of the mis-gated tests
+    amendment 1.34 corrects, where the check was the metadata itself and
+    skipping lost the whole check on the target device.
+    """
+    from PIL import Image
+
+    import figure_provenance
+
+    pngs = generated_figures() + screenshots()
+    pngs = [p for p in pngs if p.suffix == ".png"]
+    if not pngs:
+        pytest.skip("figures are not present")
+    for path in pngs:
+        reference = {k: v for k, v in Image.open(path).info.items()
+                     if isinstance(v, str)}
+        assert figure_provenance.png_text(path) == reference, path.name
+
+
 # --- screenshots are a different kind of artefact -----------------------------
 
 
 def test_no_screenshot_claims_to_be_a_generated_figure():
     """A screenshot records one session on one machine. It cannot be
     regenerated, and stamping it with the figure generator's producer string
-    would make it look like something a reader could reproduce."""
-    from PIL import Image
+    would make it look like something a reader could reproduce.
 
+    This assertion is negative, so a reader ``png_text`` that returned nothing
+    at all would satisfy it. Two tests stop that being vacuous: the round trip
+    below shows the parser reads a value it was given, and the producer test
+    above shows it reads the value out of the six committed figures.
+    """
     import figure_provenance
 
     shots = [p for p in screenshots() if p.suffix == ".png"]
     if not shots:
         pytest.skip("no screenshots are present")
     for path in shots:
-        assert Image.open(path).info.get("Software") != figure_provenance.CREATOR, (
-            f"{path.name} carries the figure generator's producer string")
+        assert figure_provenance.png_text(path).get("Software") != \
+            figure_provenance.CREATOR, (
+                f"{path.name} carries the figure generator's producer string")
 
 
 def test_no_generated_figure_is_named_like_a_screenshot():
     """The discriminator is a filename prefix, so it only works if the two sets
     stay disjoint. A generated figure called shot_* would silently drop out of
-    every reproducibility check above."""
-    import figure_provenance
+    every reproducibility check above.
 
-    if not FIGURES.exists():
-        pytest.skip("figures are not present")
-    for path in screenshots():
-        if path.suffix == ".png":
-            from PIL import Image
-            software = Image.open(path).info.get("Software")
-            assert software != figure_provenance.CREATOR, path.name
+    Reads the figure scripts, so it needs neither matplotlib nor Pillow and runs
+    everywhere. The earlier version also re-checked screenshot metadata, which
+    duplicated the test above and dragged a Pillow import into a source check
+    that has no use for one.
+    """
     sources = "\n".join((SCRIPTS / s).read_text(encoding="utf-8")
                          for s in ("make_figures.py",
                                    "make_architecture_figures.py"))

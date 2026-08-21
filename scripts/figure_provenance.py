@@ -27,6 +27,7 @@ import json
 import platform
 import re
 import sys
+import zlib
 from pathlib import Path
 
 #: What the figures record as their producer. Constant by design: it names the
@@ -49,6 +50,57 @@ SVG_METADATA: dict[str, object] = {"Date": None, "Creator": CREATOR}
 #: sets its metadata at write time instead and a test checks the result.
 _VERSION = re.compile(rb"matplotlib[ ]*(?:version)?[ ]*v?\d+\.\d+(?:\.\d+)?",
                       re.IGNORECASE)
+
+
+def png_text(path: Path) -> dict[str, str]:
+    """Read a PNG's textual metadata using the standard library only.
+
+    Pillow reads this in one line, and Pillow is in the optional ``figures``
+    dependency group. A test that needs it either skips on a machine without it
+    or fails there, and both happened: the Raspberry Pi 5 has neither Pillow nor
+    matplotlib, and two screenshot tests imported Pillow unconditionally while a
+    third was gated on matplotlib while importing Pillow.
+
+    A skipped check is a check that did not run. Parsing the chunks here costs
+    thirty lines and lets the producer metadata be verified on every machine,
+    which is where the value of the check actually is.
+
+    Handles ``tEXt``, ``zTXt`` and ``iTXt``. Returns whatever it can read and
+    raises only on a file that is not a PNG at all.
+    """
+    data = path.read_bytes()
+    if data[:8] != b"\x89PNG\r\n\x1a\n":
+        raise ValueError(f"{path.name} is not a PNG")
+    out: dict[str, str] = {}
+    offset = 8
+    while offset + 8 <= len(data):
+        length = int.from_bytes(data[offset:offset + 4], "big")
+        kind = data[offset + 4:offset + 8]
+        payload = data[offset + 8:offset + 8 + length]
+        offset += 12 + length  # length, type, payload, CRC
+        if kind == b"IEND":
+            break
+        try:
+            if kind == b"tEXt":
+                keyword, _, value = payload.partition(b"\x00")
+                out[keyword.decode("latin-1")] = value.decode("latin-1")
+            elif kind == b"zTXt":
+                keyword, _, rest = payload.partition(b"\x00")
+                out[keyword.decode("latin-1")] = zlib.decompress(
+                    rest[1:]).decode("latin-1")
+            elif kind == b"iTXt":
+                keyword, _, rest = payload.partition(b"\x00")
+                compressed, _method, rest = rest[0], rest[1], rest[2:]
+                _language, _, rest = rest.partition(b"\x00")
+                _translated, _, text = rest.partition(b"\x00")
+                if compressed:
+                    text = zlib.decompress(text)
+                out[keyword.decode("latin-1")] = text.decode("utf-8")
+        except (zlib.error, UnicodeDecodeError, IndexError):
+            # A chunk this cannot read is reported as absent rather than
+            # crashing the caller; the tests assert on presence and value.
+            continue
+    return out
 
 
 def scrub_svg(path: Path) -> bool:

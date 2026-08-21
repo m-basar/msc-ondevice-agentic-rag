@@ -1,6 +1,6 @@
 # Appendix B: Pre-registration amendment record
 
-All 33 amendments to `docs/PREREGISTRATION.md`, in order. Numbers, dates and
+All 34 amendments to `docs/PREREGISTRATION.md`, in order. Numbers, dates and
 sub-entry counts are read from that document by `scripts/make_amendment_table.py`;
 the summaries are written for this appendix. Each amendment in the source carries
 its own reason, its evidence, and a statement of what it did **not** change.
@@ -51,8 +51,9 @@ Phases are taken from the commit history. The frozen four-arm test run is
 | 1.31 | 21 August | 6 | Source identity was internal: four invented runs, an unknown purpose value and two questions swapped between families all passed. The frozen runs are now authenticated by content digest and against the question set, the declared-to-inferred mapping is compared by value and not by key, the live pipeline is compared with the frozen Arm D manifest on twelve fields rather than two, and three figures stop arguing their own case. |
 | 1.32 | 21 August | 7 | Pulling the repository onto the Raspberry Pi 5 exposed six defects in 1.31 and its own first draft: a test asserting a match on an uncommitted build artefact, a hash difference reported as a proven rebuild, the performance analysis reading timings without consulting the digests that were supposed to protect them, a generated H5 block still saying the hardware runs had not happened, and an appendix that double-counted an arm and made three claims its generator could not reproduce. |
 | 1.33 | 21 August | 4 | Appendix D.4 described a frozen record instead of reading it: which document was withdrawn, what the claim audit returned and whether the draft was served unchanged were all typed, in an appendix whose header says every count is generated. It is now derived from the authenticated record, which showed the audit to be stranger than the prose had allowed: a claim marked contradicted by its own citation. |
+| 1.34 | 21 August | 4 | Pulling 1.33 onto the Raspberry Pi 5 failed two screenshot tests that imported an optional figure library, and reading the marker properly found five more gated on a library they never call. Eight provenance checks had never run on the target device. PNG metadata is now read with the standard library, and the reader is covered by five tests including equality with Pillow where it is present. |
 
-**33 amendments, 213 numbered sub-entries.** Phase A amendments precede the
+**34 amendments, 217 numbered sub-entries.** Phase A amendments precede the
 frozen confirmatory runs and could and did change the design. Nothing from Phase B
 onwards could: the runs were complete before Phase B opened. Phases B and D govern
 how the already-frozen data are scored, aggregated and reported; Phase C concerns
