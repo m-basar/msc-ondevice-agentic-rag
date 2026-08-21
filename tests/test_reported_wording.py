@@ -260,3 +260,53 @@ def test_the_provenance_paragraph_names_the_diagnostic_source(chapters):
     assert "verifier_relationship_diagnostic" in results
     assert "load_diagnostic_source()" in results
     assert "20260814_055018_d_test" in results
+
+
+def amendment_counts() -> tuple[int, int]:
+    """What `docs/PREREGISTRATION.md` actually holds, counted the same way
+    `scripts/make_amendment_table.py` counts it."""
+    source = ROOT / "docs" / "PREREGISTRATION.md"
+    if not source.exists():
+        pytest.skip("the pre-registration is not present")
+    text = source.read_text(encoding="utf-8")
+    return (len(re.findall(r"^# Amendment 1\.\d+ ", text, flags=re.MULTILINE)),
+            len(re.findall(r"^## 1\.\d+\.\d+ ", text, flags=re.MULTILINE)))
+
+
+def test_the_methodology_chapter_states_the_amendment_count_the_document_holds(
+        chapters):
+    """Amendment 1.34. Section 3.8.4 said twenty-nine amendments across 184
+    numbered entries while the document held 34 across 217. It had drifted five
+    amendments behind and nothing noticed, in the one chapter whose subject is
+    that the study's discretion was constrained in writing.
+
+    A test count is banned from the chapters outright under 1.30.8, because it
+    measures nothing a reader can act on. An amendment count is a different
+    thing: it is a provenance claim about a table in the submitted document, and
+    a reader can check it in one glance. So it stays, pinned here to the
+    document rather than to whatever was true when the sentence was typed.
+    """
+    amendments, entries = amendment_counts()
+    methodology = chapters.get("chapter_3_methodology.md")
+    if methodology is None:
+        pytest.skip("the methodology chapter is not present")
+    stated = re.search(r"all (\d+) amendments across (\d+) numbered entries",
+                       methodology)
+    assert stated, "section 3.8.4 no longer states the amendment count"
+    assert (int(stated.group(1)), int(stated.group(2))) == (amendments, entries), (
+        f"section 3.8.4 states {stated.group(1)} amendments across "
+        f"{stated.group(2)} entries; the document holds {amendments} across "
+        f"{entries}")
+
+
+def test_no_chapter_states_an_amendment_count_that_is_not_the_current_one(
+        chapters):
+    """The reconciliation note carried "the 25 amendments" long after there were
+    29, in a sentence arguing that the pre-registration is the project's
+    strongest methodological feature. It now names them without counting them,
+    which is what a dated historical note should do."""
+    amendments, _ = amendment_counts()
+    offenders = [(name, int(n)) for name, text in chapters.items()
+                 for n in re.findall(r"\b(\d+) amendments\b", text)
+                 if int(n) != amendments]
+    assert not offenders, f"stale amendment counts: {offenders}"

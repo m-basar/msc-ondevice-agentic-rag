@@ -4890,3 +4890,65 @@ above lost the whole check.
 | Frozen runs, judgements, question set, models, figures, screenshots | unchanged |
 | `hypotheses.json` | byte-identical |
 | H1 to H5 | unchanged |
+
+# Amendment 1.35 - 21 August 2026
+
+One reporting correction in the methodology chapter, found while adding a row to
+the amendment table. No metric, denominator, threshold or verdict changes,
+`hypotheses.json` is byte-identical, and no frozen run, judgement, question,
+figure or screenshot is touched.
+
+## 1.35.1 A count in Chapter 3 had drifted five amendments behind
+
+Section 3.8.4 read "Twenty-nine amendments across 184 numbered entries are
+tabulated in Appendix B." The document held 34 across 217 when this was found,
+and the sentence had been true five amendments earlier.
+
+Appendix B is generated from `docs/PREREGISTRATION.md` and could not drift. The
+sentence pointing at it was typed, in the one chapter whose subject is that this
+study's discretion was constrained in writing, and nothing checked it. That is
+the same distance between what the repository says and what it does that
+amendment 1.34 records in the test suite, in prose this time.
+
+The sentence now reads "Appendix B tabulates all 35 amendments across 220
+numbered entries", and two tests hold it there: one compares the stated pair
+with what the pre-registration holds, counted the way the generator counts it,
+and one fails on any chapter stating an amendment count that is not the current
+one. Both were confirmed to fail on the stale numbers before the numbers were
+corrected.
+
+**Why this count stays when a test count may not.** Amendment 1.30.8 bans a test
+count from the chapters outright: it rises with every correction and measures
+nothing a reader can act on. An amendment count is a different kind of claim. It
+describes a table in the submitted document, a reader can check it in one
+glance, and it is part of what the methodology chapter is for. So it is kept and
+pinned rather than removed.
+
+The Chapter 3 reconciliation note carried "the 25 amendments" in a sentence
+naming the pre-registration as one of the project's strongest methodological
+features, while its own header says the draft predates amendments 1.1 to 1.29.
+It is a dated record of what an earlier draft got wrong and is not rewritten as
+though current: the number is **removed** rather than updated, because a note
+fixed at 19 August should name the amendments and not count them.
+
+## 1.35.2 What this does not touch
+
+* No metric, denominator, threshold, verdict or hypothesis. Nothing in this
+  amendment can reach a reported number.
+* No frozen run, manifest, judgement, question, figure or screenshot.
+* Appendix B changes only by the rows this amendment itself adds. Its generator,
+  its phase boundaries and every existing summary are unchanged.
+* The reconciliation note's substance is unchanged. It still says the draft did
+  not mention the pre-registration, the decision rule, the enforced split or the
+  stopping rules; it no longer attaches a number to the last item.
+
+## 1.35.3 State
+
+| | |
+|---|---|
+| Status | reporting correction, no experimental change |
+| Corrected | a typed amendment count in section 3.8.4 that had drifted five amendments behind; an obsolete count in a dated reconciliation note |
+| New enforcement | two tests pinning any amendment count in any chapter to the pre-registration |
+| Frozen runs, judgements, question set, models, figures, screenshots | unchanged |
+| `hypotheses.json` | byte-identical |
+| H1 to H5 | unchanged |

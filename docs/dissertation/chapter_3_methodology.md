@@ -511,8 +511,8 @@ pressure to be reframed, and Chapter 4 reports it.
 
 ### 3.8.4 The amendment record
 
-Twenty-nine amendments across 184 numbered entries are tabulated in Appendix B.
-Six groups shaped the study most and are summarised here.
+Appendix B tabulates all 35 amendments across 220 numbered entries. Six
+groups shaped the study most and are summarised here.
 
 **The taxonomy was wrong twice (1.2, 1.4, 1.5).** A single contradiction type
 became four, three negative-control families were added, and four families that

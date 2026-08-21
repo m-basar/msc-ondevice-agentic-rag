@@ -35,9 +35,9 @@ has to go, and it cannot be the one the experiment was run against.
 
 **Pre-registration absent.** The draft does not mention the pre-registration,
 the decision rule of section 5, the tuning and reported split enforced in code,
-the stopping rules, or the 25 amendments. These are the strongest
-methodological features of the project and currently appear nowhere in the
-dissertation.
+the stopping rules, or the pre-registration amendments. These are the
+strongest methodological features of the project and currently appear
+nowhere in the dissertation.
 
 ## Design described but not built
 

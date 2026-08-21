@@ -157,6 +157,11 @@ SUMMARY = {
             "metadata is now read with the standard library, and the reader is "
             "covered by five tests including equality with Pillow where it is "
             "present.",
+    "1.35": "Section 3.8.4 stated an amendment count that had drifted five "
+            "amendments behind the document it describes, in the chapter whose "
+            "subject is that this study's discretion was constrained in "
+            "writing. Corrected, and pinned by two tests to what the "
+            "pre-registration holds.",
     "1.29": "Post-hoc exploratory diagnostic of the frozen verifier's internal "
             "relationship classification, kept separate from binary conflict "
             "detection. No threshold, no verdict, no hypothesis revisited.",
