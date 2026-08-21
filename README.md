@@ -176,6 +176,7 @@ python scripts/make_architecture_figures.py         # Chapter 3 figures
 python scripts/make_corpus_doc.py > docs/CORPUS.md  # corpus provenance
 python scripts/make_amendment_table.py > docs/dissertation/appendix_amendments.md
 python scripts/make_verifier_appendix.py > docs/dissertation/appendix_verifier_classification.md
+python scripts/compare_index_architectures.py > docs/dissertation/appendix_index_architectures.md
 python scripts/dashboard.py                          # the demonstrator, see above
 ```
 
@@ -196,6 +197,18 @@ came to be overwritten by a test whose docstring said it used a scratch copy
 The four frozen quality runs are a closed list in
 `sme_assistant.evaluation.analysis.FROZEN_QUALITY_RUNS`. No run created later
 can enter the quality analysis, and performance runs are refused by it outright.
+
+Both the four quality runs and the six performance runs carry content digests in
+`sme_assistant.evaluation.authenticity`, checked before any number is read from
+them. The two tables are separate, so a caller must name which kind of run it
+expects and a timing run cannot be read as a quality run.
+
+`data/index.json` is **not** committed: it is a build artefact, and
+`scripts/build_index.py` reproduces it from the corpus. The builds are not
+byte-identical across architectures, because `nomic-embed-text` under Ollama is
+not bit-reproducible between x86-64 and ARM64. Appendix E measures what that
+costs, and the demonstrator reports a locally built index rather than treating
+it as a mismatch.
 
 ## Ethics
 

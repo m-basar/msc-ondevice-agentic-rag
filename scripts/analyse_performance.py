@@ -44,7 +44,9 @@ sys.path.insert(0, str(ROOT / "src"))
 from sme_assistant.common.config import load_config  # noqa: E402
 from sme_assistant.evaluation.analysis import AnalysisError  # noqa: E402
 from sme_assistant.common.llm_client import canonical_model_name  # noqa: E402
-from sme_assistant.evaluation.run_writer import read_run  # noqa: E402
+from sme_assistant.evaluation.authenticity import (  # noqa: E402
+    FROZEN_PERFORMANCE_DIGESTS, AuthenticityError, authenticate,
+    authenticate_index_file, read_run_content, read_summary)
 
 H5_LOWER, H5_UPPER = 1.5, 2.5
 H5_CONDITION = "pi5_cpu"
@@ -86,8 +88,32 @@ WALL_TIME_TOLERANCE = 0.002
 
 
 def performance_run(directory: Path) -> tuple[dict, list[dict], dict]:
-    """Load a run, refusing anything not declared performance-only."""
-    manifest, answers = read_run(directory)
+    """Load a run, refusing anything unauthenticated or not performance-only.
+
+    Amendment 1.32.3. Authentication was added to the analysis, the diagnostic
+    and the replay under 1.31.2 and 1.32.3, and **this path was left out**: the
+    digests existed, were exercised by tests and quoted in an appendix, and the
+    script that actually produces the reported timings did not consult them. A
+    single ``wall_seconds`` altered to 999.0 was accepted and averaged.
+
+    Every file this function returns is now covered: the records, the manifest
+    and the summary. The run-index file that decides which directories are read
+    is authenticated separately in ``main``, because a swapped path there
+    redirects the whole analysis while each run it then reads is genuine.
+    """
+    directory = Path(directory)
+    try:
+        answers_t, manifest = read_run_content(directory)
+        digests = authenticate(directory.name, answers_t, manifest,
+                               read_summary(directory),
+                               table=FROZEN_PERFORMANCE_DIGESTS,
+                               kind="performance")
+    except AuthenticityError as exc:
+        raise AnalysisError(
+            f"{directory.name} did not authenticate, so no timing is read from "
+            f"it. {exc}"
+        ) from exc
+    answers = [dict(r) for r in answers_t]
     if manifest.get("purpose") != "performance":
         raise AnalysisError(
             f"{Path(directory).name} is not a performance run: its manifest says "
@@ -102,11 +128,8 @@ def performance_run(directory: Path) -> tuple[dict, list[dict], dict]:
             "records. A performance run must not produce quality figures; "
             "rerun it with --performance-only."
         )
-    summary_path = Path(directory) / "summary.json"
-    summary = (
-        json.loads(summary_path.read_text(encoding="utf-8"))
-        if summary_path.exists() else {}
-    )
+    summary = dict(read_summary(directory) or {})
+    summary["_authenticated"] = digests
     return manifest, answers, summary
 
 
@@ -480,8 +503,16 @@ def main(argv: list[str] | None = None) -> int:
     if not index_path.exists():
         print(f"No run index at {index_path}", file=sys.stderr)
         return 1
+    # Amendment 1.32.3. Authenticated before it is read, not after: this file
+    # names which directories every figure below comes from.
+    try:
+        index_digest = authenticate_index_file(index_path)
+    except AuthenticityError as exc:
+        print(f"{args.index} did not authenticate: {exc}", file=sys.stderr)
+        return 1
     index = json.loads(index_path.read_text(encoding="utf-8"))
     index_meta = index.pop("_performance", {})
+    index_meta["index_sha256"] = index_digest
     if not index_meta:
         raise AnalysisError(
             f"{args.index} carries no _performance block, so it was not written "

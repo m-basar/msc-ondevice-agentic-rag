@@ -1,6 +1,6 @@
 # Appendix B: Pre-registration amendment record
 
-All 31 amendments to `docs/PREREGISTRATION.md`, in order. Numbers, dates and
+All 32 amendments to `docs/PREREGISTRATION.md`, in order. Numbers, dates and
 sub-entry counts are read from that document by `scripts/make_amendment_table.py`;
 the summaries are written for this appendix. Each amendment in the source carries
 its own reason, its evidence, and a statement of what it did **not** change.
@@ -49,8 +49,9 @@ Phases are taken from the commit history. The frozen four-arm test run is
 | | | | **Phase G: Review corrections, no experimental change** |
 | 1.30 | 20 August | 12 | Eight corrections after a second review, seven of them rules this document stated and the code did not enforce: 1.28's claim that replay failed closed and that live questions used POST was false when written, 1.29's principal denominator contradicted its own rule against a pooled headline, and 1.26's figures were not byte-reproducible. Enforcement added, the pooled total withdrawn, Appendix D generated. 1.30.11 records the same defect recurring in this amendment's own test, which claimed an isolation the code could not perform and overwrote four committed figures. |
 | 1.31 | 21 August | 6 | Source identity was internal: four invented runs, an unknown purpose value and two questions swapped between families all passed. The frozen runs are now authenticated by content digest and against the question set, the declared-to-inferred mapping is compared by value and not by key, the live pipeline is compared with the frozen Arm D manifest on twelve fields rather than two, and three figures stop arguing their own case. |
+| 1.32 | 21 August | 7 | Pulling the repository onto the Raspberry Pi 5 exposed six defects in 1.31 and its own first draft: a test asserting a match on an uncommitted build artefact, a hash difference reported as a proven rebuild, the performance analysis reading timings without consulting the digests that were supposed to protect them, a generated H5 block still saying the hardware runs had not happened, and an appendix that double-counted an arm and made three claims its generator could not reproduce. |
 
-**31 amendments, 202 numbered sub-entries.** Phase A amendments precede the
+**32 amendments, 209 numbered sub-entries.** Phase A amendments precede the
 frozen confirmatory runs and could and did change the design. Nothing from Phase B
 onwards could: the runs were complete before Phase B opened. Phases B and D govern
 how the already-frozen data are scored, aggregated and reported; Phase C concerns

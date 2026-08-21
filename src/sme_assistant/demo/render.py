@@ -369,19 +369,33 @@ def live_page(question: str | None, answer, error: str | None,
     agreement = model_status.get("frozen_agreement") or {}
     agreement_line = ""
     if agreement:
-        if agreement.get("matches"):
-            agreement_line = (
-                "<p class='muted'>Configuration matches the frozen Arm D run on "
-                f"all {len(agreement.get('fields') or {})} compared fields, "
-                "including the configuration fingerprint, sampling options, "
-                "retrieval parameters and index hash.</p>")
-        else:
+        if not agreement.get("matches"):
             differs = ", ".join(escape(str(d)) for d in agreement.get("differs") or [])
             agreement_line = (
                 "<p style='color:#8a1d1d'><strong>This pipeline differs from "
                 f"the frozen Arm D run on: {differs}.</strong> Answers below "
-                "are produced by a different configuration from the one the "
-                "reported results came from.</p>")
+                "are produced by a different configuration or over different "
+                "material from the one the reported results came from.</p>")
+        elif agreement.get("frozen_index_identical"):
+            agreement_line = (
+                "<p class='muted'>Configuration and source material match the "
+                f"frozen Arm D run on all {len(agreement.get('compared') or [])} "
+                "compared fields, and this is the same index file that run "
+                "used.</p>")
+        else:
+            # Amendment 1.32.4. Not "rebuilt": that is a claim about history
+            # this page cannot make. What it knows is that the recipe agrees
+            # and the file is not the same file.
+            agreement_line = (
+                "<p class='muted'>Configuration and source material match the "
+                f"frozen Arm D run on all {len(agreement.get('compared') or [])} "
+                "compared fields, including the corpus, chunk set, embedding "
+                "model, dimensions and chunking parameters. <strong>The index "
+                "file itself is not the one that run used.</strong> The index is "
+                "a build artefact and is not in the repository, so this is "
+                "expected on any machine that built its own; it is reported "
+                "rather than assumed to be harmless, and this is not an exact "
+                "match to the frozen run.</p>")
     result = ""
     if error:
         result = f"<div class='note'><strong>Could not answer.</strong> {escape(error)}</div>"

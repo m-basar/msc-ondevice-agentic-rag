@@ -16,15 +16,33 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from sme_assistant.evaluation.authenticity import (FROZEN_RUN_DIGESTS,
+from sme_assistant.evaluation.authenticity import (FROZEN_PERFORMANCE_DIGESTS,
+                                                   FROZEN_PERFORMANCE_INDEX_DIGESTS,
+                                                   FROZEN_RUN_DIGESTS,
                                                    RunDigest, digest_of,
-                                                   read_run_content)
+                                                   read_run_content,
+                                                   read_summary)
 
 
-def seal(directory: Path, name: str | None = None) -> RunDigest:
+def seal(directory: Path, name: str | None = None, *,
+         performance: bool = False) -> RunDigest:
+    """Record a stub run's digests. ``performance`` picks the timing table."""
     directory = Path(directory)
     records, manifest = read_run_content(directory)
+    summary = read_summary(directory)
     digest = RunDigest(answers=digest_of(list(records)),
-                       manifest=digest_of(manifest))
-    FROZEN_RUN_DIGESTS[name or directory.name] = digest
+                       manifest=digest_of(manifest),
+                       summary=None if summary is None else digest_of(summary))
+    table = FROZEN_PERFORMANCE_DIGESTS if performance else FROZEN_RUN_DIGESTS
+    table[name or directory.name] = digest
+    return digest
+
+
+def seal_index(path: Path) -> str:
+    """Record a stub performance run-index file's digest."""
+    import json
+
+    path = Path(path)
+    digest = digest_of(json.loads(path.read_text(encoding="utf-8")))
+    FROZEN_PERFORMANCE_INDEX_DIGESTS[path.name] = digest
     return digest

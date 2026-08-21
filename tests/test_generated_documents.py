@@ -47,6 +47,7 @@ needs_matplotlib = pytest.mark.skipif(
 @pytest.mark.parametrize("script,document", [
     ("make_amendment_table.py", "appendix_amendments.md"),
     ("make_verifier_appendix.py", "appendix_verifier_classification.md"),
+    ("compare_index_architectures.py", "appendix_index_architectures.md"),
 ])
 def test_the_committed_document_is_what_its_generator_emits(script, document):
     """The point of generating a document is that it cannot drift from its
@@ -312,3 +313,132 @@ def test_the_committed_figures_carry_no_footer_text():
         text = path.read_text(encoding="utf-8")
         for phrase in banned:
             assert phrase not in text, (path.name, phrase)
+
+
+# --- appendix E, the cross-architecture comparison ---------------------------
+
+
+def test_the_cross_architecture_appendix_declares_itself_exploratory():
+    """Amendment 1.32.2. It was raised after every hypothesis was decided, and a
+    post-hoc measurement that does not say so reads as a registered one."""
+    path = DISSERTATION / "appendix_index_architectures.md"
+    if not path.exists():
+        pytest.skip("appendix E is not present")
+    text = " ".join(path.read_text(encoding="utf-8").lower().split())
+    for phrase in ("post-hoc and exploratory",
+                   "no threshold is applied, no verdict is reached and no "
+                   "hypothesis is revisited",
+                   "h1 to h4 are unaffected"):
+        assert phrase in text, phrase
+
+
+def test_the_cross_architecture_appendix_preserves_both_index_hashes():
+    """Neither build is the wrong one. Both are legitimate, both are recorded,
+    and a reader has to be able to tell which machine produced which."""
+    path = DISSERTATION / "appendix_index_architectures.md"
+    if not path.exists():
+        pytest.skip("appendix E is not present")
+    text = path.read_text(encoding="utf-8")
+    laptop = json.loads(
+        (ROOT / "results" / "runs" / "20260814_055018_D_test" / "manifest.json")
+        .read_text(encoding="utf-8"))["provenance"]["index_file_sha256"]
+    pi = json.loads(
+        (ROOT / "results" / "runs" / "20260815_040341_D_test_perf_pi5" /
+         "manifest.json").read_text(encoding="utf-8"))["provenance"]["index_file_sha256"]
+    assert laptop != pi
+    assert laptop[:16] in text, "the laptop index hash is not shown"
+    assert pi[:16] in text, "the Raspberry Pi index hash is not shown"
+
+
+def test_appendix_e_makes_no_claim_its_generator_cannot_reproduce():
+    """Amendment 1.32.6. The first draft asserted that the chunk records were
+    byte-identical, that the vectors differed in the third and fourth decimal
+    place, and that nomic-embed-text is not bit-reproducible between x86-64 and
+    ARM64. The generator reads run records and manifests. It opens neither index
+    file and compares no vector, so none of those three was reproducible from
+    the stated inputs, however true they may be."""
+    path = DISSERTATION / "appendix_index_architectures.md"
+    if not path.exists():
+        pytest.skip("appendix E is not present")
+    text = " ".join(path.read_text(encoding="utf-8").lower().split())
+    # The claims, not the words. "byte-identical" appears legitimately in the
+    # sentence denying it, and a check that cannot tell an assertion from its
+    # negation would force the denial out of the document.
+    for phrase in ("chunk records are byte-identical",
+                   "records themselves are byte-identical",
+                   "decimal place",
+                   "bit-reproducible",
+                   "isolates the index build"):
+        assert phrase not in text, f"unsupported claim returned: {phrase!r}"
+    assert "the two serialised index files differ" in text
+    assert "does not establish that the serialised records are byte-identical" in text
+    assert "not the stored index vectors alone" in text
+
+
+def test_appendix_e_reports_only_the_independent_pair():
+    """Amendment 1.32.6. Arm D reuses Arm B's retrieval verbatim, so an Arm D
+    row would be a copy of Arm B's reported as a second observation."""
+    path = DISSERTATION / "appendix_index_architectures.md"
+    if not path.exists():
+        pytest.skip("appendix E is not present")
+    text = path.read_text(encoding="utf-8")
+    rows = [l for l in text.splitlines()
+            if l.startswith("| Arm ") and "|" in l[6:] and "Questions" not in l]
+    assert len(rows) == 1, f"expected one comparison row, found {rows}"
+    assert "Arm B, laptop against Raspberry Pi 5" in rows[0]
+    assert "drafts_reused_from: B" in text
+
+
+def test_appendix_e_records_the_configuration_difference_it_found():
+    """The two runs are not from byte-identical configurations, and saying only
+    the index differed would be false."""
+    path = DISSERTATION / "appendix_index_architectures.md"
+    if not path.exists():
+        pytest.skip("appendix E is not present")
+    text = path.read_text(encoding="utf-8")
+    assert "legitimately differ and are" in text
+    assert "config_sha256" in text
+    assert "does not claim the index was the" in text
+
+
+def test_the_cross_architecture_generator_refuses_a_broken_shared_condition():
+    """Every condition the comparison depends on is checked, not described."""
+    import compare_index_architectures as cmp_arch
+
+    original = cmp_arch.load
+
+    def wrong(name):
+        records, manifest, digests = original(name)
+        if name == cmp_arch.PI:
+            manifest = json.loads(json.dumps(manifest))
+            manifest["provenance"]["index_metadata"]["embedding_model"] = "other"
+        return records, manifest, digests
+
+    cmp_arch.load = wrong
+    try:
+        with pytest.raises(SystemExit, match="index embedding_model"):
+            cmp_arch.compare()
+    finally:
+        cmp_arch.load = original
+
+
+def test_the_cross_architecture_generator_refuses_if_arm_d_stops_reusing_arm_b():
+    """The reason Arm D is excluded is asserted, so the exclusion cannot outlive
+    the fact that justifies it."""
+    import compare_index_architectures as cmp_arch
+
+    original = cmp_arch.load
+
+    def wrong(name):
+        records, manifest, digests = original(name)
+        if name == "20260814_055018_D_test":
+            records = [dict(r) for r in records]
+            records[0] = {**records[0], "retrieval": {"results": []}}
+        return tuple(records), manifest, digests
+
+    cmp_arch.load = wrong
+    try:
+        with pytest.raises(SystemExit, match="does not reuse"):
+            cmp_arch.reuse_evidence()
+    finally:
+        cmp_arch.load = original

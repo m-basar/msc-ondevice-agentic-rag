@@ -135,6 +135,14 @@ SUMMARY = {
             "compared by value and not by key, the live pipeline is compared "
             "with the frozen Arm D manifest on twelve fields rather than two, "
             "and three figures stop arguing their own case.",
+    "1.32": "Pulling the repository onto the Raspberry Pi 5 exposed six "
+            "defects in 1.31 and its own first draft: a test asserting a match "
+            "on an uncommitted build artefact, a hash difference reported as a "
+            "proven rebuild, the performance analysis reading timings without "
+            "consulting the digests that were supposed to protect them, a "
+            "generated H5 block still saying the hardware runs had not "
+            "happened, and an appendix that double-counted an arm and made "
+            "three claims its generator could not reproduce.",
     "1.29": "Post-hoc exploratory diagnostic of the frozen verifier's internal "
             "relationship classification, kept separate from binary conflict "
             "detection. No threshold, no verdict, no hypothesis revisited.",

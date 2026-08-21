@@ -11,8 +11,10 @@ logs are read-only. And it does not choose a threshold, a denominator or a
 direction criterion; those come from section 5 as corrected by amendment 1.5.3,
 and each decision states which rule produced it so a reader can check.
 
-H5 needs the hardware runs and is reported as pending until those exist. The
-frozen laptop quality run remains the sole evidential source for H1 to H4.
+H5 is not computed here. It is scored by ``analyse_performance.py`` over the
+Pi 5 performance runs, and this script reads that report rather than restating
+it, so the two cannot disagree. The frozen laptop quality runs remain the sole
+evidential source for H1 to H4 and contribute nothing to H5.
 """
 
 from __future__ import annotations
@@ -94,6 +96,59 @@ def both_levels(rows, *, field_name="score") -> dict:
         },
         "families": len({r.group_id for r in rows}),
         "questions": len(rows),
+    }
+
+
+#: The registered wording, kept here only for the case where the report that
+#: scores H5 is absent. Where the report exists its own statement is used, so
+#: the two cannot drift apart.
+H5_STATEMENT = "latency(D) is between 1.5x and 2.5x latency(B) on the Pi 5"
+
+
+def h5_from_performance_report(analysis_dir: Path) -> dict:
+    """Route H5 to the report that scores it, or say plainly that it is absent.
+
+    Amendment 1.32.5. Three properties this needs and the previous version had
+    none of: it must not restate a verdict computed elsewhere, it must not claim
+    the runs have not happened when they have, and when the report genuinely is
+    missing it must say that rather than assert a state of the world.
+    """
+    path = analysis_dir / "performance_latest_test_performance_pi5_cpu.json"
+    if not path.exists():
+        return {
+            "statement": H5_STATEMENT,
+            "verdict": "not computed here",
+            "scored_in": path.name,
+            "note": (
+                "H5 is scored by scripts/analyse_performance.py over the Pi 5 "
+                "performance runs. That report is not present in this analysis "
+                "directory, so no verdict is available. This says nothing about "
+                "whether the runs exist."
+            ),
+        }
+    report = json.loads(path.read_text(encoding="utf-8"))
+    block = report.get("H5")
+    if not isinstance(block, dict) or "verdict" not in block:
+        raise AnalysisError(
+            f"{path.name} carries no H5 verdict. H5 is scored there and read "
+            "here; a report without one means the performance analysis did not "
+            "complete, and inventing a verdict from this side is exactly what "
+            "amendment 1.32.5 removes."
+        )
+    return {
+        "statement": block.get("statement", H5_STATEMENT),
+        "verdict": block["verdict"],
+        "scored_in": path.name,
+        "condition": block.get("condition"),
+        "ratio": block.get("ratio"),
+        "mean_wall_seconds": block.get("mean_wall_seconds"),
+        "note": (
+            "Scored by scripts/analyse_performance.py over the Pi 5 "
+            "performance-only runs, not by this script, and read from "
+            f"{path.name} rather than restated. The frozen laptop quality runs "
+            "remain the sole evidential source for H1 to H4 and contribute "
+            "nothing here."
+        ),
     }
 
 
@@ -350,14 +405,17 @@ def main(argv: list[str] | None = None) -> int:
     }
 
     # --- H5 -----------------------------------------------------------------
-    report["hypotheses"]["H5"] = {
-        "statement": "latency(D) is between 1.5x and 2.5x latency(B) on the Pi 5",
-        "verdict": "pending",
-        "note": (
-            "Requires the performance-only hardware executions, which are not "
-            "part of the frozen laptop quality run and have not been run."
-        ),
-    }
+    # Amendment 1.32.5. This block said "pending" and "have not been run" long
+    # after the hardware executions were complete and analysed, because the
+    # routing was written before them and never revisited. That is a stale
+    # statement of fact in a generated file, which is worse than an absent one:
+    # it was regenerated on every run and carried its own falsehood forward.
+    #
+    # H5 is not computed here. It is scored by analyse_performance.py over the
+    # Pi 5 performance runs, and this reads that report rather than restating
+    # it, so the two cannot disagree. Nothing about the verdict changes: it was
+    # already "not supported" at 3.18x in the report Chapter 4 cites.
+    report["hypotheses"]["H5"] = h5_from_performance_report(out)
 
     # --- CONF-04 sensitivity -------------------------------------------------
     # The one unreconciled divergence: items 27 and 221 are the same answer to

@@ -15,6 +15,7 @@ on it.
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 
 import pytest
@@ -31,7 +32,8 @@ from sme_assistant.evaluation.authenticity import (FROZEN_RUN_DIGESTS,
                                                    canonical,
                                                    check_question_identity,
                                                    digest_of,
-                                                   read_run_content)
+                                                   read_run_content,
+                                                   read_summary)
 from sme_assistant.evaluation.question_set import load_question_set
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -68,11 +70,18 @@ def copy_runs(destination: Path, edit=None, *, reseal=None) -> Path:
             "".join(json.dumps(r) + "\n" for r in records), encoding="utf-8")
         (target / "manifest.json").write_text(
             json.dumps(manifest), encoding="utf-8")
+        source_summary = source / "summary.json"
+        if source_summary.exists():
+            (target / "summary.json").write_text(
+                source_summary.read_text(encoding="utf-8"), encoding="utf-8")
         if reseal is not None:
             written, written_manifest = read_run_content(target)
+            written_summary = read_summary(target)
             reseal.setitem(FROZEN_RUN_DIGESTS, name, RunDigest(
                 answers=digest_of(list(written)),
-                manifest=digest_of(written_manifest)))
+                manifest=digest_of(written_manifest),
+                summary=None if written_summary is None
+                else digest_of(written_summary)))
     return destination
 
 
@@ -81,9 +90,15 @@ def copy_runs(destination: Path, edit=None, *, reseal=None) -> Path:
 
 @needs_runs
 def test_every_frozen_run_authenticates_as_committed():
+    from sme_assistant.evaluation.authenticity import read_summary
+
     for name in FROZEN_QUALITY_RUNS:
         records, manifest = read_run_content(RUNS / name)
-        assert authenticate(name, records, manifest)
+        digests = authenticate(name, records, manifest,
+                               read_summary(RUNS / name))
+        # Amendment 1.32.3: the summary is read by the analysis, so it is
+        # covered. The first version digested answers and manifest only.
+        assert digests["summary_sha256"]
 
 
 @needs_runs
@@ -118,7 +133,7 @@ def test_canonical_form_is_order_independent():
 
 
 def test_a_run_outside_the_closed_list_is_refused():
-    with pytest.raises(AuthenticityError, match="not one of the four"):
+    with pytest.raises(AuthenticityError, match="not one of the frozen quality"):
         authenticate("20260901_120000_D_test", [], {})
 
 
@@ -164,7 +179,7 @@ def test_replay_refuses_four_mutually_consistent_inventions(tmp_path):
                    for n in (1, 2)]
         (directory / "answers.jsonl").write_text(
             "".join(json.dumps(r) + "\n" for r in records), encoding="utf-8")
-    with pytest.raises(ReplayUnavailable, match="not one of the four"):
+    with pytest.raises(ReplayUnavailable, match="not one of the frozen quality"):
         load_replay_library(root, names, expected_questions=2)
 
 
@@ -297,15 +312,9 @@ def test_the_diagnostic_refuses_a_mapping_with_substituted_values():
 
 
 @needs_runs
-def test_live_arm_d_matches_the_frozen_manifest_in_every_compared_field():
-    """Amendment 1.31.3. The earlier check compared two model names and two
-    mode constants. Everything deciding what those models are *given* went
-    unchecked: the configuration fingerprint, the sampling options, the
-    retrieval parameters and the index the evidence comes from.
-
-    This does not need Ollama. It builds the pipeline, which loads the index
-    and the configuration, and compares them; it asks no model anything.
-    """
+def test_live_arm_d_matches_the_frozen_manifest_on_configuration_and_source():
+    """Amendment 1.32.4. What must hold on any checkout, asserted here. The
+    index file's identity is a separate question and is checked below."""
     from sme_assistant.demo.live import LiveAssistant
 
     _, manifest = read_run_content(RUNS / DIAGNOSTIC_RUN)
@@ -315,19 +324,111 @@ def test_live_arm_d_matches_the_frozen_manifest_in_every_compared_field():
         pytest.skip(f"the live pipeline cannot be built here: {exc}")
     agreement = assistant.frozen_arm_d_agreement(manifest)
     assert agreement["matches"], agreement["differs"]
-    for field in ("config_sha256", "generation_options", "retrieval",
-                  "index_file_sha256", "corpus_sha256", "chunk_set_sha256",
-                  "generation_model", "verification_model", "retrieval_mode",
-                  "evidence_format", "verification", "arm"):
-        assert field in agreement["fields"], field
+    assert agreement["configuration_matches"] and agreement["source_matches"]
+    for field in ("arm", "retrieval_mode", "evidence_format", "verification",
+                  "generation_model", "verification_model", "config_sha256",
+                  "generation_options", "retrieval", "corpus_sha256",
+                  "chunk_set_sha256", "embedding_model", "dimensions",
+                  "chunk_count", "chunking", "index_backend",
+                  "model_store_fingerprint"):
+        assert field in agreement["compared"], field
         pair = agreement["fields"][field]
         assert pair["live"] == pair["frozen"], (field, pair)
+    assert "index_file_sha256" in agreement["fields"]
+    assert "index_file_sha256" not in agreement["compared"]
+
+
+@needs_runs
+def test_a_different_embedding_model_is_refused_however_the_hash_looks():
+    """Amendment 1.32.4, the reviewer's attack. The previous version compared
+    only the corpus and chunk-set hashes on the index side. Those describe the
+    *input* to the build. Swapping the embedding model for another at the same
+    768 dimensions, and changing the expected hash, produced ``matches=True``
+    and ``index_rebuilt=True``: a different index reported as a legitimate
+    rebuild of the same one."""
+    from sme_assistant.demo.live import LiveAssistant
+
+    _, manifest = read_run_content(RUNS / DIAGNOSTIC_RUN)
+    manifest = json.loads(json.dumps(manifest))
+    manifest["provenance"]["index_file_sha256"] = "7" * 64
+    try:
+        assistant = LiveAssistant.build(ROOT)
+    except Exception as exc:  # noqa: BLE001
+        pytest.skip(f"the live pipeline cannot be built here: {exc}")
+    assistant.retriever.index.metadata = {
+        **(assistant.retriever.index.metadata or {}),
+        "embedding_model": "some-other-embed",
+    }
+    agreement = assistant.frozen_arm_d_agreement(manifest)
+    assert not agreement["matches"]
+    assert "embedding_model" in agreement["source_differs"]
+    assert agreement["frozen_index_identical"] is False
+
+
+@needs_runs
+@pytest.mark.parametrize("field,value", [
+    ("dimensions", 384),
+    ("chunk_count", 7),
+    ("backend", "something-else"),
+])
+def test_a_different_index_build_recipe_is_refused(field, value):
+    """The recipe, not just its input. Amendment 1.32.4."""
+    from sme_assistant.demo.live import LiveAssistant
+
+    _, manifest = read_run_content(RUNS / DIAGNOSTIC_RUN)
+    try:
+        assistant = LiveAssistant.build(ROOT)
+    except Exception as exc:  # noqa: BLE001
+        pytest.skip(f"the live pipeline cannot be built here: {exc}")
+    assistant.retriever.index.metadata = {
+        **(assistant.retriever.index.metadata or {}), field: value}
+    agreement = assistant.frozen_arm_d_agreement(manifest)
+    assert not agreement["matches"]
+    assert agreement["source_differs"]
+
+
+@needs_runs
+def test_a_differing_index_file_is_reported_as_itself_not_as_a_rebuild():
+    """Amendment 1.32.4. The result now says the recipe agrees and the file is
+    not the same file. It does not say the file was rebuilt, which is a claim
+    about history this code cannot make."""
+    from sme_assistant.demo.live import LiveAssistant
+
+    _, manifest = read_run_content(RUNS / DIAGNOSTIC_RUN)
+    manifest = json.loads(json.dumps(manifest))
+    manifest["provenance"]["index_file_sha256"] = "9" * 64
+    try:
+        assistant = LiveAssistant.build(ROOT)
+    except Exception as exc:  # noqa: BLE001
+        pytest.skip(f"the live pipeline cannot be built here: {exc}")
+    agreement = assistant.frozen_arm_d_agreement(manifest)
+    assert agreement["source_matches"] and agreement["configuration_matches"]
+    assert agreement["frozen_index_identical"] is False
+    assert agreement["local_index_file_differs"] is True
+    assert "index_rebuilt" not in agreement, (
+        "a differing hash does not establish that a file was rebuilt")
+
+
+@needs_runs
+def test_an_index_over_another_corpus_is_a_mismatch():
+    """A differing index file is forgiven; an index over different material is
+    not. The correction in 1.32.4 must not open that hole."""
+    from sme_assistant.demo.live import LiveAssistant
+
+    _, manifest = read_run_content(RUNS / DIAGNOSTIC_RUN)
+    manifest = json.loads(json.dumps(manifest))
+    manifest["provenance"]["corpus_sha256"] = "0" * 64
+    try:
+        assistant = LiveAssistant.build(ROOT)
+    except Exception as exc:  # noqa: BLE001
+        pytest.skip(f"the live pipeline cannot be built here: {exc}")
+    agreement = assistant.frozen_arm_d_agreement(manifest)
+    assert not agreement["matches"]
+    assert "corpus_sha256" in agreement["source_differs"]
 
 
 @needs_runs
 def test_the_live_comparison_notices_a_changed_retrieval_parameter():
-    """A live answer produced at top_k = 3, beside a frozen record produced at
-    top_k = 6, was displayed as the same arm."""
     from sme_assistant.demo.live import LiveAssistant
 
     _, manifest = read_run_content(RUNS / DIAGNOSTIC_RUN)
@@ -339,7 +440,7 @@ def test_the_live_comparison_notices_a_changed_retrieval_parameter():
         pytest.skip(f"the live pipeline cannot be built here: {exc}")
     agreement = assistant.frozen_arm_d_agreement(manifest)
     assert not agreement["matches"]
-    assert "retrieval" in agreement["differs"]
+    assert "retrieval" in agreement["configuration_differs"]
 
 
 @needs_runs
@@ -349,11 +450,198 @@ def test_the_live_comparison_notices_a_changed_config_fingerprint():
     _, manifest = read_run_content(RUNS / DIAGNOSTIC_RUN)
     manifest = json.loads(json.dumps(manifest))
     manifest["provenance"]["config_sha256"] = "0" * 64
-    manifest["provenance"]["index_file_sha256"] = "1" * 64
     try:
         assistant = LiveAssistant.build(ROOT)
     except Exception as exc:  # noqa: BLE001
         pytest.skip(f"the live pipeline cannot be built here: {exc}")
     agreement = assistant.frozen_arm_d_agreement(manifest)
     assert not agreement["matches"]
-    assert {"config_sha256", "index_file_sha256"} <= set(agreement["differs"])
+    assert "config_sha256" in agreement["configuration_differs"]
+
+
+# --- the performance runs are authenticated too, and kept separate -----------
+
+
+@needs_runs
+def test_every_frozen_performance_run_authenticates():
+    from sme_assistant.evaluation.authenticity import (
+        FROZEN_PERFORMANCE_DIGESTS, authenticated_run)
+
+    for name in FROZEN_PERFORMANCE_DIGESTS:
+        authenticated_run(RUNS, name, table=FROZEN_PERFORMANCE_DIGESTS,
+                          kind="performance")
+
+
+@needs_runs
+def test_a_performance_run_cannot_authenticate_as_a_quality_run():
+    """Amendment 1.15 declared the timing runs performance-only before any was
+    executed, and 1.16 found that declaration unenforced. The two digest tables
+    are separate so that a caller has to name which kind it expects."""
+    from sme_assistant.evaluation.authenticity import (
+        FROZEN_PERFORMANCE_DIGESTS, authenticate)
+
+    from sme_assistant.evaluation.authenticity import read_summary
+
+    name = "20260815_040341_D_test_perf_pi5"
+    records, manifest = read_run_content(RUNS / name)
+    summary = read_summary(RUNS / name)
+    with pytest.raises(AuthenticityError, match="not one of the frozen quality"):
+        authenticate(name, records, manifest, summary)
+    assert authenticate(name, records, manifest, summary,
+                        table=FROZEN_PERFORMANCE_DIGESTS, kind="performance")
+
+
+# --- the official performance path, not just the digest table ----------------
+
+
+def perf_copy(destination: Path, edit=None, *, reseal=None) -> Path:
+    """Copy the six performance runs and the three index files."""
+    from sme_assistant.evaluation.authenticity import (
+        FROZEN_PERFORMANCE_DIGESTS, read_summary)
+
+    destination.mkdir(parents=True, exist_ok=True)
+    for path in RUNS.glob("latest_test_performance_*.json"):
+        (destination / path.name).write_text(path.read_text(encoding="utf-8"),
+                                             encoding="utf-8")
+    for name in FROZEN_PERFORMANCE_DIGESTS:
+        target = destination / name
+        target.mkdir(exist_ok=True)
+        records, manifest = read_run_content(RUNS / name)
+        records = [dict(r) for r in records]
+        manifest = json.loads(json.dumps(manifest))
+        summary = json.loads(json.dumps(read_summary(RUNS / name) or {}))
+        if edit is not None:
+            records, manifest, summary = edit(name, records, manifest, summary)
+        (target / "answers.jsonl").write_text(
+            "".join(json.dumps(r) + "\n" for r in records), encoding="utf-8")
+        (target / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+        (target / "summary.json").write_text(json.dumps(summary), encoding="utf-8")
+        if reseal is not None:
+            written, written_manifest = read_run_content(target)
+            reseal.setitem(FROZEN_PERFORMANCE_DIGESTS, name, RunDigest(
+                answers=digest_of(list(written)),
+                manifest=digest_of(written_manifest),
+                summary=digest_of(read_summary(target))))
+    return destination
+
+
+@needs_runs
+@pytest.mark.parametrize("what", ["answers", "manifest", "summary"])
+def test_the_performance_analyser_refuses_a_tampered_run(tmp_path, what):
+    """Amendment 1.32.3, the reviewer's attack.
+
+    Authentication was added to the analysis, the diagnostic and the replay, and
+    the script that produces the reported timings was left out. A single
+    ``wall_seconds`` set to 999.0 was accepted and averaged into the figures
+    Chapter 4 cites. Each of the three files the analyser reads is now covered,
+    and each is tampered with here separately.
+    """
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import analyse_performance
+
+    def edit(name, records, manifest, summary):
+        if name == "20260815_040341_D_test_perf_pi5":
+            if what == "answers":
+                records[0] = {**records[0], "wall_seconds": 999.0}
+            elif what == "manifest":
+                manifest["provenance"]["corpus_sha256"] = "0" * 64
+            else:
+                summary["questions"] = 12
+        return records, manifest, summary
+
+    root = perf_copy(tmp_path / "runs", edit)
+    with pytest.raises(AnalysisError, match="did not authenticate"):
+        analyse_performance.performance_run(
+            root / "20260815_040341_D_test_perf_pi5")
+
+
+@needs_runs
+def test_the_performance_analyser_accepts_the_committed_runs():
+    """The control. Every refusal above is a departure from this."""
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import analyse_performance
+
+    from sme_assistant.evaluation.authenticity import FROZEN_PERFORMANCE_DIGESTS
+
+    for name in FROZEN_PERFORMANCE_DIGESTS:
+        manifest, answers, summary = analyse_performance.performance_run(RUNS / name)
+        assert manifest["purpose"] == "performance"
+        assert len(answers) == 68
+        assert summary["_authenticated"]["summary_sha256"]
+
+
+@needs_runs
+def test_the_performance_index_file_is_authenticated_before_it_is_read(tmp_path):
+    """A swapped path here redirects the whole analysis while every run it then
+    reads authenticates perfectly. That is the one gap a per-run digest cannot
+    close, so the index file has its own."""
+    from sme_assistant.evaluation.authenticity import authenticate_index_file
+
+    name = "latest_test_performance_pi5_cpu.json"
+    good = tmp_path / name
+    good.write_text((RUNS / name).read_text(encoding="utf-8"), encoding="utf-8")
+    assert authenticate_index_file(good)
+
+    payload = json.loads(good.read_text(encoding="utf-8"))
+    payload["D"] = "results/runs/20260815_031446_D_test_perf_laptop_cpu"
+    good.write_text(json.dumps(payload), encoding="utf-8")
+    with pytest.raises(AuthenticityError, match="does not match its recorded"):
+        authenticate_index_file(good)
+
+
+@needs_runs
+def test_an_unknown_performance_index_file_is_refused(tmp_path):
+    from sme_assistant.evaluation.authenticity import authenticate_index_file
+
+    path = tmp_path / "latest_test_performance_invented.json"
+    path.write_text(json.dumps({"B": "x", "D": "y"}), encoding="utf-8")
+    with pytest.raises(AuthenticityError, match="not one of the frozen"):
+        authenticate_index_file(path)
+
+
+# --- H5 routing --------------------------------------------------------------
+
+
+@needs_runs
+def test_h5_is_read_from_the_performance_report_not_restated():
+    """Amendment 1.32.5. The generated H5 block said "pending" and "have not
+    been run" for six days after the hardware executions were complete and
+    analysed, because the routing predated them and nothing revisited it."""
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import analyse_results
+
+    analysis = ROOT / "results" / "analysis"
+    report = json.loads(
+        (analysis / "performance_latest_test_performance_pi5_cpu.json")
+        .read_text(encoding="utf-8"))
+    block = analyse_results.h5_from_performance_report(analysis)
+    assert block["verdict"] == report["H5"]["verdict"] == "not supported"
+    assert block["ratio"] == report["H5"]["ratio"]
+    assert block["scored_in"].endswith("pi5_cpu.json")
+    text = json.dumps(block).lower()
+    assert "have not been run" not in text
+    assert "pending" not in text
+
+
+def test_h5_says_the_report_is_absent_rather_than_asserting_the_runs_are(tmp_path):
+    """Where the report genuinely is missing it must say that, not make a claim
+    about whether the hardware executions happened."""
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import analyse_results
+
+    block = analyse_results.h5_from_performance_report(tmp_path)
+    assert block["verdict"] == "not computed here"
+    assert "not present in this analysis directory" in block["note"]
+    assert "have not been run" not in json.dumps(block).lower()
+
+
+def test_the_committed_h5_block_is_not_stale():
+    """Over the committed artefact, so a regeneration that reintroduced the
+    stale text would fail here rather than in a reader's hands."""
+    path = ROOT / "results" / "analysis" / "hypotheses.json"
+    if not path.exists():
+        pytest.skip("the analysis outputs are not present")
+    h5 = json.loads(path.read_text(encoding="utf-8"))["hypotheses"]["H5"]
+    assert h5["verdict"] == "not supported"
+    assert "have not been run" not in json.dumps(h5).lower()
+    assert h5["scored_in"].endswith("pi5_cpu.json")

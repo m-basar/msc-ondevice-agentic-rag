@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any, Iterable, Mapping
 
 from ..evaluation.authenticity import (AuthenticityError, authenticate,
-                                       read_run_content)
+                                       read_run_content, read_summary)
 
 ARMS = ("A", "B", "C", "D")
 
@@ -209,7 +209,8 @@ def load_replay_library(runs_root: Path | str,
         # another arm's text, changes it.
         try:
             records_read, manifest = read_run_content(directory)
-            authenticated[name] = authenticate(name, records_read, manifest)
+            authenticated[name] = authenticate(name, records_read, manifest,
+                                               read_summary(directory))
         except AuthenticityError as exc:
             raise ReplayUnavailable(str(exc)) from exc
 

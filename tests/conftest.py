@@ -21,15 +21,23 @@ from pathlib import Path
 
 import pytest
 
-from sme_assistant.evaluation.authenticity import (FROZEN_RUN_DIGESTS,
-                                                   RunDigest, digest_of,
-                                                   read_run_content)
+from sme_assistant.evaluation.authenticity import (FROZEN_PERFORMANCE_DIGESTS,
+                                                   FROZEN_PERFORMANCE_INDEX_DIGESTS,
+                                                   FROZEN_RUN_DIGESTS)
 
 
 @pytest.fixture(autouse=True)
 def isolate_run_digests():
-    """Restore the recorded digests after every test, whatever it did to them."""
-    original = dict(FROZEN_RUN_DIGESTS)
+    """Restore every recorded digest table after each test, whatever it did.
+
+    All three: the quality runs, the performance runs and the performance
+    run-index files. Amendment 1.32.3 added the second and third, and a fixture
+    restoring only the first would let a sealed stub leak into the next test.
+    """
+    tables = (FROZEN_RUN_DIGESTS, FROZEN_PERFORMANCE_DIGESTS,
+              FROZEN_PERFORMANCE_INDEX_DIGESTS)
+    originals = [dict(table) for table in tables]
     yield FROZEN_RUN_DIGESTS
-    FROZEN_RUN_DIGESTS.clear()
-    FROZEN_RUN_DIGESTS.update(original)
+    for table, original in zip(tables, originals):
+        table.clear()
+        table.update(original)

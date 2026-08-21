@@ -47,7 +47,8 @@ from typing import Any, Iterable, Mapping, NamedTuple, Sequence
 from ..verify.schema import CONFLICTING_RELATIONSHIPS, VALID_RELATIONSHIPS
 from .manual_scoring import load_abstention, load_judgements, load_sheet
 from .authenticity import (AuthenticityError, authenticate,
-                           check_question_identity, read_run_content)
+                           check_question_identity, read_run_content,
+                           read_summary)
 from .question_set import QuestionSet, load_question_set
 from .run_writer import read_run
 from .stopping_gate import DECLARED_TO_INFERRED, MAJORITY
@@ -181,7 +182,8 @@ def authenticate_runs(runs: Sequence[Path | str],
         directory = Path(directory)
         records, manifest = read_run_content(directory)
         try:
-            digests = authenticate(directory.name, records, manifest)
+            digests = authenticate(directory.name, records, manifest,
+                                   read_summary(directory))
             identity = check_question_identity(
                 records, question_set, split="test", where=directory.name)
         except AuthenticityError as exc:
@@ -673,7 +675,8 @@ def load_diagnostic_source(runs_root: Path | str,
     # Amendment 1.31.2.
     try:
         records_read, manifest = read_run_content(directory)
-        digests = authenticate(name, records_read, manifest)
+        digests = authenticate(name, records_read, manifest,
+                               read_summary(directory))
     except AuthenticityError as exc:
         raise AnalysisError(str(exc)) from exc
     declared_id = manifest.get("run_id")

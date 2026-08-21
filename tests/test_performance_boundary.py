@@ -19,6 +19,8 @@ from pathlib import Path
 
 import pytest
 
+from .sealing import seal, seal_index
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 import analyse_performance  # noqa: E402
@@ -223,6 +225,11 @@ def write_run(root: Path, name: str, arm: str, *, purpose="performance",
         "elapsed_seconds": 120.0,
         "drafts_reused_from": reused,
     }), encoding="utf-8")
+    # Amendment 1.32.3: the analyser authenticates every run before reading a
+    # timing from it, so a stub seals itself or every test here would exercise
+    # the digest rather than the boundary rule it names. conftest restores the
+    # table afterwards, and no bypass exists in the library itself.
+    seal(directory, performance=True)
     return directory
 
 
@@ -627,6 +634,7 @@ def test_a_rejected_report_discloses_no_latency(tmp_path, monkeypatch, capsys):
     payload, _, _ = build_index(tmp_path, d_kwargs={"reused": None})
     index_path = tmp_path / "latest_test_performance_pi5_cpu.json"
     index_path.write_text(json.dumps(payload), encoding="utf-8")
+    seal_index(index_path)
 
     monkeypatch.setattr(analyse_performance, "ROOT", tmp_path)
     monkeypatch.setattr(
@@ -1193,6 +1201,7 @@ def test_a_valid_index_produces_a_report_end_to_end(tmp_path, monkeypatch):
     payload, _, _ = build_index(tmp_path)
     index_path = tmp_path / "latest_test_performance_pi5_cpu.json"
     index_path.write_text(json.dumps(payload), encoding="utf-8")
+    seal_index(index_path)
 
     monkeypatch.setattr(analyse_performance, "ROOT", tmp_path)
     monkeypatch.setattr(
@@ -1230,6 +1239,7 @@ def test_a_laptop_index_gets_no_h5_verdict_end_to_end(tmp_path, monkeypatch):
     )
     index_path = tmp_path / "latest_test_performance_laptop_cpu.json"
     index_path.write_text(json.dumps(payload), encoding="utf-8")
+    seal_index(index_path)
 
     monkeypatch.setattr(analyse_performance, "ROOT", tmp_path)
     monkeypatch.setattr(

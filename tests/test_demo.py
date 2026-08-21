@@ -184,7 +184,7 @@ def test_replay_refuses_a_run_that_is_not_on_the_closed_list(tmp_path):
         json.dumps({"split": "test", "purpose": "performance",
                     "arm": {"arm": "D"}}),
         encoding="utf-8")
-    with pytest.raises(ReplayUnavailable, match="not one of the four"):
+    with pytest.raises(ReplayUnavailable, match="not one of the frozen quality"):
         load_replay_library(tmp_path, ["perf"])
 
 

@@ -889,9 +889,16 @@
       "reading": "D exceeds ['A', 'C'] and does not exceed ['B']. D ties B at 5/5 gap topics, both at ceiling. A and C are descriptively lower and that difference is reported, but H4 as stated requires D to exceed all three and it does not."
     },
     "H5": {
-      "statement": "latency(D) is between 1.5x and 2.5x latency(B) on the Pi 5",
-      "verdict": "pending",
-      "note": "Requires the performance-only hardware executions, which are not part of the frozen laptop quality run and have not been run."
+      "statement": "latency(D) is between 1.5x and 2.5x latency(B) on pi5_cpu",
+      "verdict": "not supported",
+      "scored_in": "performance_latest_test_performance_pi5_cpu.json",
+      "condition": "pi5_cpu",
+      "ratio": 3.176152813877426,
+      "mean_wall_seconds": {
+        "B": 54.83641176470588,
+        "D": 174.16882352941175
+      },
+      "note": "Scored by scripts/analyse_performance.py over the Pi 5 performance-only runs, not by this script, and read from performance_latest_test_performance_pi5_cpu.json rather than restated. The frozen laptop quality runs remain the sole evidential source for H1 to H4 and contribute nothing here."
     }
   },
   "sensitivity_conf04": {
@@ -1781,7 +1788,8 @@
       "question_ids_unique": true,
       "content_authenticated": {
         "answers_sha256": "c09d626d4f99f932a7a509ac9369604859bed671a69c4ecdac6b3cfd89ecd813",
-        "manifest_sha256": "de1452c0bc91ec9afd3c9428505aaf12327b5b0c787727b60b4a3541ebcfc7f4"
+        "manifest_sha256": "de1452c0bc91ec9afd3c9428505aaf12327b5b0c787727b60b4a3541ebcfc7f4",
+        "summary_sha256": "c5c760b92e545463f3b01fb572a167b6d80ce2798d93feebae371fa93c318158"
       },
       "question_identity": {
         "split": "test",
