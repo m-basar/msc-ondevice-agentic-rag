@@ -18,6 +18,8 @@ from pathlib import Path
 
 import pytest
 
+from .sealing import seal
+
 from sme_assistant.demo import load_replay_library
 from sme_assistant.demo.replay import ReplayUnavailable
 from sme_assistant.demo.render import arm_card, live_page, replay_page
@@ -161,6 +163,20 @@ def test_a_missing_run_raises_rather_than_returning_a_partial_library(tmp_path):
 def test_replay_refuses_a_performance_run(tmp_path):
     """A performance run is on the test split and carries an arm, so nothing
     but the purpose field distinguishes it."""
+    _four_stubs(tmp_path)
+    directory = tmp_path / FROZEN_QUALITY_RUNS[3]
+    manifest = json.loads((directory / "manifest.json").read_text(encoding="utf-8"))
+    manifest["purpose"] = "performance"
+    (directory / "manifest.json").write_text(json.dumps(manifest),
+                                             encoding="utf-8")
+    seal(directory)
+    with pytest.raises(ReplayUnavailable, match="performance"):
+        load_replay_library(tmp_path, FROZEN_QUALITY_RUNS)
+
+
+def test_replay_refuses_a_run_that_is_not_on_the_closed_list(tmp_path):
+    """Amendment 1.31.2. A directory that is not one of the four frozen runs is
+    refused by name before anything inside it is read."""
     directory = tmp_path / "perf"
     directory.mkdir()
     (directory / "answers.jsonl").write_text("", encoding="utf-8")
@@ -168,7 +184,7 @@ def test_replay_refuses_a_performance_run(tmp_path):
         json.dumps({"split": "test", "purpose": "performance",
                     "arm": {"arm": "D"}}),
         encoding="utf-8")
-    with pytest.raises(ReplayUnavailable, match="performance"):
+    with pytest.raises(ReplayUnavailable, match="not one of the four"):
         load_replay_library(tmp_path, ["perf"])
 
 
@@ -276,7 +292,7 @@ STUB_HASHES = {
 
 def _stub_run(directory: Path, arm: str, question_ids, *, run_id=None,
               split="test", purpose=None, hashes=None, declared=None,
-              record_arm=None, records=None, extra=None):
+              record_arm=None, records=None, extra=None, seal_it=True):
     """A stub run that passes every check, so that a test can remove one.
 
     Written valid by default and broken one property at a time. A helper that
@@ -306,6 +322,11 @@ def _stub_run(directory: Path, arm: str, question_ids, *, run_id=None,
         lines.append(json.dumps(record))
     (directory / "answers.jsonl").write_text("\n".join(lines) + "\n",
                                              encoding="utf-8")
+    # Amendment 1.31.2: replay authenticates content before it checks anything
+    # else, so a stub has to be sealed or every test below would exercise the
+    # digest rather than the property it names. conftest restores the table.
+    if seal_it:
+        seal(directory)
 
 
 def _four_stubs(tmp_path: Path, **overrides) -> None:
@@ -445,6 +466,7 @@ def test_replay_refuses_a_run_that_states_no_size_for_the_split(tmp_path):
     manifest["provenance"].pop("question_set_metadata")
     (directory / "manifest.json").write_text(json.dumps(manifest),
                                              encoding="utf-8")
+    seal(directory)
     with pytest.raises(ReplayUnavailable, match="no test-split question count"):
         load_replay_library(tmp_path, FROZEN_QUALITY_RUNS)
 
@@ -587,6 +609,12 @@ class _RefusingAssistant:
     def model_status(self) -> dict:
         return {"ready": True, "generation": "g", "verification": "v",
                 "base_url": "http://localhost:11434", "detail": ""}
+
+    def frozen_arm_d_agreement(self, manifest) -> dict:
+        """Amendment 1.31.3. The live page states whether this pipeline is
+        configured as the frozen Arm D run was, so a stand-in has to answer
+        it. Reporting agreement is not answering a question."""
+        return {"matches": True, "differs": [], "fields": {}}
 
     def answer(self, question: str):
         self.calls.append(question)

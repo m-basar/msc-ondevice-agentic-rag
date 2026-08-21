@@ -128,6 +128,13 @@ SUMMARY = {
             "Appendix D generated. 1.30.11 records the same defect recurring "
             "in this amendment's own test, which claimed an isolation the "
             "code could not perform and overwrote four committed figures.",
+    "1.31": "Source identity was internal: four invented runs, an unknown "
+            "purpose value and two questions swapped between families all "
+            "passed. The frozen runs are now authenticated by content digest "
+            "and against the question set, the declared-to-inferred mapping is "
+            "compared by value and not by key, the live pipeline is compared "
+            "with the frozen Arm D manifest on twelve fields rather than two, "
+            "and three figures stop arguing their own case.",
     "1.29": "Post-hoc exploratory diagnostic of the frozen verifier's internal "
             "relationship classification, kept separate from binary conflict "
             "detection. No threshold, no verdict, no hypothesis revisited.",

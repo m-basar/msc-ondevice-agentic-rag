@@ -341,7 +341,10 @@ distribution, not an inferential interval.
 against the H5 prediction (bottom), n = 68 questions per arm per condition. Arm
 D replays Arm B's drafts, so the draft segment is identical generation work in
 both arms and the difference is the verification pass alone. The shaded band is
-the pre-registered 1.5 to 2.5 range. All three ratios sit above it.
+the pre-registered 1.5 to 2.5 range. All three ratios sit above it. H5 is stated
+over the Raspberry Pi 5 and is scored only there, which is why the two laptop
+bars are labelled NOT APPLICABLE and only the Pi bar carries a verdict; the
+laptop ratios are descriptive RQ4 figures.
 
 The **observed** ratio on the Pi 5 is 3.18, under the throttled conditions
 documented below, and exceeds the upper bound of the predicted range. The ratio is stable across three platforms whose decode rates differ more

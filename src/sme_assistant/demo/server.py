@@ -76,7 +76,15 @@ class DashboardState:
         if assistant is None:
             return {"ready": False,
                     "detail": self.live_error or "live mode is unavailable"}
-        return assistant.model_status()
+        status = dict(assistant.model_status())
+        # Amendment 1.31.3. Whether the live pipeline is configured as the
+        # frozen Arm D run was is a property of the demonstration, and a
+        # property that is only testable is not shown to anyone using it.
+        if self.library is not None:
+            frozen = self.library.provenance.get("manifests", {}).get("D")
+            if frozen:
+                status["frozen_agreement"] = assistant.frozen_arm_d_agreement(frozen)
+        return status
 
 
 class Handler(BaseHTTPRequestHandler):

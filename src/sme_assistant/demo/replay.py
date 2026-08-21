@@ -16,6 +16,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 
+from ..evaluation.authenticity import (AuthenticityError, authenticate,
+                                       read_run_content)
+
 ARMS = ("A", "B", "C", "D")
 
 
@@ -154,6 +157,10 @@ AGREEING_PROVENANCE: tuple[str, ...] = (
 #: Purposes that disqualify a directory from replay. A performance run carries
 #: timings and no scored answers; a demonstration directory carries whatever
 #: the dashboard was pointed at. Neither is an arm of the experiment.
+#: Kept for the error message only. The rule is now that a quality run declares
+#: no purpose at all; amendment 1.31.2 records that a manifest saying
+#: ``purpose: "unexpected-purpose"`` was accepted, because a blocklist admits
+#: everything it has not heard of.
 REJECTED_PURPOSES: frozenset[str] = frozenset({"performance", "demonstration"})
 
 
@@ -175,6 +182,8 @@ def load_replay_library(runs_root: Path | str,
     ``None`` skips only that one check; nothing else is optional.
     """
     root = Path(runs_root)
+    authenticated: dict[str, dict[str, str]] = {}
+    manifests: dict[str, Mapping[str, Any]] = {}
     order: list[str] = []
     merged: dict[str, dict[str, Any]] = {}
     provenance: dict[str, Any] = {"runs": {}}
@@ -190,7 +199,19 @@ def load_replay_library(runs_root: Path | str,
                 "four quality runs; showing fewer would present a partial "
                 "comparison as a complete one."
             )
-        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        # Content first, against a digest recorded outside this file.
+        # Amendment 1.31.2: every check below reads a field out of the run and
+        # compares it with another field out of the same run or its siblings,
+        # so four mutually consistent inventions satisfied all of them. This
+        # also fixes the question identity requirement without opening the gold
+        # question set, which no part of the demonstrator may do: the digest
+        # covers every record, so a question moved between families, or given
+        # another arm's text, changes it.
+        try:
+            records_read, manifest = read_run_content(directory)
+            authenticated[name] = authenticate(name, records_read, manifest)
+        except AuthenticityError as exc:
+            raise ReplayUnavailable(str(exc)) from exc
 
         # The split first, because a renamed directory passes every other
         # check. A run on the development split answers different questions
@@ -200,11 +221,16 @@ def load_replay_library(runs_root: Path | str,
                 f"{name} declares split={manifest.get('split')!r}. Replay shows "
                 "the reported test-split comparison and nothing else."
             )
+        # The four frozen quality runs declare no purpose. Anything that does
+        # is something else, whether or not this module has heard of it.
         purpose = manifest.get("purpose")
-        if purpose in REJECTED_PURPOSES:
+        if purpose is not None:
+            named = ("a " + str(purpose) + " run" if purpose in REJECTED_PURPOSES
+                     else f"purpose={purpose!r}")
             raise ReplayUnavailable(
-                f"{name} is a {purpose} run and is not an arm of the "
-                "experiment; it carries no comparable scored answers"
+                f"{name} declares {named}. The four quality runs declare no "
+                "purpose at all, so anything that declares one is not an arm "
+                "of the experiment and carries no comparable scored answers."
             )
         # A directory renamed to sit on the closed list still carries the
         # identifier it was written with. Names are the boundary here, so a
@@ -258,12 +284,10 @@ def load_replay_library(runs_root: Path | str,
             )
         entry["declared_test_questions"] = declared
         provenance["runs"][arm] = entry
+        manifests[arm] = manifest
 
         seen_ids: set[str] = set()
-        for line in answers_path.read_text(encoding="utf-8").splitlines():
-            if not line.strip():
-                continue
-            record = json.loads(line)
+        for record in records_read:
             question_id = record["question_id"]
             # The record carries its own arm. A file copied between run
             # directories keeps it, and the manifest would not notice.
@@ -354,6 +378,8 @@ def load_replay_library(runs_root: Path | str,
     provenance["question_count"] = len(merged)
     provenance["arms"] = sorted(provenance["runs"])
     provenance["checked"] = list(AGREEING_PROVENANCE)
+    provenance["content_authenticated"] = authenticated
+    provenance["manifests"] = manifests
     provenance["declared_test_questions"] = declared_count
 
     questions = tuple(

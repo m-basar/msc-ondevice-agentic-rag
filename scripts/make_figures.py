@@ -385,13 +385,11 @@ def figure_latency_distributions(series: dict) -> Path:
         ax.set_title(label, color=INK)
         ax.set_ylim(bottom=0)
     axes[0].set_ylabel("End-to-end latency per answer (seconds)")
-    fig.text(0.5, -0.06,
-             "Box is the interquartile range with the median; whiskers reach "
-             f"1.5 x IQR. Points are the {len(series['pi5_cpu']['B'])} "
-             "individual questions.\n"
-             "Spread is observed, not an inferential interval: no confidence "
-             "interval is computed anywhere in this study.",
-             ha="center", fontsize=7.5, color=MUTED, linespacing=1.5)
+    # No footer. Amendment 1.31.4: what a box shows and what the spread does
+    # not mean are arguments, and an argument belongs in the chapter that can
+    # be held to it. Both sentences that stood here are in the Table 4.9
+    # caption and in section 4.12, so the figure was repeating prose it sits
+    # beside and could not be reused anywhere that prose does not follow.
     fig.tight_layout()
     return save(fig, "fig_4_3_latency_distributions.png")
 
@@ -455,13 +453,9 @@ def figure_latency_overhead(performance: dict) -> Path:
     ax.set_ylim(0, max(ratios) * 1.42)
     ax.set_title("Latency ratio against the H5 prediction", color=INK)
     ax.legend(loc="upper right")
-    fig.text(0.5, -0.02,
-             "H5 is stated over the Raspberry Pi 5 and is scored only there. "
-             "The two laptop ratios are descriptive RQ4 figures and carry no "
-             "verdict.\nArm D replays Arm B's drafts, so the draft segment is "
-             "the same generation work in both arms and the difference is the "
-             "verification pass alone.",
-             ha="center", fontsize=7.5, color=MUTED, linespacing=1.5)
+    # No footer; amendment 1.31.4. The scoring boundary and the replay design
+    # are stated in section 4.12 and in the caption, and the NOT SCORED and
+    # NOT SUPPORTED labels on the bars carry the distinction visually.
     return save(fig, "fig_4_4_latency_overhead.png")
 
 

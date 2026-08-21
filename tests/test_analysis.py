@@ -19,6 +19,8 @@ from pathlib import Path
 
 import pytest
 
+from .sealing import seal
+
 from sme_assistant.evaluation.analysis import (
     DIAGNOSTIC_GROUPS,
     FROZEN_DIAGNOSTIC_SHAPE,
@@ -422,9 +424,14 @@ def test_two_runs_supplying_the_same_arm_and_question_are_refused(tmp_path):
             json.dumps({"split": "test", "arm": {"arm": "D"}}), encoding="utf-8"
         )
         (directory / "answers.jsonl").write_text(
-            json.dumps({"question_id": "GAP-1-Q1", "wall_seconds": 1.0}) + "\n",
+            json.dumps({"question_id": "GAP-1-Q1", "question": "q?",
+                        "wall_seconds": 1.0}) + "\n",
             encoding="utf-8",
         )
+        # Amendment 1.31.2: authentication runs before the duplicate-arm rule
+        # this test is about, so the stub seals itself. conftest restores the
+        # table afterwards.
+        seal(directory)
         runs.append(directory)
 
     with pytest.raises(AnalysisError, match="Two runs supply"):
@@ -913,22 +920,39 @@ def _diag_run(directory: Path, *, run_id=None, split="test", arm="D",
     ids = [f"Q{i}" for i in range(answers)]
     if duplicate and len(ids) > 1:
         ids[-1] = ids[0]
-    lines = [json.dumps({"question_id": qid, "arm": arm,
+    lines = [json.dumps({"question_id": qid, "question": qid,
+                         "category": "conflict", "arm": arm,
                          "verification": {"relationship": "no_relationship"}})
              for qid in ids]
     if stray_arm and lines:
-        lines[0] = json.dumps({"question_id": ids[0], "arm": stray_arm,
+        lines[0] = json.dumps({"question_id": ids[0], "question": ids[0],
+                               "category": "conflict", "arm": stray_arm,
                                "verification": {"relationship": "no_relationship"}})
     (directory / "answers.jsonl").write_text("\n".join(lines) + "\n",
                                              encoding="utf-8")
+    # Amendment 1.31.2: content is authenticated and question identity checked
+    # before any of the properties below is looked at, so a stub seals itself
+    # and supplies a question set matching what it wrote. Otherwise every test
+    # here would exercise the digest rather than the rule it names.
+    seal(directory)
+    return _diag_question_set(ids)
+
+
+def _diag_question_set(ids) -> QuestionSet:
+    """A question set that agrees with a stub run, so identity is satisfied."""
+    return QuestionSet(tuple(
+        Question(question_id=qid, text=qid, category="conflict",
+                 group_id=qid, split="test", answerability="answerable",
+                 expected_behaviour="answer_directly", family_id=None)
+        for qid in dict.fromkeys(ids)))
 
 
 DIAG = "20260814_055018_D_test"
 
 
 def test_the_diagnostic_source_is_accepted_when_it_is_the_frozen_run(tmp_path):
-    _diag_run(tmp_path / DIAG)
-    source = load_diagnostic_source(tmp_path)
+    question_set = _diag_run(tmp_path / DIAG)
+    source = load_diagnostic_source(tmp_path, question_set=question_set)
     assert len(source.records) == 68
     assert source.checks["arm"] == "D"
 
@@ -948,9 +972,9 @@ def test_the_diagnostic_source_is_validated_not_merely_named(tmp_path, kwargs,
     report, and neither was compared with the file that was opened. A renamed
     or re-executed directory of the same name would have been read without
     complaint and reported as the frozen run."""
-    _diag_run(tmp_path / DIAG, **kwargs)
+    question_set = _diag_run(tmp_path / DIAG, **kwargs)
     with pytest.raises(AnalysisError, match=message):
-        load_diagnostic_source(tmp_path)
+        load_diagnostic_source(tmp_path, question_set=question_set)
 
 
 def test_a_missing_diagnostic_source_is_an_error_not_an_empty_report(tmp_path):

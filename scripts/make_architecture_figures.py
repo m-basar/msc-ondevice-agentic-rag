@@ -223,8 +223,13 @@ def figure_arms() -> list[Path]:
     The three leaves sit on one row so that the only thing distinguishing the
     confirmatory edge is what it changes, not where it happens to be drawn.
     """
-    fig, ax = plt.subplots(figsize=(10.0, 6.0))
-    ax.set_xlim(0, 100); ax.set_ylim(0, 64); ax.axis("off")
+    # The lower bound was 0 to leave room for an explanatory footer at y=6.4.
+    # The footer is gone (amendment 1.31.4) and the lowest content is the leaf
+    # row at y=14, so 0 left a fifth of the figure empty. tight bbox does not
+    # crop it: the axis is an artist and spans the whole limit. The height
+    # scales with the span so the drawing keeps its proportions.
+    fig, ax = plt.subplots(figsize=(10.0, 5.05))
+    ax.set_xlim(0, 100); ax.set_ylim(10, 64); ax.axis("off")
 
     ax.text(50, 61.0,
             "Shared by all four arms: corpus, chunk set, index, embedding "
@@ -274,13 +279,12 @@ def figure_arms() -> list[Path]:
     # C against D: two variables at once, so not an ablation.
     arrow(ax, (63.5, 22.0), (72.0, 22.0), colour=MUTED, lw=1.4, dashed=True,
           style_="<|-|>")
-    ax.text(50.0, 6.4,
-            "C against D changes retrieval mode *and* verification, so no "
-            "difference between them can be attributed to either alone.\n"
-            "It is reported as the practical comparison a practitioner would "
-            "make, explicitly not as an ablation isolating verification.",
-            ha="center", fontsize=8.0, color=MUTED, linespacing=1.6)
-
+    # No footer. The docstring above has said since this script was written
+    # that neither figure carries one, and this figure carried one anyway;
+    # amendment 1.31.4. The C-against-D caution is made in section 3.3 and in
+    # the figure caption, where a reader can hold the chapter to it, and the
+    # dashed double-headed arrow already marks the pair as a comparison rather
+    # than a derivation.
     return save(fig, "fig_3_2_experimental_arms")
 
 

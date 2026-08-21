@@ -22,7 +22,9 @@ dev = ["pytest>=7.4"]
 # where 3.10 bundled 2.6.1, which is why the two produce different text
 # positions from identical geometry. The version actually used is recorded in
 # figures/FIGURE_ENVIRONMENT.json beside the images.
-figures = ["matplotlib==3.11.1", "numpy==2.5.1"]
+# Pillow writes the PNG bytes and is pinned for the same reason
+# matplotlib is; amendment 1.31.4.
+figures = ["matplotlib==3.11.1", "numpy==2.5.1", "pillow==12.3.0"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

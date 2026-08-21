@@ -362,6 +362,26 @@ def live_page(question: str | None, answer, error: str | None,
         "</code>." if ready else
         f"<span style='color:#8a1d1d'>{escape(str(model_status.get('detail')))}"
         "</span>")
+    # Amendment 1.31.3. Whether this pipeline is configured as the frozen Arm D
+    # run was, field by field. Shown rather than only tested: a demonstration
+    # that quietly drifted from the experiment it demonstrates is exactly the
+    # confusion the two-mode design exists to prevent.
+    agreement = model_status.get("frozen_agreement") or {}
+    agreement_line = ""
+    if agreement:
+        if agreement.get("matches"):
+            agreement_line = (
+                "<p class='muted'>Configuration matches the frozen Arm D run on "
+                f"all {len(agreement.get('fields') or {})} compared fields, "
+                "including the configuration fingerprint, sampling options, "
+                "retrieval parameters and index hash.</p>")
+        else:
+            differs = ", ".join(escape(str(d)) for d in agreement.get("differs") or [])
+            agreement_line = (
+                "<p style='color:#8a1d1d'><strong>This pipeline differs from "
+                f"the frozen Arm D run on: {differs}.</strong> Answers below "
+                "are produced by a different configuration from the one the "
+                "reported results came from.</p>")
     result = ""
     if error:
         result = f"<div class='note'><strong>Could not answer.</strong> {escape(error)}</div>"
@@ -380,7 +400,8 @@ def live_page(question: str | None, answer, error: str | None,
         "<div class='note'>Only Arm D runs live. The four-arm comparison is "
         "available under <a href='/replay'>Frozen replay</a>, where it comes "
         "from the committed experimental records rather than from a fresh "
-        f"execution.<br><span class='muted'>{status_line}</span></div>"
+        f"execution.<br><span class='muted'>{status_line}</span>"
+        f"{agreement_line}</div>"
         "<form method='post' action='/live'>"
         "<label for='q'><strong>Ask a question about the knowledge base"
         "</strong></label>"

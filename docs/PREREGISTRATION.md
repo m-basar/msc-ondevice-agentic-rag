@@ -4372,3 +4372,168 @@ the previous set, naming both versions.
 | New enforcement | replay fail-closed, POST at the handler, validated diagnostic source, generated Appendix D, `--out` isolation for both figure scripts |
 | Frozen runs, judgements, question set, models | unchanged |
 | H1 to H5 | unchanged, byte-identical |
+
+---
+
+# Amendment 1.31 - 21 August 2026
+
+Four corrections following a third independent review. Nothing in the experiment
+changes: no hypothesis, no verdict, no frozen record and no plotted value. Three
+of the four are the same class of defect as 1.30.1, in a narrower and more
+interesting form.
+
+## 1.31.1 A check on a mapping that read only its keys
+
+The diagnostic refused a substituted `DECLARED_TO_INFERRED` with
+
+```python
+if set(mapping) != set(DECLARED_TO_INFERRED):
+```
+
+**A mapping's meaning is in its values.** The reviewer substituted a mapping
+with every key intact and one value re-pointed, `version_supersession` mapped to
+`mutually_exclusive` instead of `supersession`, and the check passed. That
+substitution turns four of H1's twelve misclassifications into exact matches,
+which is the single most favourable edit available to this analysis. The check
+guarded the one part of the object that could not carry the error.
+
+It now compares the whole mapping and names both sides in the failure. A test
+supplies a values-only substitution and asserts the refusal; it was confirmed to
+pass against the previous implementation before being accepted.
+
+## 1.31.2 Source identity was internal, and internal consistency is not identity
+
+Every check the analysis and the replay made about a run compared it with itself
+or with its siblings. The manifest agreed with the directory name; the four arms
+agreed on a corpus hash; the record count matched a number in the manifest.
+Nothing compared any of it with anything outside the set. The consequences, all
+demonstrated by the reviewer:
+
+* **Four wholly invented runs were accepted** by replay, because their names,
+  fabricated hashes and records agreed with one another.
+* **`purpose: "unexpected-purpose"` was accepted**, because the rule was a
+  blocklist of two values and a blocklist admits everything it has not heard of.
+* **`CONF-02-Q1` and `CONF-06-Q1` swapped between families passed the complete
+  45-row diagnostic**, because the family a record claimed was never compared
+  with the family the frozen question set assigns it. That swap changes the
+  reported counts.
+
+Three things are added.
+
+**Content authentication.** `src/sme_assistant/evaluation/authenticity.py`
+records, for each of the four frozen runs, the SHA-256 of the canonical JSON of
+its parsed records and of its parsed manifest. The analysis authenticates all
+four inside `join`, before a single number is read; the diagnostic and the
+replay authenticate before any other check.
+
+*Content and not the file's bytes*, because `.gitattributes` normalises line
+endings to LF in the object store while the authoring checkout holds CRLF. A
+byte digest would pass on the two machines it was computed on and fail for
+anyone who cloned the repository fresh on Linux. A false alarm about the
+integrity of frozen evidence is the worst kind to raise, and the digest is
+independent of how the lines end while still covering every value in every
+record.
+
+*What the digests establish.* They were computed on 21 August from the files as
+committed, **not sealed when the runs were executed on 14 August**. They cannot
+show that nothing changed between those dates; the commit history shows that,
+where `be55077` carries the same content and predates every analysis commit.
+What they do is make any alteration from now on fail at the point of use rather
+than only for someone who thought to run `git diff`. That is the narrower claim
+and it is the one this project is entitled to make.
+
+**Purpose is an allowlist of one.** The four quality runs declare no purpose at
+all, so replay refuses any run that declares one, named or not.
+
+**Question identity against the frozen question set.** Each record's question
+text, category and family are compared with what the question set assigns that
+identifier, and the set of identifiers must equal the test split exactly. The
+demonstrator does not do this and must not: `demo/live.py` imports
+`demo/replay.py`, so a reference from replay to the question set would put the
+live assistant one import away from a file holding the gold answer to every
+question. `authenticity.py` names no path to gold data, and replay relies on the
+content digest instead, which covers the same swap because it covers every
+field of every record.
+
+The two layers are tested separately, and the inner one is tested with the outer
+removed. A test that reseals the digest and then asserts the swap is still
+caught models the one thing a digest cannot defend against: somebody who finds
+the check failing and updates the recorded value to match the file rather than
+restoring the file.
+
+**One thing this found immediately.** Wiring the digest in exposed a name
+collision: `authenticity.read_run` returned `(records, manifest)` while
+`run_writer.read_run`, already imported into the same module, returns
+`(manifest, answers)`. The second import shadowed the first and the two values
+were silently transposed. Nothing else in the file would have failed; the digest
+did, on its first run, before the function it protects was finished. The helper
+is now `read_run_content`.
+
+## 1.31.3 The live pipeline was compared on two fields and called identical
+
+The dashboard's live mode is Arm D, and the check that it *was* Arm D compared
+two model names and two mode constants. Everything that decides what those
+models are given went unchecked: the configuration fingerprint, the sampling
+options, the retrieval parameters and the index the evidence is drawn from. A
+live answer produced at `top_k = 3` against a rebuilt index, displayed beside a
+frozen record produced at `top_k = 6`, would have been presented as the same
+arm.
+
+`LiveAssistant.frozen_arm_d_agreement` now compares twelve fields against the
+frozen Arm D manifest and returns which differ. It **reports rather than
+raises**: the dashboard runs on machines where the index has legitimately been
+rebuilt, and a demonstrator that refuses to start is less honest than one that
+says which fields differ. What must not happen is silence, and the live page
+now states either that all twelve agree or which do not.
+
+Writing the comparison found a real error in it. The first version read
+`config["generation"]["options"]`, which does not exist, and compared an empty
+dictionary against four real values while reporting agreement. The key is
+`config["generation"]`, which is what the run writer records. A check that
+compares nothing with nothing passes.
+
+## 1.31.4 Figures that argued their own case, and an unrecorded dependency
+
+Three figures carried explanatory paragraphs: Figure 3.2's C-against-D caution,
+Figure 4.3's box-and-IQR note, and Figure 4.4's H5-scoring and replay note.
+Every sentence in all three is already in the surrounding caption or section.
+`make_architecture_figures.py` has said in its own docstring since it was
+written that neither of its figures carries an explanatory footer, and one of
+them did.
+
+They are removed. What a figure omits, and why, is an argument, and an argument
+belongs in the chapter that can be held to it; a figure that states its own case
+duplicates the prose beside it and cannot be reused anywhere that prose does not
+follow. The Figure 3.2 and Figure 4.4 captions were extended so that nothing the
+footers said is lost, and the Figure 3.2 caption no longer claims the figure
+labels the C-D comparison, because it now marks it with a dashed connector and
+says why here instead.
+
+**Pillow is recorded and pinned.** It writes the PNG bytes and decides the file
+as surely as FreeType decides the glyphs, and it was neither recorded in
+`FIGURE_ENVIRONMENT.json` nor pinned while this project called the figures
+reproducible. It joins matplotlib, NumPy, FreeType and Python in both, and in
+the environment-match condition that gates the byte-identity test.
+
+## 1.31.5 What none of this licenses
+
+* No hypothesis is revisited, and H1 to H5 are byte-identical.
+* No frozen record, judgement, question or gold answer is altered. The content
+  digests are computed **from** those files; they do not change them, and the
+  first thing they did was confirm all four runs are as committed.
+* The exploratory diagnostic remains exploratory. It gains a stronger guarantee
+  about which file it read, and no threshold, no verdict and no chance baseline.
+* The demonstrator still contributes no evidence. Comparing it with the frozen
+  Arm D manifest establishes that it is configured as that run was, not that
+  anything it produces is a result.
+
+## 1.31.6 State
+
+| | |
+|---|---|
+| Status | review correction, no experimental change |
+| Corrected | a keys-only mapping check, fail-open source identity in three places, a two-field live comparison, three self-explaining figures |
+| Withdrawn | the purpose blocklist, replaced by an allowlist of one |
+| New enforcement | content digests for the four frozen runs, question identity against the frozen question set, twelve-field live agreement, Pillow recorded and pinned |
+| Frozen runs, judgements, question set, models | unchanged, and now authenticated at the point of use |
+| H1 to H5 | unchanged, byte-identical |

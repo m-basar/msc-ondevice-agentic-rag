@@ -1778,7 +1778,20 @@
       "split": "test",
       "arm": "D",
       "answers": 68,
-      "question_ids_unique": true
+      "question_ids_unique": true,
+      "content_authenticated": {
+        "answers_sha256": "c09d626d4f99f932a7a509ac9369604859bed671a69c4ecdac6b3cfd89ecd813",
+        "manifest_sha256": "de1452c0bc91ec9afd3c9428505aaf12327b5b0c787727b60b4a3541ebcfc7f4"
+      },
+      "question_identity": {
+        "split": "test",
+        "questions": 68,
+        "identity_fields_checked": [
+          "question",
+          "category",
+          "family_id"
+        ]
+      }
     }
   }
 }

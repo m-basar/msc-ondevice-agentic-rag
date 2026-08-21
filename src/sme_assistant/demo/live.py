@@ -12,9 +12,10 @@ looks exactly like the reported experiment and is not it.
 
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
 
 from ..common.config import load_config
 from ..common.hostinfo import ollama_info
@@ -31,6 +32,18 @@ from .replay import ArmAnswer, _arm_answer
 LIVE_ARM = "D"
 LIVE_RETRIEVAL = RetrievalMode.ALL
 LIVE_EVIDENCE = EvidenceFormat.WITH_STATUS
+
+
+def _file_sha256(path: Path) -> str | None:
+    """Restated here rather than imported from ``evaluation.run_writer``.
+
+    Two lines of hashlib against a dependency from the demonstrator onto the
+    experiment runner, which is the direction this module exists to avoid.
+    """
+    try:
+        return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+    except OSError:
+        return None
 
 
 class LiveUnavailable(RuntimeError):
@@ -123,3 +136,68 @@ class LiveAssistant:
         })
         payload.setdefault("answer", getattr(verified, "final_answer", "") or "")
         return _arm_answer(payload)
+
+    def frozen_arm_d_agreement(self, manifest: Mapping[str, Any]) -> dict[str, Any]:
+        """Compare this live pipeline with the frozen Arm D manifest, field by field.
+
+        Amendment 1.31.3. The earlier check compared two model names and the
+        two mode constants and called that agreement. Everything that decides
+        what the models are *given* went unchecked: the configuration
+        fingerprint, the sampling options, the retrieval parameters and the
+        index the evidence is drawn from. A live answer produced at
+        ``top_k = 3`` against a rebuilt index, beside a frozen record produced
+        at ``top_k = 6``, would have been displayed as the same arm.
+
+        Returns the comparison rather than raising. The dashboard runs on
+        machines where the index has legitimately been rebuilt, and a
+        demonstrator that refuses to start is less honest than one that says
+        which fields differ. What must not happen is silence.
+        """
+        arm = dict(manifest.get("arm") or {})
+        provenance = dict(manifest.get("provenance") or {})
+        # The same key the run writer records: config["generation"], not a
+        # nested "options" block, which does not exist and quietly compared
+        # an empty dict against four real values the first time this ran.
+        live_options = {k: v for k, v in (self.config.get("generation") or {}).items()
+                        if not k.startswith("_")}
+        frozen_options = {k: v for k, v in
+                          (provenance.get("generation_options") or {}).items()
+                          if not k.startswith("_")}
+        live_retrieval = {
+            "top_k": self.config.get("retrieval.top_k"),
+            "min_similarity": self.config.get("retrieval.min_similarity"),
+        }
+        frozen_retrieval = {k: v for k, v in
+                            (provenance.get("retrieval") or {}).items()
+                            if not k.startswith("_")}
+        index_metadata = getattr(self.retriever.index, "metadata", {}) or {}
+
+        fields = {
+            "arm": (LIVE_ARM, arm.get("arm")),
+            "retrieval_mode": (LIVE_RETRIEVAL.value, arm.get("retrieval_mode")),
+            "evidence_format": (LIVE_EVIDENCE.value, arm.get("evidence_format")),
+            "verification": (True, arm.get("verification")),
+            "generation_model": (
+                canonical_model_name(self.config.require("llm.generation_model")),
+                canonical_model_name(arm.get("generation_model") or "")),
+            "verification_model": (
+                canonical_model_name(self.config.get("llm.verification_model") or ""),
+                canonical_model_name(arm.get("verification_model") or "")),
+            "config_sha256": (self.config.fingerprint(),
+                              provenance.get("config_sha256")),
+            "generation_options": (live_options, frozen_options),
+            "retrieval": (live_retrieval, frozen_retrieval),
+            "corpus_sha256": (index_metadata.get("corpus_sha256"),
+                              provenance.get("corpus_sha256")),
+            "chunk_set_sha256": (index_metadata.get("chunk_set_sha256"),
+                                 provenance.get("chunk_set_sha256")),
+            "index_file_sha256": (_file_sha256(index_path_for(self.config)),
+                                  provenance.get("index_file_sha256")),
+        }
+        differs = sorted(k for k, (live, frozen) in fields.items() if live != frozen)
+        return {
+            "matches": not differs,
+            "differs": differs,
+            "fields": {k: {"live": live, "frozen": frozen}
+                       for k, (live, frozen) in fields.items()},
+        }

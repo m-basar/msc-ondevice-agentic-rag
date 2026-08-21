@@ -155,11 +155,14 @@ def test_the_figure_environment_is_recorded_and_matches_the_pinned_versions():
     if not path.exists():
         pytest.skip("figures are not present")
     recorded = json.loads(path.read_text(encoding="utf-8"))["versions"]
-    for key in ("python", "matplotlib", "freetype", "numpy"):
+    # Pillow writes the PNG bytes. Amendment 1.31.4: it decides the file as
+    # surely as FreeType decides the glyphs, and it was neither recorded nor
+    # pinned while this project called the figures reproducible.
+    for key in ("python", "matplotlib", "freetype", "numpy", "pillow"):
         assert recorded.get(key), key
     pinned = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
-    assert f'matplotlib=={recorded["matplotlib"]}' in pinned
-    assert f'numpy=={recorded["numpy"]}' in pinned
+    for package in ("matplotlib", "numpy", "pillow"):
+        assert f'{package}=={recorded[package]}' in pinned, package
 
 
 def _current_environment() -> dict[str, str]:
@@ -239,7 +242,7 @@ def test_the_committed_figures_match_this_machine_when_the_environment_does(tmp_
     if recorded is None or not (ROOT / "results" / "analysis" / "hypotheses.json").exists():
         pytest.skip("figures or analysis outputs are not present")
     current = _current_environment()
-    relevant = ("matplotlib", "freetype")
+    relevant = ("matplotlib", "freetype", "pillow")
     mismatch = {k: (recorded.get(k), current.get(k))
                 for k in relevant if recorded.get(k) != current.get(k)}
     if mismatch:
@@ -274,3 +277,38 @@ def test_the_figure_scripts_accept_an_output_directory():
         assert "parser.parse_args(argv)" in source, (
             f"{script} parses an empty list, so --out on the command line is "
             "silently ignored")
+
+
+@needs_matplotlib
+@pytest.mark.parametrize("script,forbidden", [
+    ("make_figures.py", "fig.text("),
+    ("make_architecture_figures.py", "C against D changes retrieval mode"),
+])
+def test_no_figure_carries_an_explanatory_footer(script, forbidden):
+    """Amendment 1.31.4. Three figures carried paragraphs restating what the
+    captions and the chapter already said. ``make_architecture_figures.py`` had
+    said in its own docstring since it was written that neither of its figures
+    carried a footer, and one of them did.
+
+    A figure that argues its own case duplicates the prose it sits beside and
+    cannot be reused anywhere that prose does not follow. The argument belongs
+    in the chapter, which is the thing a reader can hold to it.
+    """
+    source = (SCRIPTS / script).read_text(encoding="utf-8")
+    assert forbidden not in source, (
+        f"{script} draws an explanatory footer again")
+
+
+@needs_matplotlib
+def test_the_committed_figures_carry_no_footer_text():
+    """Over the SVG, which is the one format that says what its text is."""
+    svgs = sorted(FIGURES.glob("*.svg"))
+    if not svgs:
+        pytest.skip("figures are not present")
+    banned = ("no difference between them can be attributed",
+              "explicitly not as an ablation",
+              "no confidence interval is computed anywhere")
+    for path in svgs:
+        text = path.read_text(encoding="utf-8")
+        for phrase in banned:
+            assert phrase not in text, (path.name, phrase)

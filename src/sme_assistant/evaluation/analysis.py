@@ -46,6 +46,8 @@ from typing import Any, Iterable, Mapping, NamedTuple, Sequence
 
 from ..verify.schema import CONFLICTING_RELATIONSHIPS, VALID_RELATIONSHIPS
 from .manual_scoring import load_abstention, load_judgements, load_sheet
+from .authenticity import (AuthenticityError, authenticate,
+                           check_question_identity, read_run_content)
 from .question_set import QuestionSet, load_question_set
 from .run_writer import read_run
 from .stopping_gate import DECLARED_TO_INFERRED, MAJORITY
@@ -160,6 +162,34 @@ def load_key(path: Path | str) -> dict[str, str]:
     return dict(mapping)
 
 
+def authenticate_runs(runs: Sequence[Path | str],
+                      question_set: QuestionSet) -> dict[str, Any]:
+    """Authenticate every run before a single number is read from it.
+
+    Amendment 1.31.2. Every earlier check was internal: a run's manifest agreed
+    with its directory name, the four arms agreed with one another on a corpus
+    hash. Four fabricated runs that agreed among themselves passed all of it.
+    This compares each run with two things outside itself - a recorded content
+    digest and the frozen question set - and refuses rather than reporting.
+
+    Called from ``join``, so the confirmatory analysis cannot be run over
+    anything else by any caller, not only by the script that normally invokes
+    it.
+    """
+    checked: dict[str, Any] = {}
+    for directory in runs:
+        directory = Path(directory)
+        records, manifest = read_run_content(directory)
+        try:
+            digests = authenticate(directory.name, records, manifest)
+            identity = check_question_identity(
+                records, question_set, split="test", where=directory.name)
+        except AuthenticityError as exc:
+            raise AnalysisError(str(exc)) from exc
+        checked[directory.name] = {**digests, **identity}
+    return checked
+
+
 def join(
     *,
     sheet: Path | str,
@@ -176,6 +206,8 @@ def join(
     first pass and is provided only so the superseded figures remain
     reproducible.
     """
+    if runs:
+        authenticate_runs(runs, question_set)
     items = load_sheet(sheet)
     first = load_judgements(judgements)
     second = load_abstention(abstention) if abstention else {}
@@ -618,7 +650,9 @@ class _DiagnosticSource(NamedTuple):
 
 
 def load_diagnostic_source(runs_root: Path | str,
-                           name: str = DIAGNOSTIC_RUN) -> _DiagnosticSource:
+                           name: str = DIAGNOSTIC_RUN,
+                           question_set: QuestionSet | None = None,
+                           ) -> _DiagnosticSource:
     """Read the frozen Arm D run for the diagnostic, or refuse.
 
     Amendment 1.30.4. The first version of the diagnostic took whatever
@@ -634,7 +668,14 @@ def load_diagnostic_source(runs_root: Path | str,
         raise AnalysisError(
             f"the diagnostic source run {name} is missing from {runs_root}"
         )
-    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    # Content first. Every check below reads fields out of these files, so a
+    # fabricated run that agrees with itself would satisfy all of them.
+    # Amendment 1.31.2.
+    try:
+        records_read, manifest = read_run_content(directory)
+        digests = authenticate(name, records_read, manifest)
+    except AuthenticityError as exc:
+        raise AnalysisError(str(exc)) from exc
     declared_id = manifest.get("run_id")
     if declared_id != name:
         raise AnalysisError(
@@ -656,11 +697,7 @@ def load_diagnostic_source(runs_root: Path | str,
             f"{name} declares arm {arm!r}. The diagnostic reads the verifier's "
             "internal classification, which only Arm D produces."
         )
-    records = tuple(
-        json.loads(line)
-        for line in answers_path.read_text(encoding="utf-8").splitlines()
-        if line.strip()
-    )
+    records = records_read
     if len(records) != DIAGNOSTIC_TEST_QUESTIONS:
         raise AnalysisError(
             f"{name} holds {len(records)} answers, the reported test split has "
@@ -675,6 +712,18 @@ def load_diagnostic_source(runs_root: Path | str,
         raise AnalysisError(
             f"{name} contains answers from arm(s) {off_arm}, not only D"
         )
+    # Which question each record answers, and which family it belongs to, are
+    # taken from the frozen question set rather than from the record's own
+    # claim about itself. Amendment 1.31.2: two questions swapped between
+    # families passed every earlier check and changed the reported counts.
+    if question_set is None:
+        question_set = load_question_set(
+            Path(runs_root).resolve().parents[1] / "gold" / "question_set.json")
+    try:
+        identity = check_question_identity(records, question_set, split="test",
+                                           where=name)
+    except AuthenticityError as exc:
+        raise AnalysisError(str(exc)) from exc
     return _DiagnosticSource(
         records=records,
         manifest=manifest,
@@ -684,6 +733,8 @@ def load_diagnostic_source(runs_root: Path | str,
             "arm": "D",
             "answers": len(records),
             "question_ids_unique": True,
+            "content_authenticated": digests,
+            "question_identity": identity,
         },
     )
 
@@ -732,10 +783,16 @@ def verifier_relationship_diagnostic(
     carry an entry: a missing one was previously read as ``None`` and dropped
     from the restricted set, which shrinks a denominator silently.
     """
-    if set(mapping) != set(DECLARED_TO_INFERRED):
+    if dict(mapping) != dict(DECLARED_TO_INFERRED):
+        # Keys alone are not the mapping. Amendment 1.31.1: a substitution that
+        # kept every key and changed a value passed this check and turned a
+        # misclassification into an exact match, because what the mapping
+        # *means* lives entirely in its values.
         raise AnalysisError(
             "the declared-to-inferred mapping has been substituted; it is the "
-            "one the stopping gate already used and is not extended here"
+            "one the stopping gate already used and is neither extended nor "
+            "re-pointed here. Expected "
+            f"{sorted(DECLARED_TO_INFERRED.items())}, got {sorted(dict(mapping).items())}"
         )
     grouped = {declared: group
                for group, declared_types in DIAGNOSTIC_GROUPS.items()

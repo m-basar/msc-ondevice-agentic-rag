@@ -14,8 +14,8 @@ matplotlib happened to be installed. That makes two regenerations comparable.
 
 **The environment is recorded rather than hidden.** Removing the version from
 the file does not make the rendering independent of it: FreeType and the font
-stack decide where glyphs land, so the same script on a different machine can
-produce different pixels. ``write_environment`` writes the versions beside the
+stack decide where glyphs land, and Pillow writes the PNG bytes, so the same
+script on a different machine can produce a different file. ``write_environment`` writes the versions beside the
 figures so that a reader can tell which machine drew them, and so that a
 regeneration producing different pixels can be explained rather than argued
 about.
@@ -91,6 +91,12 @@ def environment() -> dict[str, str]:
         versions["numpy"] = numpy.__version__
     except Exception:  # noqa: BLE001
         versions["numpy"] = "unknown"
+    try:  # Pillow writes the PNG files, so it decides their bytes.
+        import PIL
+
+        versions["pillow"] = PIL.__version__
+    except Exception:  # noqa: BLE001
+        versions["pillow"] = "unknown"
     return versions
 
 
