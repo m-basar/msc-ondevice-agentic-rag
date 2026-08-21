@@ -207,12 +207,12 @@ H5 estimate.** H5 is scored over the 68-question test split, where the Arm D
 mean on the Pi 5 is 174.17 seconds against Arm B's 54.84, a ratio of 3.176. The
 231.6 seconds shown here is a single demonstration and is not comparable with
 those means; it is included to show what the panel reports, not to add a
-measurement. Section 4.12 and Figures 4.3 and 4.4 carry the reported latency
+measurement. Section 4.10 and Figures 4.3 and 4.4 carry the reported latency
 evidence.
 
 The throttle flags likewise describe **this execution only**. Thermal state on a
 passively cooled board depends on what the device was doing beforehand, and one
-capture establishes nothing about how often either stage throttles. Section 4.12
+capture establishes nothing about how often either stage throttles. Section 4.10
 reports the throttling observed across the frozen runs.
 
 ### What the banner reports about the index

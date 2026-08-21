@@ -4952,3 +4952,87 @@ fixed at 19 August should name the amendments and not count them.
 | Frozen runs, judgements, question set, models, figures, screenshots | unchanged |
 | `hypotheses.json` | byte-identical |
 | H1 to H5 | unchanged |
+
+# Amendment 1.36 - 21 August 2026
+
+Chapter 5 is written. One post-hoc reading of already-recorded fields enters the
+dissertation with it, and two cross-references are corrected. No metric,
+denominator, threshold or verdict changes, `hypotheses.json` is byte-identical,
+and no frozen run, judgement, question, figure or screenshot is touched.
+
+## 1.36.1 A post-hoc reading of the verifier's own records
+
+Section 5.6 of Chapter 5 partitions the 68 test questions by what the
+verification pass did to the draft, using the `verification` block of the frozen
+Arm D run: whether the draft was served unchanged, revised after a detected
+conflict, or replaced by a structured abstention. It sets that partition against
+the manual rubric scores of Arms B and D on the same questions, which is
+meaningful only because Arm D serves Arm B's draft unless the verifier objects,
+so every difference between the two arms is an intervention.
+
+**This was not pre-registered and is not evidence.** The fields it reads were
+written by the system during the frozen run of 14 August and are not modified;
+what is post-hoc is the decision to read them, taken after the verdicts were
+known. It follows amendment 1.29's treatment of the relationship diagnostic:
+descriptive, labelled where it is read rather than once in a footnote, no
+threshold, no chance baseline, no verdict, and no hypothesis revisited. The
+chapter says so in the section itself and again in its limitations.
+
+It is included because one behaviour explains three separate null results. The
+verifier revised 16 of 68 drafts. Thirteen of those were structured abstentions,
+every one of them on a question where it had reported no conflict, and on ten of
+them Arm B had committed to an answer. Three were revisions after a detected
+conflict, producing the study's single improvement, one degradation and one
+question left where it was. Leaving that out of the analysis chapter would have
+meant reporting three unexplained nulls when the record explains them.
+
+**What it cannot establish.** It is a description of one run of one model pair
+on one corpus, with no comparison condition and no inferential test. It does not
+show that the abstentions were wrong in general, only that on ten questions the
+served answer changed from a committed answer to a refusal, and that the manual
+rubric scored seven of those lower. Nothing in it revises H1, H2, H2c, H3, H4 or
+H5, and the verdict table of section 4.12 is unchanged.
+
+## 1.36.2 Two corrections found while writing it
+
+Appendix C twice cited **section 4.12** for the reported latency evidence and
+for the throttling observed across the frozen runs. 4.12 is the verdict summary.
+Latency and thermal state are reported in **4.10**, and both references now point
+there. The reference was not dangling, which is why nothing caught it: 4.12 is a
+real section and the sentence was checkable only by reading. A test added with
+Chapter 5 fails on a reference to a section number that does not exist anywhere
+in the dissertation, and its docstring records that it could not have caught
+this one.
+
+Chapter 5's own figures are held to their sources by
+`tests/test_chapter_5_claims.py`, which reads every figure the chapter states
+from `hypotheses.json`, the Raspberry Pi performance report or the frozen Arm D
+run, formats it as the chapter formats it, and fails if the text does not
+contain it. Chapter 5 is authored rather than generated, so it cannot be
+regenerated and compared; this is the nearest available equivalent and it was
+confirmed to fail on a mistyped figure before being committed.
+
+## 1.36.3 What this does not touch
+
+* No metric, denominator, threshold, verdict or hypothesis. The reading in 5.6
+  is descriptive and the analysis chapter states so where it is read.
+* No frozen run, manifest, judgement, question, figure or screenshot. The Arm D
+  records are read and never written.
+* No pooled headline. The paired comparison in 5.6 is reported as counts of
+  questions by what the verifier did, not as a rate over a denominator spanning
+  hypothesis groups, which is the error amendment 1.29 withdrew.
+* No refusal rate over answerable questions. Section 4.11 declines to compute
+  one because that denominator was not pre-registered; Chapter 5 uses counts,
+  says why, and a test fails if a rate appears.
+
+## 1.36.4 State
+
+| | |
+|---|---|
+| Status | analysis chapter, post-hoc description, no experimental change |
+| Added | Chapter 5, and a post-hoc partition of the frozen Arm D run in section 5.6 |
+| Corrected | two Appendix C references to section 4.12 that belong to 4.10 |
+| New enforcement | every figure in Chapter 5 pinned to its source; every section reference in the dissertation must resolve |
+| Frozen runs, judgements, question set, models, figures, screenshots | unchanged |
+| `hypotheses.json` | byte-identical |
+| H1 to H5 | unchanged |

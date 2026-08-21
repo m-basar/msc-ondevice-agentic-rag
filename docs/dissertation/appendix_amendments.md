@@ -1,6 +1,6 @@
 # Appendix B: Pre-registration amendment record
 
-All 35 amendments to `docs/PREREGISTRATION.md`, in order. Numbers, dates and
+All 36 amendments to `docs/PREREGISTRATION.md`, in order. Numbers, dates and
 sub-entry counts are read from that document by `scripts/make_amendment_table.py`;
 the summaries are written for this appendix. Each amendment in the source carries
 its own reason, its evidence, and a statement of what it did **not** change.
@@ -53,13 +53,16 @@ Phases are taken from the commit history. The frozen four-arm test run is
 | 1.33 | 21 August | 4 | Appendix D.4 described a frozen record instead of reading it: which document was withdrawn, what the claim audit returned and whether the draft was served unchanged were all typed, in an appendix whose header says every count is generated. It is now derived from the authenticated record, which showed the audit to be stranger than the prose had allowed: a claim marked contradicted by its own citation. |
 | 1.34 | 21 August | 4 | Pulling 1.33 onto the Raspberry Pi 5 failed two screenshot tests that imported an optional figure library, and reading the marker properly found five more gated on a library they never call. Eight provenance checks had never run on the target device. PNG metadata is now read with the standard library, and the reader is covered by five tests including equality with Pillow where it is present. |
 | 1.35 | 21 August | 3 | Section 3.8.4 stated an amendment count that had drifted five amendments behind the document it describes, in the chapter whose subject is that this study's discretion was constrained in writing. Corrected, and pinned by two tests to what the pre-registration holds. |
+| | | | **Phase H: Analysis and write-up, after all evidence was frozen** |
+| 1.36 | 21 August | 4 | Chapter 5 written, organised by research question. A post-hoc partition of the frozen Arm D run enters section 5.6, labelled and carrying no verdict, because one behaviour explains three separate null results: the verifier revised 16 of 68 drafts, 13 of them into abstentions on questions where it had reported no conflict. Two Appendix C references to section 4.12 corrected to 4.10. |
 
-**35 amendments, 220 numbered sub-entries.** Phase A amendments precede the
+**36 amendments, 224 numbered sub-entries.** Phase A amendments precede the
 frozen confirmatory runs and could and did change the design. Nothing from Phase B
 onwards could: the runs were complete before Phase B opened. Phases B and D govern
 how the already-frozen data are scored, aggregated and reported; Phase C concerns
 the separate hardware experiment; Phase E concerns a demonstrator built after all
 evidence was frozen, which contributes none and is scored nowhere; Phase F is
-exploratory analysis of the frozen data, carrying no threshold and no verdict; and
-Phase G corrects how all of the above are enforced and reported, changing no
-hypothesis, no verdict and no frozen file.
+exploratory analysis of the frozen data, carrying no threshold and no verdict;
+Phase G corrects how all of the above are enforced and reported; and Phase H
+is the analysis and write-up of the frozen results. No amendment from
+Phase B onwards changes a hypothesis, a verdict or a frozen file.

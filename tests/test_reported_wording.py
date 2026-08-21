@@ -248,7 +248,8 @@ def test_the_amendment_appendix_footer_describes_every_phase(appendices):
     footer = appendices.get("appendix_amendments.md")
     if footer is None:
         pytest.skip("the amendment appendix is not present")
-    for phase in ("phase b", "phase c", "phase e", "phase f", "phase g"):
+    for phase in ("phase b", "phase c", "phase e", "phase f", "phase g",
+                  "phase h"):
         assert phase in footer, phase
     assert "demonstrator built after all evidence was frozen" in footer
 
@@ -310,3 +311,36 @@ def test_no_chapter_states_an_amendment_count_that_is_not_the_current_one(
                  for n in re.findall(r"\b(\d+) amendments\b", text)
                  if int(n) != amendments]
     assert not offenders, f"stale amendment counts: {offenders}"
+
+
+def test_every_section_reference_in_the_dissertation_resolves(chapters, appendices):
+    """A cross-reference to a section that does not exist is a broken pointer in
+    the submitted document, and the reader who follows it is the examiner.
+
+    Added while writing Chapter 5, which cites twelve sections of Chapter 4.
+    This checks that a referenced number is a heading somewhere in the
+    dissertation. It cannot check that the heading is the right one: Appendix C
+    pointed at section 4.12 for the throttling figures, which is a real section
+    reporting the verdict table, while 4.10 is where throttling is reported.
+    That was corrected by reading, not by this test, and the limit is recorded
+    here rather than left for someone to discover.
+    """
+    directory = CHAPTERS
+    if not directory.exists():
+        pytest.skip("dissertation documents are not present")
+    documents = {p.name: p.read_text(encoding="utf-8")
+                 for p in directory.glob("*.md")}
+    if not documents:
+        pytest.skip("dissertation documents are not present")
+    headings = set()
+    for text in documents.values():
+        headings.update(re.findall(r"^#{2,4}\s+(\d+\.\d+(?:\.\d+)?)\s",
+                                   text, flags=re.MULTILINE))
+    assert headings, "no numbered headings were found at all"
+    dangling = []
+    for name, text in documents.items():
+        for match in re.finditer(r"\b[Ss]ections?\s+(\d+\.\d+(?:\.\d+)?)", text):
+            if match.group(1) not in headings:
+                line = text[:match.start()].count("\n") + 1
+                dangling.append(f"{name}:{line} -> section {match.group(1)}")
+    assert not dangling, f"references to sections that do not exist: {dangling}"

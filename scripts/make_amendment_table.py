@@ -32,6 +32,7 @@ PHASES = {
     "1.27": ("E", "Post-evaluation demonstrator, no evidence contributed"),
     "1.29": ("F", "Exploratory analysis of already-frozen data"),
     "1.30": ("G", "Review corrections, no experimental change"),
+    "1.36": ("H", "Analysis and write-up, after all evidence was frozen"),
 }
 
 SUMMARY = {
@@ -162,6 +163,12 @@ SUMMARY = {
             "subject is that this study's discretion was constrained in "
             "writing. Corrected, and pinned by two tests to what the "
             "pre-registration holds.",
+    "1.36": "Chapter 5 written, organised by research question. A post-hoc "
+            "partition of the frozen Arm D run enters section 5.6, labelled and "
+            "carrying no verdict, because one behaviour explains three separate "
+            "null results: the verifier revised 16 of 68 drafts, 13 of them "
+            "into abstentions on questions where it had reported no conflict. "
+            "Two Appendix C references to section 4.12 corrected to 4.10.",
     "1.29": "Post-hoc exploratory diagnostic of the frozen verifier's internal "
             "relationship classification, kept separate from binary conflict "
             "detection. No threshold, no verdict, no hypothesis revisited.",
@@ -239,9 +246,10 @@ def main() -> int:
           "concerns\nthe separate hardware experiment; Phase E concerns a "
           "demonstrator built after all\nevidence was frozen, which contributes "
           "none and is scored nowhere; Phase F is\nexploratory analysis of the "
-          "frozen data, carrying no threshold and no verdict; and\nPhase G "
-          "corrects how all of the above are enforced and reported, changing no\n"
-          "hypothesis, no verdict and no frozen file.")
+          "frozen data, carrying no threshold and no verdict;\nPhase G "
+          "corrects how all of the above are enforced and reported; and Phase H\n"
+          "is the analysis and write-up of the frozen results. No amendment from\n"
+          "Phase B onwards changes a hypothesis, a verdict or a frozen file.")
     return 0
 
 
