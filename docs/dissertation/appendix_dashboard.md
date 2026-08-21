@@ -139,17 +139,99 @@ and it is the recommended question for a demonstration.
 
 ## C.6 Screenshots
 
-> **To be captured.** Run the dashboard and save these four images into
-> `docs/dissertation/figures/`, then replace this note.
->
-> 1. `shot_dashboard_modes.png` - the opening mode selector
-> 2. `shot_dashboard_replay.png` - Frozen Study Replay on `CONF-02-Q1`, showing
->    all four cards and the withdrawn-policy flag on Arm A
-> 3. `shot_dashboard_audit.png` - one Arm D card with the claim audit and
->    retrieved evidence expanded
-> 4. `shot_dashboard_live.png` - Live Assistant having answered a question on
->    the Raspberry Pi 5, with the timing panel open
->
-> Capture the fourth on the Pi rather than the laptop. The point of that screen
-> is the honest cost of running this on the target device, and a laptop
-> screenshot would understate it by a factor of forty.
+Four captures of the running demonstrator. Screenshots 3 and 4 were taken on the
+Raspberry Pi 5, which is the target device and the point of showing them.
+
+**These are not figures.** They record one session on one machine, they cannot be
+regenerated, and nothing in them was scored. They are distinguished from the
+generated figures by the `shot_` prefix, and the test suite holds them to a
+different standard for that reason.
+
+### The mode selector
+
+![The mode selector](figures/shot_dashboard_modes.png)
+
+**Screenshot C.1** The opening screen. The two modes are chosen here and are
+never shown together. The banner states that the demonstrator was built after
+the experiment and contributes no evidence to any hypothesis; that sentence is
+on every page.
+
+### Frozen Study Replay
+
+![Frozen Study Replay on CONF-02-Q1](figures/shot_dashboard_replay.png)
+
+**Screenshot C.2** `CONF-02-Q1` in Frozen Study Replay, all four arms side by
+side. No model is invoked: every word came from the committed records of 14
+August 2026.
+
+Arm A answers from the withdrawn policy and is flagged accordingly. Arms B, C
+and D give the current figure. Arm D additionally reports a conflict
+relationship and a rule-based confidence level, and states that the verifier
+returned the draft unchanged. The provenance block beneath names the four run
+directories and the corpus hash, so a reader can see which records produced the
+row above.
+
+### Live Assistant, claim audit
+
+![The live claim audit](figures/shot_dashboard_live_audit.png)
+
+**Screenshot C.3** The same question asked live on the Raspberry Pi 5, with the
+claim audit and the retrieved evidence expanded.
+
+**The audit is unscored model output, not ground truth.** The verdicts shown are
+what the verification model returned on this execution. They were not compared
+with the answer key, they contributed to no metric, and the panel says so in the
+interface rather than only here. On this execution the verifier marks the claim
+carrying the current document's figure `CONTRADICTED` and the claim carrying the
+withdrawn figure `SUPPORTED`, while returning the draft unchanged, so the served
+answer is the current one.
+
+Appendix D examines the verifier's classification on this question in the frozen
+Arm D quality run. That is a different execution on a different machine, and its
+recorded output differs from what is shown here. Neither corrects the other:
+this screenshot is an unscored demonstration and the appendix reads the frozen
+record, which is the only one any reported figure comes from.
+
+The retrieved evidence list shows both sides of the disputed fact, with the
+withdrawn chunk marked `[SUPERSEDED]` and its similarity score visible.
+
+### Live Assistant, timings and device state
+
+![The live timing panel](figures/shot_dashboard_live_timings.png)
+
+**Screenshot C.4** The timing and device panel for the same execution,
+reported per stage.
+
+**These are the figures for one question on one execution. They are not the
+H5 estimate.** H5 is scored over the 68-question test split, where the Arm D
+mean on the Pi 5 is 174.17 seconds against Arm B's 54.84, a ratio of 3.176. The
+231.6 seconds shown here is a single demonstration and is not comparable with
+those means; it is included to show what the panel reports, not to add a
+measurement. Section 4.12 and Figures 4.3 and 4.4 carry the reported latency
+evidence.
+
+The throttle flags likewise describe **this execution only**. Thermal state on a
+passively cooled board depends on what the device was doing beforehand, and one
+capture establishes nothing about how often either stage throttles. Section 4.12
+reports the throttling observed across the frozen runs.
+
+### What the banner reports about the index
+
+Screenshots C.3 and C.4 both carry a notice stating that configuration and
+source material match the frozen Arm D run on all seventeen compared fields, and
+that **the index file itself is not the one that run used**.
+
+That is accurate and is reported rather than suppressed. `data/index.json` is a
+build artefact and is not in the repository; every machine builds its own from
+the committed corpus, so the Pi's index is its own build. Appendix E records both
+hashes and what the two devices retrieved. The same page on the authoring
+laptop, whose index is the file the frozen run used, reports it as identical
+instead, so the check is visible in both directions rather than only when it
+finds a difference.
+
+Amendment 1.32.4 records why the notice is worded as it is. An earlier version
+reported any differing index hash as a rebuild, which is a claim about how the
+file came to differ that the code cannot support; it now reports that the recipe
+agrees and the file is not the same file, and treats a differing corpus, chunk
+set, embedding model, dimensions or chunking parameters as a mismatch rather
+than a rebuild.

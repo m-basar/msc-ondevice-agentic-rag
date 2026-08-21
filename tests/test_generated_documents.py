@@ -29,6 +29,28 @@ DISSERTATION = ROOT / "docs" / "dissertation"
 
 sys.path.insert(0, str(SCRIPTS))
 
+#: Captured screenshots, distinguished from generated figures by their prefix.
+#: Everything in the figures directory used to be matplotlib output, so the
+#: tests below assumed it. A screenshot of the demonstrator is a different kind
+#: of thing: it records a session that happened once, carries no producer
+#: metadata, and cannot be regenerated. Asserting that it names this project as
+#: its producer would fail a perfectly correct file.
+#:
+#: No amendment governs this. Appendix C already states that its screenshots
+#: illustrate an interface and are not evidence; what changes here is that the
+#: tests enforce a distinction the document was already making, which is the
+#: opposite of a new rule.
+SCREENSHOT_PREFIX = "shot_"
+
+
+def generated_figures(suffix: str = "*.png") -> list[Path]:
+    return sorted(p for p in FIGURES.glob(suffix)
+                  if not p.name.startswith(SCREENSHOT_PREFIX))
+
+
+def screenshots() -> list[Path]:
+    return sorted(FIGURES.glob(f"{SCREENSHOT_PREFIX}*"))
+
 
 def run(script: str, *args: str) -> subprocess.CompletedProcess:
     return subprocess.run(
@@ -125,7 +147,7 @@ def test_no_committed_figure_names_the_library_that_drew_it():
     reproducible."""
     import figure_provenance
 
-    figures = sorted(list(FIGURES.glob("*.png")) + list(FIGURES.glob("*.svg")))
+    figures = generated_figures() + generated_figures("*.svg")
     if not figures:
         pytest.skip("figures are not present")
     offenders = [f.name for f in figures if figure_provenance.carries_a_version(f)]
@@ -138,7 +160,7 @@ def test_every_committed_figure_names_the_project_as_its_producer():
 
     import figure_provenance
 
-    pngs = sorted(FIGURES.glob("*.png"))
+    pngs = generated_figures()
     if not pngs:
         pytest.skip("figures are not present")
     for path in pngs:
@@ -442,3 +464,66 @@ def test_the_cross_architecture_generator_refuses_if_arm_d_stops_reusing_arm_b()
             cmp_arch.reuse_evidence()
     finally:
         cmp_arch.load = original
+
+
+# --- screenshots are a different kind of artefact -----------------------------
+
+
+def test_no_screenshot_claims_to_be_a_generated_figure():
+    """A screenshot records one session on one machine. It cannot be
+    regenerated, and stamping it with the figure generator's producer string
+    would make it look like something a reader could reproduce."""
+    from PIL import Image
+
+    import figure_provenance
+
+    shots = [p for p in screenshots() if p.suffix == ".png"]
+    if not shots:
+        pytest.skip("no screenshots are present")
+    for path in shots:
+        assert Image.open(path).info.get("Software") != figure_provenance.CREATOR, (
+            f"{path.name} carries the figure generator's producer string")
+
+
+def test_no_generated_figure_is_named_like_a_screenshot():
+    """The discriminator is a filename prefix, so it only works if the two sets
+    stay disjoint. A generated figure called shot_* would silently drop out of
+    every reproducibility check above."""
+    import figure_provenance
+
+    if not FIGURES.exists():
+        pytest.skip("figures are not present")
+    for path in screenshots():
+        if path.suffix == ".png":
+            from PIL import Image
+            software = Image.open(path).info.get("Software")
+            assert software != figure_provenance.CREATOR, path.name
+    sources = "\n".join((SCRIPTS / s).read_text(encoding="utf-8")
+                         for s in ("make_figures.py",
+                                   "make_architecture_figures.py"))
+    assert SCREENSHOT_PREFIX not in sources, (
+        "a figure script emits a file named like a screenshot, which would "
+        "exempt it from every reproducibility check")
+
+
+def test_appendix_c_displays_no_screenshot_that_is_absent():
+    """A displayed image that is not there renders as a broken link in the
+    submitted document. Matched on the image embed rather than on any mention
+    of a filename: the capture instructions list the four names while they are
+    still outstanding, and that is a description of work to do, not a claim to
+    be showing them."""
+    appendix = DISSERTATION / "appendix_dashboard.md"
+    if not appendix.exists():
+        pytest.skip("appendix C is not present")
+    import re
+
+    text = appendix.read_text(encoding="utf-8")
+    embedded = set(re.findall(r"!\[[^\]]*\]\(figures/(shot_[a-z0-9_]+\.png)\)", text))
+    present = {p.name for p in screenshots()}
+    missing = sorted(embedded - present)
+    assert not missing, f"Appendix C displays absent screenshots: {missing}"
+    # And the reverse: if all four are in place, the placeholder must be gone.
+    if len(present) >= 4:
+        assert "To be captured" not in text, (
+            "the screenshots are present but Appendix C still says they are "
+            "outstanding")
