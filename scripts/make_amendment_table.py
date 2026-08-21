@@ -169,6 +169,12 @@ SUMMARY = {
             "null results: the verifier revised 16 of 68 drafts, 13 of them "
             "into abstentions on questions where it had reported no conflict. "
             "Two Appendix C references to section 4.12 corrected to 4.10.",
+    "1.37": "Chapters 6 and 7 written. They interpret and measure nothing: "
+            "every figure is quoted from Chapter 4 or from 1.36's section 5.6 "
+            "and attributed to it. Four checks hold them there, including one "
+            "that fails on any sentence claiming the confidence mechanism is "
+            "calibrated and one that requires the conclusion to restate the "
+            "success criterion it did not meet.",
     "1.29": "Post-hoc exploratory diagnostic of the frozen verifier's internal "
             "relationship classification, kept separate from binary conflict "
             "detection. No threshold, no verdict, no hypothesis revisited.",

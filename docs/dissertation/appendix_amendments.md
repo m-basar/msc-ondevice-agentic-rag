@@ -1,6 +1,6 @@
 # Appendix B: Pre-registration amendment record
 
-All 36 amendments to `docs/PREREGISTRATION.md`, in order. Numbers, dates and
+All 37 amendments to `docs/PREREGISTRATION.md`, in order. Numbers, dates and
 sub-entry counts are read from that document by `scripts/make_amendment_table.py`;
 the summaries are written for this appendix. Each amendment in the source carries
 its own reason, its evidence, and a statement of what it did **not** change.
@@ -55,8 +55,9 @@ Phases are taken from the commit history. The frozen four-arm test run is
 | 1.35 | 21 August | 3 | Section 3.8.4 stated an amendment count that had drifted five amendments behind the document it describes, in the chapter whose subject is that this study's discretion was constrained in writing. Corrected, and pinned by two tests to what the pre-registration holds. |
 | | | | **Phase H: Analysis and write-up, after all evidence was frozen** |
 | 1.36 | 21 August | 4 | Chapter 5 written, organised by research question. A post-hoc partition of the frozen Arm D run enters section 5.6, labelled and carrying no verdict, because one behaviour explains three separate null results: the verifier revised 16 of 68 drafts, 13 of them into abstentions on questions where it had reported no conflict. Two Appendix C references to section 4.12 corrected to 4.10. |
+| 1.37 | 21 August | 3 | Chapters 6 and 7 written. They interpret and measure nothing: every figure is quoted from Chapter 4 or from 1.36's section 5.6 and attributed to it. Four checks hold them there, including one that fails on any sentence claiming the confidence mechanism is calibrated and one that requires the conclusion to restate the success criterion it did not meet. |
 
-**36 amendments, 224 numbered sub-entries.** Phase A amendments precede the
+**37 amendments, 227 numbered sub-entries.** Phase A amendments precede the
 frozen confirmatory runs and could and did change the design. Nothing from Phase B
 onwards could: the runs were complete before Phase B opened. Phases B and D govern
 how the already-frozen data are scored, aggregated and reported; Phase C concerns

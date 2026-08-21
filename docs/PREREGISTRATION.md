@@ -5036,3 +5036,71 @@ confirmed to fail on a mistyped figure before being committed.
 | Frozen runs, judgements, question set, models, figures, screenshots | unchanged |
 | `hypotheses.json` | byte-identical |
 | H1 to H5 | unchanged |
+
+# Amendment 1.37 - 21 August 2026
+
+Chapters 6 and 7 are written. They interpret; they measure nothing. No metric,
+denominator, threshold or verdict changes, `hypotheses.json` is byte-identical,
+and no frozen run, judgement, question, figure or screenshot is touched.
+
+## 1.37.1 What the closing chapters add, and what they do not
+
+Chapter 6 sets the results against the literature reviewed in Chapter 2, states
+what an SME should and should not take from them, gives the study's limitations
+and threats to validity by type, and reflects on the pre-registration itself.
+Chapter 7 answers the four research questions, states the contributions, gives
+six recommendations for practice and sets out further work.
+
+**Neither chapter introduces a measurement, a denominator or a reading of the
+frozen record.** Every figure in them is quoted from Chapter 4 or from Chapter
+5's section 5.6, which amendment 1.36 governs, and is attributed to the section
+that reports it. Where the two chapters draw a conclusion the evidence does not
+carry, they say so: Arm C was never timed on the Raspberry Pi, so section 6.3
+states its cost from the architecture and claims no latency figure for it.
+
+Three properties are enforced rather than asserted, in
+`tests/test_chapter_claims.py`, which was renamed from
+`test_chapter_5_claims.py` to cover all three authored chapters:
+
+* Every figure the closing chapters state is read from `hypotheses.json`, the
+  Raspberry Pi performance report or the frozen Arm D run, formatted as the
+  chapters format it, and must appear in the text. Thirty figures are pinned.
+* Every sentence in them that mentions calibration must deny the claim or
+  attribute it to the literature. Section 1.4 declares the confidence mechanism
+  implemented and unevaluated, and a conclusion is where a qualifier is most
+  likely to be dropped.
+* The conclusion must restate the success criterion from section 1.4 and report
+  that it was not met, so that a reader cannot supply a softer one.
+
+A fourth check reads the master reference list at `../references.md` and fails
+on a citation with no entry. The list lives beside the repository rather than in
+it, so on a machine without it the check skips; the skip is honest, because
+there is nothing there to check against. Copying `references.md` into
+`docs/dissertation/` would make it run everywhere, and that is a decision about
+where the file belongs.
+
+## 1.37.2 One limitation stated more plainly than before
+
+Section 6.4 names the retrieval ceiling as the study's most consequential
+internal-validity limitation. On ten of the twenty-four live-disagreement
+questions the chunks carrying both sides of the disputed fact were never
+retrieved, so H2 tests the verification layer and the retrieval configuration
+together rather than verification alone.
+
+This is not a new finding. It is section 4.13's `pair_present` count, reported
+there and analysed in section 5.3. What changes is the framing: it is now stated
+as a limitation on what H2's verdict can be taken to mean, rather than only as
+an explanation of why the verifier performed as it did. **The verdict itself is
+unchanged.** H2 was decided under the pre-registered rule on the evidence as
+collected, and nothing here revisits it.
+
+## 1.37.3 State
+
+| | |
+|---|---|
+| Status | discussion and conclusion, interpretation only, no experimental change |
+| Added | Chapters 6 and 7; four checks over the authored chapters |
+| Corrected | nothing; no defect was found in writing them |
+| Frozen runs, judgements, question set, models, figures, screenshots | unchanged |
+| `hypotheses.json` | byte-identical |
+| H1 to H5 | unchanged |
