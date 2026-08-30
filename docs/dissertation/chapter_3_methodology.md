@@ -459,7 +459,7 @@ comparison procedure, the decision threshold, the stopping rules, and a section
 listing what would make the study wrong. It was written before the verification
 layer existed and before any question set had been run.
 
-It was then amended twenty-six times. The dates matter, and the chronology below
+It was then amended thirty-seven times. The dates matter, and the chronology below
 is taken from the commit history rather than asserted.
 
 | Phase | When | What could still change |
