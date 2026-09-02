@@ -2,8 +2,7 @@
 
 **Title:** A Privacy-Preserving On-Device Agentic Assistant for SME Knowledge Management and Operational Decision Support
 
-**Student:** Md Basar Basar (5753701), MSc Applied AI, WMG, University of Warwick
-**Supervisor:** Manoj Babu
+**Student:** Md Basar Basar, MSc Applied AI, WMG, University of Warwick
 **Module:** ES9U9-60-2025
 **Period:** 25 June 2026 to submission
 

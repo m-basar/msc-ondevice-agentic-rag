@@ -5,7 +5,7 @@ from retrieved documents, cites a source for every claim, and can pass its draft
 answer to a second model for verification.
 
 MSc Applied AI dissertation artefact. WMG, University of Warwick.
-Md Basar Basar (5753701). Supervisor: Manoj Babu.
+Md Basar Basar.
 
 **Research question.** To what extent can an on-device agentic RAG assistant,
 with source verification, support private SME knowledge management and

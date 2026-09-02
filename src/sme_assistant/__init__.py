@@ -1,7 +1,7 @@
 """Privacy-preserving on-device RAG assistant for SME knowledge management.
 
 MSc Applied AI dissertation artefact, WMG, University of Warwick.
-Md Basar Basar (5753701).
+Md Basar Basar.
 
 Implemented pipeline:
 
