@@ -15,15 +15,21 @@ The four sub-questions are in `docs/PREREGISTRATION.md` section 1.
 
 ## Quick start
 
+Clone the repository, or download the ZIP from GitHub and extract it. If you
+used Windows' Extract All, check for a nested folder of the same name: work in
+whichever folder contains `pyproject.toml`.
+
 ```bash
+cd msc-ondevice-agentic-rag           # the folder containing pyproject.toml
 python -m venv .venv
-source .venv/bin/activate          # Windows: .\.venv\Scripts\Activate.ps1
+source .venv/bin/activate             # Windows: .\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip   # pip 21.3 or newer is required
 pip install -e ".[dev,plots]"
-python scripts/dashboard.py        # http://127.0.0.1:8765
+python scripts/dashboard.py           # http://127.0.0.1:8765
 ```
 
-That opens the demonstrator. **Frozen Study Replay works immediately with no
-models installed.** Live answers need Ollama, see below.
+That opens the demonstrator with **Frozen Study Replay ready straight away and
+no models needed**. Live answers need two more steps, below.
 
 ## How it works
 
@@ -46,6 +52,21 @@ The dashboard was built **after** the evaluation. It contributes no evidence to
 any hypothesis and writes nothing into any frozen run directory. See
 pre-registration amendment 1.27.
 
+### First, only if you want live answers
+
+Frozen replay needs none of this. Live mode needs a local index and both models:
+
+```bash
+python scripts/build_index.py         # builds data/index.json from the corpus
+ollama serve
+ollama pull llama3.2:3b
+ollama pull qwen2.5:3b
+```
+
+`data/index.json` is not committed, so every machine builds its own.
+
+### Then start it
+
 ```bash
 python scripts/dashboard.py                 # http://127.0.0.1:8765
 python scripts/dashboard.py --port 8080     # different port
@@ -56,6 +77,9 @@ It binds to localhost by default because it serves internal documents and has no
 authentication. The server is Python's standard-library `http.server` and no
 asset is fetched from the network.
 
+Start-up prints the readiness of each mode. Where live mode is unavailable the
+page says why and disables the question box.
+
 Two modes, chosen on opening and never shown together.
 
 | | Frozen Study Replay | Live Assistant |
@@ -64,17 +88,6 @@ Two modes, chosen on opening and never shown together.
 | Arms | A, B, C and D side by side | D only |
 | Needs Ollama | no | yes |
 | Scored | during the experiment | never |
-
-Live mode needs Ollama running with both models pulled:
-
-```bash
-ollama serve
-ollama pull llama3.2:3b
-ollama pull qwen2.5:3b
-```
-
-Start-up prints the readiness of each mode. Where live mode is unavailable the
-page says why and disables the question box.
 
 On a Raspberry Pi 5 expect roughly three minutes per live answer; the measured
 mean is 174 seconds. Frozen replay is instant on any machine, which makes it the
