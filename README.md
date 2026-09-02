@@ -173,7 +173,7 @@ scored only there; the two laptop conditions are descriptive RQ4 figures.
 | `results/analysis/` | Generated analysis and performance reports |
 | `results/retrieval/` | Development-split retrieval evaluations |
 | `tests/` | Unit, integration, boundary and reported-wording tests |
-| `../artefact/` | Superseded July 2025 design, historical record only, not used for any result |
+| `../artefact/` | Superseded July 2026 design, historical record only, not used for any result |
 
 Core code uses the Python standard library only. Ollama serves the models over
 HTTP. matplotlib is required for figures.

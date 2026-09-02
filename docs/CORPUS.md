@@ -11,7 +11,7 @@ Legal and factual content last reviewed: **7 August 2026**.
 ## The authoritative implementation
 
 `final_v1/` is the implementation the dissertation reports. The older top-level
-`artefact/` directory is a **superseded July 2025 design**, retained only as a
+`artefact/` directory is a **superseded July 2026 design**, retained only as a
 historical record. It predates the four-arm design, the conflict taxonomy, the
 pre-registration and every reported result, and must not be used for dissertation
 claims, for a demonstration, or for any dashboard.

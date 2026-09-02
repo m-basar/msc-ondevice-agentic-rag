@@ -107,7 +107,7 @@ def main() -> int:
     w("## The authoritative implementation")
     w("")
     w("`final_v1/` is the implementation the dissertation reports. The older "
-      "top-level\n`artefact/` directory is a **superseded July 2025 design**, "
+      "top-level\n`artefact/` directory is a **superseded July 2026 design**, "
       "retained only as a\nhistorical record. It predates the four-arm design, "
       "the conflict taxonomy, the\npre-registration and every reported result, "
       "and must not be used for dissertation\nclaims, for a demonstration, or "
