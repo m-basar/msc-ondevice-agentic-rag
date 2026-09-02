@@ -11,9 +11,7 @@ Md Basar Basar (5753701). Supervisor: Manoj Babu.
 with source verification, support private SME knowledge management and
 operational decision support within the resource constraints of an edge device?
 
-The four sub-questions are in `docs/PREREGISTRATION.md` section 1. "Agentic"
-means the verification and revision stage only; the artefact does not plan,
-decompose tasks or select tools.
+The four sub-questions are in `docs/PREREGISTRATION.md` section 1.
 
 ## Quick start
 
@@ -156,60 +154,16 @@ scored only there; the two laptop conditions are descriptive RQ4 figures.
 | `src/sme_assistant/evaluation/` | Question set, scoring, harness, analysis |
 | `data/` | Knowledge base documents and index |
 | `gold/` | Answer key, conflict registry, question set. Not readable by the pipeline |
-| `docs/` | Pre-registration, corpus provenance, verifier protocol, dissertation draft |
+| `docs/` | Pre-registration, corpus provenance, verifier protocol |
+| `docs/dissertation/` | Working draft, longer than the submitted PDF, which is held by WMG |
 | `results/runs/` | Frozen experiment outputs |
 | `results/analysis/` | Generated analysis and performance reports |
 | `results/retrieval/` | Development-split retrieval evaluations |
 | `tests/` | Unit, integration, boundary and reported-wording tests |
+| `../artefact/` | Superseded July 2025 design, historical record only, not used for any result |
 
 Core code uses the Python standard library only. Ollama serves the models over
 HTTP. matplotlib is required for figures.
-
-## Scope and boundaries
-
-Each of these exists because the alternative would overclaim.
-
-**This directory is the implementation the dissertation reports.** The older
-top-level `artefact/` directory is a superseded July 2025 design, kept only as a
-historical record. It predates the four-arm design, the conflict taxonomy, the
-pre-registration and every result in Chapter 4.
-
-**The submitted dissertation is a PDF held by WMG and is not in this
-repository.** `docs/dissertation/` holds the working draft it was written from,
-roughly 31,000 words against about 14,700, because the cut to the word limit was
-made in Word and never carried back. The markdown is therefore not a copy of what
-was examined. Where prose and data disagree,
-`results/analysis/hypotheses.json` governs the hypothesis decisions and
-`results/analysis/performance_latest_test_performance_pi5_cpu.json` governs the
-Raspberry Pi timings. The draft is retained because four `scripts/make_*.py`
-generators and `tests/test_chapter_claims.py` read it.
-
-**Not implemented, despite appearing in an earlier design document:** a separate
-query-analysis stage, a separate claim-extraction agent, a next-action suggestion
-stage, and any calibrated confidence score. Confidence is a declared mapping in
-`config.json` and its calibration was not evaluated.
-
-**No comparison of candidate generation models is reported.**
-`llm.candidate_models` in `config.json` lists models pulled during development;
-it is not an experimental factor. The verifier was selected by the diagnostic
-protocol in `docs/VERIFIER_PROTOCOL.md`, recorded as amendment 1.10.
-
-**`results/retrieval/` holds development-split evaluations only, and they are
-unreported.** The nine tracked files are the laptop runs behind the retrieval
-calibration in amendment 1.3, which fixed `top_k` at 6 and `min_similarity` at
-0.30 before any test-split run. The Raspberry Pi produced six of its own, which
-are listed by name in `.gitignore` so they cannot be staged by accident and are
-left in place on that device. Nothing cites them and they contributed to none of
-H1 to H5. They are ignored to keep `results/` free of device-local output that a
-careless `git add -A` would commit, not to conceal them, which is why they are
-named individually.
-
-**The four frozen quality runs are a closed list** in
-`sme_assistant.evaluation.analysis.FROZEN_QUALITY_RUNS`. No later run can enter
-the quality analysis, and performance runs are refused outright. Both the four
-quality runs and the six performance runs carry content digests in
-`sme_assistant.evaluation.authenticity`, checked before any number is read. The
-two tables are separate, so a timing run cannot be read as a quality run.
 
 ## Ethics
 
