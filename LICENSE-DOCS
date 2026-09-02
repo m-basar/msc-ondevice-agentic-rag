@@ -1,0 +1,24 @@
+Documentation, corpus and results licence
+
+Copyright (c) 2026 Md Basar Basar
+
+The written material and data in this repository are licensed under the
+Creative Commons Attribution 4.0 International Licence (CC BY 4.0).
+
+This covers:
+
+  docs/       the pre-registration, corpus documentation and dissertation draft
+  data/kb/    the synthetic knowledge base
+  gold/       the question set, conflict registry and answer key
+  results/    the frozen run records and analysis output
+  figures/    the generated figures
+
+You may share and adapt this material for any purpose, including commercially,
+provided you give appropriate credit, link to the licence, and indicate whether
+changes were made.
+
+  Summary:    https://creativecommons.org/licenses/by/4.0/
+  Full text:  https://creativecommons.org/licenses/by/4.0/legalcode
+
+Source code in this repository is licensed separately under the MIT Licence.
+See LICENSE.
